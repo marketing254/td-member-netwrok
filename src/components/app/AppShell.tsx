@@ -1,7 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useClerk, useUser } from "@clerk/nextjs";
 import {
   AppBar,
   Avatar,
@@ -14,6 +15,10 @@ import {
   Drawer,
   IconButton,
   LinearProgress,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
   Stack,
   Toolbar,
   Tooltip,
@@ -25,14 +30,18 @@ import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
 import RedeemOutlinedIcon from "@mui/icons-material/RedeemOutlined";
 import WorkspacePremiumOutlinedIcon from "@mui/icons-material/WorkspacePremiumOutlined";
+import ManageAccountsOutlinedIcon from "@mui/icons-material/ManageAccountsOutlined";
 import PhoneInTalkOutlinedIcon from "@mui/icons-material/PhoneInTalkOutlined";
 import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
 import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
+import KeyboardArrowDownOutlinedIcon from "@mui/icons-material/KeyboardArrowDownOutlined";
+import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
+import UpgradeOutlinedIcon from "@mui/icons-material/UpgradeOutlined";
+import Logo from "@/components/brand/Logo";
 import { member } from "@/lib/memberData";
-import { brand } from "@/lib/content";
 
 const SIDEBAR_W = 264;
 
@@ -41,6 +50,7 @@ const navItems = [
   { href: "/dashboard/courses", label: "Courses", icon: SchoolOutlinedIcon },
   { href: "/dashboard/rewards", label: "Rewards", icon: RedeemOutlinedIcon },
   { href: "/dashboard/certificates", label: "Certifications", icon: WorkspacePremiumOutlinedIcon },
+  { href: "/dashboard/account", label: "Account", icon: ManageAccountsOutlinedIcon },
 ];
 
 function SidebarContent({ pathname, onClose }: { pathname: string; onClose?: () => void }) {
@@ -59,33 +69,7 @@ function SidebarContent({ pathname, onClose }: { pathname: string; onClose?: () 
       }}
     >
       <Box sx={{ px: 3, pt: 3, pb: 2 }}>
-        <Stack direction="row" spacing={1.25} sx={{ alignItems: "center" }}>
-          <Box
-            sx={{
-              width: 36,
-              height: 36,
-              borderRadius: 2,
-              backgroundImage: "linear-gradient(135deg, #F0C16E 0%, #D9A84B 100%)",
-              display: "grid",
-              placeItems: "center",
-              color: "#06182A",
-              fontFamily: "var(--font-display)",
-              fontWeight: 700,
-              fontSize: "1.05rem",
-              boxShadow: "0 8px 22px -10px rgba(217,168,75,0.55)",
-            }}
-          >
-            TD
-          </Box>
-          <Box>
-            <Typography sx={{ fontFamily: "var(--font-display)", fontSize: "1.05rem", lineHeight: 1.1 }}>
-              {brand.shortName}
-            </Typography>
-            <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.55)", fontSize: "0.72rem" }}>
-              Member workspace
-            </Typography>
-          </Box>
-        </Stack>
+        <Logo dark height={30} href="/dashboard" />
       </Box>
 
       <Box sx={{ px: 2.25, pb: 1 }}>
@@ -260,6 +244,27 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const theme = useTheme();
   const isMd = useMediaQuery(theme.breakpoints.up("md"));
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuAnchor = useRef<HTMLButtonElement | null>(null);
+  const router = useRouter();
+  const { signOut } = useClerk();
+  const { user } = useUser();
+
+  const displayFirst = user?.firstName ?? member.firstName;
+  const displayLast = user?.lastName ?? member.lastName;
+  const displayEmail = user?.primaryEmailAddress?.emailAddress ?? member.email;
+  const displayInitials =
+    `${displayFirst?.[0] ?? ""}${displayLast?.[0] ?? ""}`.toUpperCase() || member.avatarInitials;
+
+  const handleSignOut = async () => {
+    setUserMenuOpen(false);
+    await signOut({ redirectUrl: "/" });
+  };
+
+  const goTo = (href: string) => {
+    setUserMenuOpen(false);
+    router.push(href);
+  };
 
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "#F4F0E6", display: "flex" }}>
@@ -344,15 +349,35 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               </IconButton>
             </Tooltip>
             <Box
+              ref={userMenuAnchor as unknown as React.RefObject<HTMLDivElement>}
+              component="button"
+              onClick={() => setUserMenuOpen(true)}
               sx={{
-                display: { xs: "none", sm: "flex" },
+                display: "flex",
                 alignItems: "center",
                 gap: 1,
-                pl: 1.25,
+                pl: { xs: 0, sm: 1.25 },
+                pr: { xs: 0, sm: 1 },
+                py: 0.5,
                 ml: 0.5,
-                borderLeft: "1px solid",
+                borderLeft: { xs: 0, sm: "1px solid" },
                 borderColor: "divider",
+                bgcolor: "transparent",
+                border: 0,
+                borderRadius: "999px",
+                cursor: "pointer",
+                color: "text.primary",
+                fontFamily: "inherit",
+                transition: "background-color 180ms ease",
+                "&:hover": { bgcolor: "rgba(14,42,61,0.05)" },
+                "&:focus-visible": {
+                  outline: "2px solid",
+                  outlineColor: "primary.main",
+                  outlineOffset: 2,
+                },
               }}
+              aria-haspopup="menu"
+              aria-expanded={userMenuOpen}
             >
               <Avatar
                 sx={{
@@ -364,22 +389,138 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   fontWeight: 700,
                 }}
               >
-                {member.avatarInitials}
+                {displayInitials}
               </Avatar>
-              <Box sx={{ display: { xs: "none", lg: "block" } }}>
-                <Typography sx={{ fontSize: "0.85rem", fontWeight: 600, lineHeight: 1.1 }}>
-                  Dr. {member.firstName} {member.lastName}
+              <Box sx={{ display: { xs: "none", lg: "block" }, textAlign: "left" }}>
+                <Typography sx={{ fontSize: "0.85rem", fontWeight: 600, lineHeight: 1.15 }}>
+                  Dr. {displayFirst} {displayLast}
                 </Typography>
                 <Typography variant="body2" sx={{ fontSize: "0.7rem", color: "text.secondary" }}>
                   {member.tier}
                 </Typography>
               </Box>
-              <Tooltip title="Sign out">
-                <IconButton size="small" sx={{ color: "text.secondary", ml: 0.5 }}>
-                  <LogoutOutlinedIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
+              <KeyboardArrowDownOutlinedIcon
+                sx={{
+                  fontSize: 18,
+                  color: "text.secondary",
+                  transition: "transform 200ms ease",
+                  transform: userMenuOpen ? "rotate(180deg)" : "rotate(0)",
+                  ml: 0.25,
+                }}
+              />
             </Box>
+
+            <Menu
+              open={userMenuOpen}
+              onClose={() => setUserMenuOpen(false)}
+              anchorEl={userMenuAnchor.current}
+              anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+              transformOrigin={{ vertical: "top", horizontal: "right" }}
+              slotProps={{
+                paper: {
+                  sx: {
+                    mt: 1,
+                    minWidth: 280,
+                    borderRadius: "16px",
+                    border: "1px solid",
+                    borderColor: "divider",
+                    boxShadow: "0 24px 48px -20px rgba(14,42,61,0.25)",
+                    overflow: "hidden",
+                  },
+                },
+                list: { sx: { py: 0.5 } },
+              }}
+            >
+              <Box sx={{ px: 2, pt: 1.5, pb: 1.25 }}>
+                <Stack direction="row" spacing={1.25} sx={{ alignItems: "center" }}>
+                  <Avatar
+                    sx={{
+                      width: 40,
+                      height: 40,
+                      bgcolor: "primary.main",
+                      color: "common.white",
+                      fontSize: "0.85rem",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {displayInitials}
+                  </Avatar>
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography sx={{ fontSize: "0.92rem", fontWeight: 600, lineHeight: 1.2 }} noWrap>
+                      Dr. {displayFirst} {displayLast}
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontSize: "0.74rem", color: "text.secondary" }} noWrap>
+                      {displayEmail}
+                    </Typography>
+                  </Box>
+                </Stack>
+                <Chip
+                  label={member.tier}
+                  size="small"
+                  sx={{
+                    mt: 1.25,
+                    bgcolor: "rgba(217,168,75,0.14)",
+                    color: "#A07823",
+                    fontWeight: 700,
+                    fontSize: "0.65rem",
+                    height: 22,
+                    letterSpacing: "0.06em",
+                  }}
+                />
+              </Box>
+              <Divider />
+              <MenuItem onClick={() => goTo("/dashboard/account")}>
+                <ListItemIcon>
+                  <ManageAccountsOutlinedIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText
+                  primary="Account settings"
+                  secondary="Profile, password, preferences"
+                  slotProps={{
+                    primary: { sx: { fontSize: "0.9rem", fontWeight: 600 } },
+                    secondary: { sx: { fontSize: "0.74rem" } },
+                  }}
+                />
+              </MenuItem>
+              <MenuItem onClick={() => goTo("/dashboard/account?tab=subscription")}>
+                <ListItemIcon>
+                  <UpgradeOutlinedIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText
+                  primary="Subscription & plan"
+                  secondary={`Founding · $${49}/mo`}
+                  slotProps={{
+                    primary: { sx: { fontSize: "0.9rem", fontWeight: 600 } },
+                    secondary: { sx: { fontSize: "0.74rem" } },
+                  }}
+                />
+              </MenuItem>
+              <MenuItem onClick={() => goTo("/dashboard/account?tab=billing")}>
+                <ListItemIcon>
+                  <ReceiptLongOutlinedIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText
+                  primary="Billing & invoices"
+                  secondary="View, download, payment method"
+                  slotProps={{
+                    primary: { sx: { fontSize: "0.9rem", fontWeight: 600 } },
+                    secondary: { sx: { fontSize: "0.74rem" } },
+                  }}
+                />
+              </MenuItem>
+              <Divider />
+              <MenuItem onClick={handleSignOut} sx={{ color: "error.main" }}>
+                <ListItemIcon sx={{ color: "error.main" }}>
+                  <LogoutOutlinedIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText
+                  primary="Sign out"
+                  slotProps={{
+                    primary: { sx: { fontSize: "0.9rem", fontWeight: 600 } },
+                  }}
+                />
+              </MenuItem>
+            </Menu>
           </Toolbar>
         </AppBar>
 

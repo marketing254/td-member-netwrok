@@ -14,10 +14,13 @@ import {
 import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
 import { Show, UserButton } from "@clerk/nextjs";
+import Logo from "@/components/brand/Logo";
 import { brand, navLinks } from "@/lib/content";
 
 export default function Header() {
-  const [scrolled, setScrolled] = useState(false);
+  const [scrolled, setScrolled] = useState<boolean>(() =>
+    typeof window !== "undefined" ? window.scrollY > 12 : false,
+  );
   const [drawer, setDrawer] = useState(false);
 
   useEffect(() => {
@@ -46,48 +49,12 @@ export default function Header() {
       >
         <Container maxWidth="lg" disableGutters>
           <Toolbar disableGutters sx={{ minHeight: { xs: 64, md: 76 }, px: { xs: 3, md: 0 } }}>
-            <Box
-              component="a"
+            <Logo
+              dark={!scrolled}
               href="#top"
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 1.25,
-                textDecoration: "none",
-                color: fg,
-                transition: "color 250ms ease",
-              }}
-            >
-              <Box
-                sx={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 2,
-                  background: "linear-gradient(135deg, #F0C16E 0%, #D9A84B 100%)",
-                  display: "grid",
-                  placeItems: "center",
-                  color: "#06182A",
-                  fontWeight: 700,
-                  fontFamily: "var(--font-display)",
-                  boxShadow: "0 6px 16px -8px rgba(217,168,75,0.6)",
-                }}
-              >
-                T
-              </Box>
-              <Typography
-                variant="h6"
-                sx={{
-                  textTransform: "none",
-                  fontFamily: "var(--font-display)",
-                  fontWeight: 600,
-                  fontSize: "1.0625rem",
-                  color: fg,
-                  transition: "color 250ms ease",
-                }}
-              >
-                {brand.name}
-              </Typography>
-            </Box>
+              height={36}
+              ariaLabel={`${brand.name} · home`}
+            />
 
             <Stack direction="row" spacing={1} sx={{ ml: 6, display: { xs: "none", md: "flex" }, alignItems: "center" }}>
               {navLinks.map((l) => (
@@ -162,12 +129,7 @@ export default function Header() {
       >
         <Box sx={{ p: 3 }}>
           <Stack direction="row" sx={{ mb: 3, justifyContent: "space-between", alignItems: "center" }}>
-            <Typography
-              variant="h6"
-              sx={{ textTransform: "none", fontFamily: "var(--font-display)", color: "common.white" }}
-            >
-              {brand.name}
-            </Typography>
+            <Logo dark height={32} showSubline={false} href="/" />
             <IconButton onClick={() => setDrawer(false)} aria-label="Close menu" sx={{ color: "common.white" }}>
               <CloseIcon />
             </IconButton>

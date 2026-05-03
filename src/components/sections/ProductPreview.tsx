@@ -40,7 +40,7 @@ export default function ProductPreview() {
       ref={ref}
       style={{ position: "relative" }}
       sx={{
-        py: { xs: 10, md: 16 },
+        py: { xs: 7, md: 10 },
         overflow: "hidden",
         bgcolor: "grey.50",
         borderTop: "1px solid",

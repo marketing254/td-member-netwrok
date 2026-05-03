@@ -82,7 +82,10 @@ export const member = {
   firstName: "Marcus",
   lastName: "Chen",
   credential: "DDS",
+  email: "marcus.chen@bayareafamilydental.com",
+  phone: "(415) 555-0142",
   practice: "Bay Area Family Dental",
+  practiceRole: "Practice Owner",
   city: "San Francisco, CA",
   tier: "Founding Member",
   memberSince: "Mar 2026",
@@ -94,6 +97,153 @@ export const member = {
   ceCreditsGoalYtd: 40,
   savingsYtd: 4820,
   hotlineRequestsOpen: 1,
+};
+
+export type PlanTier = {
+  id: string;
+  name: string;
+  priceMonthly: number;
+  cadenceLabel: string;
+  blurb: string;
+  features: string[];
+  highlight: boolean;
+  ctaLabel: string;
+  isCurrent?: boolean;
+  isLocked?: boolean;
+  badge?: string;
+};
+
+export const subscription = {
+  planId: "founding",
+  planName: "Founding Member",
+  status: "active" as "active" | "past_due" | "canceled" | "trialing",
+  priceMonthly: 49,
+  cycle: "monthly" as "monthly" | "annual",
+  startedOn: "Mar 15, 2026",
+  renewsOn: "Jun 03, 2026",
+  nextChargeAmount: 49,
+  isLifetimeLocked: true,
+  seats: 1,
+};
+
+export const planTiers: PlanTier[] = [
+  {
+    id: "free",
+    name: "Free",
+    priceMonthly: 0,
+    cadenceLabel: "Forever free",
+    blurb: "A taste of the network. Public-facing assets only.",
+    features: ["Public podcast feed", "2 sample practice playbooks", "Waitlist for paid tiers"],
+    highlight: false,
+    ctaLabel: "Downgrade",
+  },
+  {
+    id: "founding",
+    name: "Founding",
+    priceMonthly: 49,
+    cadenceLabel: "/month, locked for life",
+    blurb: "First 1,000 owners only. Full access at the lowest rate we will ever offer.",
+    features: [
+      "Everything in Pro",
+      "Founding-member badge",
+      "Direct line to product team",
+      "Lifetime $49 on the current product",
+    ],
+    highlight: true,
+    ctaLabel: "Current plan",
+    isCurrent: true,
+    isLocked: true,
+    badge: "YOUR PLAN",
+  },
+  {
+    id: "pro",
+    name: "Pro",
+    priceMonthly: 199,
+    cadenceLabel: "/month",
+    blurb: "Everything you need to run, hire, buy, and grow.",
+    features: [
+      "24/7 hotline access",
+      "Full vendor savings network",
+      "Member directory",
+      "Full library + weekly content",
+      "Live monthly AMAs",
+    ],
+    highlight: false,
+    ctaLabel: "Upgrade to Pro",
+  },
+  {
+    id: "premium",
+    name: "Premium",
+    priceMonthly: 499,
+    cadenceLabel: "/month",
+    blurb: "Pro, plus 1:1 coaching and quarterly business strategy.",
+    features: [
+      "Everything in Pro",
+      "1:1 coaching, twice a month",
+      "Quarterly strategy review (90 min)",
+      "Priority hotline routing",
+      "Annual in-person retreat seat",
+    ],
+    highlight: false,
+    ctaLabel: "Upgrade to Premium",
+  },
+];
+
+export type Invoice = {
+  id: string;
+  number: string;
+  date: string;
+  amount: number;
+  status: "paid" | "pending" | "failed" | "refunded";
+  description: string;
+  cardLast4: string;
+};
+
+export const invoices: Invoice[] = [
+  {
+    id: "inv-2026-05",
+    number: "TDN-2026-0512",
+    date: "May 03, 2026",
+    amount: 49,
+    status: "paid",
+    description: "Founding membership — May 2026",
+    cardLast4: "4242",
+  },
+  {
+    id: "inv-2026-04",
+    number: "TDN-2026-0411",
+    date: "Apr 03, 2026",
+    amount: 49,
+    status: "paid",
+    description: "Founding membership — April 2026",
+    cardLast4: "4242",
+  },
+  {
+    id: "inv-2026-03",
+    number: "TDN-2026-0315",
+    date: "Mar 15, 2026",
+    amount: 49,
+    status: "paid",
+    description: "Founding membership — March 2026 (pro-rated)",
+    cardLast4: "4242",
+  },
+];
+
+export const paymentMethod = {
+  brand: "Visa",
+  last4: "4242",
+  expMonth: 12,
+  expYear: 2028,
+  holderName: "Marcus Chen",
+  isDefault: true,
+};
+
+export const billingAddress = {
+  line1: "1180 Market Street, Suite 240",
+  city: "San Francisco",
+  state: "CA",
+  postalCode: "94102",
+  country: "United States",
 };
 
 export const upcomingDeadlines = [

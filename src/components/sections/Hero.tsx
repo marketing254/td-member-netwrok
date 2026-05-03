@@ -11,8 +11,6 @@ import {
   Typography,
 } from "@mui/material";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
-import PhoneInTalkOutlinedIcon from "@mui/icons-material/PhoneInTalkOutlined";
 import SavingsOutlinedIcon from "@mui/icons-material/SavingsOutlined";
 import SupportAgentOutlinedIcon from "@mui/icons-material/SupportAgentOutlined";
 import { motion, useMotionValue, useReducedMotion, useSpring, useTransform } from "framer-motion";
@@ -42,10 +40,8 @@ export default function Hero() {
   const mouseY = useMotionValue(0);
   const sx = useSpring(mouseX, SPRING);
   const sy = useSpring(mouseY, SPRING);
-  const panelX = useTransform(sx, (value) => value * 18);
-  const panelY = useTransform(sy, (value) => value * 20);
-  const floatUp = useTransform(sy, (value) => value * -14);
-  const floatAcross = useTransform(sx, (value) => value * 14);
+  const panelX = useTransform(sx, (value) => value * 8);
+  const panelY = useTransform(sy, (value) => value * 10);
 
   const onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (reduced || !ref.current) return;
@@ -64,8 +60,8 @@ export default function Hero() {
       sx={{
         position: "relative",
         overflow: "hidden",
-        pt: { xs: 10, md: 14 },
-        pb: { xs: 10, md: 16 },
+        pt: { xs: 9, md: 12 },
+        pb: { xs: 8, md: 11 },
         backgroundImage: "linear-gradient(180deg, #06182A 0%, #0A2236 55%, #0E2A3D 100%)",
         color: "common.white",
       }}
@@ -282,67 +278,10 @@ export default function Hero() {
               style={reduced ? undefined : { x: panelX, y: panelY }}
               sx={{ position: "relative", maxWidth: 500, mx: "auto" }}
             >
-              <motion.div style={reduced ? undefined : { x: floatAcross, y: floatUp }}>
-                <Box
-                  sx={{
-                    display: { xs: "none", md: "flex" },
-                    position: "absolute",
-                    top: 26,
-                    right: -24,
-                    zIndex: 2,
-                    alignItems: "center",
-                    gap: 1.25,
-                    px: 1.4,
-                    py: 1.1,
-                    borderRadius: 999,
-                    bgcolor: "rgba(240,193,110,0.96)",
-                    color: "primary.dark",
-                    border: "1px solid rgba(240,193,110,0.65)",
-                    boxShadow: "0 28px 48px -28px rgba(217,168,75,0.7)",
-                  }}
-                >
-                  <PhoneInTalkOutlinedIcon sx={{ fontSize: 18 }} />
-                  <Box>
-                    <Typography variant="body2" sx={{ fontSize: "0.72rem", opacity: 0.78 }}>
-                      Typical callback
-                    </Typography>
-                    <Typography sx={{ fontWeight: 700, lineHeight: 1.1 }}>12 minutes</Typography>
-                  </Box>
-                </Box>
-              </motion.div>
-
-              <motion.div style={reduced ? undefined : { x: floatUp, y: floatAcross }}>
-                <Box
-                  sx={{
-                    display: { xs: "none", md: "flex" },
-                    position: "absolute",
-                    left: -34,
-                    bottom: 38,
-                    zIndex: 2,
-                    alignItems: "center",
-                    gap: 1.25,
-                    px: 1.4,
-                    py: 1.1,
-                    borderRadius: 999,
-                    bgcolor: "rgba(255,255,255,0.08)",
-                    color: "common.white",
-                    border: "1px solid rgba(255,255,255,0.12)",
-                    backdropFilter: "blur(14px)",
-                    boxShadow: "0 28px 48px -32px rgba(0,0,0,0.55)",
-                  }}
-                >
-                  <GroupsOutlinedIcon sx={{ fontSize: 18, color: "secondary.light" }} />
-                  <Box>
-                    <Typography variant="body2" sx={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.62)" }}>
-                      Community online
-                    </Typography>
-                    <Typography sx={{ fontWeight: 700, lineHeight: 1.1 }}>68 operators active</Typography>
-                  </Box>
-                </Box>
-              </motion.div>
-
               <Box
                 sx={{
+                  position: "relative",
+                  zIndex: 1,
                   p: { xs: 2.25, md: 3 },
                   borderRadius: 4,
                   bgcolor: "rgba(255,255,255,0.06)",

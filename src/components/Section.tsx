@@ -21,7 +21,7 @@ export default function Section({
   children,
   align = "center",
   background = "default",
-  py = { xs: 10, md: 16 },
+  py = { xs: 7, md: 10 },
   containerWidth = "lg",
 }: SectionProps) {
   const bgMap = {
@@ -51,7 +51,7 @@ export default function Section({
               maxWidth: 760,
               mx: align === "center" ? "auto" : 0,
               textAlign: align,
-              mb: { xs: 6, md: 8 },
+              mb: { xs: 4, md: 6 },
             }}
           >
             {eyebrow && (

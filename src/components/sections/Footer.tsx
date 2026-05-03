@@ -1,5 +1,6 @@
 "use client";
 import { Box, Button, Container, Grid, Stack, Typography } from "@mui/material";
+import Logo from "@/components/brand/Logo";
 import { brand, footerLinks } from "@/lib/content";
 
 export default function Footer() {
@@ -29,34 +30,7 @@ export default function Footer() {
         <Grid container spacing={{ xs: 5, md: 6 }} sx={{ position: "relative" }}>
           <Grid size={{ xs: 12, md: 5 }}>
             <Stack spacing={2.5} sx={{ maxWidth: 420 }}>
-              <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
-                <Box
-                  sx={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 2,
-                    bgcolor: "secondary.main",
-                    color: "primary.dark",
-                    display: "grid",
-                    placeItems: "center",
-                    fontWeight: 700,
-                    fontFamily: "var(--font-display)",
-                  }}
-                >
-                  T
-                </Box>
-                <Typography
-                  variant="h6"
-                  sx={{
-                    color: "common.white",
-                    fontFamily: "var(--font-display)",
-                    textTransform: "none",
-                    fontSize: "1.25rem",
-                  }}
-                >
-                  {brand.name}
-                </Typography>
-              </Stack>
+              <Logo dark height={40} href="/" />
 
               <Typography variant="body1" sx={{ color: "rgba(255,255,255,0.74)" }}>
                 A premium support network for dental practice owners who want faster answers, better buying power, and
