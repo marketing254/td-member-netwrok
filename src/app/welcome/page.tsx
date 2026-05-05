@@ -1,5 +1,7 @@
 "use client";
+import { useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import {
   Box,
@@ -46,8 +48,19 @@ const quickstart = [
 ];
 
 export default function WelcomePage() {
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
+  const router = useRouter();
   const firstName = user?.firstName ?? member.firstName;
+
+  // Route-by-role: vendors and admins shouldn't see the member welcome page.
+  // Members get the full welcome content; everyone else is redirected to their portal.
+  useEffect(() => {
+    if (!isLoaded || !user) return;
+    const role = (user.publicMetadata as { role?: string })?.role;
+    if (role === "vendor") router.replace("/vendor");
+    else if (role === "admin") router.replace("/admin");
+    // members stay on /welcome
+  }, [isLoaded, user, router]);
 
   return (
     <Box

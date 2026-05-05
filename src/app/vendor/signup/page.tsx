@@ -156,7 +156,7 @@ function VendorSignupInner() {
               <Box component={Link} href="/partners" sx={{ fontSize: "0.85rem", color: "text.secondary", textDecoration: "none", display: { xs: "none", sm: "inline-flex" }, alignItems: "center", gap: 0.5, "&:hover": { color: "text.primary" } }}>
                 <ArrowBackIcon sx={{ fontSize: 14 }} /> Back to partners page
               </Box>
-              <Box component={Link} href="/vendor" sx={{ fontSize: "0.85rem", fontWeight: 600, color: "primary.main", textDecoration: "none" }}>
+              <Box component={Link} href="/vendor/signin" sx={{ fontSize: "0.85rem", fontWeight: 600, color: "primary.main", textDecoration: "none" }}>
                 Already a partner? Sign in
               </Box>
             </Stack>

@@ -1,27 +1,102 @@
 "use client";
 import Link from "next/link";
-import { Box, Stack, Typography } from "@mui/material";
+import { Box, Chip, Stack, Typography } from "@mui/material";
 import Logo from "@/components/brand/Logo";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import VerifiedUserOutlinedIcon from "@mui/icons-material/VerifiedUserOutlined";
 import FormatQuoteRoundedIcon from "@mui/icons-material/FormatQuoteRounded";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import HandshakeOutlinedIcon from "@mui/icons-material/HandshakeOutlined";
+import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
+import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
 import { brand, founding } from "@/lib/content";
 
-const trustPoints = [
-  { value: "500+", label: "Practice owners in the network" },
-  { value: "2 hrs", label: "Median first hotline response" },
-  { value: "$6.4K", label: "Average year-one savings" },
-];
+export type AuthVariant = "member" | "vendor" | "admin";
+
+type Variant = {
+  badge: { icon: React.ReactNode; label: string };
+  trustPoints: { value: string; label: string }[];
+  testimonial?: { quote: string; initials: string; name: string; role: string };
+  footer: string;
+  crossLinks: { label: string; href: string }[];
+};
+
+const VARIANTS: Record<AuthVariant, Variant> = {
+  member: {
+    badge: { icon: <GroupsOutlinedIcon sx={{ fontSize: 14 }} />, label: "MEMBER ACCESS" },
+    trustPoints: [
+      { value: "500+", label: "Practice owners in the network" },
+      { value: "2 hrs", label: "Median first hotline response" },
+      { value: "$6.4K", label: "Average year-one savings" },
+    ],
+    testimonial: {
+      quote:
+        "The hotline alone has saved us over $150K in bad decisions. The team's guidance was invaluable when we were planning our expansion.",
+      initials: "DW",
+      name: "Dr. Diana Walsh",
+      role: "Practice Owner · Chicago, IL",
+    },
+    footer: `Secure authentication · Founding rate $${founding.priceMonthly}/mo locked for life`,
+    crossLinks: [
+      { label: "Vendor partner sign-in", href: "/vendor/signin" },
+      { label: "Admin console", href: "/admin/signin" },
+    ],
+  },
+  vendor: {
+    badge: { icon: <HandshakeOutlinedIcon sx={{ fontSize: 14 }} />, label: "VENDOR PARTNER" },
+    trustPoints: [
+      { value: "12", label: "Partner categories" },
+      { value: "$199", label: "Standard partner rate" },
+      { value: "1 day", label: "Application review SLA" },
+    ],
+    testimonial: {
+      quote:
+        "Joining the network gave us a curated audience of decision-makers we could never reach this efficiently on our own.",
+      initials: "MR",
+      name: "Marcus Reilly",
+      role: "VP Partnerships · Henry Schein",
+    },
+    footer: "Verified Partner sign-in · Curated B2B network for dental supply",
+    crossLinks: [
+      { label: "Member sign-in", href: "/signin" },
+      { label: "Admin console", href: "/admin/signin" },
+    ],
+  },
+  admin: {
+    badge: {
+      icon: <AdminPanelSettingsOutlinedIcon sx={{ fontSize: 14 }} />,
+      label: "ADMIN CONSOLE",
+    },
+    trustPoints: [
+      { value: "4", label: "Admin team members" },
+      { value: "Audited", label: "Every write action logged" },
+      { value: "MFA", label: "Required for all admins" },
+    ],
+    footer: "Admin access is invite-only. Multi-factor authentication required.",
+    crossLinks: [
+      { label: "Member sign-in", href: "/signin" },
+      { label: "Vendor partner sign-in", href: "/vendor/signin" },
+    ],
+  },
+};
 
 type AuthShellProps = {
   eyebrow: string;
   title: string;
   subtitle: string;
   children: React.ReactNode;
+  variant?: AuthVariant;
 };
 
-export default function AuthShell({ eyebrow, title, subtitle, children }: AuthShellProps) {
+export default function AuthShell({
+  eyebrow,
+  title,
+  subtitle,
+  children,
+  variant = "member",
+}: AuthShellProps) {
+  const v = VARIANTS[variant];
+  const trustPoints = v.trustPoints;
   return (
     <Box
       sx={{
@@ -136,72 +211,93 @@ export default function AuthShell({ eyebrow, title, subtitle, children }: AuthSh
             </Typography>
           </Box>
 
-          {/* Testimonial */}
-          <Box
-            sx={{
-              position: "relative",
-              p: 3,
-              borderRadius: "20px",
-              bgcolor: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.14)",
-              backdropFilter: "blur(12px)",
-            }}
-          >
-            <FormatQuoteRoundedIcon
+          {/* Testimonial — only renders when the variant supplies one */}
+          {v.testimonial && (
+            <Box
               sx={{
-                position: "absolute",
-                top: -10,
-                left: 22,
-                fontSize: 32,
-                color: "secondary.light",
-                bgcolor: "#0E2A3D",
-                borderRadius: "50%",
-                p: 0.5,
-              }}
-            />
-            <Typography
-              sx={{
-                color: "rgba(255,255,255,0.95)",
-                fontSize: "0.98rem",
-                lineHeight: 1.6,
-                fontStyle: "italic",
-                mb: 1.75,
+                position: "relative",
+                p: 3,
+                borderRadius: "20px",
+                bgcolor: "rgba(255,255,255,0.06)",
+                border: "1px solid rgba(255,255,255,0.14)",
+                backdropFilter: "blur(12px)",
               }}
             >
-              The hotline alone has saved us over $150K in bad decisions. The team&apos;s guidance
-              was invaluable when we were planning our expansion.
-            </Typography>
-            <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
-              <Box
+              <FormatQuoteRoundedIcon
                 sx={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: "50%",
-                  bgcolor: "rgba(217,168,75,0.18)",
-                  border: "1px solid rgba(217,168,75,0.4)",
+                  position: "absolute",
+                  top: -10,
+                  left: 22,
+                  fontSize: 32,
                   color: "secondary.light",
-                  display: "grid",
-                  placeItems: "center",
-                  fontFamily: "var(--font-display)",
-                  fontWeight: 700,
-                  fontSize: "0.85rem",
+                  bgcolor: "#0E2A3D",
+                  borderRadius: "50%",
+                  p: 0.5,
+                }}
+              />
+              <Typography
+                sx={{
+                  color: "rgba(255,255,255,0.95)",
+                  fontSize: "0.98rem",
+                  lineHeight: 1.6,
+                  fontStyle: "italic",
+                  mb: 1.75,
                 }}
               >
-                DW
-              </Box>
-              <Box>
-                <Typography sx={{ fontSize: "0.88rem", fontWeight: 600, color: "common.white", lineHeight: 1.2 }}>
-                  Dr. Diana Walsh
-                </Typography>
-                <Typography
-                  variant="body2"
-                  sx={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.65)" }}
+                {v.testimonial.quote}
+              </Typography>
+              <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+                <Box
+                  sx={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: "50%",
+                    bgcolor: "rgba(217,168,75,0.18)",
+                    border: "1px solid rgba(217,168,75,0.4)",
+                    color: "secondary.light",
+                    display: "grid",
+                    placeItems: "center",
+                    fontFamily: "var(--font-display)",
+                    fontWeight: 700,
+                    fontSize: "0.85rem",
+                  }}
                 >
-                  Practice Owner · Chicago, IL
-                </Typography>
-              </Box>
-            </Stack>
-          </Box>
+                  {v.testimonial.initials}
+                </Box>
+                <Box>
+                  <Typography sx={{ fontSize: "0.88rem", fontWeight: 600, color: "common.white", lineHeight: 1.2 }}>
+                    {v.testimonial.name}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.65)" }}
+                  >
+                    {v.testimonial.role}
+                  </Typography>
+                </Box>
+              </Stack>
+            </Box>
+          )}
+
+          {/* Variant badge — replaces testimonial space when there's no quote */}
+          {!v.testimonial && (
+            <Chip
+              icon={v.badge.icon as React.ReactElement}
+              label={v.badge.label}
+              size="small"
+              sx={{
+                alignSelf: "flex-start",
+                bgcolor: "rgba(217,168,75,0.16)",
+                color: "secondary.light",
+                border: "1px solid rgba(217,168,75,0.35)",
+                fontSize: "0.7rem",
+                letterSpacing: "0.18em",
+                fontWeight: 700,
+                height: 28,
+                "& .MuiChip-icon": { color: "secondary.light" },
+              }}
+            />
+          )}
         </Stack>
 
         {/* Bottom — trust row + secure note */}
@@ -242,9 +338,34 @@ export default function AuthShell({ eyebrow, title, subtitle, children }: AuthSh
               variant="body2"
               sx={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.7)" }}
             >
-              Secure authentication · Founding rate ${founding.priceMonthly}/mo locked for life
+              {v.footer}
             </Typography>
           </Stack>
+
+          {/* Cross-links to the other portals' sign-in pages */}
+          {v.crossLinks.length > 0 && (
+            <Stack direction="row" spacing={2} sx={{ flexWrap: "wrap", gap: 1, pt: 1.5, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+              <Typography variant="body2" sx={{ fontSize: "0.74rem", color: "rgba(255,255,255,0.5)", letterSpacing: "0.06em", fontWeight: 600 }}>
+                NOT THIS PORTAL?
+              </Typography>
+              {v.crossLinks.map((cl) => (
+                <Box
+                  key={cl.href}
+                  component={Link}
+                  href={cl.href}
+                  sx={{
+                    fontSize: "0.78rem",
+                    color: "secondary.light",
+                    textDecoration: "none",
+                    fontWeight: 600,
+                    "&:hover": { color: "common.white", textDecoration: "underline" },
+                  }}
+                >
+                  {cl.label} →
+                </Box>
+              ))}
+            </Stack>
+          )}
         </Stack>
       </Box>
 

@@ -193,7 +193,7 @@ export const footerLinks = {
     { label: "Why partner", href: "/partners" },
     { label: "Partner pricing", href: "/partners/pricing" },
     { label: "Apply now", href: "/vendor/signup" },
-    { label: "Partner sign in", href: "/vendor" },
+    { label: "Partner sign in", href: "/vendor/signin" },
   ],
   Contact: [
     { label: brand.email, href: `mailto:${brand.email}` },
