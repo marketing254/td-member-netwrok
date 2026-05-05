@@ -156,23 +156,103 @@ let theme = createTheme({
       styleOverrides: { root: { paddingInline: 24 } },
     },
     MuiTextField: {
-      defaultProps: { variant: "outlined", fullWidth: true },
+      defaultProps: {
+        variant: "outlined",
+        fullWidth: true,
+        // Force the floating-label style: label always sits notched in the top
+        // border, never overlapping placeholders or input text.
+        slotProps: {
+          inputLabel: { shrink: true },
+        },
+      },
     },
     MuiOutlinedInput: {
       styleOverrides: {
         root: {
-          backgroundColor: "rgba(255,255,255,0.94)",
+          backgroundColor: "#FFFFFF",
           borderRadius: 12,
+          // Lock the height so plain inputs and selects line up perfectly
+          // when placed side-by-side in the same grid row.
+          minHeight: 52,
           transition: "background-color 200ms ease, border-color 200ms ease",
-          "&:hover": { backgroundColor: "#FFFFFF" },
-          "&.Mui-focused": { backgroundColor: "#FFFFFF" },
+          "&:hover .MuiOutlinedInput-notchedOutline": {
+            borderColor: COLORS.inkSoft,
+          },
+          "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+            borderColor: COLORS.primary,
+            borderWidth: 1.5,
+          },
         },
-        notchedOutline: { borderColor: COLORS.line },
+        notchedOutline: {
+          borderColor: COLORS.line,
+          transition: "border-color 200ms ease",
+        },
+        input: {
+          padding: "14px 16px",
+          fontSize: "0.95rem",
+          // Smaller, less visually competing placeholder.
+          "&::placeholder": {
+            color: COLORS.muted,
+            opacity: 0.55,
+            fontSize: "0.85rem",
+          },
+        },
+        // Multiline (textarea) needs its own padding so rows breathe.
+        multiline: {
+          padding: 0,
+          "& textarea": {
+            padding: "12px 16px",
+            fontSize: "0.95rem",
+            "&::placeholder": {
+              color: COLORS.muted,
+              opacity: 0.55,
+              fontSize: "0.85rem",
+            },
+          },
+        },
       },
     },
     MuiInputLabel: {
       styleOverrides: {
-        root: { color: COLORS.muted, fontSize: "0.9375rem" },
+        root: {
+          color: COLORS.muted,
+          fontSize: "1rem",
+          fontWeight: 500,
+          // Floating label position tuned for our 14px input padding.
+          "&.MuiInputLabel-shrink": {
+            color: COLORS.inkSoft,
+            fontWeight: 600,
+          },
+          "&.Mui-focused": {
+            color: COLORS.primary,
+          },
+        },
+      },
+    },
+    MuiFormHelperText: {
+      styleOverrides: {
+        root: {
+          marginLeft: 4,
+          marginTop: 6,
+          fontSize: "0.78rem",
+          color: COLORS.muted,
+        },
+      },
+    },
+    MuiSelect: {
+      defaultProps: { variant: "outlined" },
+      styleOverrides: {
+        // Match the plain input padding exactly so Select and TextField are
+        // pixel-identical in height when placed side-by-side.
+        select: {
+          padding: "14px 16px",
+          paddingRight: "44px", // room for the dropdown chevron
+          minHeight: "1.4em",
+          fontSize: "0.95rem",
+          display: "flex",
+          alignItems: "center",
+          boxSizing: "border-box",
+        },
       },
     },
     MuiAccordion: {

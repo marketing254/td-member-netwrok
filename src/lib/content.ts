@@ -181,23 +181,25 @@ export const faqs = [
 ];
 
 export const footerLinks = {
-  Explore: [
+  Members: [
     { label: "Features", href: "#features" },
     { label: "Pricing", href: "#pricing" },
     { label: "Stories", href: "#stories" },
     { label: "FAQ", href: "#faq" },
+    { label: "Member sign in", href: brand.signInUrl },
+    { label: "Become a member", href: brand.joinUrl },
   ],
-  Platform: [
-    { label: "Member workspace", href: "#preview" },
-    { label: "Savings calculator", href: "#savings" },
-    { label: "Founding access", href: "#top" },
-    { label: "Private intake", href: "#apply" },
+  Vendors: [
+    { label: "Why partner", href: "/partners" },
+    { label: "Partner pricing", href: "/partners/pricing" },
+    { label: "Apply now", href: "/vendor/signup" },
+    { label: "Partner sign in", href: "/vendor" },
   ],
-  Access: [
-    { label: "Sign in", href: brand.signInUrl },
-    { label: "Claim founding spot", href: brand.joinUrl },
+  Contact: [
     { label: brand.email, href: `mailto:${brand.email}` },
     { label: brand.phoneDisplay, href: `tel:${brand.phoneTel}` },
+    { label: "Member workspace", href: "#preview" },
+    { label: "Private intake", href: "#apply" },
   ],
 };
 

@@ -66,6 +66,16 @@ export default function Header() {
                   {l.label}
                 </Button>
               ))}
+              <Button
+                href="/partners"
+                sx={{
+                  color: fgMuted,
+                  fontWeight: 500,
+                  "&:hover": { color: fg, bgcolor: "transparent" },
+                }}
+              >
+                For vendors
+              </Button>
             </Stack>
 
             <Box sx={{ flex: 1 }} />
@@ -79,7 +89,7 @@ export default function Header() {
                   Sign in
                 </Button>
                 <Button href={brand.joinUrl} variant="contained" color="secondary" size="small" sx={{ py: 1, px: 2.5 }}>
-                  Claim founding spot
+                  Become a member
                 </Button>
               </Show>
               <Show when="signed-in">
@@ -168,12 +178,37 @@ export default function Header() {
                 {l.label}
               </Button>
             ))}
+            <Button
+              href="/partners"
+              onClick={() => setDrawer(false)}
+              sx={{
+                justifyContent: "flex-start",
+                color: "secondary.light",
+                fontSize: "1.125rem",
+                "&:hover": { bgcolor: "rgba(255,255,255,0.06)" },
+              }}
+            >
+              For vendors →
+            </Button>
           </Stack>
 
           <Show when="signed-out">
             <Stack spacing={1.5}>
               <Button href={brand.joinUrl} variant="contained" color="secondary" fullWidth size="large">
-                Claim founding spot
+                Become a member
+              </Button>
+              <Button
+                href="/partners"
+                onClick={() => setDrawer(false)}
+                variant="outlined"
+                fullWidth
+                sx={{
+                  color: "common.white",
+                  borderColor: "rgba(217,168,75,0.4)",
+                  "&:hover": { borderColor: "rgba(217,168,75,0.6)", bgcolor: "rgba(217,168,75,0.06)" },
+                }}
+              >
+                Become a vendor partner
               </Button>
               <Button
                 href={brand.signInUrl}
