@@ -12,8 +12,16 @@ function readClerkError(e: unknown): { code?: string; message?: string } {
 export async function POST(req: Request) {
   const body = await req.json();
 
-  if (!body.companyName || !body.contactEmail || !body.agreedToTerms) {
-    return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
+  if (
+    !body.companyName ||
+    !body.contactEmail ||
+    !body.agreedToTerms ||
+    !body.confirmedAuthority
+  ) {
+    return NextResponse.json(
+      { error: "Both agreement checkboxes must be confirmed before submitting." },
+      { status: 400 },
+    );
   }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
@@ -27,10 +35,15 @@ export async function POST(req: Request) {
     plan_id: body.planId,
     contact_name: body.contactName,
     contact_phone: body.contactPhone ?? "",
+    // Commitment #2 — hotline notifications email
+    hotline_email: body.hotlineEmail ?? body.contactEmail,
+    // Commitment #3 — calendar booking link
+    calendar_link: body.calendarLink ?? "",
     agreement_signed_at: new Date().toISOString(),
     agreement_version: "v1.0",
     agreement_signed_by: body.signatureName,
     agreement_signed_title: body.signatureTitle,
+    agreement_dual_checkboxes_confirmed: true,
     offer_draft: {
       title: body.offerTitle,
       discount: body.offerDiscount,

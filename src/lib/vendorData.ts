@@ -74,18 +74,19 @@ export const vendorPlans: VendorPlan[] = [
 ];
 
 export const vendorCategories = [
-  "Dental Supplies",
-  "Practice Management Software",
-  "Membership Plan Software",
-  "Digital Marketing",
-  "Hiring / HR / Payroll",
-  "Insurance (Malpractice + Business)",
-  "CPA / Bookkeeping",
-  "Practice Financing / Equipment Lending",
-  "Legal / Attorney",
-  "Equipment / Imaging / Handpieces",
-  "CE / CME Providers",
-  "Real Estate / Practice Brokers",
+  "Dental supplies and consumables",
+  "Laboratory services",
+  "Equipment and operatory build-outs",
+  "Practice management software",
+  "Billing, coding and credentialing",
+  "HR, payroll and compliance",
+  "Patient financing and lending",
+  "Phone, call tracking and AI receptionists",
+  "Coaching and consulting",
+  "Continuing education",
+  "Accounting, tax and CFO services",
+  "Marketing and digital services",
+  "Other",
 ] as const;
 
 export type VendorCategory = (typeof vendorCategories)[number];
@@ -97,7 +98,7 @@ export const vendor = {
   id: "v_001",
   companyName: "Henry Schein Dental",
   displayName: "Henry Schein",
-  category: "Dental Supplies" as VendorCategory,
+  category: "Dental supplies and consumables" as VendorCategory,
   website: "https://www.henryschein.com",
   description:
     "Largest distributor of dental supplies and equipment in North America. Stack TDN's negotiated rate on top of any existing volume rebate program.",
@@ -377,7 +378,7 @@ export const adminVendors: AdminVendorRow[] = [
   {
     id: "v_001",
     companyName: "Henry Schein Dental",
-    category: "Dental Supplies",
+    category: "Dental supplies and consumables",
     status: "active",
     contactName: "Marcus Reilly",
     contactEmail: "marcus.reilly@henryschein.com",
@@ -390,7 +391,7 @@ export const adminVendors: AdminVendorRow[] = [
   {
     id: "v_002",
     companyName: "Weave",
-    category: "Practice Management Software",
+    category: "Practice management software",
     status: "active",
     contactName: "Eleanor Davis",
     contactEmail: "eleanor@getweave.com",
@@ -403,7 +404,7 @@ export const adminVendors: AdminVendorRow[] = [
   {
     id: "v_003",
     companyName: "Patterson Dental",
-    category: "Equipment / Imaging / Handpieces",
+    category: "Equipment and operatory build-outs",
     status: "active",
     contactName: "James Patel",
     contactEmail: "j.patel@pattersondental.com",
@@ -416,7 +417,7 @@ export const adminVendors: AdminVendorRow[] = [
   {
     id: "v_004",
     companyName: "CareStack",
-    category: "Practice Management Software",
+    category: "Practice management software",
     status: "pending",
     contactName: "Priya Sharma",
     contactEmail: "priya@carestack.com",
@@ -429,7 +430,7 @@ export const adminVendors: AdminVendorRow[] = [
   {
     id: "v_005",
     companyName: "Yapi",
-    category: "Practice Management Software",
+    category: "Practice management software",
     status: "pending",
     contactName: "Tom Boyle",
     contactEmail: "tom@yapiapp.com",
@@ -442,7 +443,7 @@ export const adminVendors: AdminVendorRow[] = [
   {
     id: "v_006",
     companyName: "Practice-Web",
-    category: "Digital Marketing",
+    category: "Marketing and digital services",
     status: "pending",
     contactName: "Anita Vega",
     contactEmail: "avega@practice-web.com",
@@ -471,7 +472,7 @@ export const adminPendingOffers: AdminPendingOfferRow[] = [
     vendorId: "v_001",
     title: "Premium tier members — 18% off",
     discountLabel: "18% off (Premium-only)",
-    category: "Dental Supplies",
+    category: "Dental supplies and consumables",
     submittedOn: "2026-05-02",
   },
   {
@@ -480,7 +481,7 @@ export const adminPendingOffers: AdminPendingOfferRow[] = [
     vendorId: "v_002",
     title: "6 months free + waived onboarding",
     discountLabel: "6 mo free",
-    category: "Practice Management Software",
+    category: "Practice management software",
     submittedOn: "2026-05-04",
   },
 ];
@@ -599,87 +600,137 @@ export type AgreementSection = {
 export const vendorAgreementMeta = {
   title: "Vendor Network Partnership Agreement",
   version: "v1.0",
-  effective: "Effective on the date of last signature",
+  effective: "Effective on the date of sign-up",
+  tagline: "Built around five simple commitments.",
   intro:
-    "This Vendor Network Partnership Agreement (the “Agreement”) is between Thriving Dentist (“we” / “us”) and the Vendor (“you”). Read carefully — you must agree to all terms before continuing onboarding.",
+    "This Vendor Network Partnership Agreement (the “Agreement”) is between Thriving Dentist (“we,” “us”) and the Vendor who signs up below (“you,” “Vendor”). It takes effect on the date of signup. By joining the network, you agree to five commitments — outlined below — plus the operational and legal terms that follow. The structure is intentionally short. We'd rather have a clear handshake than a 40-page document nobody reads.",
 };
 
+export type VendorCommitment = {
+  number: string;
+  title: string;
+  body: string;
+};
+
+// The five commitments — the headline framing of the agreement.
+export const vendorCommitments: VendorCommitment[] = [
+  {
+    number: "01",
+    title: "Offer our members the best deal you have.",
+    body:
+      "You agree to give Thriving Dentist members a discount, bonus, or exclusive benefit that is at least as good as any offer you make available to comparable customers. If your terms get better elsewhere, ours match or improve. We promote this deal — it has to be real.",
+  },
+  {
+    number: "02",
+    title: "Join our private partner hotline.",
+    body:
+      "We host a private hotline that connects our members with vendors in the network. We keep one team member responsive there during business hours, and use it for fast coordination between members and vendors. It's where deals get sorted, leads get triaged, and we share what's working.",
+  },
+  {
+    number: "03",
+    title: "Provide a calendar link.",
+    body:
+      "You give us a working calendar booking link (Calendly, HubSpot, Cal.com, anything) where members can book a call with you directly. We feature it on your profile. You agree to keep it live, keep availability open, and respond to bookings within one business day.",
+  },
+  {
+    number: "04",
+    title: "Accept that we'll evolve the network.",
+    body:
+      "The network is new. We reserve the right to update the terms, benefits, fees, and operating rules from time to time on at least thirty (30) days' written notice. If a change materially reduces your benefits, you can terminate before it takes effect with no penalty.",
+  },
+  {
+    number: "05",
+    title: "Pay the fee — waived for your first six months.",
+    body:
+      "The standard fee is $199 per month. Founding partners pay $0 for months 1-6, $49 for months 7-12, and the standard $199 from month thirteen onward. You're free to cancel with 30 days' written notice at any time, but you remain responsible for fees accrued during notice.",
+  },
+];
+
+// The fee schedule presented as a flat table (matches Schedule A in HTML).
+export type FeeScheduleRow = {
+  period: string;
+  fee: string;
+  note: string;
+};
+
+export const vendorFeeSchedule: FeeScheduleRow[] = [
+  { period: "Months 1-6", fee: "$0", note: "Founding partner waiver — applies automatically" },
+  { period: "Months 7-12", fee: "$49", note: "Locked-in launch rate" },
+  { period: "Month 13 onward", fee: "$199", note: "Standard partner rate" },
+];
+
+// Headline numbers shown above the agreement (the "key terms band" in the HTML).
+export const vendorAgreementKeyTerms = [
+  { label: "Months 1-6", value: "$0", sub: "Waived" },
+  { label: "Months 7-12", value: "$49", sub: "per month" },
+  { label: "Month 13+", value: "$199", sub: "per month" },
+  { label: "Commitment", value: "12 mo", sub: "Initial term" },
+  { label: "Cancel", value: "30 d", sub: "Written notice" },
+];
+
+// The 9 operational/legal sections that follow the five commitments.
 export const vendorAgreementSections: AgreementSection[] = [
   {
-    id: "definitions",
-    number: "1",
-    title: "Definitions",
+    id: "whats-included",
+    number: "01",
+    title: "What's included",
     body:
-      "Member: a registered participant of the Thriving Dentist community or any affiliated community (Less Insurance Dependence, RIDA Academy, Dental Marketing Society, Insurance Untangled) with Network access. Vendor Profile: your dedicated listing page including logo, description, service details, contact form. Member Discount: the discount or benefit you commit to make available to Members. Lead: an inquiry attributed to or routed by the Network. Term: the duration of this Agreement.",
+      "Profile in the directory: we create and maintain a dedicated profile page for you in the Thriving Dentist Vendor Directory — logo, description, services, contact form, member-exclusive offer, and your calendar link. Promotion to members: priority category placement, quarterly newsletter mentions, one dedicated email to members per year, and eligibility for podcast and webinar features at our editorial discretion. Lead routing: inquiries from members are routed directly to you by email and via your partner dashboard. All leads are pre-qualified — these are members who chose the network specifically to find someone like you. Verified Partner badge: a “Thriving Dentist Verified Partner” mark you can use on your site, email signature, and sales materials while this Agreement is active. The license ends when this Agreement ends.",
   },
   {
-    id: "listing",
-    number: "2",
-    title: "Network Listing & Benefits",
+    id: "fees-and-payment",
+    number: "02",
+    title: "Fees and payment",
     body:
-      "You are enrolled as a Featured Partner — benefits in Schedule A (enhanced directory listing, priority category placement, quarterly newsletter mentions, 1 dedicated email to members per year, eligibility for podcast/webinar features, full lead dashboard, Verified Partner badge). You supply all profile content (logo, description, pricing guidance, member discount). Promotional placements (podcast, webinar) are subject to editorial discretion and scheduling. The Verified Partner mark license is non-exclusive, non-transferable, and terminates with this Agreement.",
+      "Fees are billed in advance and due Net 15 from invoice date. Payments more than 30 days past due may accrue late charges at 1.5% per month or the maximum rate permitted by law, whichever is lower. Fees are exclusive of applicable taxes. Annual pre-pay option: if you commit to twelve months at the standard rate up front, you get two months free (effectively 10 months for the price of 12). Available after the founding partner period or at any time during the term. No refunds: except as expressly stated in this Agreement, fees are non-refundable. If you cancel mid-period, you remain responsible for fees through the end of the current billing period.",
   },
   {
-    id: "leads",
-    number: "3",
-    title: "Leads & Attribution",
+    id: "member-discount-details",
+    number: "03",
+    title: "Member discount details",
     body:
-      "Member inquiries are routed to you by email, dashboard notification, or other reasonable means. You will respond professionally and timely. A sale or engagement is attributed to the Network if the Lead originated through a Network-issued contact, code, or link within the prior 12 months, or if the Member identifies Thriving Dentist as the source at point of contact and you confirm. You will provide a monthly account of Lead activity and revenue, due by the 5th of the following month.",
-  },
-  {
-    id: "discount",
-    number: "4",
-    title: "Member Discount Commitment",
-    body:
-      "You commit to offer Members a meaningful Member Discount that is NOT generally available to non-Members, throughout the Term. The discount may be a percentage off, a flat-dollar discount, a waived setup fee, bonus inclusions (extra hours, bundled products, extended trials), or preferred payment terms. You will honor the discount when a Member identifies as a Thriving Dentist Member. You may not reduce or withdraw the discount during the Term without our prior written consent. You may improve it at any time.",
-  },
-  {
-    id: "fees",
-    number: "5",
-    title: "Fees & Payment",
-    body:
-      "Monthly Fee: USD $199.00/month (subject to the Founding Partner Offer in Schedule C, if applicable). Annual Pre-Pay: 12 months in advance buys 10 months of fees (≈17% savings) — non-refundable except as expressly provided. Billing: Net 15 from invoice date; 1.5%/mo late fees apply past 30 days. Taxes: all fees exclusive of taxes; you are responsible for sales/use/VAT etc. No Refunds: termination for convenience does not entitle you to a refund of the current billing period.",
+      "The member discount you commit to in the signup form is binding for the term of this Agreement. You can improve it any time — you just can't reduce or withdraw it without our written consent. Acceptable discount formats include: a percentage off your standard pricing (typically 3-20%), a flat-dollar discount on first purchase or engagement, a waived setup/onboarding/implementation fee, bonus inclusions (extra hours, bundled products, extended trials), or preferred payment terms or deferred billing. You honor the discount when a member identifies themselves as a Thriving Dentist member, books through your network calendar link, or is referred via the network's lead routing.",
   },
   {
     id: "standards",
-    number: "6",
-    title: "Vendor Standards",
+    number: "04",
+    title: "Standards we hold partners to",
     body:
-      "You represent and warrant that you are duly authorized; will operate in compliance with all applicable laws and professional standards (dental industry, advertising, consumer protection, data privacy); will provide responsive, professional support to Members at the same level of care as your general customer base; have rights to all content and marks supplied; and will not engage in conduct that brings the Thriving Dentist brand into disrepute (no misleading advertising, no harassment of Members, no violations of professional codes).",
+      "While in the network, you confirm and agree that: you operate in compliance with all applicable laws, regulations, and professional standards; you provide responsive, professional sales and customer support to members — at least at the quality level you give your best customers; you have the rights to all logos, copy, and content you give us, and you grant us a non-exclusive license to use them to promote you in the network; you will not engage in conduct that damages the Thriving Dentist brand — including misleading advertising, harassment of members, or violation of professional codes of conduct.",
   },
   {
-    id: "data",
-    number: "7",
-    title: "Confidentiality & Member Data",
+    id: "confidentiality",
+    number: "05",
+    title: "Confidentiality and member data",
     body:
-      "Each Party will protect the other's Confidential Information with at least the care it gives its own confidential information of like importance. Member contact information shared in connection with Leads may ONLY be used to respond to and service the Lead. You will not sell, resell, or transfer Member data to any third party. You will not enroll Members in unrelated marketing programs without their consent. You will comply with all applicable data protection laws. These obligations survive termination.",
+      "Both parties may receive non-public information from the other. Each agrees to use it only for purposes of this Agreement and protect it with at least reasonable care. Member contact information shared with you in connection with leads may only be used to respond to and service that lead. You will not sell, transfer, or use member data for unrelated marketing, and you will comply with all applicable data protection laws. This survives termination of this Agreement.",
+  },
+  {
+    id: "changes",
+    number: "06",
+    title: "Changes to terms",
+    body:
+      "Thriving Dentist may modify these terms — including pricing, benefits, eligibility, and operating rules — from time to time. We will provide at least thirty (30) days' prior written notice by email and via the partner dashboard. If a change materially reduces your benefits or increases your fees, you may terminate this Agreement before the change takes effect with no further obligation, provided you give us written notice within the 30-day notice window. Your continued participation after the effective date of a change constitutes acceptance of the updated terms.",
   },
   {
     id: "term",
-    number: "8",
-    title: "Term & Termination",
+    number: "07",
+    title: "Term, renewal, and termination",
     body:
-      "Initial Term: 12 months. Auto-renews for successive 12-month terms unless either Party gives 30 days' written notice of non-renewal. Termination for convenience: either Party with 30 days' written notice; you remain responsible for accrued fees. Termination for cause: immediate, on uncured material breach (15-day cure period), insolvency, or conduct materially harming the Network. On termination, your profile and promotional placements are removed, the Verified Partner badge license terminates, all unpaid fees are due, and confidentiality obligations survive.",
+      "Initial term and renewal: this Agreement starts on the date you sign up and continues for an initial term of twelve (12) months. It then renews automatically for successive twelve-month terms unless either party gives written notice of non-renewal at least 30 days before the end of the current term. Termination for convenience: either party may terminate at any time on 30 days' prior written notice. You remain responsible for fees accrued through the effective date of termination. Termination for cause: immediate, on uncured material breach (15-day cure period), insolvency, or conduct that materially harms the network. What happens at termination: your profile and promotional placements are removed; the Verified Partner badge license ends; any unpaid accrued fees become immediately due; provisions that by their nature survive — confidentiality, member data protection, indemnification, and limits of liability — continue to apply.",
   },
   {
     id: "disclaimers",
-    number: "9",
-    title: "Disclaimers & Limitation of Liability",
+    number: "08",
+    title: "Disclaimers and liability",
     body:
-      "We make no guarantee about the volume, quality, conversion rate, or revenue value of Leads — results depend on factors outside our control. The Network is provided AS IS, AS AVAILABLE. Except for breaches of Sections 4, 6, or 7, IP infringement, or indemnification, neither Party is liable for indirect, incidental, special, consequential, or punitive damages, or lost profits/revenue/data. Each Party's total liability is capped at the fees you paid in the 12 months preceding the event giving rise to liability.",
+      "We do not guarantee any specific number of leads, conversion rate, or revenue outcome from network participation. Results depend on your products, pricing, sales process, and responsiveness. Except as expressly stated here, the network is provided “as is.” Neither party is liable for indirect, incidental, special, or consequential damages, or for lost profits or revenue. Total cumulative liability of either party is capped at the total fees paid by Vendor under this Agreement in the twelve months immediately preceding the event giving rise to liability. Vendor will indemnify Thriving Dentist from third-party claims arising out of Vendor's products, services, sales practices, breach of this Agreement, or content supplied to the network.",
   },
   {
-    id: "indemnification",
-    number: "10",
-    title: "Indemnification",
+    id: "miscellaneous",
+    number: "09",
+    title: "Miscellaneous",
     body:
-      "You will defend, indemnify, and hold harmless Thriving Dentist and its affiliates from third-party claims arising from your products, services, or sales practices; your breach of this Agreement; content you supplied; or any failure to honor the Member Discount.",
-  },
-  {
-    id: "general",
-    number: "11",
-    title: "General Provisions",
-    body:
-      "Independent contractors — no partnership/joint venture/agency/employment created. You may not assign this Agreement without our consent; we may assign to an affiliate or in M&A. Notices in writing by email (with confirmation) or overnight courier. This Agreement is the entire agreement; modifications must be in writing signed by both Parties. Governed by the laws of [State]; venue [City]. If any provision is unenforceable, the remaining provisions stay in effect. Electronic signatures (PDF, DocuSign, click-to-agree) have the same effect as original signatures.",
+      "The parties are independent contractors — this Agreement does not create a partnership, joint venture, agency, or employment relationship. You may not assign or transfer this Agreement without our prior written consent. This Agreement is the entire agreement between the parties on its subject and supersedes prior discussions. Any modification must be by written notice as described in Section 06 or by a signed amendment. If any provision is unenforceable, the remaining provisions stay in effect. This Agreement is governed by the laws of the State of [State], and any disputes will be resolved in the state or federal courts located in [Venue]. Electronic signatures and acceptance via this online form have the same effect as original written signatures.",
   },
 ];
