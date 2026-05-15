@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   AppBar,
   Box,
@@ -13,110 +14,133 @@ import {
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
-import { Show, UserButton } from "@clerk/nextjs";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import Logo from "@/components/brand/Logo";
 import { brand, navLinks } from "@/lib/content";
 
+/**
+ * Premium pill-cluster nav inspired by modern SaaS landings.
+ *
+ * Layout: [Logo]          [pill with nav items]          [Join CTA]
+ * No vertical divider, no rectangle "gap" artifact. The pill is one
+ * continuous rounded container; on mobile it collapses into an animated
+ * hamburger drawer.
+ */
 export default function Header() {
-  const [scrolled, setScrolled] = useState<boolean>(() =>
-    typeof window !== "undefined" ? window.scrollY > 12 : false,
-  );
   const [drawer, setDrawer] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 12);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setDrawer(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, []);
-
-  const fg = scrolled ? "text.primary" : "rgba(255,255,255,0.92)";
-  const fgMuted = scrolled ? "text.secondary" : "rgba(255,255,255,0.72)";
 
   return (
     <>
       <AppBar
         position="sticky"
+        elevation={0}
         sx={{
           top: 0,
-          backdropFilter: scrolled ? "saturate(180%) blur(18px)" : "blur(10px)",
-          backgroundColor: scrolled ? "rgba(247,245,240,0.88)" : "rgba(6,24,42,0.08)",
+          backgroundColor: "rgba(251, 248, 241, 0.85)",
+          backdropFilter: "saturate(180%) blur(14px)",
+          WebkitBackdropFilter: "saturate(180%) blur(14px)",
           borderBottom: "1px solid",
-          borderColor: scrolled ? "divider" : "rgba(255,255,255,0.06)",
-          transition: "background-color 280ms ease, backdrop-filter 280ms ease, border-color 280ms ease",
+          borderColor: "rgba(14,42,61,0.06)",
+          color: "#0A1A2F",
           zIndex: (t) => t.zIndex.appBar,
         }}
       >
-        <Container maxWidth="lg" disableGutters>
-          <Toolbar disableGutters sx={{ minHeight: { xs: 64, md: 76 }, px: { xs: 3, md: 0 } }}>
-            <Logo
-              dark={!scrolled}
-              href="#top"
-              height={36}
-              ariaLabel={`${brand.name} · home`}
-            />
+        <Container maxWidth="xl" disableGutters>
+          <Toolbar
+            disableGutters
+            sx={{
+              minHeight: { xs: 76, md: 92 },
+              px: { xs: 2.5, sm: 3, md: 4 },
+              gap: { xs: 2, md: 3 },
+              justifyContent: "space-between",
+            }}
+          >
+            {/* Logo — large, no divider after it */}
+            <Logo href="/#top" height={64} ariaLabel={`${brand.name} · home`} />
 
-            <Stack direction="row" spacing={1} sx={{ ml: 6, display: { xs: "none", md: "flex" }, alignItems: "center" }}>
+            {/* Pill cluster with nav items — single container, no artifacts */}
+            <Box
+              sx={{
+                display: { xs: "none", lg: "flex" },
+                alignItems: "center",
+                gap: 0.25,
+                bgcolor: "#FFFFFF",
+                border: "1px solid rgba(14,42,61,0.08)",
+                borderRadius: 999,
+                px: 0.75,
+                py: 0.75,
+                boxShadow: "0 4px 20px -8px rgba(14,42,61,0.08)",
+              }}
+            >
               {navLinks.map((l) => (
                 <Button
-                  key={l.href}
-                  href={l.href}
-                  sx={{ color: fgMuted, fontWeight: 500, "&:hover": { color: fg, bgcolor: "transparent" } }}
+                  key={l.label}
+                  href={l.href.startsWith("#") ? `/${l.href}` : l.href}
+                  disableRipple
+                  sx={{
+                    color: "#3B4A55",
+                    fontWeight: 500,
+                    fontSize: "0.86rem",
+                    px: 2.25,
+                    py: 0.85,
+                    borderRadius: 999,
+                    minWidth: "auto",
+                    textTransform: "none",
+                    transition: "color 200ms ease, background-color 200ms ease",
+                    "&:hover": {
+                      color: "#0A1A2F",
+                      bgcolor: "rgba(217,168,75,0.10)",
+                    },
+                  }}
                 >
                   {l.label}
                 </Button>
               ))}
+            </Box>
+
+            {/* Right side: primary CTA */}
+            <Stack direction="row" spacing={1.25} sx={{ alignItems: "center" }}>
               <Button
-                href="/partners"
+                component={Link}
+                href="/#waitlist"
+                variant="contained"
+                color="secondary"
+                disableElevation
+                endIcon={<ArrowForwardIcon sx={{ fontSize: 16 }} />}
                 sx={{
-                  color: fgMuted,
-                  fontWeight: 500,
-                  "&:hover": { color: fg, bgcolor: "transparent" },
+                  display: { xs: "none", sm: "inline-flex" },
+                  py: 1.1,
+                  px: 2.5,
+                  fontSize: "0.86rem",
+                  fontWeight: 600,
+                  boxShadow: "0 8px 22px -10px rgba(217,168,75,0.55)",
                 }}
               >
-                For vendors
+                Join the waitlist
               </Button>
+
+              <IconButton
+                onClick={() => setDrawer((v) => !v)}
+                sx={{
+                  display: { xs: "inline-flex", lg: "none" },
+                  width: 40,
+                  height: 40,
+                  bgcolor: drawer ? "#0A1A2F" : "rgba(14,42,61,0.05)",
+                  color: drawer ? "#F6F1E7" : "#0A1A2F",
+                  "&:hover": { bgcolor: drawer ? "#0A1A2F" : "rgba(14,42,61,0.1)" },
+                  transition: "background-color 200ms ease, color 200ms ease",
+                }}
+                aria-label={drawer ? "Close menu" : "Open menu"}
+              >
+                {drawer ? <CloseIcon sx={{ fontSize: 20 }} /> : <MenuIcon sx={{ fontSize: 20 }} />}
+              </IconButton>
             </Stack>
-
-            <Box sx={{ flex: 1 }} />
-
-            <Stack direction="row" spacing={1.25} sx={{ display: { xs: "none", md: "flex" }, alignItems: "center" }}>
-              <Show when="signed-out">
-                <Button
-                  href={brand.signInUrl}
-                  sx={{ color: fgMuted, "&:hover": { color: fg, bgcolor: "transparent" } }}
-                >
-                  Sign in
-                </Button>
-                <Button href={brand.joinUrl} variant="contained" color="secondary" size="small" sx={{ py: 1, px: 2.5 }}>
-                  Become a member
-                </Button>
-              </Show>
-              <Show when="signed-in">
-                <Box
-                  sx={{
-                    display: "grid",
-                    placeItems: "center",
-                    width: 44,
-                    height: 44,
-                    borderRadius: 999,
-                    bgcolor: scrolled ? "rgba(14,42,61,0.06)" : "rgba(255,255,255,0.08)",
-                    border: "1px solid",
-                    borderColor: scrolled ? "rgba(14,42,61,0.08)" : "rgba(255,255,255,0.12)",
-                  }}
-                >
-                  <UserButton />
-                </Box>
-              </Show>
-            </Stack>
-
-            <IconButton
-              onClick={() => setDrawer(true)}
-              sx={{ display: { xs: "inline-flex", md: "none" }, color: fg }}
-              aria-label="Open menu"
-            >
-              <MenuIcon />
-            </IconButton>
           </Toolbar>
         </Container>
       </AppBar>
@@ -128,19 +152,17 @@ export default function Header() {
         slotProps={{
           paper: {
             sx: {
-              width: 320,
-              bgcolor: "primary.dark",
-              color: "common.white",
-              backgroundImage:
-                "radial-gradient(60% 55% at 100% 0%, rgba(217,168,75,0.22) 0%, transparent 60%), linear-gradient(180deg, #0A2236 0%, #06182A 100%)",
+              width: { xs: "100%", sm: 360 },
+              bgcolor: "#FBF8F1",
+              color: "#0A1A2F",
             },
           },
         }}
       >
         <Box sx={{ p: 3 }}>
           <Stack direction="row" sx={{ mb: 3, justifyContent: "space-between", alignItems: "center" }}>
-            <Logo dark height={32} showSubline={false} href="/" />
-            <IconButton onClick={() => setDrawer(false)} aria-label="Close menu" sx={{ color: "common.white" }}>
+            <Logo href="/" height={48} />
+            <IconButton onClick={() => setDrawer(false)} aria-label="Close menu" sx={{ color: "#0A1A2F" }}>
               <CloseIcon />
             </IconButton>
           </Stack>
@@ -150,89 +172,54 @@ export default function Header() {
               mb: 3.5,
               p: 2,
               borderRadius: 3,
-              bgcolor: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.08)",
+              bgcolor: "rgba(217,168,75,0.10)",
+              border: "1px solid rgba(217,168,75,0.28)",
             }}
           >
-            <Typography variant="overline" sx={{ color: "secondary.light", display: "block", mb: 0.75 }}>
+            <Typography variant="overline" sx={{ color: "#A07823", display: "block", mb: 0.5, fontSize: "0.66rem", letterSpacing: "0.16em" }}>
               FOUNDING ACCESS
             </Typography>
-            <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.78)" }}>
-              Premium support for practice owners who want fast answers and cleaner decisions.
+            <Typography variant="body2" sx={{ color: "#3B4A55", fontSize: "0.86rem", lineHeight: 1.55 }}>
+              Expert helpline, vendor savings, exclusive content, and a network of 500+ practice owners.
             </Typography>
           </Box>
 
-          <Stack spacing={1.5} sx={{ mb: 4 }}>
+          <Stack spacing={0.5} sx={{ mb: 4 }}>
             {navLinks.map((l) => (
               <Button
-                key={l.href}
-                href={l.href}
+                key={l.label}
+                href={l.href.startsWith("#") ? `/${l.href}` : l.href}
                 onClick={() => setDrawer(false)}
+                disableRipple
+                endIcon={<ArrowForwardIcon sx={{ fontSize: 14, opacity: 0.4 }} />}
                 sx={{
-                  justifyContent: "flex-start",
-                  color: "common.white",
-                  fontSize: "1.125rem",
-                  "&:hover": { bgcolor: "rgba(255,255,255,0.06)" },
+                  justifyContent: "space-between",
+                  color: "#0A1A2F",
+                  fontSize: "1.05rem",
+                  fontWeight: 500,
+                  py: 1.5,
+                  px: 1.5,
+                  textTransform: "none",
+                  "&:hover": { bgcolor: "rgba(14,42,61,0.04)" },
                 }}
               >
                 {l.label}
               </Button>
             ))}
-            <Button
-              href="/partners"
-              onClick={() => setDrawer(false)}
-              sx={{
-                justifyContent: "flex-start",
-                color: "secondary.light",
-                fontSize: "1.125rem",
-                "&:hover": { bgcolor: "rgba(255,255,255,0.06)" },
-              }}
-            >
-              For vendors →
-            </Button>
           </Stack>
 
-          <Show when="signed-out">
-            <Stack spacing={1.5}>
-              <Button href={brand.joinUrl} variant="contained" color="secondary" fullWidth size="large">
-                Become a member
-              </Button>
-              <Button
-                href="/partners"
-                onClick={() => setDrawer(false)}
-                variant="outlined"
-                fullWidth
-                sx={{
-                  color: "common.white",
-                  borderColor: "rgba(217,168,75,0.4)",
-                  "&:hover": { borderColor: "rgba(217,168,75,0.6)", bgcolor: "rgba(217,168,75,0.06)" },
-                }}
-              >
-                Become a vendor partner
-              </Button>
-              <Button
-                href={brand.signInUrl}
-                variant="outlined"
-                fullWidth
-                sx={{
-                  color: "common.white",
-                  borderColor: "rgba(255,255,255,0.18)",
-                  "&:hover": { borderColor: "rgba(255,255,255,0.35)", bgcolor: "rgba(255,255,255,0.04)" },
-                }}
-                >
-                  Sign in
-                </Button>
-            </Stack>
-          </Show>
-
-          <Show when="signed-in">
-            <Stack spacing={1.5} sx={{ alignItems: "flex-start" }}>
-              <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.6)" }}>
-                Signed in
-              </Typography>
-              <UserButton />
-            </Stack>
-          </Show>
+          <Button
+            component={Link}
+            href="/#waitlist"
+            onClick={() => setDrawer(false)}
+            variant="contained"
+            color="secondary"
+            fullWidth
+            size="large"
+            endIcon={<ArrowForwardIcon />}
+          >
+            Join the waitlist
+          </Button>
         </Box>
       </Drawer>
     </>

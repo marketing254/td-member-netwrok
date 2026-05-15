@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1200" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+  <!--
+    DMN cinematic hero illustration — animated.
+    A stylized tooth silhouette anchored right, surrounded by a network of
+    practice-owner nodes connected by gold edges. Four floating UI cards.
+    All animation is CSS @keyframes inside the SVG: pulsing nodes, drawing
+    edges, floating cards, rotating sparkles. No JavaScript needed.
+  -->
+  <style><![CDATA[
+    @keyframes pulseGold {
+      0%, 100% { opacity: 0.25; r: 36; }
+      50%      { opacity: 0.65; r: 56; }
+    }
+    @keyframes pulseGoldOuter {
+      0%, 100% { opacity: 0.06; r: 60; }
+      50%      { opacity: 0.18; r: 88; }
+    }
+    @keyframes shine {
+      0%, 100% { filter: brightness(1) saturate(1); }
+      50%      { filter: brightness(1.15) saturate(1.2); }
+    }
+    @keyframes float-1 {
+      0%, 100% { transform: translate(120px, 760px); }
+      50%      { transform: translate(120px, 752px); }
+    }
+    @keyframes float-2 {
+      0%, 100% { transform: translate(220px, 80px); }
+      50%      { transform: translate(220px, 72px); }
+    }
+    @keyframes float-3 {
+      0%, 100% { transform: translate(880px, 980px); }
+      50%      { transform: translate(880px, 972px); }
+    }
+    @keyframes float-4 {
+      0%, 100% { transform: translate(1320px, 140px); }
+      50%      { transform: translate(1320px, 132px); }
+    }
+    @keyframes drawEdge {
+      from { stroke-dashoffset: 1200; }
+      to   { stroke-dashoffset: 0; }
+    }
+    @keyframes blink {
+      0%, 90%, 100% { opacity: 1; }
+      95%           { opacity: 0.55; }
+    }
+    @keyframes rotateSlow {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+    @keyframes sparkle {
+      0%, 100% { opacity: 0.3; transform: scale(1); }
+      50%      { opacity: 0.8; transform: scale(1.4); }
+    }
+    @keyframes ringExpand {
+      0%   { r: 80; opacity: 0.6; }
+      100% { r: 160; opacity: 0; }
+    }
+
+    .net-edge { animation: drawEdge 3.5s ease-in-out infinite; stroke-dasharray: 1200; }
+    .net-edge-2 { animation: drawEdge 4.5s ease-in-out infinite 0.7s; stroke-dasharray: 1200; }
+    .net-edge-3 { animation: drawEdge 5s ease-in-out infinite 1.3s; stroke-dasharray: 1200; }
+    .net-node { animation: blink 6s ease-in-out infinite; }
+    .net-node-2 { animation: blink 7s ease-in-out infinite 1s; }
+    .net-node-3 { animation: blink 8s ease-in-out infinite 2s; }
+    .pulse-aura { animation: pulseGold 2.6s ease-in-out infinite; transform-origin: 700px 500px; }
+    .pulse-aura-outer { animation: pulseGoldOuter 3.2s ease-in-out infinite; transform-origin: 700px 500px; }
+    .ring-expand { animation: ringExpand 3s ease-out infinite; transform-origin: 700px 500px; }
+    .tooth-shine { animation: shine 5s ease-in-out infinite; transform-origin: 1180px 360px; }
+    .card-1 { animation: float-1 5.5s ease-in-out infinite; }
+    .card-2 { animation: float-2 6s ease-in-out infinite 0.4s; }
+    .card-3 { animation: float-3 5.8s ease-in-out infinite 0.8s; }
+    .card-4 { animation: float-4 6.2s ease-in-out infinite 1.2s; }
+    .sparkle { animation: sparkle 3.5s ease-in-out infinite; transform-origin: center; }
+    .sparkle-2 { animation: sparkle 4.2s ease-in-out infinite 0.8s; transform-origin: center; }
+    .sparkle-3 { animation: sparkle 3.8s ease-in-out infinite 1.6s; transform-origin: center; }
+    .sparkle-4 { animation: sparkle 4.6s ease-in-out infinite 2.2s; transform-origin: center; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .net-edge, .net-edge-2, .net-edge-3,
+      .net-node, .net-node-2, .net-node-3,
+      .pulse-aura, .pulse-aura-outer, .ring-expand,
+      .tooth-shine,
+      .card-1, .card-2, .card-3, .card-4,
+      .sparkle, .sparkle-2, .sparkle-3, .sparkle-4 {
+        animation: none;
+      }
+    }
+  ]]></style>
+
+  <defs>
+    <radialGradient id="bgWash" cx="65%" cy="40%" r="80%">
+      <stop offset="0%" stop-color="#FFFBF1"/>
+      <stop offset="55%" stop-color="#F5EFE0"/>
+      <stop offset="100%" stop-color="#EFE9DA"/>
+    </radialGradient>
+
+    <linearGradient id="goldAccent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFE6B6"/>
+      <stop offset="50%" stop-color="#F0C16E"/>
+      <stop offset="100%" stop-color="#A07823"/>
+    </linearGradient>
+
+    <linearGradient id="navyFill" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1B4258"/>
+      <stop offset="50%" stop-color="#0E2A3D"/>
+      <stop offset="100%" stop-color="#06182A"/>
+    </linearGradient>
+
+    <radialGradient id="toothGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#F0C16E" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#F0C16E" stop-opacity="0"/>
+    </radialGradient>
+
+    <pattern id="dotGrid" x="0" y="0" width="48" height="48" patternUnits="userSpaceOnUse">
+      <circle cx="24" cy="24" r="1.2" fill="#0E2A3D" opacity="0.08"/>
+    </pattern>
+
+    <filter id="softShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="12"/>
+      <feOffset dx="0" dy="14"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.18"/></feComponentTransfer>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="goldGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="1200" fill="url(#bgWash)"/>
+  <rect width="1600" height="1200" fill="url(#dotGrid)"/>
+
+  <ellipse cx="1280" cy="200" rx="500" ry="320" fill="#F0C16E" opacity="0.14"/>
+  <ellipse cx="1200" cy="900" rx="400" ry="280" fill="#1B4258" opacity="0.06"/>
+
+  <!-- Network edges — animated drawing lines -->
+  <g stroke="#C99A3A" stroke-width="1.4" opacity="0.42" fill="none">
+    <line class="net-edge" x1="280" y1="320" x2="430" y2="240"/>
+    <line class="net-edge-2" x1="430" y1="240" x2="580" y2="380"/>
+    <line class="net-edge-3" x1="580" y1="380" x2="720" y2="280"/>
+    <line class="net-edge" x1="720" y1="280" x2="860" y2="420"/>
+    <line class="net-edge-2" x1="280" y1="320" x2="420" y2="500"/>
+    <line class="net-edge-3" x1="420" y1="500" x2="580" y2="380"/>
+    <line class="net-edge" x1="420" y1="500" x2="560" y2="640"/>
+    <line class="net-edge-2" x1="560" y1="640" x2="720" y2="700"/>
+    <line class="net-edge-3" x1="720" y1="700" x2="880" y2="660"/>
+    <line class="net-edge" x1="880" y1="660" x2="980" y2="780"/>
+    <line class="net-edge-2" x1="980" y1="780" x2="1140" y2="820"/>
+    <line class="net-edge-3" x1="860" y1="420" x2="980" y2="540"/>
+    <line class="net-edge" x1="980" y1="540" x2="1140" y2="500"/>
+    <line class="net-edge-2" x1="1140" y1="500" x2="1280" y2="600"/>
+    <line class="net-edge-3" x1="1140" y1="820" x2="1280" y2="900"/>
+    <line class="net-edge" x1="980" y1="540" x2="880" y2="660"/>
+    <line class="net-edge-2" x1="720" y1="280" x2="860" y2="200"/>
+    <line class="net-edge-3" x1="860" y1="200" x2="980" y2="320"/>
+    <line class="net-edge" x1="980" y1="320" x2="1140" y2="280"/>
+    <line class="net-edge-2" x1="980" y1="320" x2="980" y2="540"/>
+  </g>
+
+  <!-- Network nodes — blink subtly -->
+  <g fill="#0E2A3D">
+    <circle class="net-node" cx="280" cy="320" r="6"/>
+    <circle class="net-node-2" cx="430" cy="240" r="6"/>
+    <circle class="net-node-3" cx="580" cy="380" r="6"/>
+    <circle class="net-node" cx="720" cy="280" r="7"/>
+    <circle class="net-node-2" cx="860" cy="420" r="6"/>
+    <circle class="net-node-3" cx="420" cy="500" r="6"/>
+    <circle class="net-node" cx="560" cy="640" r="7"/>
+    <circle class="net-node-2" cx="720" cy="700" r="6"/>
+    <circle class="net-node-3" cx="880" cy="660" r="6"/>
+    <circle class="net-node" cx="980" cy="780" r="8"/>
+    <circle class="net-node-2" cx="1140" cy="820" r="6"/>
+    <circle class="net-node-3" cx="980" cy="540" r="7"/>
+    <circle class="net-node" cx="1140" cy="500" r="6"/>
+    <circle class="net-node-2" cx="1280" cy="600" r="6"/>
+    <circle class="net-node-3" cx="1280" cy="900" r="6"/>
+    <circle class="net-node" cx="860" cy="200" r="6"/>
+    <circle class="net-node-2" cx="980" cy="320" r="7"/>
+    <circle class="net-node-3" cx="1140" cy="280" r="6"/>
+  </g>
+
+  <!-- Spotlight "you" node with expanding aura rings -->
+  <circle class="ring-expand" cx="700" cy="500" r="80" fill="none" stroke="#F0C16E" stroke-width="1.5" opacity="0.6"/>
+  <g filter="url(#goldGlow)">
+    <circle cx="700" cy="500" r="22" fill="url(#goldAccent)"/>
+    <circle class="pulse-aura" cx="700" cy="500" r="44" fill="#F0C16E" opacity="0.35"/>
+    <circle class="pulse-aura-outer" cx="700" cy="500" r="72" fill="#F0C16E" opacity="0.12"/>
+  </g>
+  <line x1="700" y1="500" x2="430" y2="240" stroke="#D9A84B" stroke-width="2" opacity="0.55"/>
+  <line x1="700" y1="500" x2="580" y2="380" stroke="#D9A84B" stroke-width="2" opacity="0.55"/>
+  <line x1="700" y1="500" x2="720" y2="280" stroke="#D9A84B" stroke-width="2" opacity="0.55"/>
+  <line x1="700" y1="500" x2="860" y2="420" stroke="#D9A84B" stroke-width="2" opacity="0.55"/>
+  <line x1="700" y1="500" x2="560" y2="640" stroke="#D9A84B" stroke-width="2" opacity="0.55"/>
+  <line x1="700" y1="500" x2="420" y2="500" stroke="#D9A84B" stroke-width="2" opacity="0.55"/>
+
+  <!-- TOOTH SILHOUETTE — subtle shine animation -->
+  <g class="tooth-shine" transform="translate(1180, 360)">
+    <path
+      d="
+        M 0 60
+        C -20 0, -80 -40, -160 -40
+        C -240 -40, -300 0, -300 70
+        C -300 130, -270 170, -250 220
+        C -230 270, -220 320, -210 380
+        C -200 430, -190 460, -160 460
+        C -140 460, -125 430, -115 380
+        C -105 320, -100 280, -90 240
+        C -80 220, -70 220, -60 240
+        C -50 280, -45 320, -35 380
+        C -25 430, -10 460, 10 460
+        C 40 460, 50 430, 60 380
+        C 70 320, 80 270, 100 220
+        C 120 170, 150 130, 150 70
+        C 150 0, 90 -40, 10 -40
+        C -60 -40, -120 0, -140 60
+        Z
+      "
+      fill="url(#navyFill)"
+      opacity="0.92"
+    />
+    <ellipse cx="-75" cy="150" rx="180" ry="170" fill="url(#toothGlow)"/>
+    <path
+      d="
+        M -260 30
+        C -240 -10, -200 -30, -140 -30
+        C -80 -30, -40 -10, -20 30
+      "
+      fill="none"
+      stroke="#F0C16E"
+      stroke-width="2"
+      opacity="0.4"
+    />
+    <text
+      x="-75" y="180"
+      text-anchor="middle"
+      font-family="Georgia, 'Fraunces', serif"
+      font-size="60"
+      font-weight="500"
+      fill="url(#goldAccent)"
+      letter-spacing="2"
+      opacity="0.95"
+    >DMN</text>
+    <text
+      x="-75" y="220"
+      text-anchor="middle"
+      font-family="Inter, system-ui, sans-serif"
+      font-size="14"
+      font-weight="700"
+      fill="#F0C16E"
+      letter-spacing="6"
+      opacity="0.85"
+    >MEMBER NETWORK</text>
+  </g>
+
+  <!-- FLOATING DATA CARDS — gentle float animation, one per feature -->
+  <g class="card-1" filter="url(#softShadow)">
+    <rect width="240" height="76" rx="14" fill="#FFFFFF" stroke="rgba(14,42,61,0.08)"/>
+    <circle cx="32" cy="38" r="14" fill="#F4ECD7"/>
+    <path d="M 26 38 a 6 6 0 1 0 12 0 a 6 6 0 1 0 -12 0" stroke="#A07823" stroke-width="2" fill="none"/>
+    <text x="60" y="36" font-family="Inter, sans-serif" font-size="14" font-weight="700" fill="#0A1A2F">24/7 Expert Helpline</text>
+    <text x="60" y="56" font-family="Inter, sans-serif" font-size="11" font-weight="500" fill="#A07823" letter-spacing="1">2 HR RESPONSE</text>
+  </g>
+
+  <g class="card-2" filter="url(#softShadow)">
+    <rect width="240" height="76" rx="14" fill="#FFFFFF" stroke="rgba(14,42,61,0.08)"/>
+    <circle cx="32" cy="38" r="14" fill="#F4ECD7"/>
+    <text x="32" y="44" text-anchor="middle" font-family="Georgia, serif" font-size="16" fill="#A07823" font-weight="700">$</text>
+    <text x="60" y="36" font-family="Inter, sans-serif" font-size="14" font-weight="700" fill="#0A1A2F">Vendor Savings</text>
+    <text x="60" y="56" font-family="Inter, sans-serif" font-size="11" font-weight="500" fill="#A07823" letter-spacing="1">$6.4K AVG / YEAR</text>
+  </g>
+
+  <g class="card-3" filter="url(#softShadow)">
+    <rect width="240" height="76" rx="14" fill="#FFFFFF" stroke="rgba(14,42,61,0.08)"/>
+    <circle cx="32" cy="38" r="14" fill="#F4ECD7"/>
+    <g transform="translate(32 38)" stroke="#A07823" stroke-width="1.6" fill="none">
+      <circle cx="-3" cy="-2" r="3"/>
+      <circle cx="3" cy="-2" r="3"/>
+      <path d="M -8 5 q 5 -4 16 0"/>
+    </g>
+    <text x="60" y="36" font-family="Inter, sans-serif" font-size="14" font-weight="700" fill="#0A1A2F">Member Directory</text>
+    <text x="60" y="56" font-family="Inter, sans-serif" font-size="11" font-weight="500" fill="#A07823" letter-spacing="1">500+ PRACTICE OWNERS</text>
+  </g>
+
+  <g class="card-4" filter="url(#softShadow)">
+    <rect width="220" height="76" rx="14" fill="#FFFFFF" stroke="rgba(14,42,61,0.08)"/>
+    <circle cx="32" cy="38" r="14" fill="#F4ECD7"/>
+    <g transform="translate(26 32)" fill="#A07823">
+      <rect x="0" y="0" width="3" height="12"/>
+      <rect x="5" y="2" width="3" height="10"/>
+      <rect x="10" y="4" width="3" height="8"/>
+    </g>
+    <text x="60" y="36" font-family="Inter, sans-serif" font-size="14" font-weight="700" fill="#0A1A2F">Content Library</text>
+    <text x="60" y="56" font-family="Inter, sans-serif" font-size="11" font-weight="500" fill="#A07823" letter-spacing="1">WEEKLY DROPS</text>
+  </g>
+
+  <!-- Sparkle stars — twinkle -->
+  <g fill="#F0C16E">
+    <g class="sparkle" transform="translate(540 130)">
+      <path d="M 0 0 l 3 9 l 9 3 l -9 3 l -3 9 l -3 -9 l -9 -3 l 9 -3 z"/>
+    </g>
+    <g class="sparkle-2" transform="translate(1380 720)">
+      <path d="M 0 0 l 2.5 7 l 7 2.5 l -7 2.5 l -2.5 7 l -2.5 -7 l -7 -2.5 l 7 -2.5 z"/>
+    </g>
+    <g class="sparkle-3" transform="translate(420 980)">
+      <path d="M 0 0 l 2 6 l 6 2 l -6 2 l -2 6 l -2 -6 l -6 -2 l 6 -2 z"/>
+    </g>
+    <g class="sparkle-4" transform="translate(1080 380)">
+      <path d="M 0 0 l 2 6 l 6 2 l -6 2 l -2 6 l -2 -6 l -6 -2 l 6 -2 z"/>
+    </g>
+  </g>
+
+  <g transform="translate(80, 1100)">
+    <text font-family="Inter, sans-serif" font-size="11" font-weight="700" fill="#A07823" letter-spacing="3">DENTAL MEMBER NETWORK · OPERATOR PLATFORM FOR US PRACTICE OWNERS</text>
+  </g>
+</svg>

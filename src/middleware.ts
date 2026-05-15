@@ -5,13 +5,13 @@ import { NextResponse } from "next/server";
 const isAuthenticated = createRouteMatcher([
   "/welcome",
   "/dashboard(.*)",
-  "/vendor(.*)",
+  "/vendor(/.*)?",
   "/admin(.*)",
 ]);
 
 // Per-role surfaces — used to redirect authenticated-but-wrong-role users.
 const isMemberArea = createRouteMatcher(["/dashboard(.*)", "/welcome"]);
-const isVendorArea = createRouteMatcher(["/vendor(.*)"]);
+const isVendorArea = createRouteMatcher(["/vendor(/.*)?"]);
 const isAdminArea = createRouteMatcher(["/admin(.*)"]);
 
 // Vendor signup is public — anyone can apply (it creates the vendor account).

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Fraunces, Manrope } from "next/font/google";
 import Providers from "@/components/Providers";
+import SmoothScroll from "@/components/SmoothScroll";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -18,33 +19,33 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://join.thrivingdentist.com"),
+  metadataBase: new URL("https://dentalmembernetwork.com"),
   title: {
-    default: "Thriving Dentist Network | A premium support network for practice owners",
-    template: "%s | Thriving Dentist Network",
+    default: "Dental Member Network | Expert helpline, vendor savings, and the operator playbook",
+    template: "%s | Dental Member Network",
   },
   description:
-    "The operator network for US dental practice owners: real hotline access, measurable vendor savings, and a peer community built for growth.",
+    "The only network with a human expert on the line for every practice problem. 24/7 helpline, $6,400+ avg vendor savings, and 500+ practice owners — all in one membership.",
   openGraph: {
     type: "website",
-    siteName: "Thriving Dentist Network",
-    title: "A premium support network for practice owners",
+    siteName: "Dental Member Network",
+    title: "Dental Member Network — Expert helpline, vendor savings, and the operator playbook",
     description:
-      "Hotline access, vendor savings, curated playbooks, and a peer community built for owners running real practices.",
+      "24/7 expert helpline, exclusive partner discounts, and a directory of 500+ practice owners. Founding rate $49/mo locked for life — first 1,000 only.",
     images: [
       {
         url: "/td-logo-horizontal-dark.svg",
         width: 540,
         height: 120,
-        alt: "Thriving Dentist Member Network",
+        alt: "Dental Member Network",
       },
     ],
   },
   twitter: {
     card: "summary",
-    title: "Thriving Dentist Network",
+    title: "Dental Member Network",
     description:
-      "Hotline access, vendor savings, and a peer community for practice owners.",
+      "Expert helpline, vendor savings, and a directory of 500+ practice owners.",
     images: ["/td-logo-horizontal-dark.svg"],
   },
   robots: { index: true, follow: true },
@@ -59,7 +60,9 @@ export default function RootLayout({
     <html lang="en" className={`${manrope.variable} ${fraunces.variable}`}>
       <body>
         <ClerkProvider>
-          <Providers>{children}</Providers>
+          <Providers>
+            <SmoothScroll>{children}</SmoothScroll>
+          </Providers>
         </ClerkProvider>
       </body>
     </html>

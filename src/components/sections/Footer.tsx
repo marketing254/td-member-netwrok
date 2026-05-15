@@ -1,18 +1,30 @@
 "use client";
-import { Box, Button, Container, Grid, Stack, Typography } from "@mui/material";
+import Link from "next/link";
+import { Box, Button, Container, Stack, Typography } from "@mui/material";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import Logo from "@/components/brand/Logo";
-import { brand, footerLinks } from "@/lib/content";
+import { brand, footer as footerCopy } from "@/lib/content";
+
+const FOOTER_NAV = [
+  { label: "What you get", href: "/#features" },
+  { label: "Pricing", href: "/#pricing" },
+  { label: "Members", href: "/#waitlist-member" },
+  { label: "Vendors", href: "/#waitlist-vendor" },
+  { label: "Experts", href: "/#waitlist-expert" },
+  { label: "FAQ", href: "/#faq" },
+  { label: "Vendor agreement", href: "/agreement/vendor" },
+];
 
 export default function Footer() {
   return (
     <Box
       component="footer"
       sx={{
-        bgcolor: "primary.dark",
-        color: "common.white",
-        pt: { xs: 8, md: 10 },
-        pb: 5,
         position: "relative",
+        bgcolor: "#0A1A2F",
+        color: "#F6F1E7",
+        pt: { xs: 3, md: 3.5 },
+        pb: 2,
         overflow: "hidden",
       }}
     >
@@ -22,126 +34,115 @@ export default function Footer() {
           position: "absolute",
           inset: 0,
           backgroundImage:
-            "radial-gradient(45% 45% at 100% 0%, rgba(217,168,75,0.16) 0%, transparent 60%), radial-gradient(40% 35% at 0% 100%, rgba(34,108,165,0.14) 0%, transparent 65%)",
+            "radial-gradient(40% 60% at 0% 0%, rgba(217,168,75,0.10) 0%, transparent 60%)",
+          pointerEvents: "none",
         }}
       />
 
-      <Container maxWidth="lg">
-        <Grid container spacing={{ xs: 5, md: 6 }} sx={{ position: "relative" }}>
-          <Grid size={{ xs: 12, md: 5 }}>
-            <Stack spacing={2.5} sx={{ maxWidth: 420 }}>
-              <Logo dark height={40} href="/" />
-
-              <Typography variant="body1" sx={{ color: "rgba(255,255,255,0.74)" }}>
-                A premium support network for dental practice owners who want faster answers, better buying power, and
-                a cleaner operating system for growth.
+      <Container maxWidth="lg" sx={{ position: "relative" }}>
+        {/* Top row: brand + CTA + nav links — all inline on desktop */}
+        <Stack
+          direction={{ xs: "column", md: "row" }}
+          spacing={{ xs: 2.5, md: 3 }}
+          sx={{ alignItems: { md: "center" }, justifyContent: "space-between", flexWrap: "wrap", rowGap: 2 }}
+        >
+          <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
+            <Logo dark height={38} />
+            <Box sx={{ display: { xs: "none", lg: "block" }, maxWidth: 280 }}>
+              <Typography sx={{ color: "rgba(246,241,231,0.65)", fontSize: "0.78rem", lineHeight: 1.5 }}>
+                {footerCopy.brandDescription}
               </Typography>
+            </Box>
+          </Stack>
 
-              <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ pt: 1 }}>
-                <Button href={brand.joinUrl} variant="contained" color="secondary">
-                  Claim founding spot
-                </Button>
-                <Button
-                  href={`mailto:${brand.email}`}
-                  variant="outlined"
-                  sx={{
-                    color: "common.white",
-                    borderColor: "rgba(255,255,255,0.16)",
-                    "&:hover": { borderColor: "rgba(255,255,255,0.35)", bgcolor: "rgba(255,255,255,0.04)" },
-                  }}
-                >
-                  Email founding team
-                </Button>
-              </Stack>
+          <Stack
+            direction="row"
+            spacing={{ xs: 1.5, md: 2.5 }}
+            sx={{ alignItems: "center", flexWrap: "wrap", rowGap: 1 }}
+          >
+            {FOOTER_NAV.map((l) => (
+              <Box
+                key={l.href}
+                component={Link}
+                href={l.href}
+                sx={{
+                  color: "rgba(246,241,231,0.78)",
+                  textDecoration: "none",
+                  fontSize: "0.82rem",
+                  fontWeight: 500,
+                  transition: "color 200ms ease",
+                  "&:hover": { color: "secondary.light" },
+                }}
+              >
+                {l.label}
+              </Box>
+            ))}
+          </Stack>
 
-              <Stack direction={{ xs: "column", sm: "row" }} spacing={3} sx={{ pt: 1.5 }}>
-                <Box>
-                  <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.55)" }}>
-                    Hotline
-                  </Typography>
-                  <Typography
-                    component="a"
-                    href={`tel:${brand.phoneTel}`}
-                    sx={{
-                      display: "inline-block",
-                      mt: 0.5,
-                      color: "secondary.main",
-                      textDecoration: "none",
-                      fontFamily: "var(--font-display)",
-                      fontSize: "1.125rem",
-                      fontWeight: 500,
-                      "&:hover": { textDecoration: "underline" },
-                    }}
-                  >
-                    {brand.phoneDisplay}
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.55)" }}>
-                    Response standard
-                  </Typography>
-                  <Typography sx={{ mt: 0.5, color: "common.white", fontWeight: 600 }}>
-                    Human reply in under 1 business day
-                  </Typography>
-                </Box>
-              </Stack>
-            </Stack>
-          </Grid>
+          <Button
+            component={Link}
+            href="/#waitlist"
+            variant="contained"
+            color="secondary"
+            endIcon={<ArrowForwardIcon sx={{ fontSize: 16 }} />}
+            sx={{ py: 0.75, px: 2.25, fontSize: "0.82rem", flexShrink: 0 }}
+          >
+            {footerCopy.primaryCta}
+          </Button>
+        </Stack>
 
-          <Grid size={{ xs: 12, md: 7 }}>
-            <Grid container spacing={{ xs: 4, md: 3 }}>
-              {Object.entries(footerLinks).map(([title, items]) => (
-                <Grid key={title} size={{ xs: 12, sm: 4 }}>
-                  <Stack spacing={1.5}>
-                    <Typography variant="overline" sx={{ color: "secondary.main", letterSpacing: "0.14em" }}>
-                      {title}
-                    </Typography>
-                    {items.map((item) => (
-                      <Box
-                        key={item.label}
-                        component="a"
-                        href={item.href}
-                        sx={{
-                          color: "rgba(255,255,255,0.76)",
-                          textDecoration: "none",
-                          fontSize: "0.95rem",
-                          "&:hover": { color: "common.white" },
-                        }}
-                      >
-                        {item.label}
-                      </Box>
-                    ))}
-                  </Stack>
-                </Grid>
-              ))}
-            </Grid>
-          </Grid>
-        </Grid>
-
-        <Box
+        {/* Bottom row: contact + copyright + legal — single thin row */}
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={{ xs: 1, sm: 3 }}
           sx={{
-            mt: { xs: 5, md: 6 },
-            pt: 3,
-            borderTop: "1px solid rgba(255,255,255,0.1)",
-            position: "relative",
+            mt: 2.5,
+            pt: 2,
+            borderTop: "1px solid rgba(246,241,231,0.08)",
+            alignItems: { sm: "center" },
+            justifyContent: "space-between",
+            color: "rgba(246,241,231,0.45)",
+            fontSize: "0.74rem",
+            flexWrap: "wrap",
+            rowGap: 1,
           }}
         >
-          <Stack
-            direction={{ xs: "column", md: "row" }}
-            spacing={1.5}
-            sx={{
-              justifyContent: "space-between",
-              alignItems: { xs: "flex-start", md: "center" },
-            }}
-          >
-            <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.5)" }}>
-              © {new Date().getFullYear()} {brand.name}. Built for practice owners running real businesses.
-            </Typography>
-            <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.4)" }}>
-              HIPAA-aware product direction. No patient data stored in the network.
+          <Stack direction="row" spacing={2} sx={{ alignItems: "center", flexWrap: "wrap", rowGap: 0.5 }}>
+            <Box
+              component="a"
+              href={`tel:${brand.phoneTel}`}
+              sx={{
+                color: "rgba(246,241,231,0.7)",
+                textDecoration: "none",
+                fontWeight: 600,
+                "&:hover": { color: "secondary.light" },
+              }}
+            >
+              {brand.phoneDisplay}
+            </Box>
+            <Box component="span">·</Box>
+            <Box
+              component="a"
+              href={`mailto:${brand.email}`}
+              sx={{
+                color: "rgba(246,241,231,0.7)",
+                textDecoration: "none",
+                fontWeight: 600,
+                "&:hover": { color: "secondary.light" },
+              }}
+            >
+              {brand.email}
+            </Box>
+            <Box component="span" sx={{ display: { xs: "none", md: "inline" } }}>·</Box>
+            <Typography variant="body2" sx={{ color: "rgba(246,241,231,0.5)", fontSize: "0.74rem", display: { xs: "none", md: "inline" } }}>
+              {footerCopy.responseValue}
             </Typography>
           </Stack>
-        </Box>
+
+          <Typography variant="body2" sx={{ color: "rgba(246,241,231,0.5)", fontSize: "0.72rem" }}>
+            {footerCopy.copyright}
+          </Typography>
+        </Stack>
       </Container>
     </Box>
   );

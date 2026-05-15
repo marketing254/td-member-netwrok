@@ -1,33 +1,23 @@
 import Header from "@/components/sections/Header";
-import Hero from "@/components/sections/Hero";
-import Stats from "@/components/sections/Stats";
-import ProductPreview from "@/components/sections/ProductPreview";
+import WaitlistHero from "@/components/sections/WaitlistHero";
 import Features from "@/components/sections/Features";
-import SavingsCalculator from "@/components/sections/SavingsCalculator";
-import SLA from "@/components/sections/SLA";
-import Cadence from "@/components/sections/Cadence";
 import Pricing from "@/components/sections/Pricing";
-import Testimonials from "@/components/sections/Testimonials";
+import WaitlistSection from "@/components/sections/WaitlistSection";
 import FAQ from "@/components/sections/FAQ";
-import CTAForm from "@/components/sections/CTAForm";
 import Footer from "@/components/sections/Footer";
+import ScrollProgressBar from "@/components/effects/ScrollProgressBar";
 
 export default function HomePage() {
   return (
     <>
+      <ScrollProgressBar />
       <Header />
       <main>
-        <Hero />
-        <Stats />
-        <ProductPreview />
+        <WaitlistHero />
         <Features />
-        <SavingsCalculator />
-        <SLA />
-        <Cadence />
         <Pricing />
-        <Testimonials />
+        <WaitlistSection />
         <FAQ />
-        <CTAForm />
       </main>
       <Footer />
     </>

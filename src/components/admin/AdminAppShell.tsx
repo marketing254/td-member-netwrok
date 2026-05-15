@@ -32,6 +32,7 @@ import SupportAgentOutlinedIcon from "@mui/icons-material/SupportAgentOutlined";
 import LibraryBooksOutlinedIcon from "@mui/icons-material/LibraryBooksOutlined";
 import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
 import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
+import MarkEmailReadOutlinedIcon from "@mui/icons-material/MarkEmailReadOutlined";
 import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
@@ -44,7 +45,10 @@ const SIDEBAR_W = 264;
 const navSections: { label: string; items: { href: string; label: string; icon: React.ElementType; badge?: number }[] }[] = [
   {
     label: "OVERVIEW",
-    items: [{ href: "/admin", label: "Dashboard", icon: DashboardOutlinedIcon }],
+    items: [
+      { href: "/admin", label: "Dashboard", icon: DashboardOutlinedIcon },
+      { href: "/admin/waitlist", label: "Launch waitlist", icon: MarkEmailReadOutlinedIcon },
+    ],
   },
   {
     label: "PEOPLE",

@@ -1,171 +1,180 @@
 "use client";
-import { Box, Card, CardContent, Grid, Stack, Typography } from "@mui/material";
+import { Box, Container, Stack, Typography } from "@mui/material";
+import { motion, useReducedMotion } from "framer-motion";
+import { features, featuresSection } from "@/lib/content";
+import SectionReveal from "@/components/effects/SectionReveal";
 import PhoneInTalkOutlinedIcon from "@mui/icons-material/PhoneInTalkOutlined";
-import BusinessCenterOutlinedIcon from "@mui/icons-material/BusinessCenterOutlined";
+import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
 import HandshakeOutlinedIcon from "@mui/icons-material/HandshakeOutlined";
-import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
-import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
-import TrackChangesOutlinedIcon from "@mui/icons-material/TrackChangesOutlined";
-import Section from "@/components/Section";
-import TiltCard from "@/components/TiltCard";
-import Reveal from "@/components/Reveal";
+import RuleFolderOutlinedIcon from "@mui/icons-material/RuleFolderOutlined";
+import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
+import EventNoteOutlinedIcon from "@mui/icons-material/EventNoteOutlined";
 
-const cards = [
-  {
-    title: "24/7 Expert Hotline",
-    summary:
-      "Direct line to business coaches and practice advisors. Every case gets a written summary and a follow-up plan within 3 days.",
-    icon: <PhoneInTalkOutlinedIcon />,
-    span: { xs: 12, md: 8 },
-    feature: true,
-  },
-  {
-    title: "Member Directory",
-    summary: "500+ practice owners, searchable by city, specialty, revenue.",
-    icon: <GroupsOutlinedIcon />,
-    span: { xs: 12, md: 4 },
-  },
-  {
-    title: "Vendor Network",
-    summary: "Negotiated savings averaging $6,000+ per year.",
-    icon: <HandshakeOutlinedIcon />,
-    span: { xs: 12, md: 4 },
-  },
-  {
-    title: "Proven Systems",
-    summary:
-      "Battle-tested templates, checklists, and SOPs. From HR onboarding to expansion playbooks — the work, already done.",
-    icon: <BusinessCenterOutlinedIcon />,
-    span: { xs: 12, md: 4 },
-  },
-  {
-    title: "Learning Academy",
-    summary:
-      "Weekly audio, monthly video, live AMAs. Led by practice owners who have actually built what you are trying to build.",
-    icon: <MenuBookOutlinedIcon />,
-    span: { xs: 12, md: 4 },
-    accent: true,
-  },
-  {
-    title: "Quarterly Strategy",
-    summary: "Premium tier members get a 90-minute review every quarter.",
-    icon: <TrackChangesOutlinedIcon />,
-    span: { xs: 12, md: 8 },
-  },
+const MotionBox = motion.create(Box);
+
+const FEATURE_ICONS = [
+  PhoneInTalkOutlinedIcon,
+  PeopleAltOutlinedIcon,
+  HandshakeOutlinedIcon,
+  RuleFolderOutlinedIcon,
+  SchoolOutlinedIcon,
+  EventNoteOutlinedIcon,
 ];
 
+/**
+ * Compact uniform 3x2 grid of feature rows.
+ *
+ * No more "big card / small card" mixed sizes. Every feature is the same
+ * compact icon-and-text block, so the section reads as a tight overview
+ * instead of huge billboards.
+ */
 export default function Features() {
+  const reduced = useReducedMotion();
+
   return (
-    <Section
+    <Box
       id="features"
-      eyebrow="WHAT YOU GET"
-      title="Six things you would otherwise hire a consultant, a buyer, and an HR firm to do."
-      subtitle="Bundled into one membership. Built for the operator side of running a practice."
-      background="alt"
+      component="section"
+      sx={{
+        position: "relative",
+        py: { xs: 5, md: 7 },
+        bgcolor: "#FBF8F1",
+        borderTop: "1px solid",
+        borderColor: "rgba(14,42,61,0.06)",
+      }}
     >
-      <Grid container spacing={{ xs: 2.5, md: 3 }}>
-        {cards.map((c, i) => (
-          <Grid key={c.title} size={c.span}>
-            <Reveal delay={i * 0.04}>
-              <TiltCard intensity={c.feature ? 4 : 3} style={{ height: "100%" }}>
-                <Card
-                  sx={{
-                    height: "100%",
-                    minHeight: c.feature ? { xs: 240, md: 320 } : 200,
-                    position: "relative",
-                    overflow: "hidden",
-                    borderColor: c.accent ? "primary.main" : "divider",
-                    borderWidth: c.accent ? 1.5 : 1,
-                    backgroundImage: c.feature
-                      ? "linear-gradient(180deg, #FFFFFF 0%, #F7F5F0 100%)"
-                      : c.accent
-                      ? "linear-gradient(180deg, #06182A 0%, #0E2A3D 100%)"
-                      : undefined,
-                    color: c.accent ? "common.white" : "text.primary",
-                    "&:hover": {
-                      borderColor: c.accent ? "secondary.main" : "primary.main",
-                      boxShadow: c.feature
-                        ? "0 30px 60px -28px rgba(14,42,61,0.35)"
-                        : "0 20px 40px -28px rgba(14,42,61,0.3)",
-                    },
-                  }}
-                >
-                  {c.feature && (
-                    <Box
-                      aria-hidden
-                      sx={{
-                        position: "absolute",
-                        inset: 0,
-                        backgroundImage:
-                          "radial-gradient(50% 60% at 90% 10%, rgba(217,168,75,0.18) 0%, transparent 60%)",
-                        pointerEvents: "none",
-                      }}
-                    />
-                  )}
-                  <CardContent
+      <Box
+        aria-hidden
+        sx={{
+          position: "absolute",
+          inset: 0,
+          backgroundImage:
+            "radial-gradient(40% 50% at 90% 0%, rgba(217,168,75,0.06) 0%, transparent 60%)",
+          pointerEvents: "none",
+        }}
+      />
+      <Container maxWidth="lg" sx={{ position: "relative" }}>
+        <SectionReveal variant="fade-up" sx={{ mb: { xs: 4, md: 5 } }}>
+          <Stack spacing={1.25} sx={{ maxWidth: 680 }}>
+            <Typography
+              variant="overline"
+              sx={{ color: "#A07823", letterSpacing: "0.16em", fontSize: "0.72rem" }}
+            >
+              {featuresSection.eyebrow}
+            </Typography>
+            <Typography
+              component="h2"
+              sx={{
+                color: "#0A1A2F",
+                fontFamily: "var(--font-display)",
+                fontSize: { xs: "1.55rem", sm: "1.85rem", md: "2.15rem" },
+                lineHeight: 1.15,
+                fontWeight: 500,
+                letterSpacing: "-0.02em",
+              }}
+            >
+              {featuresSection.title}
+            </Typography>
+            <Typography
+              sx={{
+                color: "#3B4A55",
+                maxWidth: 560,
+                fontSize: { xs: "0.95rem", md: "1rem" },
+                lineHeight: 1.6,
+              }}
+            >
+              {featuresSection.subtitle}
+            </Typography>
+          </Stack>
+        </SectionReveal>
+
+        {/* Uniform 3x2 grid — CSS grid for predictable equal sizing on every breakpoint */}
+        <Box
+          sx={{
+            display: "grid",
+            gap: { xs: 1.5, md: 1.75 },
+            gridTemplateColumns: {
+              xs: "1fr",
+              sm: "1fr 1fr",
+              md: "1fr 1fr 1fr",
+            },
+          }}
+        >
+          {features.map((f, i) => {
+            const Icon = FEATURE_ICONS[i] ?? PhoneInTalkOutlinedIcon;
+            return (
+              <MotionBox
+                key={f.title}
+                initial={reduced ? false : { opacity: 0, y: 14 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-40px" }}
+                transition={{
+                  duration: 0.5,
+                  delay: Math.min(i * 0.05, 0.25),
+                  ease: [0.16, 1, 0.3, 1],
+                }}
+                whileHover={reduced ? undefined : { y: -2 }}
+                sx={{
+                  position: "relative",
+                  p: { xs: 2, md: 2.25 },
+                  borderRadius: 2.5,
+                  bgcolor: "#FFFFFF",
+                  border: "1px solid rgba(14,42,61,0.08)",
+                  transition:
+                    "transform 280ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 280ms ease, border-color 280ms ease",
+                  "&:hover": {
+                    borderColor: "rgba(160,120,35,0.4)",
+                    boxShadow: "0 18px 36px -22px rgba(14,42,61,0.16)",
+                  },
+                }}
+              >
+                <Stack direction="row" spacing={1.5} sx={{ alignItems: "flex-start" }}>
+                  <Box
                     sx={{
-                      p: { xs: 3.5, md: c.feature ? 5 : 4 },
-                      height: "100%",
-                      display: "flex",
-                      flexDirection: "column",
-                      position: "relative",
+                      flexShrink: 0,
+                      width: 34,
+                      height: 34,
+                      borderRadius: 1.5,
+                      display: "grid",
+                      placeItems: "center",
+                      bgcolor: "rgba(217,168,75,0.12)",
+                      color: "#A07823",
+                      border: "1px solid rgba(217,168,75,0.22)",
                     }}
                   >
-                    <Stack
-                      spacing={c.feature ? 4 : 2}
-                      sx={{ flex: 1, justifyContent: c.feature ? "space-between" : "flex-start" }}
+                    <Icon sx={{ fontSize: 17 }} />
+                  </Box>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography
+                      component="h3"
+                      sx={{
+                        color: "#0A1A2F",
+                        fontFamily: "var(--font-display)",
+                        fontSize: "1rem",
+                        fontWeight: 500,
+                        lineHeight: 1.25,
+                        letterSpacing: "-0.01em",
+                        mb: 0.5,
+                      }}
                     >
-                      <Box
-                        sx={{
-                          width: 48,
-                          height: 48,
-                          borderRadius: 3,
-                          display: "grid",
-                          placeItems: "center",
-                          bgcolor: c.accent
-                            ? "rgba(217,168,75,0.18)"
-                            : c.feature
-                            ? "primary.main"
-                            : "rgba(14,42,61,0.06)",
-                          color: c.accent
-                            ? "secondary.light"
-                            : c.feature
-                            ? "secondary.main"
-                            : "primary.main",
-                          "& svg": { fontSize: 24 },
-                        }}
-                      >
-                        {c.icon}
-                      </Box>
-
-                      <Stack spacing={1.25}>
-                        <Typography
-                          variant={c.feature ? "h3" : "h5"}
-                          sx={{
-                            color: c.accent ? "common.white" : "text.primary",
-                            fontFamily: c.feature ? "var(--font-display)" : undefined,
-                          }}
-                        >
-                          {c.title}
-                        </Typography>
-                        <Typography
-                          variant={c.feature ? "subtitle1" : "body2"}
-                          sx={{
-                            color: c.accent ? "rgba(255,255,255,0.72)" : "text.secondary",
-                            fontSize: c.feature ? { xs: "1rem", md: "1.0625rem" } : "0.9375rem",
-                          }}
-                        >
-                          {c.summary}
-                        </Typography>
-                      </Stack>
-                    </Stack>
-                  </CardContent>
-                </Card>
-              </TiltCard>
-            </Reveal>
-          </Grid>
-        ))}
-      </Grid>
-    </Section>
+                      {f.title}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        color: "#3B4A55",
+                        fontSize: "0.85rem",
+                        lineHeight: 1.55,
+                      }}
+                    >
+                      {f.summary}
+                    </Typography>
+                  </Box>
+                </Stack>
+              </MotionBox>
+            );
+          })}
+        </Box>
+      </Container>
+    </Box>
   );
 }
