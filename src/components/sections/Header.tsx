@@ -49,20 +49,25 @@ export default function Header() {
           borderColor: "rgba(14,42,61,0.06)",
           color: "#0A1A2F",
           zIndex: (t) => t.zIndex.appBar,
+          overflow: "visible",
         }}
       >
-        <Container maxWidth="xl" disableGutters>
+        <Container maxWidth="xl" disableGutters sx={{ overflow: "visible" }}>
           <Toolbar
             disableGutters
             sx={{
               minHeight: { xs: 76, md: 92 },
+              height: { xs: 76, md: 92 },
               px: { xs: 2.5, sm: 3, md: 4 },
               gap: { xs: 2, md: 3 },
               justifyContent: "space-between",
+              overflow: "visible",
             }}
           >
-            {/* Logo — large, no divider after it */}
-            <Logo href="/#top" height={64} ariaLabel={`${brand.name} · home`} />
+            {/* Logo — oversized, overflows the toolbar intentionally */}
+            <Box sx={{ position: "relative", zIndex: 1, mt: -2, mb: -6 }}>
+              <Logo href="/#top" height={160} ariaLabel={`${brand.name} · home`} />
+            </Box>
 
             {/* Pill cluster with nav items — single container, no artifacts */}
             <Box
@@ -109,6 +114,13 @@ export default function Header() {
               <Button
                 component={Link}
                 href="/#waitlist"
+                onClick={(e: React.MouseEvent) => {
+                  const el = document.getElementById("waitlist");
+                  if (el) {
+                    e.preventDefault();
+                    el.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }
+                }}
                 variant="contained"
                 color="secondary"
                 disableElevation
@@ -211,7 +223,14 @@ export default function Header() {
           <Button
             component={Link}
             href="/#waitlist"
-            onClick={() => setDrawer(false)}
+            onClick={(e: React.MouseEvent) => {
+              setDrawer(false);
+              const el = document.getElementById("waitlist");
+              if (el) {
+                e.preventDefault();
+                setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 300);
+              }
+            }}
             variant="contained"
             color="secondary"
             fullWidth

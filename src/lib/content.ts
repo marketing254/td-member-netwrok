@@ -14,7 +14,7 @@ export const brand = {
 };
 
 export const founding = {
-  totalSpots: 1000,
+  totalSpots: 100,
   spotsClaimed: 0,
   priceMonthly: 49,
   priceRegular: 199,
@@ -24,7 +24,7 @@ export const founding = {
 
 // HERO (Section 2 in doc) — verbatim
 export const hero = {
-  topChip: "FOUNDING MEMBERSHIP — FIRST 1,000 ONLY",
+  topChip: "FOUNDING MEMBERSHIP — FIRST 100 ONLY",
   headline: "The only network with a human expert on the line for every practice problem.",
   subtitle:
     "Built for US dental practice owners who want fast answers, measurable vendor savings, and a peer room full of operators who have already solved the problem in front of you.",
@@ -35,7 +35,7 @@ export const hero = {
     { value: "$6.4K", label: "Average first-year savings" },
     { value: "500+", label: "Practice owners in the room" },
   ],
-  progressLabel: "of 1,000 founding spots claimed",
+  progressLabel: "of 100 founding spots claimed",
 };
 
 // MARQUEE (Section 3 in doc) — 6 badges verbatim
@@ -111,7 +111,7 @@ export const waitlist = {
   benefits: [
     "Early access — be the first to know when new features and vendor deals launch",
     "Exclusive launch pricing — waitlist members get first crack at founding rate",
-    "Priority founding access — limited to 1,000 spots, waitlist members notified first",
+    "Priority founding access — limited to 100 spots, waitlist members notified first",
     "First notice — new content, partner deals, and expert panel invitations",
   ],
   submitLabel: "Join the Waitlist",
@@ -161,7 +161,7 @@ export const faqs = [
   },
   {
     q: "What is the founding member rate?",
-    a: "$49/month, locked for the life of your membership. This rate is only available to the first 1,000 members. After those spots fill, the standard price is $199/month. There is also an annual option: $490/year (pay for 10 months, get 12 — save $98). Cancel anytime.",
+    a: "$49/month, locked for the life of your membership. This rate is only available to the first 100 members. After those spots fill, the standard price is $199/month. There is also an annual option: $490/year (pay for 10 months, get 12 — save $98). Cancel anytime.",
   },
   {
     q: "What if I'm not ready to join yet?",
@@ -279,9 +279,9 @@ export const expertAvailability = [
 // PRICING (Section 10 in doc) — verbatim
 export const pricingSection = {
   eyebrow: "MEMBERSHIP",
-  title: "One membership. One price. First 1,000 lock it for life.",
+  title: "One membership. One price. First 100 lock it for life.",
   subtitle:
-    "No tiers to decode, no upsell ladder. The first 1,000 founding members pay $49/month — locked for the life of their membership. After that, it's $199.",
+    "No tiers to decode, no upsell ladder. The first 100 founding members pay $49/month — locked for the life of their membership. After that, it's $199.",
   bottomNote:
     "30-day money-back guarantee. Cancel anytime. Founding-member rate is locked for the life of your membership — it will never increase.",
 };
