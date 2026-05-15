@@ -288,7 +288,7 @@ function ActionQueue({
   href,
   urgency,
 }: {
-  icon: React.ElementType;
+  icon: React.ElementType<{ sx?: object }>;
   label: string;
   count: number;
   detail: string;
@@ -351,7 +351,7 @@ function Stat({
   footer,
   accent = "primary",
 }: {
-  icon: React.ElementType;
+  icon: React.ElementType<{ sx?: object }>;
   label: string;
   value: string;
   footer?: string;

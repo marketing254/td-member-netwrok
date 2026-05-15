@@ -334,7 +334,7 @@ function StatCard({
   link,
   accent = "primary",
 }: {
-  icon: React.ElementType;
+  icon: React.ElementType<{ sx?: object }>;
   label: string;
   value: string;
   suffix?: string;

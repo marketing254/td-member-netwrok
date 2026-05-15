@@ -30,7 +30,8 @@ export default function KineticText({
   const words = content.split(" ");
 
   if (reduced) {
-    return <Tag>{children ?? content}</Tag>;
+    const El = Tag as "span";
+    return <El>{children ?? content}</El>;
   }
 
   if (children) {
@@ -45,8 +46,9 @@ export default function KineticText({
     );
   }
 
+  const Wrapper = Tag as "span";
   return (
-    <Tag style={{ display: "inline" }}>
+    <Wrapper style={{ display: "inline" }}>
       {words.map((word, i) => {
         const isHighlight = highlightWords.includes(word);
         return (
@@ -73,6 +75,6 @@ export default function KineticText({
           </span>
         );
       })}
-    </Tag>
+    </Wrapper>
   );
 }

@@ -42,7 +42,7 @@ import { adminUsers } from "@/lib/vendorData";
 
 const SIDEBAR_W = 264;
 
-const navSections: { label: string; items: { href: string; label: string; icon: React.ElementType; badge?: number }[] }[] = [
+const navSections: { label: string; items: { href: string; label: string; icon: React.ElementType<{ sx?: object }>; badge?: number }[] }[] = [
   {
     label: "OVERVIEW",
     items: [

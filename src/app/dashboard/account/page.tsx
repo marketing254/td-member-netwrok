@@ -40,7 +40,7 @@ import {
 
 type TabKey = "profile" | "subscription" | "billing";
 
-const TABS: { key: TabKey; label: string; icon: React.ElementType }[] = [
+const TABS: { key: TabKey; label: string; icon: React.ElementType<{ sx?: object }> }[] = [
   { key: "profile", label: "Profile", icon: PersonOutlineOutlinedIcon },
   { key: "subscription", label: "Subscription", icon: WorkspacePremiumOutlinedIcon },
   { key: "billing", label: "Billing", icon: ReceiptLongOutlinedIcon },

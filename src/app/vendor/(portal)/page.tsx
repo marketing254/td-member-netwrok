@@ -319,7 +319,7 @@ function Stat({
   footer,
   accent = "primary",
 }: {
-  icon: React.ElementType;
+  icon: React.ElementType<{ sx?: object }>;
   label: string;
   value: string;
   footer?: string;
