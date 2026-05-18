@@ -67,6 +67,21 @@ const BRAND = {
   goldLight: "#F0C16E",
 };
 
+// Email-safe font stacks. We import Fraunces from Google Fonts in <head> for
+// the clients that support it (Apple Mail, iOS Mail, Gmail web, Yahoo); for
+// Outlook + Windows Mail (which strip @import), the stacks fall back to
+// Georgia/system sans, which already look refined — far better than Arial.
+//
+// Body uses a "system stack" that renders as San Francisco on macOS/iOS,
+// Segoe UI on Windows, Roboto on Android — every reader sees the sharpest
+// native font on their device.
+const FONT_DISPLAY =
+  "'Fraunces','Iowan Old Style','Apple Garamond','Baskerville','Times New Roman',Georgia,serif";
+const FONT_BODY =
+  "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Helvetica,Arial,sans-serif";
+const FONT_MONO =
+  "ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'Liberation Mono',monospace";
+
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
@@ -290,33 +305,33 @@ function renderIntro(intro: string[]): string {
   return intro
     .map(
       (line, i) =>
-        `<p style="margin:${i === 0 ? "0" : "0 0 0"} 0 ${i === intro.length - 1 ? "0" : "16px"};color:${BRAND.inkSoft};font-size:16px;line-height:1.65;">${escapeHtml(line)}</p>`,
+        `<p style="margin:${i === 0 ? "0" : "0"} 0 ${i === intro.length - 1 ? "0" : "16px"};color:${BRAND.inkSoft};font-family:${FONT_BODY};font-size:16px;line-height:1.7;font-weight:400;letter-spacing:-.003em;">${escapeHtml(line)}</p>`,
     )
     .join("");
 }
 
 function renderSection(section: EmailSection, accent: string): string {
   const body = section.body
-    ? `<p style="margin:6px 0 0;color:${BRAND.inkSoft};font-size:15px;line-height:1.65;">${escapeHtml(section.body)}</p>`
+    ? `<p style="margin:8px 0 0;color:${BRAND.inkSoft};font-family:${FONT_BODY};font-size:15px;line-height:1.7;font-weight:400;letter-spacing:-.003em;">${escapeHtml(section.body)}</p>`
     : "";
   const items = section.items
-    ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:10px 0 0;width:100%;">${section.items
+    ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:12px 0 0;width:100%;">${section.items
         .map(
           (item) => `
         <tr>
-          <td valign="top" width="22" style="padding:7px 10px 0 0;">
-            <div style="width:7px;height:7px;border-radius:50%;background:${accent};margin-top:7px;"></div>
+          <td valign="top" width="22" style="padding:9px 10px 0 0;">
+            <div style="width:7px;height:7px;border-radius:50%;background:${accent};margin-top:0;"></div>
           </td>
-          <td valign="top" style="padding:4px 0;color:${BRAND.inkSoft};font-size:15px;line-height:1.62;">${escapeHtml(item)}</td>
+          <td valign="top" style="padding:4px 0;color:${BRAND.inkSoft};font-family:${FONT_BODY};font-size:15px;line-height:1.65;font-weight:400;letter-spacing:-.003em;">${escapeHtml(item)}</td>
         </tr>`,
         )
         .join("")}</table>`
     : "";
   return `
     <tr>
-      <td style="padding:22px 0 0;">
-        <div style="display:inline-block;height:3px;width:22px;background:${accent};border-radius:2px;margin-bottom:10px;"></div>
-        <h2 style="margin:0;color:${BRAND.ink};font-size:17px;line-height:1.3;font-weight:700;letter-spacing:-.005em;">${escapeHtml(section.title)}</h2>
+      <td style="padding:26px 0 0;">
+        <div style="display:inline-block;height:3px;width:24px;background:${accent};border-radius:2px;margin-bottom:12px;"></div>
+        <h2 style="margin:0;color:${BRAND.ink};font-family:${FONT_BODY};font-size:16px;line-height:1.3;font-weight:700;letter-spacing:-.005em;">${escapeHtml(section.title)}</h2>
         ${body}
         ${items}
       </td>
@@ -330,7 +345,7 @@ function renderCta(cta: CtaSpec, accent: string): string {
         <table role="presentation" cellpadding="0" cellspacing="0">
           <tr>
             <td bgcolor="${accent}" style="border-radius:8px;background:${accent};">
-              <a href="${cta.url}" style="display:inline-block;padding:13px 22px;color:#FFFFFF;font-size:14px;font-weight:700;letter-spacing:.01em;text-decoration:none;border-radius:8px;mso-padding-alt:0;">${escapeHtml(cta.label)} &nbsp;→</a>
+              <a href="${cta.url}" style="display:inline-block;padding:14px 24px;color:#FFFFFF;font-family:${FONT_BODY};font-size:14px;font-weight:700;letter-spacing:.005em;text-decoration:none;border-radius:8px;mso-padding-alt:0;">${escapeHtml(cta.label)} &nbsp;→</a>
             </td>
           </tr>
         </table>
@@ -346,7 +361,7 @@ function renderHtml(draft: EmailDraft): string {
     <tr>
       <td style="padding:24px 0 0;">
         <div style="height:1px;background:${BRAND.line};margin-bottom:20px;"></div>
-        <p style="margin:0;color:${BRAND.inkSoft};font-size:14.5px;line-height:1.65;">${escapeHtml(draft.closing)}</p>
+        <p style="margin:0;color:${BRAND.inkSoft};font-family:${FONT_BODY};font-size:14.5px;line-height:1.7;font-weight:400;letter-spacing:-.003em;">${escapeHtml(draft.closing)}</p>
       </td>
     </tr>`;
   const signoff = `
@@ -355,7 +370,7 @@ function renderHtml(draft: EmailDraft): string {
         ${draft.signoff
           .map(
             (line, i) =>
-              `<p style="margin:${i === 0 ? "0" : "4px 0 0"};color:${i === 0 ? BRAND.ink : BRAND.inkSoft};font-size:${i === 0 ? "15.5px" : "14px"};line-height:1.6;font-weight:${i === 0 ? "600" : "500"};">${escapeHtml(line)}</p>`,
+              `<p style="margin:${i === 0 ? "0" : "4px 0 0"};color:${i === 0 ? BRAND.ink : BRAND.inkSoft};font-family:${FONT_BODY};font-size:${i === 0 ? "15.5px" : "14px"};line-height:1.6;font-weight:${i === 0 ? "600" : "500"};letter-spacing:-.003em;">${escapeHtml(line)}</p>`,
           )
           .join("")}
       </td>
@@ -363,7 +378,7 @@ function renderHtml(draft: EmailDraft): string {
   const footer = draft.footerLines
     .map(
       (line) =>
-        `<div style="margin:3px 0;color:rgba(247,245,240,0.55);font-size:11.5px;line-height:1.55;">${escapeHtml(line)}</div>`,
+        `<div style="margin:3px 0;color:rgba(247,245,240,0.55);font-family:${FONT_BODY};font-size:11.5px;line-height:1.6;letter-spacing:.002em;">${escapeHtml(line)}</div>`,
     )
     .join("");
 
@@ -375,16 +390,34 @@ function renderHtml(draft: EmailDraft): string {
     <meta name="color-scheme" content="light only" />
     <meta name="supported-color-schemes" content="light only" />
     <title>${escapeHtml(draft.subject)}</title>
+    <!-- Web fonts for clients that support @import (Apple Mail, iOS Mail,
+         Gmail web, Yahoo, AOL). Outlook/Windows Mail will strip this and
+         fall back to the system stack below — which still looks professional. -->
+    <!--[if !mso]><!-->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!--<![endif]-->
     <style>
+      /* Strong typographic defaults — applied to every text node that doesn't override */
+      body, table, td, p, a, h1, h2, h3, span, div {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
+      }
+      /* Tighten the optical sizing on the display headline */
+      h1, .dmn-display {
+        font-feature-settings: "ss01" on, "ss02" on, "kern" on;
+      }
       @media (max-width: 600px) {
         .container { padding: 18px 8px !important; }
         .card-pad { padding: 24px 22px 28px !important; }
         .footer-pad { padding: 20px 22px !important; }
-        h1 { font-size: 24px !important; line-height: 1.18 !important; }
+        h1 { font-size: 24px !important; line-height: 1.16 !important; }
       }
     </style>
   </head>
-  <body style="margin:0;padding:0;background:${BRAND.creamSoft};font-family:'Inter','Manrope','Helvetica Neue',Arial,sans-serif;color:${BRAND.ink};-webkit-font-smoothing:antialiased;">
+  <body style="margin:0;padding:0;background:${BRAND.creamSoft};font-family:${FONT_BODY};color:${BRAND.ink};-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;">
     <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;font-size:1px;line-height:1px;">${escapeHtml(draft.preview)}</div>
 
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:${BRAND.creamSoft};">
@@ -403,13 +436,13 @@ function renderHtml(draft: EmailDraft): string {
                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
                   <tr>
                     <td>
-                      <div style="font-family:'Fraunces',Georgia,serif;font-size:22px;font-weight:600;letter-spacing:-.02em;color:${BRAND.ink};">
+                      <div class="dmn-display" style="font-family:${FONT_DISPLAY};font-size:24px;font-weight:600;letter-spacing:-.025em;color:${BRAND.ink};line-height:1;">
                         <span style="color:${BRAND.ink};">D</span><span style="color:${BRAND.gold};">M</span><span style="color:${BRAND.ink};">N</span>
-                        <span style="display:inline-block;margin-left:8px;padding-left:10px;border-left:1px solid ${BRAND.line};font-family:'Inter',Arial,sans-serif;font-size:10.5px;font-weight:700;letter-spacing:.16em;color:${BRAND.inkMute};text-transform:uppercase;vertical-align:3px;">Dental Member Network</span>
+                        <span style="display:inline-block;margin-left:10px;padding-left:12px;border-left:1px solid ${BRAND.line};font-family:${FONT_BODY};font-size:10.5px;font-weight:700;letter-spacing:.18em;color:${BRAND.inkMute};text-transform:uppercase;vertical-align:4px;">Dental Member Network</span>
                       </div>
                     </td>
                     <td align="right" style="white-space:nowrap;">
-                      <span style="display:inline-block;padding:5px 10px;border-radius:999px;background:${BRAND.creamSoft};border:1px solid ${BRAND.line};color:${draft.accent};font-size:10.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;">${escapeHtml(draft.eyebrow)}</span>
+                      <span style="display:inline-block;padding:6px 11px;border-radius:999px;background:${BRAND.creamSoft};border:1px solid ${BRAND.line};color:${draft.accent};font-family:${FONT_BODY};font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;">${escapeHtml(draft.eyebrow)}</span>
                     </td>
                   </tr>
                 </table>
@@ -419,7 +452,7 @@ function renderHtml(draft: EmailDraft): string {
             <!-- Headline + intro -->
             <tr>
               <td class="card-pad" style="padding:24px 34px 6px;">
-                <h1 style="margin:0 0 18px;color:${BRAND.ink};font-family:'Fraunces',Georgia,serif;font-size:28px;line-height:1.14;font-weight:500;letter-spacing:-.015em;">${escapeHtml(draft.headline)}</h1>
+                <h1 class="dmn-display" style="margin:0 0 18px;color:${BRAND.ink};font-family:${FONT_DISPLAY};font-size:30px;line-height:1.12;font-weight:500;letter-spacing:-.02em;">${escapeHtml(draft.headline)}</h1>
                 ${intro}
               </td>
             </tr>
@@ -442,7 +475,7 @@ function renderHtml(draft: EmailDraft): string {
             <!-- Footer -->
             <tr>
               <td class="footer-pad" style="padding:22px 34px;background:${BRAND.ink};">
-                <div style="color:${BRAND.goldLight};font-size:10.5px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;margin:0 0 6px;">${escapeHtml(draft.footerNote)}</div>
+                <div style="color:${BRAND.goldLight};font-family:${FONT_BODY};font-size:10.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;margin:0 0 8px;">${escapeHtml(draft.footerNote)}</div>
                 ${footer}
               </td>
             </tr>
@@ -450,7 +483,7 @@ function renderHtml(draft: EmailDraft): string {
           </table>
 
           <!-- Outside footer (legal hint) -->
-          <div style="max-width:620px;margin:14px auto 0;color:${BRAND.inkMute};font-size:11px;line-height:1.5;text-align:center;">
+          <div style="max-width:620px;margin:14px auto 0;color:${BRAND.inkMute};font-family:${FONT_BODY};font-size:11px;line-height:1.55;text-align:center;letter-spacing:.002em;">
             You received this because you submitted the Dental Member Network waitlist form.
           </div>
         </td>
