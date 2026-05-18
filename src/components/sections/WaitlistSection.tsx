@@ -33,6 +33,7 @@ import {
   locationOptions,
   memberRoles,
   waitlist as waitlistCopy,
+  waitlistByRole,
 } from "@/lib/content";
 import { vendorCategories } from "@/lib/vendorData";
 import type { WaitlistRole } from "@/lib/waitlist/validate";
@@ -185,29 +186,49 @@ export default function WaitlistSection() {
             >
               <Stack spacing={2.5}>
                 <Typography variant="overline" sx={{ color: "#A07823", letterSpacing: "0.16em" }}>
-                  {waitlistCopy.eyebrow}
+                  {waitlistByRole[role].eyebrow}
                 </Typography>
-                <Typography
-                  variant="h2"
-                  component="h2"
-                  sx={{ color: "#0A1A2F", fontSize: { xs: "2rem", md: "2.85rem" }, lineHeight: 1.1 }}
-                >
-                  {waitlistCopy.headline}
-                </Typography>
-                <Typography variant="subtitle1" sx={{ color: "#3B4A55", maxWidth: 480 }}>
-                  {waitlistCopy.subtitle}
-                </Typography>
+                <AnimatePresence mode="wait">
+                  <MotionBox
+                    key={`headline-${role}`}
+                    initial={reduced ? false : { opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={reduced ? { opacity: 0 } : { opacity: 0, y: -10 }}
+                    transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                  >
+                    <Typography
+                      variant="h2"
+                      component="h2"
+                      sx={{ color: "#0A1A2F", fontSize: { xs: "1.9rem", md: "2.5rem" }, lineHeight: 1.1, mb: 1.5 }}
+                    >
+                      {waitlistByRole[role].headline}
+                    </Typography>
+                    <Typography variant="subtitle1" sx={{ color: "#3B4A55", maxWidth: 480 }}>
+                      {waitlistByRole[role].subtitle}
+                    </Typography>
+                  </MotionBox>
+                </AnimatePresence>
 
-                <Stack spacing={1.5} sx={{ pt: 1.5 }}>
-                  {waitlistCopy.benefits.map((b) => (
-                    <Stack key={b} direction="row" spacing={1.5} sx={{ alignItems: "flex-start" }}>
-                      <CheckCircleOutlineIcon sx={{ color: "#A07823", fontSize: 19, mt: "1px", flexShrink: 0 }} />
-                      <Typography variant="body2" sx={{ color: "#0A1A2F", fontSize: "0.95rem", lineHeight: 1.6 }}>
-                        {b}
-                      </Typography>
-                    </Stack>
-                  ))}
-                </Stack>
+                <AnimatePresence mode="wait">
+                  <MotionBox
+                    key={`bullets-${role}`}
+                    initial={reduced ? false : { opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={reduced ? { opacity: 0 } : { opacity: 0, y: -6 }}
+                    transition={{ duration: 0.45, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
+                  >
+                      <Stack spacing={1.5} sx={{ pt: 1.5 }}>
+                        {waitlistByRole[role].benefits.map((b) => (
+                          <Stack key={b} direction="row" spacing={1.5} sx={{ alignItems: "flex-start" }}>
+                            <CheckCircleOutlineIcon sx={{ color: "#A07823", fontSize: 19, mt: "1px", flexShrink: 0 }} />
+                            <Typography variant="body2" sx={{ color: "#0A1A2F", fontSize: "0.95rem", lineHeight: 1.6 }}>
+                              {b}
+                            </Typography>
+                          </Stack>
+                        ))}
+                      </Stack>
+                  </MotionBox>
+                </AnimatePresence>
               </Stack>
             </MotionBox>
           </Grid>
@@ -315,7 +336,7 @@ export default function WaitlistSection() {
                   >
                     <ToggleButton value="member">
                       <PersonOutlineOutlinedIcon sx={{ fontSize: 16 }} />
-                      Dentist
+                      Member
                     </ToggleButton>
                     <ToggleButton value="vendor">
                       <StoreOutlinedIcon sx={{ fontSize: 16 }} />
@@ -576,9 +597,26 @@ export default function WaitlistSection() {
                             }
                             label={
                               <Typography sx={{ fontSize: "0.82rem", color: "#3B4A55", lineHeight: 1.5 }}>
-                                I understand DMN will review my application and follow up before any
-                                expert listing or paid session. The full expert participation terms
-                                will be sent for review before onboarding.
+                                I have read and agree to the{" "}
+                                <Box
+                                  component={Link}
+                                  href="/agreement/expert"
+                                  target="_blank"
+                                  rel="noopener"
+                                  sx={{
+                                    color: "#A07823",
+                                    fontWeight: 700,
+                                    textDecoration: "underline",
+                                    textDecorationColor: "rgba(160,120,35,0.5)",
+                                    textUnderlineOffset: 3,
+                                    "&:hover": { textDecorationColor: "#A07823" },
+                                  }}
+                                >
+                                  Expert Partner Agreement
+                                  <OpenInNewIcon sx={{ fontSize: 12, ml: 0.4, verticalAlign: "middle" }} />
+                                </Box>
+                                . DMN will review my application and follow up before any expert
+                                listing or paid session.
                               </Typography>
                             }
                             sx={{ alignItems: "flex-start", m: 0, mt: 1 }}
@@ -649,10 +687,64 @@ export default function WaitlistSection() {
                   </AnimatePresence>
 
                   {!isVendor && !isExpert && (
-                    <Stack direction="row" spacing={1.25} sx={{ alignItems: "center", color: "#5C6770", mt: 0.5 }}>
-                      <LockOutlinedIcon sx={{ fontSize: 14 }} />
-                      <Typography variant="body2" sx={{ color: "#5C6770", fontSize: "0.78rem" }}>
-                        {waitlistCopy.footerNote}
+                    <Stack direction="row" spacing={1.25} sx={{ alignItems: "flex-start", color: "#5C6770", mt: 0.5 }}>
+                      <LockOutlinedIcon sx={{ fontSize: 14, mt: "3px", flexShrink: 0 }} />
+                      <Typography variant="body2" sx={{ color: "#5C6770", fontSize: "0.78rem", lineHeight: 1.55 }}>
+                        By joining the waitlist you agree to the{" "}
+                        <Box
+                          component={Link}
+                          href="/agreement/member"
+                          target="_blank"
+                          rel="noopener"
+                          sx={{
+                            color: "#A07823",
+                            fontWeight: 700,
+                            textDecoration: "underline",
+                            textDecorationColor: "rgba(160,120,35,0.45)",
+                            textUnderlineOffset: 3,
+                            "&:hover": { textDecorationColor: "#A07823" },
+                          }}
+                        >
+                          Member Agreement
+                          <OpenInNewIcon sx={{ fontSize: 11, ml: 0.3, verticalAlign: "middle" }} />
+                        </Box>
+                        ,{" "}
+                        <Box
+                          component={Link}
+                          href="/legal/refund"
+                          target="_blank"
+                          rel="noopener"
+                          sx={{
+                            color: "#A07823",
+                            fontWeight: 700,
+                            textDecoration: "underline",
+                            textDecorationColor: "rgba(160,120,35,0.45)",
+                            textUnderlineOffset: 3,
+                            "&:hover": { textDecorationColor: "#A07823" },
+                          }}
+                        >
+                          Refund Policy
+                          <OpenInNewIcon sx={{ fontSize: 11, ml: 0.3, verticalAlign: "middle" }} />
+                        </Box>
+                        , and{" "}
+                        <Box
+                          component={Link}
+                          href="/legal/privacy"
+                          target="_blank"
+                          rel="noopener"
+                          sx={{
+                            color: "#A07823",
+                            fontWeight: 700,
+                            textDecoration: "underline",
+                            textDecorationColor: "rgba(160,120,35,0.45)",
+                            textUnderlineOffset: 3,
+                            "&:hover": { textDecorationColor: "#A07823" },
+                          }}
+                        >
+                          Privacy Policy
+                          <OpenInNewIcon sx={{ fontSize: 11, ml: 0.3, verticalAlign: "middle" }} />
+                        </Box>
+                        . {waitlistCopy.footerNote}
                       </Typography>
                     </Stack>
                   )}

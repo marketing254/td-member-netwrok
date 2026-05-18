@@ -118,6 +118,48 @@ export const waitlist = {
     "No spam. Just early access, launch updates, and founding-member opportunities.",
 };
 
+// Role-specific copy for the WaitlistSection LEFT panel. The right panel is
+// the form, the left panel changes when the user toggles Member/Vendor/Expert
+// so the pitch matches what they're signing up for.
+export const waitlistByRole = {
+  member: {
+    eyebrow: "FOUNDING MEMBER",
+    headline: "Lock in $49/month for life. First 100 only.",
+    subtitle:
+      "The waitlist is how we onboard the founding cohort before launch. Get a guaranteed spot, lifetime pricing, and first access to every feature we ship.",
+    benefits: [
+      "$49/month locked for life — never increases while you stay active",
+      "24/7 expert helpline with a written follow-up plan within 3 business days",
+      "Vendor savings averaging $6,000+/year, no per-deal commissions",
+      "30-day money-back guarantee, cancel anytime",
+    ],
+  },
+  vendor: {
+    eyebrow: "FOUNDING VENDOR PARTNER",
+    headline: "Six months free. Featured to dentists actively buying.",
+    subtitle:
+      "The founding vendor cohort gets featured placement in the directory, warm introductions to members, and access to the partner hotline from day one.",
+    benefits: [
+      "$0 for the first 6 months, $49/mo for months 7–12, $199/mo standard",
+      "Featured listing + warm-intro routing through the partner hotline",
+      "Co-branded content opportunities (podcast, AMAs, written guides)",
+      "Members already pre-qualified — practice owners actively spending",
+    ],
+  },
+  expert: {
+    eyebrow: "FOUNDING EXPERT PARTNER",
+    headline: "Six months free. 96% revenue share. Curated launch cohort.",
+    subtitle:
+      "Founding experts get on the helpline bench, the expert directory, and the editorial calendar from day one. We curate deliberately to protect member trust.",
+    benefits: [
+      "Free for the first 6 months, then $99/mo with 30-day cancel",
+      "96% revenue share on paid courses, 100% on direct 1:1 bookings",
+      "Helpline bench + monthly live AMAs + co-branded content",
+      "You set your own pricing and keep ownership of your content",
+    ],
+  },
+};
+
 // CTA FORM (Section 13 in doc) — bottom-of-page founding-team contact form
 export const ctaForm = {
   eyebrow: "FOUNDING ACCESS",
@@ -209,10 +251,14 @@ export const footerLinks = {
     { label: "Waitlist", href: "#waitlist" },
     { label: "FAQ", href: "#faq" },
   ],
-  Legal: [
+  Agreements: [
+    { label: "Member Agreement", href: "/agreement/member" },
     { label: "Vendor Partnership Agreement", href: "/agreement/vendor" },
+    { label: "Expert Partner Agreement", href: "/agreement/expert" },
+  ],
+  Legal: [
+    { label: "Refund & Cancellation", href: "/legal/refund" },
     { label: "Privacy Policy", href: "/legal/privacy" },
-    { label: "Terms of Service", href: "/legal/terms" },
   ],
 };
 
