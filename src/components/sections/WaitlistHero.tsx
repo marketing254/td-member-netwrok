@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import {
   Box,
+  Button,
   Chip,
   Container,
   Grid,
@@ -10,6 +11,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import BoltOutlinedIcon from "@mui/icons-material/BoltOutlined";
 import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import Countdown from "@/components/sections/Countdown";
@@ -66,6 +68,10 @@ export default function WaitlistHero() {
   }, []);
 
   const claimedPct = (counts.total / founding.totalSpots) * 100;
+  const waitlistProof = hero.proofPoints[0] ?? {
+    value: "247+",
+    label: "Practice owners in the waitlist",
+  };
 
   return (
     <Box
@@ -248,44 +254,90 @@ export default function WaitlistHero() {
                 <Countdown variant="light" />
               </MotionBox>
 
-              {/* Proof points */}
+              {/* Countdown CTA */}
               <MotionBox
                 initial={{ opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 1.15 }}
               >
-                <Grid container spacing={1.5} sx={{ maxWidth: 560 }}>
-                  {hero.proofPoints.map((p) => (
-                    <Grid key={p.label} size={{ xs: 12, sm: 4 }}>
-                      <Box
-                        sx={{
-                          height: "100%",
-                          p: 2,
-                          borderRadius: 3,
-                          bgcolor: "rgba(255,255,255,0.7)",
-                          border: "1px solid rgba(14,42,61,0.08)",
-                          backdropFilter: "blur(10px)",
-                        }}
-                      >
-                        <Typography
-                          sx={{
-                            color: "#0A1A2F",
-                            fontFamily: "var(--font-display)",
-                            fontSize: "1.45rem",
-                            lineHeight: 1,
-                            mb: 0.75,
-                            fontWeight: 500,
-                          }}
-                        >
-                          {p.value}
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: "#5C6770", fontSize: "0.78rem" }}>
-                          {p.label}
-                        </Typography>
-                      </Box>
-                    </Grid>
-                  ))}
-                </Grid>
+                <Stack
+                  direction={{ xs: "column", sm: "row" }}
+                  spacing={1.25}
+                  sx={{
+                    maxWidth: 560,
+                    alignItems: { xs: "stretch", sm: "center" },
+                  }}
+                >
+                  <Button
+                    href="#waitlist"
+                    onClick={(e) => {
+                      const el = document.getElementById("waitlist");
+                      if (el) {
+                        e.preventDefault();
+                        el.scrollIntoView({ behavior: "smooth", block: "start" });
+                      }
+                    }}
+                    variant="contained"
+                    color="secondary"
+                    size="large"
+                    endIcon={<ArrowForwardIcon sx={{ fontSize: 17 }} />}
+                    sx={{
+                      minHeight: 56,
+                      px: 3,
+                      fontSize: "0.95rem",
+                      fontWeight: 700,
+                      boxShadow:
+                        "0 18px 38px -14px rgba(217,168,75,0.55), 0 0 0 1px rgba(217,168,75,0.3) inset",
+                    }}
+                  >
+                    Join the waitlist
+                  </Button>
+
+                  <Box
+                    sx={{
+                      minHeight: 56,
+                      px: { xs: 2, sm: 2.25 },
+                      py: 1.1,
+                      borderRadius: 999,
+                      bgcolor: "rgba(255,255,255,0.7)",
+                      border: "1px solid rgba(14,42,61,0.08)",
+                      backdropFilter: "blur(10px)",
+                      boxShadow: "0 14px 32px -24px rgba(14,42,61,0.32)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: { xs: "center", sm: "flex-start" },
+                      gap: 1,
+                      textAlign: "left",
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        color: "#A07823",
+                        fontFamily: "var(--font-display)",
+                        fontSize: { xs: "1.35rem", sm: "1.45rem" },
+                        fontWeight: 650,
+                        lineHeight: 1,
+                        letterSpacing: 0,
+                        fontVariantNumeric: "tabular-nums",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {waitlistProof.value}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: "#5C6770",
+                        fontSize: { xs: "0.78rem", sm: "0.82rem" },
+                        lineHeight: 1.25,
+                        fontWeight: 700,
+                        maxWidth: 170,
+                      }}
+                    >
+                      {waitlistProof.label}
+                    </Typography>
+                  </Box>
+                </Stack>
               </MotionBox>
 
               {/* Progress bar */}

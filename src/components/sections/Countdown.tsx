@@ -77,7 +77,12 @@ export default function Countdown({ target, variant = "light", compact = false }
     }
   }, [targetMs]);
 
-  const progress = parts.finished
+  // Same hydration trick for the progress bar: server and client see
+  // different `parts.totalSeconds`, so we lock the initial render to 6%
+  // and let the client update post-mount.
+  const progress = !mounted
+    ? 6
+    : parts.finished
     ? 100
     : Math.max(
         6,
@@ -111,7 +116,13 @@ export default function Countdown({ target, variant = "light", compact = false }
     { label: "Seconds", value: parts.seconds, accent: "#C75C4A" },
   ];
 
-  const timerLabel = `Time until launch: ${parts.days} days, ${parts.hours} hours, ${parts.minutes} minutes, ${parts.seconds} seconds`;
+  // IMPORTANT: only switch to the dynamic timer label after client mount.
+  // Otherwise the server renders one Date.now() and the client hydrates with
+  // a different one (a few seconds later), and React throws a hydration
+  // mismatch error on the aria-label string.
+  const timerLabel = mounted
+    ? `Time until launch: ${parts.days} days, ${parts.hours} hours, ${parts.minutes} minutes, ${parts.seconds} seconds`
+    : "Time until launch";
 
   if (parts.finished) {
     return (

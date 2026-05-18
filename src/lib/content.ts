@@ -31,9 +31,7 @@ export const hero = {
   bottomNote:
     "No four-figure upsells. No surprise coaching pitches. The membership is the product.",
   proofPoints: [
-    { value: "2 hrs", label: "Median first response" },
-    { value: "$6.4K", label: "Average first-year savings" },
-    { value: "500+", label: "Practice owners in the room" },
+    { value: "247+", label: "Practice owners in the waitlist" },
   ],
   progressLabel: "of 100 founding spots claimed",
 };
@@ -223,7 +221,6 @@ export const navLinks = [
   { label: "Pricing", href: "#pricing" },
   { label: "Vendor", href: "#waitlist" },
   { label: "Expert", href: "#waitlist" },
-  { label: "Join Waitlist", href: "#waitlist" },
   { label: "FAQ", href: "#faq" },
 ];
 

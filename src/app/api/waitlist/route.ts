@@ -3,6 +3,8 @@ import { createHash } from "node:crypto";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { validateWaitlist } from "@/lib/waitlist/validate";
 import { checkRateLimit } from "@/lib/waitlist/rateLimit";
+import { sendWaitlistConfirmationEmail } from "@/lib/waitlist/confirmationEmail";
+import type { WaitlistPayload } from "@/lib/waitlist/validate";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,6 +34,21 @@ function hashIp(ip: string): string {
   return createHash("sha256").update(`${salt}:${ip}`).digest("hex").slice(0, 32);
 }
 
+async function sendConfirmation(signup: WaitlistPayload, referenceId: string, submittedAt: string) {
+  try {
+    const result = await sendWaitlistConfirmationEmail({ signup, referenceId, submittedAt });
+    if (!result.sent) {
+      console.info("[waitlist] confirmation email not sent", {
+        reason: result.reason,
+        role: signup.role,
+        referenceId,
+      });
+    }
+  } catch (err) {
+    console.error("[waitlist] confirmation email failed:", err);
+  }
+}
+
 export async function POST(req: Request) {
   let json: unknown;
   try {
@@ -57,6 +74,8 @@ export async function POST(req: Request) {
   // Mock path — log to server console, increment the in-memory counter, then
   // pretend the row was inserted. Used to preview the thank-you flow without DB.
   if (MOCK_MODE) {
+    const id = "mock-" + Math.random().toString(36).slice(2, 10);
+    const createdAt = new Date().toISOString();
     console.log("[waitlist:mock] signup", {
       role: result.data.role,
       email: result.data.email,
@@ -69,11 +88,12 @@ export async function POST(req: Request) {
     if (result.data.role === "member") mockCounts.members += 1;
     if (result.data.role === "vendor") mockCounts.vendors += 1;
     if (result.data.role === "expert") mockCounts.experts += 1;
+    await sendConfirmation(result.data, id, createdAt);
     return NextResponse.json({
       ok: true,
-      id: "mock-" + Math.random().toString(36).slice(2, 10),
+      id,
       role: result.data.role,
-      createdAt: new Date().toISOString(),
+      createdAt,
       mock: true,
     });
   }
@@ -126,6 +146,8 @@ export async function POST(req: Request) {
       { status: 500 },
     );
   }
+
+  await sendConfirmation(result.data, data.id, data.created_at);
 
   return NextResponse.json({ ok: true, id: data.id, role: data.role, createdAt: data.created_at });
 }
