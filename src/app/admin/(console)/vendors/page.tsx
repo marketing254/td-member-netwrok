@@ -174,7 +174,7 @@ function Inner() {
             </Cell>
             <Cell>
               <Box sx={{ display: { xs: "none", md: "block" }, fontWeight: 600, color: v.commissionAccrued > 0 ? "success.dark" : "text.secondary" }}>
-                {v.commissionAccrued > 0 ? `$${v.commissionAccrued.toLocaleString()}` : "—"}
+                {v.commissionAccrued > 0 ? `$${v.commissionAccrued.toLocaleString()}` : ""}
               </Box>
             </Cell>
             <Stack direction="row" sx={{ justifyContent: "flex-end", gap: 0.5, alignItems: "center" }}>

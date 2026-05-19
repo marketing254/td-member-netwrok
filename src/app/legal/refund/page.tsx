@@ -20,16 +20,16 @@ const sections: LegalSection[] = [
     title: "Cancellation Policy",
     body: "",
     items: [
-      "Monthly plans — cancel anytime, effective at the end of the billing period. Access retained until period ends. No partial-month refunds.",
-      "Annual plans — cancel anytime. Within 30 days: full refund. After 30 days: cancellation is effective at the end of the annual period. No pro-rated refunds.",
-      "How to cancel — through your member portal settings, or contact support. Cancellations are processed within 1–2 business days.",
+      "Monthly plans, cancel anytime, effective at the end of the billing period. Access retained until period ends. No partial-month refunds.",
+      "Annual plans, cancel anytime. Within 30 days: full refund. After 30 days: cancellation is effective at the end of the annual period. No pro-rated refunds.",
+      "How to cancel, through your member portal settings, or contact support. Cancellations are processed within 1–2 business days.",
     ],
   },
   {
     number: "03",
     title: "Founding Member Pricing",
     body:
-      "$49/month or $490/year is locked for life while your membership is active. If you cancel and later re-enroll, the founding rate is no longer available — the standard rate of $199/month applies. Contact us about a temporary pause before cancelling.",
+      "$49/month or $490/year is locked for life while your membership is active. If you cancel and later re-enroll, the founding rate is no longer available, the standard rate of $199/month applies. Contact us about a temporary pause before cancelling.",
   },
   {
     number: "04",
@@ -59,10 +59,10 @@ const sections: LegalSection[] = [
     title: "Vendor Partner Cancellation & Refunds",
     body: "Founding cohort (months 1–6 free): vendors may cancel during the free period with no charge. No refund applies because no fees were collected.",
     items: [
-      "Months 7–12 ($49/month) — cancel anytime with 30 days written notice. Cancellation takes effect at the end of the current billing period. No partial-month refunds. If cancelled during this period, vendor loses founding cohort pricing if they re-enroll.",
-      "Month 13+ ($199/month standard) — cancel anytime with 30 days written notice. Cancellation takes effect at the end of the current billing period. No partial-month refunds.",
-      "Initial commitment — the vendor partnership has a 12-month initial commitment term. Early termination within the first 12 months may be subject to the remaining balance for the commitment period unless otherwise agreed in writing.",
-      "Upon cancellation — vendor listing removed within 5 business days. Active member deals are honored through their published end date. Vendor loses access to the member network.",
+      "Months 7–12 ($49/month), cancel anytime with 30 days written notice. Cancellation takes effect at the end of the current billing period. No partial-month refunds. If cancelled during this period, vendor loses founding cohort pricing if they re-enroll.",
+      "Month 13+ ($199/month standard), cancel anytime with 30 days written notice. Cancellation takes effect at the end of the current billing period. No partial-month refunds.",
+      "Initial commitment, the vendor partnership has a 12-month initial commitment term. Early termination within the first 12 months may be subject to the remaining balance for the commitment period unless otherwise agreed in writing.",
+      "Upon cancellation, vendor listing removed within 5 business days. Active member deals are honored through their published end date. Vendor loses access to the member network.",
     ],
   },
   {
@@ -71,9 +71,9 @@ const sections: LegalSection[] = [
     body:
       "Free period (first 6 months): experts may cancel during the free period with no charge. No refund applies because no fees were collected.",
     items: [
-      "Paid period ($99/month) — cancel anytime with 30 days written notice. Cancellation takes effect at the end of the current billing period. No partial-month refunds.",
-      "Course revenue — any pending commission payouts for paid courses will be processed within 30 days of cancellation. The 4% platform commission applies to all course fees collected prior to the cancellation effective date.",
-      "Upon cancellation — expert profile removed from directory. Free courses are archived but no longer accessible to new members. Paid course access is honored for members who already purchased. Expert is removed from the helpline bench rotation.",
+      "Paid period ($99/month), cancel anytime with 30 days written notice. Cancellation takes effect at the end of the current billing period. No partial-month refunds.",
+      "Course revenue, any pending commission payouts for paid courses will be processed within 30 days of cancellation. The 4% platform commission applies to all course fees collected prior to the cancellation effective date.",
+      "Upon cancellation, expert profile removed from directory. Free courses are archived but no longer accessible to new members. Paid course access is honored for members who already purchased. Expert is removed from the helpline bench rotation.",
     ],
   },
   {
@@ -105,7 +105,7 @@ export default function RefundPolicyPage() {
         intro={
           <>
             How refunds work for members, vendor partners, and expert partners. Plain language,
-            no surprises — read this before joining so you know exactly what you&apos;re signing
+            no surprises, read this before joining so you know exactly what you&apos;re signing
             up for.
           </>
         }

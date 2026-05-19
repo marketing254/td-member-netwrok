@@ -5,7 +5,7 @@ import Lenis from "lenis";
 /**
  * Lenis-powered smooth scroll, mounted once at the app root.
  *
- * Renders no DOM — it just spins up a Lenis instance, runs its RAF tick loop,
+ * Renders no DOM, it just spins up a Lenis instance, runs its RAF tick loop,
  * and disposes on unmount. This is the smoothness modern motion sites use:
  * inertia, subtle easing, no jank on parallax.
  *

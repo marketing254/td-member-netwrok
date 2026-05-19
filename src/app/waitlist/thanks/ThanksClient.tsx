@@ -38,7 +38,7 @@ type Reveal = {
 };
 
 const REVEALS: Reveal[] = [
-  { daysOut: 14, category: "BEHIND THE SCENES", headline: "Why we built this", body: "After 12 years on the Thriving Dentist podcast, the same questions kept coming back. The hotline is the answer — a real expert, on the phone, in two business hours." },
+  { daysOut: 14, category: "BEHIND THE SCENES", headline: "Why we built this", body: "After 12 years on the Thriving Dentist podcast, the same questions kept coming back. The hotline is the answer, a real expert, on the phone, in two business hours." },
   { daysOut: 13, category: "FEATURE", headline: "The 2-hour SLA", body: "Every case gets a written response within 2 business hours. Not a chatbot. Not a forum. A specialist who has solved this for another owner already." },
   { daysOut: 12, category: "VENDOR", headline: "Founding vendor: PPO consultancy", body: "Our first founding vendor partner negotiates fee schedules for $0 upfront. Members reported $8K–$22K in first-year savings during the pilot." },
   { daysOut: 11, category: "MEMBER", headline: "Dr. Diana W., Chicago", body: "Used the hotline three times in her first month. Saved $150K on a decision she was about to greenlight. Her quote: \"I would have signed the wrong lease.\"" },
@@ -50,7 +50,7 @@ const REVEALS: Reveal[] = [
   { daysOut: 5, category: "BEHIND THE SCENES", headline: "What we will not do", body: "No four-figure mastermind upsells. No surprise coaching pitches. The membership is the product. Premium tier bundles coaching transparently or not at all." },
   { daysOut: 4, category: "FEATURE", headline: "Weekly content cadence", body: "Four audio episodes, one long-form video, one live AMA per month. All led by people who have actually run the play they're describing." },
   { daysOut: 3, category: "VENDOR", headline: "Final founding vendors", body: "We are closing the founding-vendor cohort at 12 partners. Three slots left. If you applied as a vendor, your status email goes out 48 hours before launch." },
-  { daysOut: 2, category: "FEATURE", headline: "Quarterly strategy reviews", body: "Premium-tier members get a 90-minute review every quarter. Real planning around real numbers — not a feel-good coaching call." },
+  { daysOut: 2, category: "FEATURE", headline: "Quarterly strategy reviews", body: "Premium-tier members get a 90-minute review every quarter. Real planning around real numbers, not a feel-good coaching call." },
   { daysOut: 1, category: "BEHIND THE SCENES", headline: "Tomorrow, the doors open", body: "Your invitation email goes out at 9am ET tomorrow. Founding spots are first-come; we expect to seat the first cohort within 72 hours." },
   { daysOut: 0, category: "BEHIND THE SCENES", headline: "Today. Welcome in.", body: "The members area is live. Check your inbox for your founding invitation. The hotline is open." },
 ];
@@ -199,7 +199,7 @@ export default function ThanksClient() {
                 variant="subtitle1"
                 sx={{ color: "#3B4A55", maxWidth: 580, mx: "auto", fontSize: { xs: "1.05rem", md: "1.15rem" }, lineHeight: 1.65 }}
               >
-                We&apos;ll email you the moment the network goes live. Until then, we&apos;re unlocking one piece of what we&apos;ve been building — every day.
+                We&apos;ll email you the moment the network goes live. Until then, we&apos;re unlocking one piece of what we&apos;ve been building, every day.
               </Typography>
             </MotionBox>
 

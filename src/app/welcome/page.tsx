@@ -41,7 +41,7 @@ const quickstart = [
   {
     icon: RedeemOutlinedIcon,
     title: "Claim a vendor offer",
-    detail: "Henry Schein, Weave, Patterson — your codes are live. The average member captures $6K/year.",
+    detail: "Henry Schein, Weave, Patterson, your codes are live. The average member captures $6K/year.",
     href: "/dashboard/rewards",
     cta: "See offers",
   },
@@ -306,7 +306,7 @@ export default function WelcomePage() {
                 </Typography>
                 <Typography sx={{ color: "rgba(255,255,255,0.88)", maxWidth: 600, lineHeight: 1.6 }}>
                   No four-figure upsells. No surprise pitches. Your $49 stays $49 for life on the
-                  current product — that&apos;s the deal we made you, and we&apos;ll keep it.
+                  current product, that&apos;s the deal we made you, and we&apos;ll keep it.
                 </Typography>
                 <Stack
                   direction="row"

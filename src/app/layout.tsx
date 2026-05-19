@@ -25,13 +25,13 @@ export const metadata: Metadata = {
     template: "%s | Dental Member Network",
   },
   description:
-    "The only network with a human expert on the line for every practice problem. 24/7 helpline, $6,400+ avg vendor savings, and 500+ practice owners — all in one membership.",
+    "The only network with a human expert on the line for every practice problem. 24/7 helpline, $6,400+ avg vendor savings, and 500+ practice owners, all in one membership.",
   openGraph: {
     type: "website",
     siteName: "Dental Member Network",
-    title: "Dental Member Network — Expert helpline, vendor savings, and the operator playbook",
+    title: "Dental Member Network, Expert helpline, vendor savings, and the operator playbook",
     description:
-      "24/7 expert helpline, exclusive partner discounts, and a directory of 500+ practice owners. Founding rate $49/mo locked for life — first 1,000 only.",
+      "24/7 expert helpline, exclusive partner discounts, and a directory of 500+ practice owners. Founding rate $49/mo locked for life, first 1,000 only.",
     images: [
       {
         url: "/td-logo-horizontal-dark.svg",

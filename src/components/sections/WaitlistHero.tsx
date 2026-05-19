@@ -380,7 +380,7 @@ export default function WaitlistHero() {
             </MotionBox>
           </Grid>
 
-          {/* Right column — NetworkScene is the background, this is empty spacer on mobile */}
+          {/* Right column, NetworkScene is the background, this is empty spacer on mobile */}
           <Grid size={{ xs: 0, md: 5 }} sx={{ display: { xs: "none", md: "block" } }} />
         </Grid>
       </Container>

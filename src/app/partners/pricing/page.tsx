@@ -35,7 +35,7 @@ const featureMatrix = [
 const faqs = [
   {
     q: "How do I qualify as a Founding Partner?",
-    a: "Founding seats are offered at Thriving Dentist's discretion, limited to a fixed number of vendors per category. Apply early — we approve on a first-come-first-served basis within each category until the cap is hit.",
+    a: "Founding seats are offered at Thriving Dentist's discretion, limited to a fixed number of vendors per category. Apply early, we approve on a first-come-first-served basis within each category until the cap is hit.",
   },
   {
     q: "What's the cancellation policy?",
@@ -47,7 +47,7 @@ const faqs = [
   },
   {
     q: "How are leads attributed?",
-    a: "A sale or engagement is attributed to the Network if the lead originated through a Network-issued contact, code, or link within the prior 12 months — or if the member identifies Thriving Dentist as the source at point of contact and you confirm.",
+    a: "A sale or engagement is attributed to the Network if the lead originated through a Network-issued contact, code, or link within the prior 12 months, or if the member identifies Thriving Dentist as the source at point of contact and you confirm.",
   },
   {
     q: "Can I change plans mid-term?",
@@ -55,7 +55,7 @@ const faqs = [
   },
   {
     q: "What's the Member Discount we have to offer?",
-    a: "You commit to a meaningful discount that's not generally available to non-members — % off, flat $ off, waived setup, bonus inclusions, or preferred terms. You set the specifics in Schedule B of the agreement.",
+    a: "You commit to a meaningful discount that's not generally available to non-members, % off, flat $ off, waived setup, bonus inclusions, or preferred terms. You set the specifics in Schedule B of the agreement.",
   },
 ];
 
@@ -238,7 +238,7 @@ export default function VendorPricingPage() {
                     {v ? (
                       <CheckCircleOutlinedIcon sx={{ color: "#1F5C40", fontSize: 20 }} />
                     ) : (
-                      <Box component="span" sx={{ color: "text.secondary", fontSize: "0.85rem" }}>—</Box>
+                      <Box component="span" sx={{ color: "text.secondary", fontSize: "0.85rem" }}></Box>
                     )}
                   </Box>
                 ))}

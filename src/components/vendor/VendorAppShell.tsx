@@ -205,7 +205,7 @@ function SidebarContent({ pathname, onClose }: { pathname: string; onClose?: () 
             NEED HELP?
           </Typography>
           <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.85)", fontSize: "0.78rem", lineHeight: 1.5, mb: 1.25 }}>
-            Reach Reshani directly for vendor support — partner@thrivingdentist.com
+            Reach Reshani directly for vendor support, partner@thrivingdentist.com
           </Typography>
           <Button
             href="mailto:partner@thrivingdentist.com"

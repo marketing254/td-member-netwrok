@@ -5,12 +5,12 @@ import CircleIcon from "@mui/icons-material/FiberManualRecord";
 const SAMPLE_ACTIVITY = [
   "Dr. M.S. from Boston, MA just joined",
   "Dr. R.T. from Austin, TX just joined",
-  "Acme Dental Supply — Vendor partner",
+  "Acme Dental Supply, Vendor partner",
   "Dr. K.P. from Seattle, WA just joined",
-  "Brightway Practice Loans — Vendor partner",
+  "Brightway Practice Loans, Vendor partner",
   "Dr. J.L. from Miami, FL just joined",
   "Dr. A.W. from Denver, CO just joined",
-  "ChairSide CE — Vendor partner",
+  "ChairSide CE, Vendor partner",
   "Dr. P.G. from Chicago, IL just joined",
   "Dr. N.K. from Portland, OR just joined",
 ];

@@ -161,7 +161,7 @@ export const vendorOwnOffers: VendorOfferRow[] = [
   },
   {
     id: "off_003",
-    title: "Premium tier members — 18% off",
+    title: "Premium tier members, 18% off",
     code: "TDN-HSDN-PRM",
     mechanic: "promo_code",
     discountLabel: "18% off",
@@ -170,11 +170,11 @@ export const vendorOwnOffers: VendorOfferRow[] = [
     savingsDeliveredYtd: 0,
     expiresOn: "2026-12-31",
     createdOn: "2026-05-02",
-    reviewerNote: "Awaiting Reshani's approval — submitted 2 days ago.",
+    reviewerNote: "Awaiting Reshani's approval, submitted 2 days ago.",
   },
   {
     id: "off_004",
-    title: "Black Friday flash — 22% off (3 days)",
+    title: "Black Friday flash, 22% off (3 days)",
     code: "TDN-HSDN-BF",
     mechanic: "promo_code",
     discountLabel: "22% off",
@@ -470,7 +470,7 @@ export const adminPendingOffers: AdminPendingOfferRow[] = [
     id: "off_003",
     vendor: "Henry Schein",
     vendorId: "v_001",
-    title: "Premium tier members — 18% off",
+    title: "Premium tier members, 18% off",
     discountLabel: "18% off (Premium-only)",
     category: "Dental supplies and consumables",
     submittedOn: "2026-05-02",
@@ -520,7 +520,7 @@ export const adminHotlineCases: AdminHotlineCase[] = [
     memberId: "m_002",
     pillar: "HR",
     urgency: "critical",
-    summary: "Office manager resigned mid-week — emergency cover plan",
+    summary: "Office manager resigned mid-week, emergency cover plan",
     status: "received",
     openedAt: "2 hrs ago",
     slaDueIn: "Triage due now",
@@ -531,7 +531,7 @@ export const adminHotlineCases: AdminHotlineCase[] = [
     memberId: "m_004",
     pillar: "Marketing",
     urgency: "normal",
-    summary: "New patient acquisition — local SEO for second location",
+    summary: "New patient acquisition, local SEO for second location",
     status: "triaged",
     assignedTo: "VA",
     openedAt: "Yesterday",
@@ -543,7 +543,7 @@ export const adminHotlineCases: AdminHotlineCase[] = [
     memberId: "m_005",
     pillar: "M&A",
     urgency: "normal",
-    summary: "Practice acquisition LOI review — buy-side timing",
+    summary: "Practice acquisition LOI review, buy-side timing",
     status: "replied",
     assignedTo: "Lester",
     expert: "External M&A counsel",
@@ -587,7 +587,7 @@ export const adminKpis = {
 };
 
 // =====================================================================
-// VENDOR AGREEMENT — sectioned for the signup terms display
+// VENDOR AGREEMENT, sectioned for the signup terms display
 // =====================================================================
 
 export type AgreementSection = {
@@ -603,7 +603,7 @@ export const vendorAgreementMeta = {
   effective: "Effective on the date of sign-up",
   tagline: "Built around five simple commitments.",
   intro:
-    "This Vendor Network Partnership Agreement (the “Agreement”) is between Thriving Dentist (“we,” “us”) and the Vendor who signs up below (“you,” “Vendor”). It takes effect on the date of signup. By joining the network, you agree to five commitments — outlined below — plus the operational and legal terms that follow. The structure is intentionally short. We'd rather have a clear handshake than a 40-page document nobody reads.",
+    "This Vendor Network Partnership Agreement (the “Agreement”) is between Thriving Dentist (“we,” “us”) and the Vendor who signs up below (“you,” “Vendor”). It takes effect on the date of signup. By joining the network, you agree to five commitments, outlined below, plus the operational and legal terms that follow. The structure is intentionally short. We'd rather have a clear handshake than a 40-page document nobody reads.",
 };
 
 export type VendorCommitment = {
@@ -612,13 +612,13 @@ export type VendorCommitment = {
   body: string;
 };
 
-// The five commitments — the headline framing of the agreement.
+// The five commitments, the headline framing of the agreement.
 export const vendorCommitments: VendorCommitment[] = [
   {
     number: "01",
     title: "Offer our members the best deal you have.",
     body:
-      "You agree to give Thriving Dentist members a discount, bonus, or exclusive benefit that is at least as good as any offer you make available to comparable customers. If your terms get better elsewhere, ours match or improve. We promote this deal — it has to be real.",
+      "You agree to give Thriving Dentist members a discount, bonus, or exclusive benefit that is at least as good as any offer you make available to comparable customers. If your terms get better elsewhere, ours match or improve. We promote this deal, it has to be real.",
   },
   {
     number: "02",
@@ -640,7 +640,7 @@ export const vendorCommitments: VendorCommitment[] = [
   },
   {
     number: "05",
-    title: "Pay the fee — waived for your first six months.",
+    title: "Pay the fee, waived for your first six months.",
     body:
       "The standard fee is $199 per month. Founding partners pay $0 for months 1-6, $49 for months 7-12, and the standard $199 from month thirteen onward. You're free to cancel with 30 days' written notice at any time, but you remain responsible for fees accrued during notice.",
   },
@@ -654,7 +654,7 @@ export type FeeScheduleRow = {
 };
 
 export const vendorFeeSchedule: FeeScheduleRow[] = [
-  { period: "Months 1-6", fee: "$0", note: "Founding partner waiver — applies automatically" },
+  { period: "Months 1-6", fee: "$0", note: "Founding partner waiver, applies automatically" },
   { period: "Months 7-12", fee: "$49", note: "Locked-in launch rate" },
   { period: "Month 13 onward", fee: "$199", note: "Standard partner rate" },
 ];
@@ -675,7 +675,7 @@ export const vendorAgreementSections: AgreementSection[] = [
     number: "01",
     title: "What's included",
     body:
-      "Profile in the directory: we create and maintain a dedicated profile page for you in the Thriving Dentist Vendor Directory — logo, description, services, contact form, member-exclusive offer, and your calendar link. Promotion to members: priority category placement, quarterly newsletter mentions, one dedicated email to members per year, and eligibility for podcast and webinar features at our editorial discretion. Lead routing: inquiries from members are routed directly to you by email and via your partner dashboard. All leads are pre-qualified — these are members who chose the network specifically to find someone like you. Verified Partner badge: a “Thriving Dentist Verified Partner” mark you can use on your site, email signature, and sales materials while this Agreement is active. The license ends when this Agreement ends.",
+      "Profile in the directory: we create and maintain a dedicated profile page for you in the Thriving Dentist Vendor Directory, logo, description, services, contact form, member-exclusive offer, and your calendar link. Promotion to members: priority category placement, quarterly newsletter mentions, one dedicated email to members per year, and eligibility for podcast and webinar features at our editorial discretion. Lead routing: inquiries from members are routed directly to you by email and via your partner dashboard. All leads are pre-qualified, these are members who chose the network specifically to find someone like you. Verified Partner badge: a “Thriving Dentist Verified Partner” mark you can use on your site, email signature, and sales materials while this Agreement is active. The license ends when this Agreement ends.",
   },
   {
     id: "fees-and-payment",
@@ -689,14 +689,14 @@ export const vendorAgreementSections: AgreementSection[] = [
     number: "03",
     title: "Member discount details",
     body:
-      "The member discount you commit to in the signup form is binding for the term of this Agreement. You can improve it any time — you just can't reduce or withdraw it without our written consent. Acceptable discount formats include: a percentage off your standard pricing (typically 3-20%), a flat-dollar discount on first purchase or engagement, a waived setup/onboarding/implementation fee, bonus inclusions (extra hours, bundled products, extended trials), or preferred payment terms or deferred billing. You honor the discount when a member identifies themselves as a Thriving Dentist member, books through your network calendar link, or is referred via the network's lead routing.",
+      "The member discount you commit to in the signup form is binding for the term of this Agreement. You can improve it any time, you just can't reduce or withdraw it without our written consent. Acceptable discount formats include: a percentage off your standard pricing (typically 3-20%), a flat-dollar discount on first purchase or engagement, a waived setup/onboarding/implementation fee, bonus inclusions (extra hours, bundled products, extended trials), or preferred payment terms or deferred billing. You honor the discount when a member identifies themselves as a Thriving Dentist member, books through your network calendar link, or is referred via the network's lead routing.",
   },
   {
     id: "standards",
     number: "04",
     title: "Standards we hold partners to",
     body:
-      "While in the network, you confirm and agree that: you operate in compliance with all applicable laws, regulations, and professional standards; you provide responsive, professional sales and customer support to members — at least at the quality level you give your best customers; you have the rights to all logos, copy, and content you give us, and you grant us a non-exclusive license to use them to promote you in the network; you will not engage in conduct that damages the Thriving Dentist brand — including misleading advertising, harassment of members, or violation of professional codes of conduct.",
+      "While in the network, you confirm and agree that: you operate in compliance with all applicable laws, regulations, and professional standards; you provide responsive, professional sales and customer support to members, at least at the quality level you give your best customers; you have the rights to all logos, copy, and content you give us, and you grant us a non-exclusive license to use them to promote you in the network; you will not engage in conduct that damages the Thriving Dentist brand, including misleading advertising, harassment of members, or violation of professional codes of conduct.",
   },
   {
     id: "confidentiality",
@@ -710,14 +710,14 @@ export const vendorAgreementSections: AgreementSection[] = [
     number: "06",
     title: "Changes to terms",
     body:
-      "Thriving Dentist may modify these terms — including pricing, benefits, eligibility, and operating rules — from time to time. We will provide at least thirty (30) days' prior written notice by email and via the partner dashboard. If a change materially reduces your benefits or increases your fees, you may terminate this Agreement before the change takes effect with no further obligation, provided you give us written notice within the 30-day notice window. Your continued participation after the effective date of a change constitutes acceptance of the updated terms.",
+      "Thriving Dentist may modify these terms, including pricing, benefits, eligibility, and operating rules, from time to time. We will provide at least thirty (30) days' prior written notice by email and via the partner dashboard. If a change materially reduces your benefits or increases your fees, you may terminate this Agreement before the change takes effect with no further obligation, provided you give us written notice within the 30-day notice window. Your continued participation after the effective date of a change constitutes acceptance of the updated terms.",
   },
   {
     id: "term",
     number: "07",
     title: "Term, renewal, and termination",
     body:
-      "Initial term and renewal: this Agreement starts on the date you sign up and continues for an initial term of twelve (12) months. It then renews automatically for successive twelve-month terms unless either party gives written notice of non-renewal at least 30 days before the end of the current term. Termination for convenience: either party may terminate at any time on 30 days' prior written notice. You remain responsible for fees accrued through the effective date of termination. Termination for cause: immediate, on uncured material breach (15-day cure period), insolvency, or conduct that materially harms the network. What happens at termination: your profile and promotional placements are removed; the Verified Partner badge license ends; any unpaid accrued fees become immediately due; provisions that by their nature survive — confidentiality, member data protection, indemnification, and limits of liability — continue to apply.",
+      "Initial term and renewal: this Agreement starts on the date you sign up and continues for an initial term of twelve (12) months. It then renews automatically for successive twelve-month terms unless either party gives written notice of non-renewal at least 30 days before the end of the current term. Termination for convenience: either party may terminate at any time on 30 days' prior written notice. You remain responsible for fees accrued through the effective date of termination. Termination for cause: immediate, on uncured material breach (15-day cure period), insolvency, or conduct that materially harms the network. What happens at termination: your profile and promotional placements are removed; the Verified Partner badge license ends; any unpaid accrued fees become immediately due; provisions that by their nature survive, confidentiality, member data protection, indemnification, and limits of liability, continue to apply.",
   },
   {
     id: "disclaimers",
@@ -731,6 +731,6 @@ export const vendorAgreementSections: AgreementSection[] = [
     number: "09",
     title: "Miscellaneous",
     body:
-      "The parties are independent contractors — this Agreement does not create a partnership, joint venture, agency, or employment relationship. You may not assign or transfer this Agreement without our prior written consent. This Agreement is the entire agreement between the parties on its subject and supersedes prior discussions. Any modification must be by written notice as described in Section 06 or by a signed amendment. If any provision is unenforceable, the remaining provisions stay in effect. This Agreement is governed by the laws of the State of [State], and any disputes will be resolved in the state or federal courts located in [Venue]. Electronic signatures and acceptance via this online form have the same effect as original written signatures.",
+      "The parties are independent contractors, this Agreement does not create a partnership, joint venture, agency, or employment relationship. You may not assign or transfer this Agreement without our prior written consent. This Agreement is the entire agreement between the parties on its subject and supersedes prior discussions. Any modification must be by written notice as described in Section 06 or by a signed amendment. If any provision is unenforceable, the remaining provisions stay in effect. This Agreement is governed by the laws of the State of [State], and any disputes will be resolved in the state or federal courts located in [Venue]. Electronic signatures and acceptance via this online form have the same effect as original written signatures.",
   },
 ];

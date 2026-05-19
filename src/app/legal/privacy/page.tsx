@@ -16,11 +16,11 @@ const sections: LegalSection[] = [
     items: [
       "Account registration (name, email, phone).",
       "Practice information (practice name, address, specialty, locations).",
-      "Billing information (processed securely via payment processor — we do not store full card numbers).",
+      "Billing information (processed securely via payment processor, we do not store full card numbers).",
       "Profile information (title, years in practice).",
       "Communications (messages, support inquiries).",
-      "Information collected automatically — usage data (pages visited, content accessed), device information (browser, OS, IP address), and cookies for session management and analytics.",
-      "Information we do NOT collect — patient health information, PHI, clinical records, or any patient data. DMN is a business services platform. HIPAA does not apply to the data we collect.",
+      "Information collected automatically, usage data (pages visited, content accessed), device information (browser, OS, IP address), and cookies for session management and analytics.",
+      "Information we do NOT collect, patient health information, PHI, clinical records, or any patient data. DMN is a business services platform. HIPAA does not apply to the data we collect.",
     ],
   },
   {
@@ -59,14 +59,14 @@ const sections: LegalSection[] = [
       "Secure payment processing.",
       "Access controls.",
       "Regular security assessments.",
-      "No method is 100% secure — but we treat your data the way we'd want ours treated.",
+      "No method is 100% secure, but we treat your data the way we'd want ours treated.",
     ],
   },
   {
     number: "05",
     title: "Your Rights",
     body:
-      "You have the right to access, correct, or delete your data. You can opt out of marketing communications at any time. You can request data portability. Contact legal@dentalmembernetwork.com — we respond within 30 days.",
+      "You have the right to access, correct, or delete your data. You can opt out of marketing communications at any time. You can request data portability. Contact legal@dentalmembernetwork.com, we respond within 30 days.",
   },
   {
     number: "06",
@@ -110,7 +110,7 @@ export default function PrivacyPolicyPage() {
           <>
             DMN respects your privacy and is committed to protecting your personal information.
             This policy explains what we collect, how we use it, and your rights. Critically: we
-            do not collect, store, or process any patient data — DMN is a business services
+            do not collect, store, or process any patient data, DMN is a business services
             platform, not a clinical one.
           </>
         }

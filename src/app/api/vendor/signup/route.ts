@@ -35,9 +35,9 @@ export async function POST(req: Request) {
     plan_id: body.planId,
     contact_name: body.contactName,
     contact_phone: body.contactPhone ?? "",
-    // Commitment #2 — hotline notifications email
+    // Commitment #2, hotline notifications email
     hotline_email: body.hotlineEmail ?? body.contactEmail,
-    // Commitment #3 — calendar booking link
+    // Commitment #3, calendar booking link
     calendar_link: body.calendarLink ?? "",
     agreement_signed_at: new Date().toISOString(),
     agreement_version: "v1.0",
@@ -71,7 +71,7 @@ export async function POST(req: Request) {
     const { code, message } = readClerkError(e);
     console.error("vendor signup failed:", { code, message, raw: e });
 
-    // Case 1 — a pending invitation already exists for this email.
+    // Case 1, a pending invitation already exists for this email.
     // Revoke it and retry once. This is the most common dev-loop case.
     if (code === "duplicate_record" || message?.toLowerCase().includes("already") && message?.toLowerCase().includes("invit")) {
       try {
@@ -87,7 +87,7 @@ export async function POST(req: Request) {
       }
     }
 
-    // Case 2 — a real user already exists with this email.
+    // Case 2, a real user already exists with this email.
     if (code === "form_identifier_exists" || message?.toLowerCase().includes("exists")) {
       return NextResponse.json(
         {
@@ -97,12 +97,12 @@ export async function POST(req: Request) {
       );
     }
 
-    // Case 3 — bad email format.
+    // Case 3, bad email format.
     if (code === "form_param_format_invalid") {
       return NextResponse.json({ error: "That email address looks invalid." }, { status: 400 });
     }
 
-    // Fallback — surface Clerk's actual message instead of a generic 500.
+    // Fallback, surface Clerk's actual message instead of a generic 500.
     return NextResponse.json(
       { error: message ?? "Could not create invitation. Please try again." },
       { status: 422 },

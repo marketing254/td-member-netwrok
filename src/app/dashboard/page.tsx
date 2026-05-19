@@ -730,7 +730,7 @@ function DiscountsCard() {
                   color: offer.savedYtd > 0 ? "success.dark" : "text.secondary",
                 }}
               >
-                {offer.savedYtd > 0 ? `$${offer.savedYtd.toLocaleString()}` : "—"}
+                {offer.savedYtd > 0 ? `$${offer.savedYtd.toLocaleString()}` : ""}
               </Typography>
               <Typography variant="body2" sx={{ fontSize: "0.68rem", color: "text.secondary" }}>
                 this year

@@ -8,7 +8,7 @@ import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion
  * `speed` > 0 moves the element UP relative to the scroll (parallax-back),
  * `speed` < 0 moves it DOWN (parallax-forward).
  *
- * Tuned for short, sectionwise parallax — not for full-page heavy effects.
+ * Tuned for short, sectionwise parallax, not for full-page heavy effects.
  */
 export default function ScrollParallax({
   children,

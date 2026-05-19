@@ -48,7 +48,7 @@ export default function RewardsPage() {
         </Typography>
         <Typography sx={{ color: "text.secondary", maxWidth: 720 }}>
           Two currencies, one wallet. Vendor offers stack on every purchase you already make. CE
-          points come from the work you put in — redeem them for hotline priority, swag, gift
+          points come from the work you put in, redeem them for hotline priority, swag, gift
           cards, and conference seats.
         </Typography>
       </Box>
@@ -178,7 +178,7 @@ export default function RewardsPage() {
                           lineHeight: 1.1,
                         }}
                       >
-                        {offer.savedYtd > 0 ? `$${offer.savedYtd.toLocaleString()}` : "—"}
+                        {offer.savedYtd > 0 ? `$${offer.savedYtd.toLocaleString()}` : ""}
                       </Typography>
                     </Box>
                     <Box sx={{ ml: "auto", textAlign: "right" }}>

@@ -71,7 +71,7 @@ export async function POST(req: Request) {
     );
   }
 
-  // Mock path — log to server console, increment the in-memory counter, then
+  // Mock path, log to server console, increment the in-memory counter, then
   // pretend the row was inserted. Used to preview the thank-you flow without DB.
   if (MOCK_MODE) {
     const id = "mock-" + Math.random().toString(36).slice(2, 10);

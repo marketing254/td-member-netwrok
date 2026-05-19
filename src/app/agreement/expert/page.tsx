@@ -31,7 +31,7 @@ const sections: LegalSection[] = [
     body:
       "Free courses: experts may list unlimited free courses on the platform at no additional cost. Free courses are accessible to all DMN members.",
     items: [
-      "Paid courses — experts may list paid courses with pricing set by the expert.",
+      "Paid courses, experts may list paid courses with pricing set by the expert.",
       "DMN charges a 4% commission on all paid course fees.",
       "Commission is deducted before payout to the expert.",
       "Payouts are processed monthly, net 30 days.",
@@ -96,9 +96,9 @@ const sections: LegalSection[] = [
     title: "Revenue Share and Payments",
     body: "",
     items: [
-      "Paid course revenue — expert receives 96%, DMN receives 4%.",
-      "Direct booking revenue — expert receives 100%.",
-      "Helpline compensation — negotiated separately per expert.",
+      "Paid course revenue, expert receives 96%, DMN receives 4%.",
+      "Direct booking revenue, expert receives 100%.",
+      "Helpline compensation, negotiated separately per expert.",
       "Payouts processed monthly via designated payment method.",
       "Expert is responsible for their own taxes.",
       "DMN provides annual earnings statements and reports payments over $600/year via 1099 forms for US experts.",

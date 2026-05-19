@@ -268,7 +268,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "#F4F0E6", display: "flex" }}>
-      {/* Sidebar — desktop */}
+      {/* Sidebar, desktop */}
       {isMd && (
         <Box
           component="nav"
@@ -285,7 +285,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </Box>
       )}
 
-      {/* Sidebar — mobile drawer */}
+      {/* Sidebar, mobile drawer */}
       {!isMd && (
         <Drawer
           open={drawerOpen}

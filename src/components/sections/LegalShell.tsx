@@ -190,7 +190,7 @@ export default function LegalShell({
             )}
           </Stack>
 
-          {/* Optional key-terms band — same look as the vendor agreement */}
+          {/* Optional key-terms band, same look as the vendor agreement */}
           {keyTerms && keyTerms.length > 0 && (
             <Box
               sx={{

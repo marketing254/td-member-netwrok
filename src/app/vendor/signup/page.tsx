@@ -48,15 +48,15 @@ type Form = {
   contactEmail: string;
   contactPhone: string;
   description: string;
-  // Commitment #1 — member discount
+  // Commitment #1, member discount
   offerTitle: string;
   offerDiscount: string;
   offerMechanic: "promo_code" | "affiliate_link" | "portal_redemption" | "manual_verification";
   offerCode: string;
   offerTerms: string;
-  // Commitment #3 — calendar booking link
+  // Commitment #3, calendar booking link
   calendarLink: string;
-  // Commitment #2 — hotline notifications email
+  // Commitment #2, hotline notifications email
   hotlineEmail: string;
   planId: VendorPlanId;
   // Dual acceptance checkboxes
@@ -363,7 +363,7 @@ function CompanyStep({ form, set }: { form: Form; set: <K extends keyof Form>(k:
             multiline
             rows={3}
             required
-            helperText={`${form.description.length} / 240 — minimum 20 characters`}
+            helperText={`${form.description.length} / 240, minimum 20 characters`}
             slotProps={{ htmlInput: { maxLength: 240 } }}
           />
         </Grid>
@@ -491,7 +491,7 @@ function OfferStep({ form, set }: { form: Form; set: <K extends keyof Form>(k: K
           value={form.calendarLink}
           onChange={(e) => set("calendarLink", e.target.value)}
           required
-          helperText="Calendly, HubSpot, Cal.com, anything — keep it live and respond to bookings within 1 business day."
+          helperText="Calendly, HubSpot, Cal.com, anything, keep it live and respond to bookings within 1 business day."
         />
       </Box>
       <Alert
@@ -499,7 +499,7 @@ function OfferStep({ form, set }: { form: Form; set: <K extends keyof Form>(k: K
         icon={<VerifiedUserOutlinedIcon />}
         sx={{ borderRadius: "12px" }}
       >
-        Your offer goes through a quick review by Reshani before it appears in the member rewards page — usually within 24 hours.
+        Your offer goes through a quick review by Reshani before it appears in the member rewards page, usually within 24 hours.
       </Alert>
     </Stack>
   );
@@ -515,7 +515,7 @@ function PlanStep({ form, set }: { form: Form; set: <K extends keyof Form>(k: K,
           Pick your plan
         </Typography>
         <Typography variant="body2" sx={{ color: "text.secondary" }}>
-          Same Featured Partner benefits across all three. You can change plans later — downgrades take effect at the next renewal.
+          Same Featured Partner benefits across all three. You can change plans later, downgrades take effect at the next renewal.
         </Typography>
       </Box>
       <Stack spacing={1.75}>
@@ -601,7 +601,7 @@ function PlanStep({ form, set }: { form: Form; set: <K extends keyof Form>(k: K,
   );
 }
 
-/* -------------------------------- Step 4 — Agreement -------------------------------- */
+/* -------------------------------- Step 4, Agreement -------------------------------- */
 
 function AgreementStep({ form, set }: { form: Form; set: <K extends keyof Form>(k: K, v: Form[K]) => void }) {
   const bothChecked = form.agreedToTerms && form.confirmedAuthority;
@@ -622,7 +622,7 @@ function AgreementStep({ form, set }: { form: Form; set: <K extends keyof Form>(
         </Typography>
       </Box>
 
-      {/* Key terms band — the headline numbers */}
+      {/* Key terms band, the headline numbers */}
       <Box
         sx={{
           display: "grid",
@@ -659,7 +659,7 @@ function AgreementStep({ form, set }: { form: Form; set: <K extends keyof Form>(
         ))}
       </Box>
 
-      {/* The five commitments — headline cards */}
+      {/* The five commitments, headline cards */}
       <Box>
         <Typography variant="overline" sx={{ display: "block", color: "primary.main", fontWeight: 700, letterSpacing: "0.18em", mb: 0.5 }}>
           THE FIVE COMMITMENTS
@@ -872,7 +872,7 @@ function AgreementStep({ form, set }: { form: Form; set: <K extends keyof Form>(
   );
 }
 
-/* -------------------------------- Step 5 — Review -------------------------------- */
+/* -------------------------------- Step 5, Review -------------------------------- */
 
 function ReviewStep({ form }: { form: Form }) {
   const plan = vendorPlans.find((p) => p.id === form.planId)!;
@@ -992,7 +992,7 @@ function SuccessCard({ plan, email }: { plan: string; email: string }) {
         Application submitted.
       </Typography>
       <Typography sx={{ color: "text.secondary", maxWidth: 460 }}>
-        Welcome to the Thriving Dentist partner program — <strong>{plan}</strong>.
+        Welcome to the Thriving Dentist partner program, <strong>{plan}</strong>.
       </Typography>
       <Box
         sx={{
@@ -1007,7 +1007,7 @@ function SuccessCard({ plan, email }: { plan: string; email: string }) {
         }}
       >
         <Typography variant="overline" sx={{ color: "#A07823", display: "block", fontWeight: 700, letterSpacing: "0.14em", mb: 0.75 }}>
-          NEXT STEP — CHECK YOUR EMAIL
+          NEXT STEP, CHECK YOUR EMAIL
         </Typography>
         <Typography variant="body2" sx={{ color: "text.primary", fontSize: "0.88rem", lineHeight: 1.6 }}>
           We sent a partner sign-in link to <strong>{email}</strong>. Click it to set your

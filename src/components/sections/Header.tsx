@@ -64,12 +64,12 @@ export default function Header() {
               overflow: "visible",
             }}
           >
-            {/* Logo — oversized, overflows the toolbar intentionally */}
+            {/* Logo, oversized, overflows the toolbar intentionally */}
             <Box sx={{ position: "relative", zIndex: 1, mt: -2, mb: -6 }}>
               <Logo href="/#top" height={160} ariaLabel={`${brand.name} · home`} />
             </Box>
 
-            {/* Pill cluster with nav items — single container, no artifacts */}
+            {/* Pill cluster with nav items, single container, no artifacts */}
             <Box
               sx={{
                 display: { xs: "none", lg: "flex" },

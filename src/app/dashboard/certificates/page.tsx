@@ -260,7 +260,7 @@ export default function CertificatesPage() {
             </Typography>
             <Typography variant="body2" sx={{ color: "text.secondary", maxWidth: 360 }}>
               {inProgress > 0
-                ? `${inProgress} course${inProgress > 1 ? "s" : ""} in progress — finish a video and pass the quiz to add a new badge.`
+                ? `${inProgress} course${inProgress > 1 ? "s" : ""} in progress, finish a video and pass the quiz to add a new badge.`
                 : "Pick a course, watch to the CE checkpoint, pass the quiz with 70% or more."}
             </Typography>
             <Button

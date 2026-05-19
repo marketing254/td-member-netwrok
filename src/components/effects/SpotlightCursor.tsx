@@ -4,7 +4,7 @@ import { Box } from "@mui/material";
 
 /**
  * A soft glow that follows the cursor. Mount inside a positioned ancestor
- * (the hero/section) — it absolute-positions itself to fill that ancestor.
+ * (the hero/section), it absolute-positions itself to fill that ancestor.
  * Pointer-events: none so it never blocks UI.
  */
 export default function SpotlightCursor({

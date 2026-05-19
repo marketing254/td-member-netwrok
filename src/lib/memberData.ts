@@ -1,4 +1,4 @@
-// Sample data for the member-app prototype. Swap with real APIs later —
+// Sample data for the member-app prototype. Swap with real APIs later 
 // the shape here is what the UI components consume.
 
 export type CourseStatus = "not-started" | "in-progress" | "completed";
@@ -90,9 +90,9 @@ export const member = {
   tier: "Founding Member",
   memberSince: "Mar 2026",
   avatarInitials: "MC",
-  // CE points (separate currency from CE credits — earned for engagement)
+  // CE points (separate currency from CE credits, earned for engagement)
   cePointsBalance: 285,
-  // CE credits — actual continuing-education credits
+  // CE credits, actual continuing-education credits
   ceCreditsEarnedYtd: 11.5,
   ceCreditsGoalYtd: 40,
   savingsYtd: 4820,
@@ -206,7 +206,7 @@ export const invoices: Invoice[] = [
     date: "May 03, 2026",
     amount: 49,
     status: "paid",
-    description: "Founding membership — May 2026",
+    description: "Founding membership, May 2026",
     cardLast4: "4242",
   },
   {
@@ -215,7 +215,7 @@ export const invoices: Invoice[] = [
     date: "Apr 03, 2026",
     amount: 49,
     status: "paid",
-    description: "Founding membership — April 2026",
+    description: "Founding membership, April 2026",
     cardLast4: "4242",
   },
   {
@@ -224,7 +224,7 @@ export const invoices: Invoice[] = [
     date: "Mar 15, 2026",
     amount: 49,
     status: "paid",
-    description: "Founding membership — March 2026 (pro-rated)",
+    description: "Founding membership, March 2026 (pro-rated)",
     cardLast4: "4242",
   },
 ];
@@ -267,7 +267,7 @@ export const courses: Course[] = [
     title: "Negotiating PPO Reimbursements That Actually Move",
     category: "Finance",
     summary:
-      "A practical playbook for raising your PPO fee schedules without losing patient volume — used in 40+ real renegotiations.",
+      "A practical playbook for raising your PPO fee schedules without losing patient volume, used in 40+ real renegotiations.",
     instructor: "Lester Carrington",
     instructorRole: "Practice Advisor",
     durationMin: 45,
@@ -296,7 +296,7 @@ export const courses: Course[] = [
         ],
         correctIndex: 1,
         explanation:
-          "Carriers respond to data they can act on internally — named competitors and CDT codes give their analysts something to defend.",
+          "Carriers respond to data they can act on internally, named competitors and CDT codes give their analysts something to defend.",
       },
       {
         id: "q2",
@@ -316,7 +316,7 @@ export const courses: Course[] = [
         prompt: "How long does a typical reimbursement adjustment take to process?",
         options: ["1-2 weeks", "30-60 days", "90-120 days", "Over a year"],
         correctIndex: 2,
-        explanation: "90-120 days is the realistic window — anyone promising faster is selling something.",
+        explanation: "90-120 days is the realistic window, anyone promising faster is selling something.",
       },
       {
         id: "q4",
@@ -380,7 +380,7 @@ export const courses: Course[] = [
         ],
         correctIndex: 0,
         explanation:
-          "Promoting your best front desk doesn't make them a good OM — different job, different skills, different loyalty dynamics.",
+          "Promoting your best front desk doesn't make them a good OM, different job, different skills, different loyalty dynamics.",
       },
       {
         id: "q2",
@@ -392,7 +392,7 @@ export const courses: Course[] = [
           "Personality fit only",
         ],
         correctIndex: 1,
-        explanation: "Decision-making under ambiguity is the actual OM job — speed is table stakes.",
+        explanation: "Decision-making under ambiguity is the actual OM job, speed is table stakes.",
       },
       {
         id: "q3",
@@ -404,14 +404,14 @@ export const courses: Course[] = [
           "Long-term career planning",
         ],
         correctIndex: 1,
-        explanation: "Day 30 is too early for performance — relationships and pattern recognition are the leading indicators.",
+        explanation: "Day 30 is too early for performance, relationships and pattern recognition are the leading indicators.",
       },
       {
         id: "q4",
         prompt: "How many references should you actually call?",
         options: ["1", "2", "3 minimum, including one off-list", "Don't bother"],
         correctIndex: 2,
-        explanation: "Off-list references — people not on the candidate's prepared list — are where the real signal lives.",
+        explanation: "Off-list references, people not on the candidate's prepared list, are where the real signal lives.",
       },
       {
         id: "q5",
@@ -474,14 +474,14 @@ export const courses: Course[] = [
           "Variable expenses ÷ collections",
         ],
         correctIndex: 0,
-        explanation: "Expenses ÷ collections — collections, not production, because production isn't money in the bank.",
+        explanation: "Expenses ÷ collections, collections, not production, because production isn't money in the bank.",
       },
       {
         id: "q4",
         prompt: "Which ratio most reliably predicts a slow Q3?",
         options: ["Hygiene re-care rate", "Marketing spend", "Treatment plan acceptance", "Days A/R outstanding"],
         correctIndex: 0,
-        explanation: "Hygiene re-care is the leading indicator — soft numbers in March = soft revenue in July.",
+        explanation: "Hygiene re-care is the leading indicator, soft numbers in March = soft revenue in July.",
       },
       {
         id: "q5",
@@ -520,7 +520,7 @@ export const courses: Course[] = [
         prompt: "How often must your exposure control plan be reviewed and updated?",
         options: ["Every 6 months", "Annually, at minimum", "Every 2 years", "Only after an incident"],
         correctIndex: 1,
-        explanation: "Annual review is the OSHA minimum — more often if your tasks or PPE change.",
+        explanation: "Annual review is the OSHA minimum, more often if your tasks or PPE change.",
       },
       {
         id: "q2",
@@ -532,7 +532,7 @@ export const courses: Course[] = [
           "Lack of training documentation",
         ],
         correctIndex: 3,
-        explanation: "Training documentation gaps are the #1 cited finding — the training happened, but no one signed.",
+        explanation: "Training documentation gaps are the #1 cited finding, the training happened, but no one signed.",
       },
       {
         id: "q3",
@@ -556,7 +556,7 @@ export const courses: Course[] = [
           "Reviewed by the dentist personally",
         ],
         correctIndex: 0,
-        explanation: "Available within 5 minutes — digital is fine as long as access is reliable and the team knows how to find them.",
+        explanation: "Available within 5 minutes, digital is fine as long as access is reliable and the team knows how to find them.",
       },
       {
         id: "q5",
@@ -600,7 +600,7 @@ export const courses: Course[] = [
           "Too few touches",
         ],
         correctIndex: 1,
-        explanation: "Ownership is the failure point — a list that no one owns becomes everyone's last priority.",
+        explanation: "Ownership is the failure point, a list that no one owns becomes everyone's last priority.",
       },
       {
         id: "q2",
@@ -638,7 +638,7 @@ export const courses: Course[] = [
           "Charge a deposit",
         ],
         correctIndex: 1,
-        explanation: "Move them to a short-list — you fill the chair if a same-day slot opens, but you stop wasting the front desk's time chasing.",
+        explanation: "Move them to a short-list, you fill the chair if a same-day slot opens, but you stop wasting the front desk's time chasing.",
       },
     ],
   },
@@ -647,7 +647,7 @@ export const courses: Course[] = [
     title: "Associate Compensation Models, Compared",
     category: "People",
     summary:
-      "Daily guarantee vs. percent-of-collections vs. hybrid — which one keeps your associate the longest, and how to switch without losing them.",
+      "Daily guarantee vs. percent-of-collections vs. hybrid, which one keeps your associate the longest, and how to switch without losing them.",
     instructor: "Lester Carrington",
     instructorRole: "Practice Advisor",
     durationMin: 30,
@@ -687,7 +687,7 @@ export const courses: Course[] = [
           "It's faster to administer",
         ],
         correctIndex: 1,
-        explanation: "Pay on collections — production minus what insurance writes off and patients don't pay.",
+        explanation: "Pay on collections, production minus what insurance writes off and patients don't pay.",
       },
       {
         id: "q3",
@@ -699,7 +699,7 @@ export const courses: Course[] = [
           "You want to underpay",
         ],
         correctIndex: 0,
-        explanation: "Hybrid is the bridge — it lowers the associate's anxiety during the switch.",
+        explanation: "Hybrid is the bridge, it lowers the associate's anxiety during the switch.",
       },
       {
         id: "q4",
@@ -723,7 +723,7 @@ export const courses: Course[] = [
           "Only switch with a raise",
         ],
         correctIndex: 1,
-        explanation: "A shadow period builds trust — the associate sees the math before the change is real.",
+        explanation: "A shadow period builds trust, the associate sees the math before the change is real.",
       },
     ],
   },
@@ -839,7 +839,7 @@ export const rewardCatalog: RewardItem[] = [
   },
   {
     id: "conference-discount",
-    title: "Conference Ticket — 50% Off",
+    title: "Conference Ticket, 50% Off",
     detail: "Apply to any partner conference: ADA, Townie Meeting, Voices of Dentistry.",
     pointsCost: 200,
     category: "Events",
@@ -880,7 +880,7 @@ export const recentActivity: ActivityEntry[] = [
   {
     id: "a1",
     kind: "savings",
-    title: "Henry Schein order — $214 saved",
+    title: "Henry Schein order, $214 saved",
     detail: "Stacked with quarterly rebate.",
     when: "2 days ago",
   },
@@ -888,28 +888,28 @@ export const recentActivity: ActivityEntry[] = [
     id: "a2",
     kind: "course",
     title: "Started: Hygiene Recall System That Works",
-    detail: "Lesson 1 of 5 — 12% complete.",
+    detail: "Lesson 1 of 5, 12% complete.",
     when: "3 days ago",
   },
   {
     id: "a3",
     kind: "ce",
     title: "Earned 1.0 CE credit",
-    detail: "P&L for Operators — quiz scored 88%.",
+    detail: "P&L for Operators, quiz scored 88%.",
     when: "Apr 18",
   },
   {
     id: "a4",
     kind: "hotline",
     title: "Hotline case opened: PPO renegotiation",
-    detail: "Matched with Lester Carrington — call scheduled Tue 2pm PT.",
+    detail: "Matched with Lester Carrington, call scheduled Tue 2pm PT.",
     when: "Apr 21",
   },
   {
     id: "a5",
     kind: "reward",
     title: "Redeemed: Founding Swag Bundle",
-    detail: "60 CE points — shipped to SF address.",
+    detail: "60 CE points, shipped to SF address.",
     when: "Apr 9",
   },
 ];

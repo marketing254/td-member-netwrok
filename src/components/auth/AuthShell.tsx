@@ -106,7 +106,7 @@ export default function AuthShell({
         bgcolor: "#F7F5F0",
       }}
     >
-      {/* LEFT — dark branded panel */}
+      {/* LEFT, dark branded panel */}
       <Box
         sx={{
           position: "relative",
@@ -146,7 +146,7 @@ export default function AuthShell({
           }}
         />
 
-        {/* Top — brand + back to site */}
+        {/* Top, brand + back to site */}
         <Stack
           direction="row"
           sx={{ position: "relative", justifyContent: "space-between", alignItems: "center" }}
@@ -172,7 +172,7 @@ export default function AuthShell({
           </Box>
         </Stack>
 
-        {/* Middle — eyebrow + title + subtitle + testimonial */}
+        {/* Middle, eyebrow + title + subtitle + testimonial */}
         <Stack spacing={4} sx={{ position: "relative", maxWidth: 540 }}>
           <Box>
             <Typography
@@ -211,7 +211,7 @@ export default function AuthShell({
             </Typography>
           </Box>
 
-          {/* Testimonial — only renders when the variant supplies one */}
+          {/* Testimonial, only renders when the variant supplies one */}
           {v.testimonial && (
             <Box
               sx={{
@@ -279,7 +279,7 @@ export default function AuthShell({
             </Box>
           )}
 
-          {/* Variant badge — replaces testimonial space when there's no quote */}
+          {/* Variant badge, replaces testimonial space when there's no quote */}
           {!v.testimonial && (
             <Chip
               icon={v.badge.icon as React.ReactElement}
@@ -300,7 +300,7 @@ export default function AuthShell({
           )}
         </Stack>
 
-        {/* Bottom — trust row + secure note */}
+        {/* Bottom, trust row + secure note */}
         <Stack spacing={2.5} sx={{ position: "relative" }}>
           <Stack
             direction="row"
@@ -369,7 +369,7 @@ export default function AuthShell({
         </Stack>
       </Box>
 
-      {/* RIGHT — form panel */}
+      {/* RIGHT, form panel */}
       <Box
         sx={{
           position: "relative",

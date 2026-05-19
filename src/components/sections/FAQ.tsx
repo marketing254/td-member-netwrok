@@ -84,9 +84,51 @@ export default function FAQ() {
                     </Typography>
                   </AccordionSummary>
                   <AccordionDetails sx={{ px: 0, pb: 3 }}>
-                    <Typography sx={{ color: "#3B4A55", fontSize: "0.98rem", lineHeight: 1.7, maxWidth: 720 }}>
-                      {f.a}
-                    </Typography>
+                    <Stack spacing={1.5} sx={{ maxWidth: 720 }}>
+                      <Typography sx={{ color: "#3B4A55", fontSize: "0.98rem", lineHeight: 1.7 }}>
+                        {f.a}
+                      </Typography>
+                      {"items" in f && Array.isArray(f.items) && f.items.length > 0 && (
+                        <Stack spacing={1} component="ol" sx={{ pl: 0, listStyle: "none", m: 0, counterReset: "faq-step" }}>
+                          {f.items.map((it, idx) => (
+                            <Stack
+                              key={idx}
+                              component="li"
+                              direction="row"
+                              spacing={1.5}
+                              sx={{ alignItems: "flex-start" }}
+                            >
+                              <Box
+                                sx={{
+                                  flexShrink: 0,
+                                  width: 22,
+                                  height: 22,
+                                  borderRadius: "50%",
+                                  bgcolor: "rgba(217,168,75,0.14)",
+                                  border: "1px solid rgba(217,168,75,0.32)",
+                                  color: "#A07823",
+                                  display: "grid",
+                                  placeItems: "center",
+                                  fontWeight: 700,
+                                  fontSize: "0.74rem",
+                                  mt: "2px",
+                                }}
+                              >
+                                {idx + 1}
+                              </Box>
+                              <Typography sx={{ color: "#3B4A55", fontSize: "0.96rem", lineHeight: 1.65 }}>
+                                {it}
+                              </Typography>
+                            </Stack>
+                          ))}
+                        </Stack>
+                      )}
+                      {"aClose" in f && typeof f.aClose === "string" && f.aClose && (
+                        <Typography sx={{ color: "#3B4A55", fontSize: "0.98rem", lineHeight: 1.7, pt: 0.5 }}>
+                          {f.aClose}
+                        </Typography>
+                      )}
+                    </Stack>
                   </AccordionDetails>
                 </Accordion>
               </MotionBox>

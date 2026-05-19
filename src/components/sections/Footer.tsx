@@ -40,7 +40,7 @@ export default function Footer() {
       />
 
       <Container maxWidth="lg" sx={{ position: "relative" }}>
-        {/* Top row: brand + CTA + nav links — all inline on desktop */}
+        {/* Top row: brand + CTA + nav links, all inline on desktop */}
         <Stack
           direction={{ xs: "column", md: "row" }}
           spacing={{ xs: 2.5, md: 3 }}
@@ -91,7 +91,7 @@ export default function Footer() {
           </Button>
         </Stack>
 
-        {/* Bottom row: contact + copyright + legal — single thin row */}
+        {/* Bottom row: contact + copyright + legal, single thin row */}
         <Stack
           direction={{ xs: "column", sm: "row" }}
           spacing={{ xs: 1, sm: 3 }}

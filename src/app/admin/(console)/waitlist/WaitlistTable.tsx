@@ -130,7 +130,7 @@ export default function WaitlistTable({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id, status }),
     }).catch(() => {
-      // Optimistic update — rollback on failure.
+      // Optimistic update, rollback on failure.
       setRows((r) =>
         r.map((row) => (row.id === id ? { ...row, status: initialRows.find((x) => x.id === id)?.status ?? "new" } : row)),
       );
@@ -345,12 +345,12 @@ export default function WaitlistTable({
                       </Box>
                       <Box component="td">
                         <Typography variant="body2" sx={{ color: row.practice_name ? "text.primary" : "text.disabled" }}>
-                          {row.practice_name ?? "—"}
+                          {row.practice_name ?? ""}
                         </Typography>
                       </Box>
                       <Box component="td">
                         <Typography variant="body2" sx={{ color: row.city_state ? "text.secondary" : "text.disabled" }}>
-                          {row.city_state ?? "—"}
+                          {row.city_state ?? ""}
                         </Typography>
                       </Box>
                       <Box component="td">

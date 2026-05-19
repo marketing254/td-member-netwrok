@@ -25,7 +25,7 @@ const benefits = [
   {
     icon: GroupsOutlinedIcon,
     title: "Reach 1,000+ practice owners",
-    body: "A curated network of dental practice owners and operators — exactly the audience you sell to. Founding cohort capped at 1,000 to keep the room high-signal.",
+    body: "A curated network of dental practice owners and operators, exactly the audience you sell to. Founding cohort capped at 1,000 to keep the room high-signal.",
   },
   {
     icon: VerifiedUserOutlinedIcon,
@@ -68,7 +68,7 @@ const steps = [
   {
     n: "03",
     title: "Build your profile",
-    body: "Upload logo, write your description, set your member discount. Submit your first offer for review — published within 24 hours.",
+    body: "Upload logo, write your description, set your member discount. Submit your first offer for review, published within 24 hours.",
   },
   {
     n: "04",
@@ -197,10 +197,10 @@ export default function PartnersPage() {
                 </Typography>
                 <Stack spacing={1.5}>
                   {[
-                    "Henry Schein Dental — Supplies",
-                    "Weave — Patient communications",
-                    "Patterson Dental — Equipment",
-                    "Ekwa Marketing — Digital marketing",
+                    "Henry Schein Dental, Supplies",
+                    "Weave, Patient communications",
+                    "Patterson Dental, Equipment",
+                    "Ekwa Marketing, Digital marketing",
                   ].map((row) => (
                     <Stack key={row} direction="row" spacing={1.25} sx={{ alignItems: "center" }}>
                       <CheckCircleOutlinedIcon sx={{ fontSize: 16, color: "secondary.light" }} />
@@ -237,7 +237,7 @@ export default function PartnersPage() {
             What you get as a Featured Partner.
           </Typography>
           <Typography sx={{ color: "text.secondary", fontSize: "1.05rem", maxWidth: 620, lineHeight: 1.6 }}>
-            One agreement. Transparent monthly billing. Same benefits for founding and standard tiers — only the price differs.
+            One agreement. Transparent monthly billing. Same benefits for founding and standard tiers, only the price differs.
           </Typography>
         </Stack>
         <Grid container spacing={3}>

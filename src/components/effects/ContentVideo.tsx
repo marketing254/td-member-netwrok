@@ -111,7 +111,7 @@ export default function ContentVideo() {
         }}
       />
 
-      {/* Floating trust chips — connect the imagery to the product */}
+      {/* Floating trust chips, connect the imagery to the product */}
       <Box
         sx={{
           position: "absolute",

@@ -88,7 +88,7 @@ export default function Features() {
           </Stack>
         </SectionReveal>
 
-        {/* Uniform 3x2 grid — CSS grid for predictable equal sizing on every breakpoint */}
+        {/* Uniform 3x2 grid, CSS grid for predictable equal sizing on every breakpoint */}
         <Box
           sx={{
             display: "grid",

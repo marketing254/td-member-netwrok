@@ -16,8 +16,8 @@ import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 import { vendor, vendorPlans } from "@/lib/vendorData";
 
 const sampleInvoices = [
-  { id: "inv-2026-05", number: "TDN-V-2026-0501", date: "May 01, 2026", amount: 0, status: "paid" as const, period: "Founding waiver — Month 2 of 6" },
-  { id: "inv-2026-04", number: "TDN-V-2026-0401", date: "Apr 24, 2026", amount: 0, status: "paid" as const, period: "Founding waiver — Month 1 of 6 (pro-rated)" },
+  { id: "inv-2026-05", number: "TDN-V-2026-0501", date: "May 01, 2026", amount: 0, status: "paid" as const, period: "Founding waiver, Month 2 of 6" },
+  { id: "inv-2026-04", number: "TDN-V-2026-0401", date: "Apr 24, 2026", amount: 0, status: "paid" as const, period: "Founding waiver, Month 1 of 6 (pro-rated)" },
 ];
 
 export default function VendorAccountPage() {
@@ -92,7 +92,7 @@ export default function VendorAccountPage() {
               {plan.name}
             </Typography>
             <Typography sx={{ color: "rgba(255,255,255,0.92)", mt: 1.25, lineHeight: 1.55, maxWidth: 540 }}>
-              You&apos;re in the founding waiver — <strong>{monthsLeftInWaiver} months</strong> remain at $0.
+              You&apos;re in the founding waiver, <strong>{monthsLeftInWaiver} months</strong> remain at $0.
               Months 7–12 will auto-bill at $49/mo. Standard $199/mo from month 13 unless you upgrade or cancel.
             </Typography>
           </Grid>

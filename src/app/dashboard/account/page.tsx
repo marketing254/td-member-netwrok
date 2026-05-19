@@ -326,7 +326,7 @@ function ProfilePanel() {
                   label="Email"
                   value={email}
                   disabled
-                  helperText="Email changes go through verification — handled separately."
+                  helperText="Email changes go through verification, handled separately."
                 />
               </Grid>
             </Grid>
@@ -524,7 +524,7 @@ function SubscriptionPanel() {
           </Box>
           <Typography variant="body2" sx={{ color: "text.secondary", maxWidth: 360 }}>
             Your founding rate is locked for life on this product. Upgrading to Pro or Premium
-            preserves your $49 founding seat — you only pay the difference.
+            preserves your $49 founding seat, you only pay the difference.
           </Typography>
         </Stack>
 
@@ -555,7 +555,7 @@ function SubscriptionPanel() {
             <Typography variant="body2" sx={{ color: "text.secondary", maxWidth: 520 }}>
               You&apos;ll keep access through {subscription.renewsOn}. Your founding rate is{" "}
               <Box component="span" sx={{ fontWeight: 700, color: "text.primary" }}>permanently lost</Box> if you
-              cancel and return — we won&apos;t reopen the founding seat.
+              cancel and return, we won&apos;t reopen the founding seat.
             </Typography>
           </Box>
           <Button variant="outlined" color="error" sx={{ flexShrink: 0 }}>

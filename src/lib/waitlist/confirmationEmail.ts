@@ -54,7 +54,7 @@ const FROM_EMAIL =
   process.env.WAITLIST_EMAIL_FROM ??
   "Dental Member Network <hello@dentalmembernetwork.com>";
 
-// Brand palette — used inline in the email HTML
+// Brand palette, used inline in the email HTML
 const BRAND = {
   ink: "#0A1A2F",
   inkSoft: "#3B4A55",
@@ -70,17 +70,17 @@ const BRAND = {
 // Email-safe font stacks. We import Fraunces from Google Fonts in <head> for
 // the clients that support it (Apple Mail, iOS Mail, Gmail web, Yahoo); for
 // Outlook + Windows Mail (which strip @import), the stacks fall back to
-// Georgia/system sans, which already look refined — far better than Arial.
+// Georgia/system sans, which already look refined, far better than Arial.
 //
 // Body uses a "system stack" that renders as San Francisco on macOS/iOS,
-// Segoe UI on Windows, Roboto on Android — every reader sees the sharpest
+// Segoe UI on Windows, Roboto on Android, every reader sees the sharpest
 // native font on their device.
 const FONT_DISPLAY =
-  "'Fraunces','Iowan Old Style','Apple Garamond','Baskerville','Times New Roman',Georgia,serif";
+  "'Fraunces','Iowan Old Style','Apple Garamond','Baskerville','Times New Roman', Georgia, serif";
 const FONT_BODY =
-  "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Helvetica,Arial,sans-serif";
+  "-apple-system, BlinkMacSystemFont,'Segoe UI', Roboto,'Helvetica Neue', Helvetica, Arial, sans-serif";
 const FONT_MONO =
-  "ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'Liberation Mono',monospace";
+  "ui-monospace, SFMono-Regular,'SF Mono', Menlo, Consolas,'Liberation Mono', monospace";
 
 function escapeHtml(value: string): string {
   return value
@@ -114,16 +114,16 @@ function normalizeUrl(path: string): string {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// DRAFTS — copy mirrors `Confirmation emails.md` (May 2026 source of truth).
+// DRAFTS, copy mirrors `Confirmation emails.md` (May 2026 source of truth).
 // ─────────────────────────────────────────────────────────────────────────
 
 function memberDraft(input: ConfirmationInput): EmailDraft {
   const submitted = formatDate(input.submittedAt);
   return {
     role: "member",
-    subject: "Welcome to the Dental Member Network — your lifetime spot is locked in",
+    subject: "Welcome to the Dental Member Network, your lifetime spot is locked in",
     preview:
-      "Your founding membership is confirmed. $49/month locked in — for life. Here's what happens next.",
+      "Your founding membership is confirmed. $49/month locked in, for life. Here's what happens next.",
     eyebrow: "Founding Member",
     headline: "Your lifetime spot is locked in.",
     accent: BRAND.gold,
@@ -131,7 +131,7 @@ function memberDraft(input: ConfirmationInput): EmailDraft {
     replyTo: SUPPORT_EMAIL,
     intro: [
       `Hi ${firstName(input.signup.fullName)},`,
-      "Welcome to the Dental Member Network. Your founding membership is confirmed and your $49/month lifetime price is locked in — for life. No surprise increases, ever.",
+      "Welcome to the Dental Member Network. Your founding membership is confirmed and your $49/month lifetime price is locked in, for life. No surprise increases, ever.",
     ],
     sections: [
       {
@@ -145,7 +145,7 @@ function memberDraft(input: ConfirmationInput): EmailDraft {
         title: "A few things to know",
         items: [
           "Your founding member status is permanent. As we add features over time, you keep access at the same $49/month lifetime price.",
-          'Member discounts on vendor products and services are clearly marked in the Vendor Directory — just look for the "Member Benefit" panel on each vendor\'s card.',
+          'Member discounts on vendor products and services are clearly marked in the Vendor Directory, just look for the "Member Benefit" panel on each vendor\'s card.',
           "If you registered with a practice email, feel free to invite your office manager or team members to set up their own accounts. The first 1,000 founding spots are still open.",
         ],
       },
@@ -154,8 +154,8 @@ function memberDraft(input: ConfirmationInput): EmailDraft {
       label: "Visit the network",
       url: normalizeUrl("/"),
     },
-    closing: `If you have any questions or run into issues accessing your account, send us a mail to ${SUPPORT_EMAIL} — we read and respond to every message.`,
-    signoff: ["Welcome aboard.", "— The Dental Member Network Team", "Powered by Thriving Dentist"],
+    closing: `If you have any questions or run into issues accessing your account, send us a mail to ${SUPPORT_EMAIL}, we read and respond to every message.`,
+    signoff: ["Welcome aboard.", " The Dental Member Network Team", "Powered by Thriving Dentist"],
     footerNote: "Do not reply to this email.",
     footerLines: [
       `This is an automated confirmation email for your Dental Member Network founding membership submitted on ${submitted}.`,
@@ -169,9 +169,9 @@ function expertDraft(input: ConfirmationInput): EmailDraft {
   const submitted = formatDate(input.submittedAt);
   return {
     role: "expert",
-    subject: "Your Dental Member Network expert application — what happens next",
+    subject: "Your Dental Member Network expert application, what happens next",
     preview:
-      "We received your founding expert application. Our team reviews carefully — here's what to expect.",
+      "We received your founding expert application. Our team reviews carefully, here's what to expect.",
     eyebrow: "Expert Application",
     headline: "Your founding expert application is in review.",
     accent: "#2AA7B8",
@@ -185,7 +185,7 @@ function expertDraft(input: ConfirmationInput): EmailDraft {
       {
         title: "Here's what to expect",
         body:
-          "Within the next 5 business days, our team will review your application against our founding expert criteria — primarily your track record serving dental practice owners, the distinctiveness of your coaching or consulting approach, and the fit with our member base. We review carefully because protecting member trust is the whole point of curation.",
+          "Within the next 5 business days, our team will review your application against our founding expert criteria, primarily your track record serving dental practice owners, the distinctiveness of your coaching or consulting approach, and the fit with our member base. We review carefully because protecting member trust is the whole point of curation.",
       },
       {
         title: "If your application is approved",
@@ -211,7 +211,7 @@ function expertDraft(input: ConfirmationInput): EmailDraft {
     closing: `If you have questions in the meantime, reply to this email and we'll get back to you within one business day.`,
     signoff: [
       "Thanks for your interest in helping us build the network.",
-      "— The Dental Member Network Team",
+      " The Dental Member Network Team",
       "Powered by Thriving Dentist",
     ],
     footerNote: "Do not reply to this email.",
@@ -229,7 +229,7 @@ function vendorDraft(input: ConfirmationInput): EmailDraft {
   const agreementUrl = normalizeUrl("/agreement/vendor");
   return {
     role: "vendor",
-    subject: "Your Vendor Network partnership application — what happens next",
+    subject: "Your Vendor Network partnership application, what happens next",
     preview:
       "We received your founding vendor partner application and your file is now in review.",
     eyebrow: "Vendor Partnership",
@@ -278,7 +278,7 @@ function vendorDraft(input: ConfirmationInput): EmailDraft {
       "While your application is in review, the partnerships team is happy to answer questions about how the network operates, how leads are routed, or what to expect during onboarding. Just reply to this email.",
     signoff: [
       "We're glad you applied. Looking forward to connecting soon.",
-      "— The Dental Member Network Team",
+      " The Dental Member Network Team",
       "Powered by Thriving Dentist",
     ],
     footerNote: "Do not reply to this email.",
@@ -297,7 +297,7 @@ function draftFor(input: ConfirmationInput): EmailDraft {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// HTML RENDER — table-based layout so it works in every email client
+// HTML RENDER, table-based layout so it works in every email client
 // (Outlook, Apple Mail, Gmail iOS/Android). Inline styles only.
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -392,14 +392,14 @@ function renderHtml(draft: EmailDraft): string {
     <title>${escapeHtml(draft.subject)}</title>
     <!-- Web fonts for clients that support @import (Apple Mail, iOS Mail,
          Gmail web, Yahoo, AOL). Outlook/Windows Mail will strip this and
-         fall back to the system stack below — which still looks professional. -->
+         fall back to the system stack below, which still looks professional. -->
     <!--[if !mso]><!-->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz, wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <!--<![endif]-->
     <style>
-      /* Strong typographic defaults — applied to every text node that doesn't override */
+      /* Strong typographic defaults, applied to every text node that doesn't override */
       body, table, td, p, a, h1, h2, h3, span, div {
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
@@ -537,7 +537,7 @@ export function buildWaitlistConfirmationEmail(input: ConfirmationInput): BuiltE
 //
 // Selection priority:
 //   1. Gmail SMTP if GMAIL_USER + GMAIL_APP_PASSWORD are set
-//      (used during pre-launch testing — works for any recipient,
+//      (used during pre-launch testing, works for any recipient,
 //       no DNS or domain verification needed)
 //   2. Resend API if RESEND_API_KEY is set
 //      (used in production once a sending domain is verified at resend.com)
@@ -638,7 +638,7 @@ export async function sendWaitlistConfirmationEmail(
     return { sent: true, id };
   }
 
-  // No sender configured — log so a dev sees what would have shipped.
+  // No sender configured, log so a dev sees what would have shipped.
   const email = buildWaitlistConfirmationEmail(input);
   console.info("[waitlist:email] no sender configured; preview only", {
     to: input.signup.email,

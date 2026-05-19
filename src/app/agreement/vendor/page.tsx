@@ -25,14 +25,14 @@ import Footer from "@/components/sections/Footer";
 export const metadata = {
   title: "Vendor Network Partnership Agreement · Dental Member Network",
   description:
-    "Full Vendor Network Partnership Agreement for the Dental Member Network — five commitments, fee schedule, and legal terms.",
+    "Full Vendor Network Partnership Agreement for the Dental Member Network, five commitments, fee schedule, and legal terms.",
 };
 
 const PARTNERSHIP_POINTS = [
   {
     icon: LocalOfferOutlinedIcon,
     title: "Featured listing in the vendor directory",
-    body: "We create and maintain a dedicated profile page — logo, description, services, contact form, member-exclusive offer, and your calendar link.",
+    body: "We create and maintain a dedicated profile page, logo, description, services, contact form, member-exclusive offer, and your calendar link.",
   },
   {
     icon: GroupsOutlinedIcon,
@@ -84,7 +84,7 @@ const COMMITMENTS = [
   },
   {
     icon: PaymentsOutlinedIcon,
-    title: "Pay the fee — waived for your first six months",
+    title: "Pay the fee, waived for your first six months",
     body: "Standard: $199/mo. Founding partners: $0 for months 1–6, $49 for months 7–12, then $199 from month 13. Cancel with 30 days' notice anytime.",
   },
 ];
@@ -119,7 +119,7 @@ const LEGAL_SECTIONS = [
   {
     num: "01",
     title: "Member discount details",
-    content: "The member discount you commit to is binding for the term of the Agreement. You can improve it any time — you just can't reduce or withdraw it without written consent. Acceptable formats include percentage off, flat-dollar discount, waived setup fees, bonus inclusions, or preferred payment terms.",
+    content: "The member discount you commit to is binding for the term of the Agreement. You can improve it any time, you just can't reduce or withdraw it without written consent. Acceptable formats include percentage off, flat-dollar discount, waived setup fees, bonus inclusions, or preferred payment terms.",
   },
   {
     num: "02",
@@ -129,7 +129,7 @@ const LEGAL_SECTIONS = [
   {
     num: "03",
     title: "Changes to terms",
-    content: "DMN may modify terms — including pricing, benefits, eligibility, and operating rules — on at least 30 days' prior written notice. If a change materially reduces your benefits or increases fees, you may terminate before it takes effect with no further obligation.",
+    content: "DMN may modify terms, including pricing, benefits, eligibility, and operating rules, on at least 30 days' prior written notice. If a change materially reduces your benefits or increases fees, you may terminate before it takes effect with no further obligation.",
   },
   {
     num: "04",
@@ -218,7 +218,7 @@ export default function VendorAgreementPage() {
             <Typography variant="subtitle1" sx={{ color: "text.secondary", maxWidth: 640, lineHeight: 1.65 }}>
               We bring you the most engaged practice owners in dentistry. You bring the service
               quality, the best deal in the room, and a calendar link they can book in two clicks.
-              Below are the terms — read them through, then apply at the bottom.
+              Below are the terms, read them through, then apply at the bottom.
             </Typography>
           </Stack>
 

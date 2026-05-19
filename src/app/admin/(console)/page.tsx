@@ -39,7 +39,7 @@ export default function AdminOverviewPage() {
           Operations dashboard
         </Typography>
         <Typography sx={{ color: "text.secondary", maxWidth: 720 }}>
-          State of the network at a glance. Action queues are highlighted at the top — clear them first.
+          State of the network at a glance. Action queues are highlighted at the top, clear them first.
         </Typography>
       </Box>
 
@@ -269,7 +269,7 @@ export default function AdminOverviewPage() {
               ))}
               {adminPendingOffers.length === 0 && (
                 <Box sx={{ p: 3, textAlign: "center", color: "text.secondary" }}>
-                  <Typography variant="body2">No pending offers — queue is clear.</Typography>
+                  <Typography variant="body2">No pending offers, queue is clear.</Typography>
                 </Box>
               )}
             </Stack>

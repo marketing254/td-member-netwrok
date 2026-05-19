@@ -6,7 +6,7 @@ import { motion, useMotionValue, useSpring, useTransform, useReducedMotion } fro
 const SPRING = { stiffness: 120, damping: 14, mass: 0.4 };
 
 /**
- * 3D card tilt — rotates the child around X/Y based on cursor position.
+ * 3D card tilt, rotates the child around X/Y based on cursor position.
  * Includes an animated highlight that follows the cursor across the surface.
  */
 export default function TiltCard({

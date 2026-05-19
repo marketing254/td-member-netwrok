@@ -1,6 +1,6 @@
-// Single source of truth for the pre-launch waitlist landing.
+﻿// Single source of truth for the pre-launch waitlist landing.
 // COPY IS VERBATIM from DMN_Website_Content_Guide.docx (May 2026 revision).
-// If you change wording here, the doc is the source of truth — update there first.
+// If you change wording here, the doc is the source of truth, update there first.
 
 export const brand = {
   name: "Dental Member Network",
@@ -19,12 +19,12 @@ export const founding = {
   priceMonthly: 49,
   priceRegular: 199,
   priceAnnual: 490,
-  annualNote: "Pay for 10 months, get 12 — save $98/year",
+  annualNote: "Pay for 10 months, get 12, save $98/year",
 };
 
-// HERO (Section 2 in doc) — verbatim
+// HERO (Section 2 in doc), verbatim
 export const hero = {
-  topChip: "FOUNDING MEMBERSHIP — FIRST 100 ONLY",
+  topChip: "FOUNDING MEMBERSHIP, FIRST 100 ONLY",
   headline: "The only network with a human expert on the line for every practice problem.",
   subtitle:
     "Built for US dental practice owners who want fast answers, measurable vendor savings, and a peer room full of operators who have already solved the problem in front of you.",
@@ -36,7 +36,7 @@ export const hero = {
   progressLabel: "of 100 founding spots claimed",
 };
 
-// MARQUEE (Section 3 in doc) — 6 badges verbatim
+// MARQUEE (Section 3 in doc), 6 badges verbatim
 export const marqueeBadges = [
   "24/7 Expert Helpline",
   "Exclusive Partner Discounts",
@@ -46,7 +46,7 @@ export const marqueeBadges = [
   "Vendor Savings Averaging $6K+",
 ];
 
-// FEATURES (Section 6 in doc) — verbatim
+// FEATURES (Section 6 in doc), verbatim
 export const featuresSection = {
   eyebrow: "WHAT YOU GET",
   title:
@@ -80,7 +80,7 @@ export const features = [
   {
     title: "Proven Systems",
     summary:
-      "Battle-tested templates, checklists, and SOPs. From HR onboarding to expansion playbooks — the work, already done.",
+      "Battle-tested templates, checklists, and SOPs. From HR onboarding to expansion playbooks, the work, already done.",
     size: "regular",
     accent: false,
   },
@@ -100,17 +100,17 @@ export const features = [
   },
 ];
 
-// WAITLIST SECTION (Section 10 in doc — replaces free tier) — verbatim
+// WAITLIST SECTION (Section 10 in doc, replaces free tier), verbatim
 export const waitlist = {
   eyebrow: "JOIN THE WAITLIST",
   headline: "Not ready to join? Get on the list.",
   subtitle:
     "Join the waitlist for early access, exclusive launch pricing, and priority access to founding spots before they fill.",
   benefits: [
-    "Early access — be the first to know when new features and vendor deals launch",
-    "Exclusive launch pricing — waitlist members get first crack at founding rate",
-    "Priority founding access — limited to 100 spots, waitlist members notified first",
-    "First notice — new content, partner deals, and expert panel invitations",
+    "Early access, be the first to know when new features and vendor deals launch",
+    "Exclusive launch pricing, waitlist members get first crack at founding rate",
+    "Priority founding access, limited to 100 spots, waitlist members notified first",
+    "First notice, new content, partner deals, and expert panel invitations",
   ],
   submitLabel: "Join the Waitlist",
   submittingLabel: "Saving your spot…",
@@ -128,7 +128,7 @@ export const waitlistByRole = {
     subtitle:
       "The waitlist is how we onboard the founding cohort before launch. Get a guaranteed spot, lifetime pricing, and first access to every feature we ship.",
     benefits: [
-      "$49/month locked for life — never increases while you stay active",
+      "$49/month locked for life, never increases while you stay active",
       "24/7 expert helpline with a written follow-up plan within 3 business days",
       "Vendor savings averaging $6,000+/year, no per-deal commissions",
       "30-day money-back guarantee, cancel anytime",
@@ -143,7 +143,7 @@ export const waitlistByRole = {
       "$0 for the first 6 months, $49/mo for months 7–12, $199/mo standard",
       "Featured listing + warm-intro routing through the partner hotline",
       "Co-branded content opportunities (podcast, AMAs, written guides)",
-      "Members already pre-qualified — practice owners actively spending",
+      "Members already pre-qualified, practice owners actively spending",
     ],
   },
   expert: {
@@ -160,7 +160,7 @@ export const waitlistByRole = {
   },
 };
 
-// CTA FORM (Section 13 in doc) — bottom-of-page founding-team contact form
+// CTA FORM (Section 13 in doc), bottom-of-page founding-team contact form
 export const ctaForm = {
   eyebrow: "FOUNDING ACCESS",
   title: "Tell us about your practice.",
@@ -174,12 +174,12 @@ export const ctaForm = {
   reassurances: [
     "30-day money-back guarantee with no retention call.",
     "We do not store any patient data. Ever.",
-    "$49/mo founding rate locked for life — will never increase.",
+    "$49/mo founding rate locked for life, will never increase.",
     "Cancel anytime, in two clicks, from your account page.",
   ],
 };
 
-// FAQ (Section 12 in doc) — 10 verbatim Q&As
+// FAQ (Section 12 in doc), 10 verbatim Q&As
 export const faqSection = {
   eyebrow: "QUESTIONS",
   title: "The honest answers.",
@@ -189,23 +189,30 @@ export const faqSection = {
 export const faqs = [
   {
     q: "What exactly do I get with my membership?",
-    a: "Four core things: (1) a 24/7 expert helpline staffed by business coaches and practice advisors, (2) exclusive partner discounts averaging $6,000+ per year on supplies, labs, equipment, and services, (3) an exclusive content library with recorded expert panels, training, and knowledge resources, and (4) a searchable directory of 500+ practice owners. Plus proven systems, SOPs, and monthly live AMAs with specialists.",
+    a: "Four core things:",
+    items: [
+      "A 24/7 expert helpline staffed by business coaches and practice advisors.",
+      "Exclusive partner discounts averaging $6,000+ per year on supplies, labs, equipment, and services.",
+      "An exclusive content library with recorded expert panels, training, and knowledge resources.",
+      "A searchable directory of 500+ practice owners.",
+    ],
+    aClose: "Plus proven systems, SOPs, and monthly live AMAs with specialists.",
   },
   {
     q: "What is the expert helpline?",
-    a: "A direct line to business coaches and practice advisors. Call or message 24/7 with any practice problem — staffing, vendor issues, PPO renegotiation, expansion planning, anything. Every case gets a written summary and a follow-up plan within 3 business days. Median first response is under 2 hours.",
+    a: "A direct line to business coaches and practice advisors. Call or message 24/7 with any practice problem, staffing, vendor issues, PPO renegotiation, expansion planning, anything. Every case gets a written summary and a follow-up plan within 3 business days. Median first response is under 2 hours.",
   },
   {
     q: "How do the vendor savings work?",
-    a: "We negotiate group rates with suppliers, labs, equipment companies, and service providers on behalf of our members. You get access to the full vendor network as part of your membership — no extra fees, no per-deal commissions. Members save an average of $6,400 in their first year.",
+    a: "We negotiate group rates with suppliers, labs, equipment companies, and service providers on behalf of our members. You get access to the full vendor network as part of your membership, no extra fees, no per-deal commissions. Members save an average of $6,400 in their first year.",
   },
   {
     q: "What is the founding member rate?",
-    a: "$49/month, locked for the life of your membership. This rate is only available to the first 100 members. After those spots fill, the standard price is $199/month. There is also an annual option: $490/year (pay for 10 months, get 12 — save $98). Cancel anytime.",
+    a: "$49/month, locked for the life of your membership. This rate is only available to the first 100 members. After those spots fill, the standard price is $199/month. There is also an annual option: $490/year (pay for 10 months, get 12, save $98). Cancel anytime.",
   },
   {
     q: "What if I'm not ready to join yet?",
-    a: "Join the waitlist. You'll get early access, exclusive launch pricing, and priority access to founding spots before they fill. No spam — just launch updates and founding-member opportunities.",
+    a: "Join the waitlist. You'll get early access, exclusive launch pricing, and priority access to founding spots before they fill. No spam, just launch updates and founding-member opportunities.",
   },
   {
     q: "Is this just another dental membership I won't use?",
@@ -232,18 +239,18 @@ export const faqs = [
 // FOOTER (Section 15 in doc)
 export const footer = {
   brandDescription:
-    "The only network with a human expert on the line for every practice problem. Expert helpline, vendor savings, exclusive content, and 500+ practice owners — all in one membership.",
+    "The only network with a human expert on the line for every practice problem. Expert helpline, vendor savings, exclusive content, and 500+ practice owners, all in one membership.",
   primaryCta: "Claim founding spot",
   secondaryCta: "Email founding team",
   supportLabel: "Support",
   responseLabel: "Response standard",
   responseValue: "Human reply in under 1 business day",
-  copyright: "© 2026 Dental Member Network. Built for practice owners running real businesses.",
+  copyright: "Â© 2026 Dental Member Network. Built for practice owners running real businesses.",
   dataNote:
     "We do not store patient data. The Dental Member Network is a training and education platform.",
 };
 
-// FOOTER LINKS (Section 1 in doc) — trimmed to what exists at waitlist stage
+// FOOTER LINKS (Section 1 in doc), trimmed to what exists at waitlist stage
 export const footerLinks = {
   Network: [
     { label: "What You Get", href: "#features" },
@@ -316,17 +323,17 @@ export const expertAvailability = [
   "Helpline + monthly AMA",
   "Helpline + 1:1 sessions",
   "Quarterly strategy reviews",
-  "Custom — let's talk",
+  "Custom, let's talk",
 ];
 
-// PRICING (Section 10 in doc) — verbatim
+// PRICING (Section 10 in doc), verbatim
 export const pricingSection = {
   eyebrow: "MEMBERSHIP",
   title: "One membership. One price. First 100 lock it for life.",
   subtitle:
-    "No tiers to decode, no upsell ladder. The first 100 founding members pay $49/month — locked for the life of their membership. After that, it's $199.",
+    "No tiers to decode, no upsell ladder. The first 100 founding members pay $49/month, locked for the life of their membership. After that, it's $199.",
   bottomNote:
-    "30-day money-back guarantee. Cancel anytime. Founding-member rate is locked for the life of your membership — it will never increase.",
+    "30-day money-back guarantee. Cancel anytime. Founding-member rate is locked for the life of your membership, it will never increase.",
 };
 
 export const pricing = [
@@ -337,13 +344,13 @@ export const pricing = [
     cadence: "/month, locked for life",
     regularNote: "Regular price will be $199/month after founding spots fill",
     blurb:
-      "Full access to every feature in the Dental Member Network. The same membership everyone gets — at a rate that never goes up.",
+      "Full access to every feature in the Dental Member Network. The same membership everyone gets, at a rate that never goes up.",
     features: [
-      "24/7 expert helpline — business coaches and practice advisors on call",
-      "Exclusive partner discounts — negotiated vendor savings averaging $6,000+/year",
-      "Exclusive content library — recorded expert panels, training, and knowledge resources",
-      "Member directory — 500+ practice owners searchable by city, specialty, revenue",
-      "Proven systems — battle-tested templates, checklists, and SOPs",
+      "24/7 expert helpline, business coaches and practice advisors on call",
+      "Exclusive partner discounts, negotiated vendor savings averaging $6,000+/year",
+      "Exclusive content library, recorded expert panels, training, and knowledge resources",
+      "Member directory,500+ practice owners searchable by city, specialty, revenue",
+      "Proven systems, battle-tested templates, checklists, and SOPs",
       "Monthly live AMAs with specialists",
     ],
     cta: "Claim founding spot",

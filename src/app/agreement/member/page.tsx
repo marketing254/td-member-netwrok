@@ -130,7 +130,7 @@ export default function MemberAgreementPage() {
           <>
             Questions before you join? Email{" "}
             <a href="mailto:members@dentalmembernetwork.com">members@dentalmembernetwork.com</a>{" "}
-            — we read and respond to every message within one business day.
+           , we read and respond to every message within one business day.
           </>
         }
       />

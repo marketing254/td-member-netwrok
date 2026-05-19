@@ -196,7 +196,7 @@ export default function VendorProfilePage() {
                   <TextField label="Phone" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} />
                 </Grid>
                 <Grid size={{ xs: 12 }}>
-                  <TextField label="Primary email (login)" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} disabled helperText="Email changes go through verification — handled separately." />
+                  <TextField label="Primary email (login)" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} disabled helperText="Email changes go through verification, handled separately." />
                 </Grid>
                 <Grid size={{ xs: 12 }}>
                   <TextField label="Billing email" value={billingEmail} onChange={(e) => setBillingEmail(e.target.value)} helperText="Where invoices and payment receipts go." />

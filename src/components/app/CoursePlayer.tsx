@@ -41,7 +41,7 @@ export default function CoursePlayer({ course }: { course: Course }) {
   const [score, setScore] = useState<number | null>(course.quizScore ?? null);
   const lastTickRef = useRef<number | null>(null);
 
-  // Simulated playback — advance progress while "playing"
+  // Simulated playback, advance progress while "playing"
   useEffect(() => {
     if (!playing) {
       lastTickRef.current = null;
@@ -206,8 +206,8 @@ export default function CoursePlayer({ course }: { course: Course }) {
                   detail={
                     score !== null
                       ? passed
-                        ? `${score}% — passed`
-                        : `${score}% — retake`
+                        ? `${score}%, passed`
+                        : `${score}%, retake`
                       : "Locked until checkpoint"
                   }
                 />
@@ -540,13 +540,13 @@ function VideoStage({
           <Box sx={{ flex: 1 }}>
             <Typography sx={{ fontWeight: 700, fontSize: "1rem", color: "text.primary", mb: 0.25 }}>
               {ceUnlocked
-                ? "CE checkpoint reached — quiz unlocked"
+                ? "CE checkpoint reached, quiz unlocked"
                 : `Watch to ${ceUnlockPct}% to unlock the CE quiz`}
             </Typography>
             <Typography variant="body2" sx={{ color: "text.secondary", fontSize: "0.85rem" }}>
               {ceUnlocked
                 ? `Pass with ${PASS_THRESHOLD}% or higher to earn ${course.ceCredits} CE credits and a downloadable certificate.`
-                : `You're at ${watchedPct}% — ${ceUnlockPct - watchedPct}% to go before the quiz becomes available.`}
+                : `You're at ${watchedPct}%, ${ceUnlockPct - watchedPct}% to go before the quiz becomes available.`}
             </Typography>
           </Box>
           <Button
@@ -743,12 +743,12 @@ function ResultStage({
               </Typography>
             </Stack>
             <Typography variant="h2" sx={{ color: "common.white", fontSize: { xs: "2rem", md: "2.5rem" }, mb: 1 }}>
-              {passed ? "You earned it." : "Close — but not quite there."}
+              {passed ? "You earned it." : "Close, but not quite there."}
             </Typography>
             <Typography sx={{ color: "rgba(255,255,255,0.92)", fontSize: "1.02rem", maxWidth: 520, lineHeight: 1.55 }}>
               {passed
                 ? `You scored ${score}% (${correctCount} of ${course.quiz.length}). ${course.ceCredits} CE credits have been added to your 2026 transcript and your certificate is ready to download.`
-                : `You scored ${score}% (${correctCount} of ${course.quiz.length}). You need ${PASS_THRESHOLD}% to certify. Re-watch the relevant lessons or retake the quiz — there's no limit on attempts.`}
+                : `You scored ${score}% (${correctCount} of ${course.quiz.length}). You need ${PASS_THRESHOLD}% to certify. Re-watch the relevant lessons or retake the quiz, there's no limit on attempts.`}
             </Typography>
           </Grid>
           <Grid size={{ xs: 12, md: 5 }}>
@@ -882,7 +882,7 @@ function ResultStage({
                     <Typography variant="body2" sx={{ fontSize: "0.82rem", color: "text.secondary" }}>
                       Your answer:{" "}
                       <Box component="span" sx={{ color: correct ? "success.dark" : "error.main", fontWeight: 600 }}>
-                        {userAns !== null ? q.options[userAns] : "—"}
+                        {userAns !== null ? q.options[userAns] : ""}
                       </Box>
                     </Typography>
                     {!correct && (

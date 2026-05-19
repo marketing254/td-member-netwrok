@@ -8,13 +8,13 @@ import {
 import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
 
 const sample = [
-  { id: 1, who: "Reshani", role: "reshani", what: "Approved vendor offer", target: "Henry Schein — Premium tier 18% off", when: "2 hrs ago" },
-  { id: 2, who: "Lester", role: "lester", what: "Resolved hotline case", target: "hc_2026_05_03_1 — Dr. Hannah Kim · M&A LOI review", when: "Yesterday" },
+  { id: 1, who: "Reshani", role: "reshani", what: "Approved vendor offer", target: "Henry Schein, Premium tier 18% off", when: "2 hrs ago" },
+  { id: 2, who: "Lester", role: "lester", what: "Resolved hotline case", target: "hc_2026_05_03_1, Dr. Hannah Kim · M&A LOI review", when: "Yesterday" },
   { id: 3, who: "Rushda", role: "rushda", what: "Updated Stripe webhook config", target: "checkout.session.completed handler", when: "Yesterday" },
   { id: 4, who: "Reshani", role: "reshani", what: "Approved vendor application", target: "Patterson Dental → status=active", when: "Apr 30" },
   { id: 5, who: "Chamika", role: "chamika", what: "Edited landing page", target: "Hero subheadline copy", when: "Apr 28" },
   { id: 6, who: "Lester", role: "lester", what: "Published course", target: "Reading Your P&L Like an Operator (v2)", when: "Apr 26" },
-  { id: 7, who: "Reshani", role: "reshani", what: "Sent vendor agreement", target: "CareStack PMS — pending signature", when: "May 04" },
+  { id: 7, who: "Reshani", role: "reshani", what: "Sent vendor agreement", target: "CareStack PMS, pending signature", when: "May 04" },
 ];
 
 const roleTint: Record<string, { bg: string; color: string }> = {

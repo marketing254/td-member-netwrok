@@ -8,16 +8,16 @@ import * as THREE from "three";
  * Content-related 3D scene for DMN.
  *
  * Visual layers, from back to front:
- *  1. Soft starfield of 220 distant dots — depth + ambience
+ *  1. Soft starfield of 220 distant dots, depth + ambience
  *  2. ~28 small membership "nodes" (smooth spheres, no faceted hex/pentagon look)
- *     connected by hairline gold edges — represents the practice-owner network
+ *     connected by hairline gold edges, represents the practice-owner network
  *  3. Four large floating PLAQUES at orbit positions, each carrying the name
  *     of one of the four core features from the content guide:
  *       Expert Helpline · Partner Discounts · Content Library · Member Directory
  *     The plaques tilt gently with the cursor and orbit slowly around the center.
  *  4. A bright gold "you, when you join" node pulses at the heart of the network.
  *
- * Tuned for a DARK navy hero background — uses light/gold accents with warm gold
+ * Tuned for a DARK navy hero background, uses light/gold accents with warm gold
  * edges for high contrast against the deep navy backdrop.
  */
 export default function NetworkScene() {
@@ -132,7 +132,7 @@ function SceneContent() {
       {/* Background star dots */}
       <Sparkles count={220} scale={[18, 10, 12]} size={0.9} speed={0.1} opacity={0.25} color="#A07823" />
 
-      {/* Network edges — warm gold hairlines */}
+      {/* Network edges, warm gold hairlines */}
       <lineSegments geometry={lineGeometry}>
         <lineBasicMaterial color="#C99A3A" transparent opacity={0.32} depthWrite={false} />
       </lineSegments>
@@ -151,7 +151,7 @@ function SceneContent() {
         </mesh>
       ))}
 
-      {/* "You, when you join" — bright pulse at the center */}
+      {/* "You, when you join", bright pulse at the center */}
       <mesh position={[0, 0, 0]}>
         <sphereGeometry args={[0.18, 28, 28]} />
         <meshStandardMaterial
@@ -167,7 +167,7 @@ function SceneContent() {
         <meshBasicMaterial color="#F0C16E" transparent opacity={0.35} depthWrite={false} />
       </mesh>
 
-      {/* Floating feature plaques — orbiting around the network, content-related */}
+      {/* Floating feature plaques, orbiting around the network, content-related */}
       {FEATURE_PLAQUES.map((p, i) => (
         <OrbitingPlaque key={p.label} {...p} index={i} />
       ))}
@@ -208,7 +208,7 @@ function OrbitingPlaque({
   return (
     <Float speed={1.2} rotationIntensity={0.12} floatIntensity={0.35}>
       <group ref={ref}>
-        {/* Plaque card — compact pill, easier to read */}
+        {/* Plaque card, compact pill, easier to read */}
         <RoundedBox args={[1.3, 0.5, 0.06]} radius={0.12} smoothness={6} castShadow>
           <meshStandardMaterial
             color="#FFFFFF"

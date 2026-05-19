@@ -175,7 +175,7 @@ export default function WaitlistSection() {
 
       <Container maxWidth="lg" sx={{ position: "relative" }}>
         <Grid container spacing={{ xs: 5, md: 7 }} sx={{ alignItems: "flex-start" }}>
-          {/* LEFT — verbatim benefits panel */}
+          {/* LEFT, verbatim benefits panel */}
           <Grid size={{ xs: 12, md: 5 }}>
             <MotionBox
               initial={reduced ? false : { opacity: 0, x: -20 }}
@@ -233,7 +233,7 @@ export default function WaitlistSection() {
             </MotionBox>
           </Grid>
 
-          {/* RIGHT — the form */}
+          {/* RIGHT, the form */}
           <Grid size={{ xs: 12, md: 7 }}>
             <MotionBox
               initial={reduced ? false : { opacity: 0, y: 24 }}
@@ -289,7 +289,7 @@ export default function WaitlistSection() {
                 />
 
                 <Stack spacing={2.25}>
-                  {/* Anchor targets for the nav links — invisible spans that scroll-into-view */}
+                  {/* Anchor targets for the nav links, invisible spans that scroll-into-view */}
                   <Box id="waitlist-member" sx={{ position: "absolute", top: -100, height: 1, width: 1, pointerEvents: "none" }} />
                   <Box id="waitlist-vendor" sx={{ position: "absolute", top: -100, height: 1, width: 1, pointerEvents: "none" }} />
                   <Box id="waitlist-expert" sx={{ position: "absolute", top: -100, height: 1, width: 1, pointerEvents: "none" }} />
@@ -383,7 +383,7 @@ export default function WaitlistSection() {
                               <LightField
                                 name="description"
                                 label="What does your company do, in one sentence?"
-                                placeholder="We negotiate PPO contracts on a contingency basis — practices pay only after fee increases land."
+                                placeholder="We negotiate PPO contracts on a contingency basis, practices pay only after fee increases land."
                                 multiline
                                 minRows={2}
                                 required
