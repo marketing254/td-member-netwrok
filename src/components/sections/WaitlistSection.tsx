@@ -5,18 +5,24 @@ import Link from "next/link";
 import {
   Box,
   Button,
+  Checkbox,
   CircularProgress,
   Container,
+  FormControlLabel,
   Grid,
   MenuItem,
   Stack,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from "@mui/material";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
+import StoreOutlinedIcon from "@mui/icons-material/StoreOutlined";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   challengeOptions,
@@ -25,22 +31,44 @@ import {
   waitlist as waitlistCopy,
   waitlistByRole,
 } from "@/lib/content";
+import { vendorCategories } from "@/lib/vendorData";
 
 const MotionBox = motion.create(Box);
 const OTHER = "Other";
 
-const member = waitlistByRole.member;
-
 /**
- * Animated reveal-input that appears when a parent dropdown's value === "Other".
+ * Landing page sign-up form.
+ *
+ * Members → POST /api/waitlist (the founding-cohort waitlist).
+ * Vendors → POST /api/vendor/signup (dedicated vendor application path that
+ * triggers team review + a magic-link email). Vendors do NOT go through the
+ * waitlist API, but the apply-as-vendor surface lives here on the landing
+ * page so prospects can choose either path in one place.
  */
-function OtherReveal({
-  show,
-  children,
-}: {
-  show: boolean;
-  children: React.ReactNode;
-}) {
+
+type Role = "member" | "vendor";
+
+// Role-specific copy for the LEFT pitch panel. Members come from content.ts;
+// vendors have a dedicated copy block tailored to the apply flow.
+const VENDOR_PITCH = {
+  eyebrow: "FOUNDING VENDOR PARTNER",
+  headline: "Six months free. Featured to dentists actively buying.",
+  subtitle:
+    "The founding vendor cohort gets featured placement in the directory, warm introductions to members, and access to the partner hotline from day one.",
+  benefits: [
+    "$0 for the first 6 months, $49/mo for months 7-12, $199/mo standard",
+    "Featured listing + warm-intro routing through the partner hotline",
+    "Co-branded content opportunities (podcast, AMAs, written guides)",
+    "Members already pre-qualified, practice owners actively spending",
+  ],
+};
+
+function pitchFor(role: Role) {
+  if (role === "vendor") return VENDOR_PITCH;
+  return waitlistByRole.member;
+}
+
+function OtherReveal({ show, children }: { show: boolean; children: React.ReactNode }) {
   return (
     <AnimatePresence initial={false}>
       {show && (
@@ -63,46 +91,95 @@ export default function WaitlistSection() {
   const router = useRouter();
   const reduced = useReducedMotion();
 
+  const [role, setRole] = useState<Role>("member");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [agreed, setAgreed] = useState(false);
+  const [authorized, setAuthorized] = useState(false);
 
   const [memberRoleValue, setMemberRoleValue] = useState("");
   const [memberChallengeValue, setMemberChallengeValue] = useState("");
+  const [vendorCategoryValue, setVendorCategoryValue] = useState("");
+
+  const isVendor = role === "vendor";
+  const pitch = pitchFor(role);
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
-    setSubmitting(true);
 
+    if (isVendor && (!agreed || !authorized)) {
+      setError("Please confirm both boxes before applying as a vendor partner.");
+      return;
+    }
+
+    setSubmitting(true);
     const fd = new FormData(e.currentTarget);
     const firstName = String(fd.get("firstName") ?? "").trim();
     const lastName = String(fd.get("lastName") ?? "").trim();
     const fullName = [firstName, lastName].filter(Boolean).join(" ");
 
-    const payload = {
-      role: "member" as const,
-      fullName,
-      email: fd.get("email"),
-      practiceName: fd.get("practiceName"),
-      phone: fd.get("phone"),
-      source: "landing-waitlist",
-      utm: {
-        role_label: fd.get("roleLabel"),
-        role_label_other: fd.get("roleLabelOther") ?? "",
-        locations: fd.get("locations"),
-        biggest_challenge: fd.get("challenge"),
-        biggest_challenge_other: fd.get("challengeOther") ?? "",
-        phone: fd.get("phone"),
-      },
-    };
-
     try {
+      if (isVendor) {
+        // Vendors go to the dedicated application endpoint, not the waitlist.
+        const payload = {
+          companyName: fd.get("companyName"),
+          category:
+            vendorCategoryValue === OTHER ? fd.get("categoryOther") : fd.get("category"),
+          website: fd.get("website"),
+          contactName: fullName,
+          contactEmail: fd.get("email"),
+          contactPhone: fd.get("contactPhone"),
+          hotlineEmail: fd.get("secondaryEmail") || fd.get("email"),
+          calendarLink: "",
+          signatureName: fd.get("signatureName"),
+          signatureTitle: fd.get("signatureTitle"),
+          agreedToTerms: agreed,
+          confirmedAuthority: authorized,
+          planId: "founding",
+          source: "landing-vendor-cta",
+          description: fd.get("description") ?? "",
+        };
+
+        const res = await fetch("/api/vendor/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          setError(data?.error ?? "Could not submit your application. Please try again.");
+          setSubmitting(false);
+          return;
+        }
+        router.push(`/waitlist/thanks?role=vendor`);
+        return;
+      }
+
+      // Member waitlist branch
+      const payload = {
+        role: "member" as const,
+        fullName,
+        email: fd.get("email"),
+        practiceName: fd.get("practiceName"),
+        phone: fd.get("phone"),
+        source: "landing-waitlist",
+        utm: {
+          role_label: fd.get("roleLabel"),
+          role_label_other: fd.get("roleLabelOther") ?? "",
+          locations: fd.get("locations"),
+          biggest_challenge: fd.get("challenge"),
+          biggest_challenge_other: fd.get("challengeOther") ?? "",
+          phone: fd.get("phone"),
+        },
+      };
+
       const res = await fetch("/api/waitlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setError(data?.error ?? "Something went wrong. Please try again.");
         setSubmitting(false);
@@ -150,58 +227,49 @@ export default function WaitlistSection() {
             >
               <Stack spacing={2.5}>
                 <Typography variant="overline" sx={{ color: "#A07823", letterSpacing: "0.16em" }}>
-                  {member.eyebrow}
+                  {pitch.eyebrow}
                 </Typography>
-                <Typography
-                  variant="h2"
-                  component="h2"
-                  sx={{ color: "#0A1A2F", fontSize: { xs: "1.9rem", md: "2.5rem" }, lineHeight: 1.1, mb: 1.5 }}
-                >
-                  {member.headline}
-                </Typography>
-                <Typography variant="subtitle1" sx={{ color: "#3B4A55", maxWidth: 480 }}>
-                  {member.subtitle}
-                </Typography>
-
-                <Stack spacing={1.5} sx={{ pt: 1.5 }}>
-                  {member.benefits.map((b) => (
-                    <Stack key={b} direction="row" spacing={1.5} sx={{ alignItems: "flex-start" }}>
-                      <CheckCircleOutlineIcon sx={{ color: "#A07823", fontSize: 19, mt: "1px", flexShrink: 0 }} />
-                      <Typography variant="body2" sx={{ color: "#0A1A2F", fontSize: "0.95rem", lineHeight: 1.6 }}>
-                        {b}
-                      </Typography>
-                    </Stack>
-                  ))}
-                </Stack>
-
-                <Box
-                  sx={{
-                    mt: 1.5,
-                    p: 2,
-                    borderRadius: 2,
-                    bgcolor: "rgba(14,42,61,0.04)",
-                    border: "1px solid rgba(14,42,61,0.08)",
-                  }}
-                >
-                  <Typography sx={{ fontSize: "0.82rem", color: "#3B4A55", lineHeight: 1.55 }}>
-                    A vendor partner?{" "}
-                    <Box
-                      component={Link}
-                      href="/vendor/signup"
-                      sx={{
-                        color: "#A07823",
-                        fontWeight: 700,
-                        textDecoration: "underline",
-                        textDecorationColor: "rgba(160,120,35,0.5)",
-                        textUnderlineOffset: 3,
-                        "&:hover": { textDecorationColor: "#A07823" },
-                      }}
+                <AnimatePresence mode="wait">
+                  <MotionBox
+                    key={`headline-${role}`}
+                    initial={reduced ? false : { opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={reduced ? { opacity: 0 } : { opacity: 0, y: -10 }}
+                    transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                  >
+                    <Typography
+                      variant="h2"
+                      component="h2"
+                      sx={{ color: "#0A1A2F", fontSize: { xs: "1.9rem", md: "2.5rem" }, lineHeight: 1.1, mb: 1.5 }}
                     >
-                      Apply directly here
-                    </Box>{" "}
-                    — vendors don&apos;t use the waitlist; our team reviews each application personally.
-                  </Typography>
-                </Box>
+                      {pitch.headline}
+                    </Typography>
+                    <Typography variant="subtitle1" sx={{ color: "#3B4A55", maxWidth: 480 }}>
+                      {pitch.subtitle}
+                    </Typography>
+                  </MotionBox>
+                </AnimatePresence>
+
+                <AnimatePresence mode="wait">
+                  <MotionBox
+                    key={`bullets-${role}`}
+                    initial={reduced ? false : { opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={reduced ? { opacity: 0 } : { opacity: 0, y: -6 }}
+                    transition={{ duration: 0.45, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
+                  >
+                    <Stack spacing={1.5} sx={{ pt: 1.5 }}>
+                      {pitch.benefits.map((b) => (
+                        <Stack key={b} direction="row" spacing={1.5} sx={{ alignItems: "flex-start" }}>
+                          <CheckCircleOutlineIcon sx={{ color: "#A07823", fontSize: 19, mt: "1px", flexShrink: 0 }} />
+                          <Typography variant="body2" sx={{ color: "#0A1A2F", fontSize: "0.95rem", lineHeight: 1.6 }}>
+                            {b}
+                          </Typography>
+                        </Stack>
+                      ))}
+                    </Stack>
+                  </MotionBox>
+                </AnimatePresence>
               </Stack>
             </MotionBox>
           </Grid>
@@ -261,161 +329,405 @@ export default function WaitlistSection() {
                 />
 
                 <Stack spacing={2.25}>
-                  <Grid container spacing={1.5}>
-                    <Grid size={{ xs: 12, sm: 6 }}>
-                      <LightField name="firstName" label="First name" placeholder="Dr. Taylor" autoComplete="given-name" required />
-                    </Grid>
-                    <Grid size={{ xs: 12, sm: 6 }}>
-                      <LightField name="lastName" label="Last name" placeholder="Morgan" autoComplete="family-name" required />
-                    </Grid>
-                    <Grid size={{ xs: 12, sm: 6 }}>
-                      <LightField name="email" type="email" label="Email address" placeholder="taylor@practice.com" autoComplete="email" required />
-                    </Grid>
-                    <Grid size={{ xs: 12, sm: 6 }}>
-                      <LightField
-                        name="phone"
-                        type="tel"
-                        label="Mobile number"
-                        placeholder="+1 (555) 010-1234"
-                        autoComplete="tel"
-                        required
-                      />
-                    </Grid>
-                    <Grid size={{ xs: 12 }}>
-                      <LightField
-                        name="roleLabel"
-                        label="What best describes your role?"
-                        select
-                        value={memberRoleValue}
-                        onChange={(e) => setMemberRoleValue(e.target.value)}
-                      >
-                        <MenuItem value="" disabled>
-                          Choose one
-                        </MenuItem>
-                        {memberRoles.map((r) => (
-                          <MenuItem key={r} value={r}>
-                            {r}
-                          </MenuItem>
-                        ))}
-                      </LightField>
-                      <OtherReveal show={memberRoleValue === OTHER}>
-                        <LightField
-                          name="roleLabelOther"
-                          label="Explain your role"
-                          placeholder="e.g. Practice administrator, CFO, regional director"
-                          required
-                        />
-                      </OtherReveal>
-                    </Grid>
-                    <Grid size={{ xs: 12 }}>
-                      <LightField name="practiceName" label="Practice name" placeholder="Morgan Dental Group" autoComplete="organization" />
-                    </Grid>
-                    <Grid size={{ xs: 12, sm: 6 }}>
-                      <LightField name="locations" label="Number of locations" select defaultValue="">
-                        <MenuItem value="" disabled>
-                          Choose
-                        </MenuItem>
-                        {locationOptions.map((o) => (
-                          <MenuItem key={o} value={o}>
-                            {o}
-                          </MenuItem>
-                        ))}
-                      </LightField>
-                    </Grid>
-                    <Grid size={{ xs: 12, sm: 6 }}>
-                      <LightField
-                        name="challenge"
-                        label="Biggest challenge right now?"
-                        select
-                        value={memberChallengeValue}
-                        onChange={(e) => setMemberChallengeValue(e.target.value)}
-                      >
-                        <MenuItem value="" disabled>
-                          Choose
-                        </MenuItem>
-                        {challengeOptions.map((c) => (
-                          <MenuItem key={c} value={c}>
-                            {c}
-                          </MenuItem>
-                        ))}
-                      </LightField>
-                    </Grid>
-                    {memberChallengeValue === OTHER && (
-                      <Grid size={{ xs: 12 }}>
-                        <OtherReveal show>
-                          <LightField
-                            name="challengeOther"
-                            label="Describe your biggest challenge"
-                            placeholder="What's slowing your practice down right now?"
-                            multiline
-                            minRows={2}
-                            required
-                          />
-                        </OtherReveal>
-                      </Grid>
-                    )}
-                  </Grid>
+                  <ToggleButtonGroup
+                    exclusive
+                    value={role}
+                    onChange={(_, v) => {
+                      if (v) {
+                        setRole(v as Role);
+                        setAgreed(false);
+                        setAuthorized(false);
+                        setError(null);
+                      }
+                    }}
+                    fullWidth
+                    sx={{
+                      gap: 1,
+                      "& .MuiToggleButtonGroup-grouped": {
+                        border: "1px solid rgba(14,42,61,0.14) !important",
+                        borderRadius: "12px !important",
+                        ml: "0 !important",
+                      },
+                      "& .MuiToggleButton-root": {
+                        flex: 1,
+                        color: "#3B4A55",
+                        bgcolor: "rgba(247,245,240,0.6)",
+                        py: 1.15,
+                        textTransform: "none",
+                        fontWeight: 600,
+                        fontSize: "0.85rem",
+                        gap: 0.6,
+                        transition: "all 350ms cubic-bezier(0.16, 1, 0.3, 1)",
+                        "&.Mui-selected": {
+                          bgcolor: "rgba(217,168,75,0.16)",
+                          color: "#0A1320",
+                          border: "1px solid rgba(217,168,75,0.6) !important",
+                          boxShadow: "0 0 0 1px rgba(217,168,75,0.2), 0 12px 30px -10px rgba(217,168,75,0.4)",
+                          "&:hover": { bgcolor: "rgba(217,168,75,0.22)" },
+                        },
+                        "&:hover": { bgcolor: "rgba(247,245,240,0.9)" },
+                      },
+                    }}
+                  >
+                    <ToggleButton value="member">
+                      <PersonOutlineOutlinedIcon sx={{ fontSize: 17 }} />
+                      Join the waitlist
+                    </ToggleButton>
+                    <ToggleButton value="vendor">
+                      <StoreOutlinedIcon sx={{ fontSize: 17 }} />
+                      Apply as vendor
+                    </ToggleButton>
+                  </ToggleButtonGroup>
 
-                  <Stack direction="row" spacing={1.25} sx={{ alignItems: "flex-start", color: "#5C6770", mt: 0.5 }}>
-                    <LockOutlinedIcon sx={{ fontSize: 14, mt: "3px", flexShrink: 0 }} />
-                    <Typography variant="body2" sx={{ color: "#5C6770", fontSize: "0.78rem", lineHeight: 1.55 }}>
-                      By joining the waitlist you agree to the{" "}
-                      <Box
-                        component={Link}
-                        href="/agreement/member"
-                        target="_blank"
-                        rel="noopener"
-                        sx={{
-                          color: "#A07823",
-                          fontWeight: 700,
-                          textDecoration: "underline",
-                          textDecorationColor: "rgba(160,120,35,0.45)",
-                          textUnderlineOffset: 3,
-                          "&:hover": { textDecorationColor: "#A07823" },
-                        }}
+                  <AnimatePresence mode="wait" initial={false}>
+                    {isVendor ? (
+                      <motion.div
+                        key="vendor"
+                        initial={reduced ? false : { opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={reduced ? { opacity: 0 } : { opacity: 0, y: -12 }}
+                        transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                        style={{ width: "100%", minWidth: 0 }}
                       >
-                        Member Agreement
-                        <OpenInNewIcon sx={{ fontSize: 11, ml: 0.3, verticalAlign: "middle" }} />
-                      </Box>
-                      ,{" "}
-                      <Box
-                        component={Link}
-                        href="/legal/refund"
-                        target="_blank"
-                        rel="noopener"
-                        sx={{
-                          color: "#A07823",
-                          fontWeight: 700,
-                          textDecoration: "underline",
-                          textDecorationColor: "rgba(160,120,35,0.45)",
-                          textUnderlineOffset: 3,
-                          "&:hover": { textDecorationColor: "#A07823" },
-                        }}
+                        <Stack spacing={2.25}>
+                          <SectionLabel num="01" title="Company" />
+                          <Grid container spacing={1.5}>
+                            <Grid size={{ xs: 12 }}>
+                              <LightField name="companyName" label="Company name" placeholder="Acme Dental Supply" autoComplete="organization" required />
+                            </Grid>
+                            <Grid size={{ xs: 12, sm: 6 }}>
+                              <LightField name="website" label="Website" placeholder="https://acmedental.com" autoComplete="url" required />
+                            </Grid>
+                            <Grid size={{ xs: 12, sm: 6 }}>
+                              <LightField
+                                name="category"
+                                label="Category"
+                                select
+                                value={vendorCategoryValue}
+                                onChange={(e) => setVendorCategoryValue(e.target.value)}
+                                required
+                              >
+                                <MenuItem value="" disabled>
+                                  Choose
+                                </MenuItem>
+                                {vendorCategories.map((c) => (
+                                  <MenuItem key={c} value={c}>
+                                    {c}
+                                  </MenuItem>
+                                ))}
+                              </LightField>
+                              <OtherReveal show={vendorCategoryValue === OTHER}>
+                                <LightField
+                                  name="categoryOther"
+                                  label="Describe your category"
+                                  placeholder="What kind of product or service do you provide?"
+                                  required
+                                />
+                              </OtherReveal>
+                            </Grid>
+                            <Grid size={{ xs: 12 }}>
+                              <LightField
+                                name="description"
+                                label="What does your company do, in one sentence?"
+                                placeholder="We negotiate PPO contracts on a contingency basis."
+                                multiline
+                                minRows={2}
+                                required
+                              />
+                            </Grid>
+                          </Grid>
+
+                          <SectionLabel num="02" title="Contact" />
+                          <Grid container spacing={1.5}>
+                            <Grid size={{ xs: 12, sm: 6 }}>
+                              <LightField name="firstName" label="First name" placeholder="Taylor" autoComplete="given-name" required />
+                            </Grid>
+                            <Grid size={{ xs: 12, sm: 6 }}>
+                              <LightField name="lastName" label="Last name" placeholder="Morgan" autoComplete="family-name" required />
+                            </Grid>
+                            <Grid size={{ xs: 12, sm: 6 }}>
+                              <LightField
+                                name="email"
+                                type="email"
+                                label="Primary work email"
+                                placeholder="taylor@acme.com"
+                                autoComplete="email"
+                                required
+                              />
+                            </Grid>
+                            <Grid size={{ xs: 12, sm: 6 }}>
+                              <LightField
+                                name="secondaryEmail"
+                                type="email"
+                                label="Secondary email (optional)"
+                                placeholder="partnerships@acme.com"
+                                autoComplete="email"
+                              />
+                            </Grid>
+                            <Grid size={{ xs: 12, sm: 6 }}>
+                              <LightField
+                                name="contactPhone"
+                                type="tel"
+                                label="Primary phone"
+                                placeholder="+1 (555) 010-1234"
+                                autoComplete="tel"
+                                required
+                              />
+                            </Grid>
+                            <Grid size={{ xs: 12, sm: 6 }}>
+                              <LightField
+                                name="secondaryPhone"
+                                type="tel"
+                                label="Secondary phone (optional)"
+                                placeholder="+1 (555) 010-5678"
+                                autoComplete="tel"
+                              />
+                            </Grid>
+                          </Grid>
+
+                          <SectionLabel num="03" title="Sign on behalf of the company" />
+                          <Grid container spacing={1.5}>
+                            <Grid size={{ xs: 12, sm: 6 }}>
+                              <LightField name="signatureName" label="Signer full name" placeholder="Taylor Morgan" autoComplete="name" required />
+                            </Grid>
+                            <Grid size={{ xs: 12, sm: 6 }}>
+                              <LightField name="signatureTitle" label="Signer title" placeholder="VP of Partnerships" autoComplete="organization-title" required />
+                            </Grid>
+                          </Grid>
+
+                          <Stack spacing={1.25} sx={{ mt: 1 }}>
+                            <FormControlLabel
+                              control={
+                                <Checkbox
+                                  checked={agreed}
+                                  onChange={(e) => setAgreed(e.target.checked)}
+                                  size="small"
+                                  sx={{
+                                    color: "rgba(14,42,61,0.35)",
+                                    "&.Mui-checked": { color: "#A07823" },
+                                    p: 0.5,
+                                    mr: 0.5,
+                                  }}
+                                />
+                              }
+                              label={
+                                <Typography sx={{ fontSize: "0.82rem", color: "#3B4A55", lineHeight: 1.5 }}>
+                                  I have read and agree to the{" "}
+                                  <Box
+                                    component={Link}
+                                    href="/agreement/vendor"
+                                    target="_blank"
+                                    rel="noopener"
+                                    sx={{
+                                      color: "#A07823",
+                                      fontWeight: 700,
+                                      textDecoration: "underline",
+                                      textDecorationColor: "rgba(160,120,35,0.5)",
+                                      textUnderlineOffset: 3,
+                                      "&:hover": { textDecorationColor: "#A07823" },
+                                    }}
+                                  >
+                                    Vendor Partnership Agreement
+                                    <OpenInNewIcon sx={{ fontSize: 12, ml: 0.4, verticalAlign: "middle" }} />
+                                  </Box>
+                                  .
+                                </Typography>
+                              }
+                              sx={{ alignItems: "flex-start", m: 0 }}
+                            />
+                            <FormControlLabel
+                              control={
+                                <Checkbox
+                                  checked={authorized}
+                                  onChange={(e) => setAuthorized(e.target.checked)}
+                                  size="small"
+                                  sx={{
+                                    color: "rgba(14,42,61,0.35)",
+                                    "&.Mui-checked": { color: "#A07823" },
+                                    p: 0.5,
+                                    mr: 0.5,
+                                  }}
+                                />
+                              }
+                              label={
+                                <Typography sx={{ fontSize: "0.82rem", color: "#3B4A55", lineHeight: 1.5 }}>
+                                  I confirm I am authorized to commit my company to this partnership.
+                                </Typography>
+                              }
+                              sx={{ alignItems: "flex-start", m: 0 }}
+                            />
+                          </Stack>
+                        </Stack>
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="member"
+                        initial={reduced ? false : { opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={reduced ? { opacity: 0 } : { opacity: 0, y: -12 }}
+                        transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                        style={{ width: "100%", minWidth: 0 }}
                       >
-                        Refund Policy
-                        <OpenInNewIcon sx={{ fontSize: 11, ml: 0.3, verticalAlign: "middle" }} />
-                      </Box>
-                      , and{" "}
-                      <Box
-                        component={Link}
-                        href="/legal/privacy"
-                        target="_blank"
-                        rel="noopener"
-                        sx={{
-                          color: "#A07823",
-                          fontWeight: 700,
-                          textDecoration: "underline",
-                          textDecorationColor: "rgba(160,120,35,0.45)",
-                          textUnderlineOffset: 3,
-                          "&:hover": { textDecorationColor: "#A07823" },
-                        }}
-                      >
-                        Privacy Policy
-                        <OpenInNewIcon sx={{ fontSize: 11, ml: 0.3, verticalAlign: "middle" }} />
-                      </Box>
-                      . {waitlistCopy.footerNote}
-                    </Typography>
-                  </Stack>
+                        <Grid container spacing={1.5}>
+                          <Grid size={{ xs: 12, sm: 6 }}>
+                            <LightField name="firstName" label="First name" placeholder="Dr. Taylor" autoComplete="given-name" required />
+                          </Grid>
+                          <Grid size={{ xs: 12, sm: 6 }}>
+                            <LightField name="lastName" label="Last name" placeholder="Morgan" autoComplete="family-name" required />
+                          </Grid>
+                          <Grid size={{ xs: 12, sm: 6 }}>
+                            <LightField name="email" type="email" label="Email address" placeholder="taylor@practice.com" autoComplete="email" required />
+                          </Grid>
+                          <Grid size={{ xs: 12, sm: 6 }}>
+                            <LightField
+                              name="phone"
+                              type="tel"
+                              label="Mobile number"
+                              placeholder="+1 (555) 010-1234"
+                              autoComplete="tel"
+                              required
+                            />
+                          </Grid>
+                          <Grid size={{ xs: 12 }}>
+                            <LightField
+                              name="roleLabel"
+                              label="What best describes your role?"
+                              select
+                              value={memberRoleValue}
+                              onChange={(e) => setMemberRoleValue(e.target.value)}
+                            >
+                              <MenuItem value="" disabled>
+                                Choose one
+                              </MenuItem>
+                              {memberRoles.map((r) => (
+                                <MenuItem key={r} value={r}>
+                                  {r}
+                                </MenuItem>
+                              ))}
+                            </LightField>
+                            <OtherReveal show={memberRoleValue === OTHER}>
+                              <LightField
+                                name="roleLabelOther"
+                                label="Explain your role"
+                                placeholder="e.g. Practice administrator, CFO, regional director"
+                                required
+                              />
+                            </OtherReveal>
+                          </Grid>
+                          <Grid size={{ xs: 12 }}>
+                            <LightField name="practiceName" label="Practice name" placeholder="Morgan Dental Group" autoComplete="organization" />
+                          </Grid>
+                          <Grid size={{ xs: 12, sm: 6 }}>
+                            <LightField name="locations" label="Number of locations" select defaultValue="">
+                              <MenuItem value="" disabled>
+                                Choose
+                              </MenuItem>
+                              {locationOptions.map((o) => (
+                                <MenuItem key={o} value={o}>
+                                  {o}
+                                </MenuItem>
+                              ))}
+                            </LightField>
+                          </Grid>
+                          <Grid size={{ xs: 12, sm: 6 }}>
+                            <LightField
+                              name="challenge"
+                              label="Biggest challenge right now?"
+                              select
+                              value={memberChallengeValue}
+                              onChange={(e) => setMemberChallengeValue(e.target.value)}
+                            >
+                              <MenuItem value="" disabled>
+                                Choose
+                              </MenuItem>
+                              {challengeOptions.map((c) => (
+                                <MenuItem key={c} value={c}>
+                                  {c}
+                                </MenuItem>
+                              ))}
+                            </LightField>
+                          </Grid>
+                          {memberChallengeValue === OTHER && (
+                            <Grid size={{ xs: 12 }}>
+                              <OtherReveal show>
+                                <LightField
+                                  name="challengeOther"
+                                  label="Describe your biggest challenge"
+                                  placeholder="What's slowing your practice down right now?"
+                                  multiline
+                                  minRows={2}
+                                  required
+                                />
+                              </OtherReveal>
+                            </Grid>
+                          )}
+                        </Grid>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {!isVendor && (
+                    <Stack direction="row" spacing={1.25} sx={{ alignItems: "flex-start", color: "#5C6770", mt: 0.5 }}>
+                      <LockOutlinedIcon sx={{ fontSize: 14, mt: "3px", flexShrink: 0 }} />
+                      <Typography variant="body2" sx={{ color: "#5C6770", fontSize: "0.78rem", lineHeight: 1.55 }}>
+                        By joining the waitlist you agree to the{" "}
+                        <Box
+                          component={Link}
+                          href="/agreement/member"
+                          target="_blank"
+                          rel="noopener"
+                          sx={{
+                            color: "#A07823",
+                            fontWeight: 700,
+                            textDecoration: "underline",
+                            textDecorationColor: "rgba(160,120,35,0.45)",
+                            textUnderlineOffset: 3,
+                            "&:hover": { textDecorationColor: "#A07823" },
+                          }}
+                        >
+                          Member Agreement
+                          <OpenInNewIcon sx={{ fontSize: 11, ml: 0.3, verticalAlign: "middle" }} />
+                        </Box>
+                        ,{" "}
+                        <Box
+                          component={Link}
+                          href="/legal/refund"
+                          target="_blank"
+                          rel="noopener"
+                          sx={{
+                            color: "#A07823",
+                            fontWeight: 700,
+                            textDecoration: "underline",
+                            textDecorationColor: "rgba(160,120,35,0.45)",
+                            textUnderlineOffset: 3,
+                            "&:hover": { textDecorationColor: "#A07823" },
+                          }}
+                        >
+                          Refund Policy
+                          <OpenInNewIcon sx={{ fontSize: 11, ml: 0.3, verticalAlign: "middle" }} />
+                        </Box>
+                        , and{" "}
+                        <Box
+                          component={Link}
+                          href="/legal/privacy"
+                          target="_blank"
+                          rel="noopener"
+                          sx={{
+                            color: "#A07823",
+                            fontWeight: 700,
+                            textDecoration: "underline",
+                            textDecorationColor: "rgba(160,120,35,0.45)",
+                            textUnderlineOffset: 3,
+                            "&:hover": { textDecorationColor: "#A07823" },
+                          }}
+                        >
+                          Privacy Policy
+                          <OpenInNewIcon sx={{ fontSize: 11, ml: 0.3, verticalAlign: "middle" }} />
+                        </Box>
+                        . {waitlistCopy.footerNote}
+                      </Typography>
+                    </Stack>
+                  )}
 
                   {error && (
                     <Typography
@@ -440,7 +752,7 @@ export default function WaitlistSection() {
                     variant="contained"
                     color="secondary"
                     size="large"
-                    disabled={submitting}
+                    disabled={submitting || (isVendor && (!agreed || !authorized))}
                     fullWidth
                     endIcon={
                       submitting ? (
@@ -459,18 +771,73 @@ export default function WaitlistSection() {
                       },
                     }}
                   >
-                    {submitting ? waitlistCopy.submittingLabel : waitlistCopy.submitLabel}
+                    {submitting
+                      ? isVendor
+                        ? "Sending application…"
+                        : waitlistCopy.submittingLabel
+                      : isVendor
+                        ? "Apply as vendor partner"
+                        : waitlistCopy.submitLabel}
                   </Button>
 
-                  <Typography variant="body2" sx={{ color: "#5C6770", fontSize: "0.74rem", textAlign: "center" }}>
-                    No payment now. Founding members are billed only when the doors open on launch day.
-                  </Typography>
+                  {!isVendor && (
+                    <Typography variant="body2" sx={{ color: "#5C6770", fontSize: "0.74rem", textAlign: "center" }}>
+                      No payment now. Founding members are billed only when the doors open on launch day.
+                    </Typography>
+                  )}
                 </Stack>
               </Box>
             </MotionBox>
           </Grid>
         </Grid>
       </Container>
+    </Box>
+  );
+}
+
+function SectionLabel({ num, title }: { num: string; title: string }) {
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: 1.25,
+        mt: 1,
+        width: "100%",
+        minWidth: 0,
+      }}
+    >
+      <Box
+        sx={{
+          flexShrink: 0,
+          width: 24,
+          height: 24,
+          borderRadius: "50%",
+          bgcolor: "rgba(217,168,75,0.14)",
+          color: "#A07823",
+          display: "grid",
+          placeItems: "center",
+          fontSize: "0.66rem",
+          fontWeight: 700,
+          border: "1px solid rgba(217,168,75,0.3)",
+        }}
+      >
+        {num}
+      </Box>
+      <Typography
+        variant="overline"
+        sx={{
+          color: "#0A1A2F",
+          fontSize: "0.7rem",
+          letterSpacing: "0.18em",
+          fontWeight: 700,
+          flexShrink: 0,
+          whiteSpace: "nowrap",
+        }}
+      >
+        {title}
+      </Typography>
+      <Box sx={{ flex: 1, height: 1, bgcolor: "rgba(14,42,61,0.1)" }} />
     </Box>
   );
 }
