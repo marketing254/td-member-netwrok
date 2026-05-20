@@ -1,267 +1,463 @@
 "use client";
+
+import Link from "next/link";
 import {
   Box,
   Button,
-  Chip,
+  Divider,
   Grid,
   IconButton,
+  LinearProgress,
   Stack,
   Tooltip,
   Typography,
 } from "@mui/material";
-import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import CreditCardOutlinedIcon from "@mui/icons-material/CreditCardOutlined";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
+import OpenInNewOutlinedIcon from "@mui/icons-material/OpenInNewOutlined";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import { vendor, vendorPlans } from "@/lib/vendorData";
+import { PageHeader, SectionCard, StatCard, TagPill, portalText } from "@/components/vendor/PortalUI";
 
-const sampleInvoices = [
-  { id: "inv-2026-05", number: "TDN-V-2026-0501", date: "May 01, 2026", amount: 0, status: "paid" as const, period: "Founding waiver, Month 2 of 6" },
-  { id: "inv-2026-04", number: "TDN-V-2026-0401", date: "Apr 24, 2026", amount: 0, status: "paid" as const, period: "Founding waiver, Month 1 of 6 (pro-rated)" },
+type InvoiceStatus = "paid" | "open" | "due" | "failed";
+const sampleInvoices: { id: string; number: string; date: string; amount: number; status: InvoiceStatus; period: string }[] = [
+  { id: "inv-2026-05", number: "TDN-V-2026-0501", date: "May 01, 2026", amount: 0, status: "paid", period: "Founding waiver, month 2 of 6" },
+  { id: "inv-2026-04", number: "TDN-V-2026-0401", date: "Apr 24, 2026", amount: 0, status: "paid", period: "Founding waiver, month 1 of 6 (pro-rated)" },
 ];
 
 export default function VendorAccountPage() {
   const plan = vendorPlans.find((p) => p.id === vendor.planId)!;
   const monthsLeftInWaiver = Math.max(0, 6 - vendor.monthsInProgram);
+  const waiverProgress = Math.min(100, (vendor.monthsInProgram / 6) * 100);
+  const nextBill = monthsLeftInWaiver > 0 ? "$0.00" : vendor.monthsInProgram < 12 ? "$49.00" : "$199.00";
 
   return (
-    <Stack spacing={4}>
-      <Box>
-        <Typography variant="overline" sx={{ color: "text.secondary", display: "block" }}>
-          ACCOUNT & BILLING
-        </Typography>
-        <Typography variant="h2" sx={{ mt: 0.5, mb: 1, fontSize: { xs: "1.85rem", md: "2.5rem" } }}>
-          Subscription & invoices
-        </Typography>
-        <Typography sx={{ color: "text.secondary", maxWidth: 620 }}>
-          Your founding rate is locked through month 12. Manage payment method and download past invoices.
-        </Typography>
-      </Box>
+    <Stack spacing={2.5}>
+      <PageHeader
+        eyebrow="ACCOUNT & BILLING"
+        title="Plan, payment method & invoices"
+        subtitle="Your founding rate is locked through month 12. Manage payment method and download past invoices."
+      />
 
-      {/* Current plan card */}
-      <Box
-        sx={{
-          position: "relative",
-          overflow: "hidden",
-          borderRadius: "24px",
-          p: { xs: 3, md: 4 },
-          color: "common.white",
-          backgroundImage: "linear-gradient(135deg, #06182A 0%, #0E2A3D 50%, #1B4258 100%)",
-        }}
-      >
-        <Box
-          aria-hidden
-          sx={{
-            position: "absolute",
-            inset: 0,
-            backgroundImage: "radial-gradient(45% 45% at 80% 0%, rgba(217,168,75,0.35) 0%, transparent 60%)",
-          }}
-        />
-        <Grid container spacing={3} sx={{ position: "relative", alignItems: "center" }}>
-          <Grid size={{ xs: 12, md: 7 }}>
-            <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
-              <Chip
-                label="ACTIVE"
-                size="small"
-                sx={{
-                  bgcolor: "rgba(56,176,109,0.18)",
-                  color: "#A8E6BD",
-                  border: "1px solid rgba(56,176,109,0.35)",
-                  fontSize: "0.65rem",
-                  letterSpacing: "0.12em",
-                  fontWeight: 700,
-                }}
-              />
-              <Chip
-                label={`MONTH ${vendor.monthsInProgram} OF 12`}
-                size="small"
-                sx={{
-                  bgcolor: "rgba(217,168,75,0.16)",
-                  color: "secondary.light",
-                  border: "1px solid rgba(217,168,75,0.35)",
-                  fontSize: "0.65rem",
-                  letterSpacing: "0.12em",
-                  fontWeight: 700,
-                }}
-              />
-            </Stack>
-            <Typography variant="overline" sx={{ color: "secondary.light", display: "block", fontWeight: 700 }}>
-              YOUR PARTNERSHIP PLAN
-            </Typography>
-            <Typography variant="h2" sx={{ color: "common.white", fontSize: { xs: "2.25rem", md: "3rem" }, mt: 0.5 }}>
-              {plan.name}
-            </Typography>
-            <Typography sx={{ color: "rgba(255,255,255,0.92)", mt: 1.25, lineHeight: 1.55, maxWidth: 540 }}>
-              You&apos;re in the founding waiver, <strong>{monthsLeftInWaiver} months</strong> remain at $0.
-              Months 7–12 will auto-bill at $49/mo. Standard $199/mo from month 13 unless you upgrade or cancel.
-            </Typography>
-          </Grid>
-          <Grid size={{ xs: 12, md: 5 }}>
-            <Box sx={{ p: 2.75, borderRadius: "16px", bgcolor: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.16)", backdropFilter: "blur(8px)" }}>
-              <Stack spacing={1.5}>
-                <KvDark label="Started on" value={vendor.joinedAt} />
-                <KvDark label="Next bill" value="Oct 24, 2026 · $49.00" detail={`Months 7–12 locked rate`} />
-                <KvDark label="Payment method" value="Visa ···· 4242" detail="Updates in Stripe" />
-              </Stack>
-            </Box>
-          </Grid>
+      {/* Stat tiles */}
+      <Grid container spacing={2}>
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+          <StatCard
+            label="Current plan"
+            value={plan.name}
+            footer={<Box>{plan.cadenceLabel}</Box>}
+            accent="gold"
+          />
         </Grid>
-      </Box>
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+          <StatCard
+            label="Next billing"
+            value={nextBill}
+            footer={`On ${monthsLeftInWaiver > 0 ? "1st next month" : "next renewal"}`}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+          <StatCard
+            label="Months in program"
+            value={`${vendor.monthsInProgram}/12`}
+            footer="Founding term"
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+          <StatCard
+            label="Lifetime billed"
+            value="$0.00"
+            footer="Waiver covers months 1-6"
+            accent="green"
+          />
+        </Grid>
+      </Grid>
 
-      <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-        <Button variant="contained" color="primary">Upgrade plan</Button>
-        <Button variant="outlined" color="primary">Cancel subscription</Button>
-      </Stack>
-
-      {/* Payment method */}
-      <Box
-        sx={{
-          p: { xs: 2.5, md: 3 },
-          borderRadius: "20px",
-          border: "1px solid",
-          borderColor: "divider",
-          bgcolor: "common.white",
-        }}
-      >
-        <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "flex-start", mb: 2 }}>
-          <Box>
-            <Typography variant="overline" sx={{ color: "text.secondary", display: "block" }}>
-              PAYMENT METHOD
-            </Typography>
-            <Typography variant="h4" sx={{ fontSize: "1.35rem", mt: 0.25 }}>
-              On file
-            </Typography>
-          </Box>
-          <Button variant="outlined" color="primary" size="small" startIcon={<EditOutlinedIcon />}>
-            Update card
-          </Button>
-        </Stack>
-        <Box
-          sx={{
-            p: 2.5,
-            borderRadius: "16px",
-            color: "common.white",
-            backgroundImage: "linear-gradient(135deg, #1B4258 0%, #06182A 100%)",
-            position: "relative",
-            overflow: "hidden",
-            aspectRatio: "1.6 / 1",
-            maxWidth: 340,
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-            boxShadow: "0 24px 40px -16px rgba(14,42,61,0.5)",
-          }}
-        >
-          <Box aria-hidden sx={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(50% 50% at 100% 0%, rgba(217,168,75,0.3) 0%, transparent 60%)" }} />
-          <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center", position: "relative" }}>
-            <CreditCardOutlinedIcon sx={{ fontSize: 28, color: "secondary.light" }} />
-            <Typography sx={{ fontFamily: "var(--font-display)", color: "common.white", fontSize: "1.15rem", letterSpacing: "0.04em" }}>
-              Visa
-            </Typography>
-          </Stack>
-          <Box sx={{ position: "relative" }}>
-            <Typography
-              sx={{
-                fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-                fontSize: "1.15rem",
-                color: "common.white",
-                letterSpacing: "0.18em",
-                mb: 1.25,
-              }}
-            >
-              •••• •••• •••• 4242
-            </Typography>
-            <Stack direction="row" spacing={3}>
+      <Grid container spacing={2}>
+        {/* Subscription detail */}
+        <Grid size={{ xs: 12, lg: 7 }}>
+          <SectionCard
+            title="Subscription"
+            subtitle="The founding cohort schedule applies for your full first year."
+            padding="default"
+            action={
+              <Stack direction="row" spacing={0.5} sx={{ flexWrap: "wrap", gap: 0.5 }}>
+                <TagPill label="FOUNDING" tone="gold" size="sm" />
+                <TagPill label="MONTH-TO-MONTH" tone="navy" size="sm" />
+              </Stack>
+            }
+          >
+            <Stack spacing={2}>
+              {/* Waiver progress */}
               <Box>
-                <Typography variant="body2" sx={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.65)", letterSpacing: "0.14em", fontWeight: 700 }}>
-                  HOLDER
-                </Typography>
-                <Typography sx={{ fontSize: "0.78rem", fontWeight: 600 }}>
-                  HENRY SCHEIN
-                </Typography>
+                <Stack direction="row" sx={{ alignItems: "baseline", justifyContent: "space-between", mb: 1 }}>
+                  <Typography sx={{ fontSize: "0.82rem", fontWeight: 600, color: "#0A1A2F" }}>
+                    Founding waiver
+                  </Typography>
+                  <Typography sx={portalText.meta}>
+                    {monthsLeftInWaiver} month{monthsLeftInWaiver === 1 ? "" : "s"} left at $0
+                  </Typography>
+                </Stack>
+                <LinearProgress
+                  variant="determinate"
+                  value={waiverProgress}
+                  sx={{
+                    height: 6,
+                    borderRadius: 999,
+                    bgcolor: "rgba(14,42,61,0.06)",
+                    "& .MuiLinearProgress-bar": {
+                      borderRadius: 999,
+                      backgroundImage: "linear-gradient(90deg, #A07823 0%, #F0C16E 100%)",
+                    },
+                  }}
+                />
               </Box>
-              <Box>
-                <Typography variant="body2" sx={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.65)", letterSpacing: "0.14em", fontWeight: 700 }}>
-                  EXPIRES
+
+              <Divider />
+
+              {/* Pricing ladder */}
+              <Stack spacing={1.25}>
+                <Typography sx={{ fontSize: "0.82rem", fontWeight: 600, color: "#0A1A2F" }}>
+                  Pricing ladder
                 </Typography>
-                <Typography sx={{ fontSize: "0.78rem", fontWeight: 600 }}>
-                  12 / 28
+                <LadderRow
+                  period="Months 1-6"
+                  price="$0/mo"
+                  note="Founding waiver, applies automatically"
+                  current={vendor.monthsInProgram <= 6}
+                />
+                <LadderRow
+                  period="Months 7-12"
+                  price="$49/mo"
+                  note="Locked launch rate"
+                  current={vendor.monthsInProgram > 6 && vendor.monthsInProgram <= 12}
+                />
+                <LadderRow
+                  period="Month 13+"
+                  price="$199/mo"
+                  note="Standard partner rate"
+                  current={vendor.monthsInProgram > 12}
+                />
+              </Stack>
+
+              <Divider />
+
+              {/* Annual pre-pay teaser */}
+              <Box
+                sx={{
+                  px: 1.5,
+                  py: 1.25,
+                  borderRadius: 1.5,
+                  bgcolor: "rgba(217,168,75,0.06)",
+                  border: "1px dashed rgba(217,168,75,0.32)",
+                }}
+              >
+                <Typography sx={{ fontSize: "0.82rem", fontWeight: 700, color: "#7A5B17", mb: 0.25 }}>
+                  Save with annual pre-pay
+                </Typography>
+                <Typography sx={portalText.body}>
+                  Commit to 12 months at the standard rate and get 2 months free (10 for the price of 12).
+                  Available after month 6.
                 </Typography>
               </Box>
             </Stack>
-          </Box>
-        </Box>
-      </Box>
+          </SectionCard>
+        </Grid>
+
+        {/* Payment method */}
+        <Grid size={{ xs: 12, lg: 5 }}>
+          <Stack spacing={2}>
+            <SectionCard
+              title="Payment method"
+              padding="default"
+              action={
+                <Button
+                  size="small"
+                  startIcon={<EditOutlinedIcon sx={{ fontSize: 14 }} />}
+                  sx={{
+                    textTransform: "none",
+                    fontSize: "0.78rem",
+                    color: "#A07823",
+                    "&:hover": { bgcolor: "rgba(217,168,75,0.06)" },
+                  }}
+                >
+                  Update
+                </Button>
+              }
+            >
+              <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+                <Box
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 1.5,
+                    bgcolor: "rgba(14,42,61,0.06)",
+                    border: "1px solid rgba(14,42,61,0.1)",
+                    color: "#0A1A2F",
+                    display: "grid",
+                    placeItems: "center",
+                  }}
+                >
+                  <CreditCardOutlinedIcon sx={{ fontSize: 18 }} />
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                  <Typography sx={{ fontSize: "0.88rem", fontWeight: 600, color: "#0A1A2F" }}>
+                    Visa · 4242
+                  </Typography>
+                  <Typography sx={portalText.meta}>Expires 12/2027 · billing email {vendor.billingEmail}</Typography>
+                </Box>
+              </Stack>
+            </SectionCard>
+
+            <SectionCard title="Cancellation" padding="default">
+              <Typography sx={portalText.body}>
+                Cancel anytime with <Box component="strong" sx={{ color: "#0A1A2F" }}>30 days&apos; written notice</Box>{" "}
+                through this portal. You remain responsible for fees accrued through the effective date of
+                termination.
+              </Typography>
+              <Button
+                size="small"
+                sx={{
+                  mt: 1.5,
+                  color: "#8C1D1D",
+                  textTransform: "none",
+                  fontWeight: 600,
+                  fontSize: "0.78rem",
+                  px: 0,
+                  "&:hover": { bgcolor: "rgba(220,60,60,0.06)" },
+                }}
+              >
+                Start cancellation
+              </Button>
+            </SectionCard>
+
+            <SectionCard title="Documents" padding="default">
+              <Stack spacing={0.75}>
+                <DocLink
+                  href="/agreement/vendor"
+                  label="Partnership agreement"
+                  meta="Active draft · signed at signup"
+                />
+                <DocLink
+                  href="/legal/refund"
+                  label="Refund & cancellation policy"
+                  meta="Public"
+                />
+                <DocLink
+                  href="/legal/privacy"
+                  label="Privacy policy"
+                  meta="Public"
+                />
+              </Stack>
+            </SectionCard>
+          </Stack>
+        </Grid>
+      </Grid>
 
       {/* Invoices */}
-      <Box
-        sx={{
-          borderRadius: "20px",
-          border: "1px solid",
-          borderColor: "divider",
-          bgcolor: "common.white",
-          overflow: "hidden",
-        }}
-      >
-        <Box sx={{ p: { xs: 2.5, md: 3 }, borderBottom: "1px solid", borderColor: "divider" }}>
-          <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
-            <ReceiptLongOutlinedIcon sx={{ color: "primary.dark" }} />
-            <Box>
-              <Typography variant="overline" sx={{ color: "text.secondary", display: "block" }}>
-                BILLING HISTORY
-              </Typography>
-              <Typography variant="h4" sx={{ fontSize: "1.4rem", mt: 0.25 }}>
-                Invoices
-              </Typography>
-            </Box>
+      <SectionCard
+        title="Invoices"
+        subtitle="Download for your records."
+        padding="none"
+        action={
+          <Stack direction="row" spacing={0.5}>
+            <Button
+              size="small"
+              startIcon={<DownloadOutlinedIcon sx={{ fontSize: 14 }} />}
+              sx={{
+                textTransform: "none",
+                fontSize: "0.78rem",
+                color: "#0A1A2F",
+                "&:hover": { bgcolor: "rgba(14,42,61,0.04)" },
+              }}
+            >
+              Export all
+            </Button>
           </Stack>
+        }
+      >
+        <Box
+          sx={{
+            display: { xs: "none", md: "grid" },
+            gridTemplateColumns: "1fr 120px 1.5fr 120px 80px",
+            px: 2,
+            py: 1.25,
+            borderBottom: "1px solid rgba(14,42,61,0.06)",
+            bgcolor: "#FBFAF6",
+            fontSize: "0.66rem",
+            fontWeight: 700,
+            color: "#7A8590",
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+          }}
+        >
+          <Box>Invoice</Box>
+          <Box>Date</Box>
+          <Box>Period</Box>
+          <Box>Amount</Box>
+          <Box>Status</Box>
         </Box>
-        <Stack divider={<Box sx={{ borderTop: "1px solid", borderColor: "divider" }} />}>
-          {sampleInvoices.map((inv) => (
-            <Stack key={inv.id} direction="row" sx={{ p: 2, alignItems: "center", gap: 2 }}>
-              <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Typography sx={{ fontSize: "0.92rem", fontWeight: 600 }}>{inv.period}</Typography>
-                <Typography variant="body2" sx={{ fontSize: "0.78rem", color: "text.secondary" }}>
-                  {inv.number} · {inv.date}
-                </Typography>
+        {sampleInvoices.length === 0 ? (
+          <Box sx={{ px: 2, py: 3, color: "#9CA3AB", fontSize: "0.84rem" }}>
+            No invoices yet. Your first invoice ships next month.
+          </Box>
+        ) : (
+          <Stack divider={<Box sx={{ borderTop: "1px solid rgba(14,42,61,0.06)" }} />}>
+            {sampleInvoices.map((inv) => (
+              <Box
+                key={inv.id}
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: { xs: "1fr auto", md: "1fr 120px 1.5fr 120px 80px" },
+                  alignItems: "center",
+                  px: 2,
+                  py: 1.25,
+                  gap: 1,
+                  "&:hover": { bgcolor: "rgba(14,42,61,0.02)" },
+                }}
+              >
+                <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+                  <ReceiptLongOutlinedIcon sx={{ fontSize: 16, color: "#7A8590" }} />
+                  <Typography sx={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: "0.76rem", color: "#0A1A2F" }}>
+                    {inv.number}
+                  </Typography>
+                </Stack>
+                <Box sx={{ display: { xs: "none", md: "block" }, fontSize: "0.82rem", color: "#3B4A55" }}>{inv.date}</Box>
+                <Box sx={{ display: { xs: "none", md: "block" }, fontSize: "0.78rem", color: "#5C6770" }}>{inv.period}</Box>
+                <Box sx={{ display: { xs: "none", md: "block" }, fontSize: "0.86rem", fontWeight: 700, color: "#0A1A2F" }}>
+                  ${inv.amount.toFixed(2)}
+                </Box>
+                <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", justifyContent: { xs: "flex-end", md: "flex-start" } }}>
+                  <InvoiceStatusPill status={inv.status} />
+                  <Tooltip title="Download PDF">
+                    <IconButton size="small" sx={{ color: "#5C6770" }}>
+                      <DownloadOutlinedIcon sx={{ fontSize: 15 }} />
+                    </IconButton>
+                  </Tooltip>
+                </Stack>
               </Box>
-              <Typography sx={{ fontWeight: 700, fontSize: "1rem", color: inv.amount === 0 ? "#A07823" : "text.primary" }}>
-                ${inv.amount.toFixed(2)}
-              </Typography>
-              <Chip
-                label="Paid"
-                size="small"
-                sx={{ bgcolor: "rgba(34,108,78,0.12)", color: "#1F5C40", fontWeight: 700, fontSize: "0.7rem", height: 24 }}
-              />
-              <Tooltip title="Download invoice (PDF)">
-                <IconButton size="small" sx={{ color: "text.secondary" }}>
-                  <DownloadOutlinedIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            </Stack>
-          ))}
-        </Stack>
-      </Box>
+            ))}
+          </Stack>
+        )}
+      </SectionCard>
     </Stack>
   );
 }
 
-function KvDark({ label, value, detail }: { label: string; value: string; detail?: string }) {
+function LadderRow({
+  period,
+  price,
+  note,
+  current,
+}: {
+  period: string;
+  price: string;
+  note: string;
+  current: boolean;
+}) {
   return (
-    <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "flex-start", gap: 2 }}>
-      <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.78)", fontSize: "0.82rem", flexShrink: 0 }}>
-        {label}
-      </Typography>
-      <Box sx={{ textAlign: "right", minWidth: 0 }}>
-        <Typography sx={{ fontWeight: 600, fontSize: "0.88rem", color: "common.white" }}>
-          {value}
-        </Typography>
-        {detail && (
-          <Typography variant="body2" sx={{ fontSize: "0.74rem", color: "rgba(255,255,255,0.7)", mt: 0.25 }}>
-            {detail}
-          </Typography>
-        )}
+    <Stack
+      direction="row"
+      spacing={1.5}
+      sx={{
+        alignItems: "center",
+        px: 1.5,
+        py: 1,
+        borderRadius: 1,
+        bgcolor: current ? "rgba(217,168,75,0.06)" : "transparent",
+        border: current ? "1px solid rgba(217,168,75,0.3)" : "1px solid transparent",
+      }}
+    >
+      <Box
+        sx={{
+          width: 8,
+          height: 8,
+          borderRadius: "50%",
+          bgcolor: current ? "#A07823" : "rgba(14,42,61,0.18)",
+          flexShrink: 0,
+        }}
+      />
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Stack direction="row" spacing={1} sx={{ alignItems: "baseline", flexWrap: "wrap" }}>
+          <Typography sx={{ fontSize: "0.84rem", fontWeight: 700, color: "#0A1A2F" }}>{period}</Typography>
+          <Typography sx={{ fontSize: "0.78rem", color: "#7A8590" }}>· {note}</Typography>
+        </Stack>
       </Box>
+      <Typography
+        sx={{
+          fontFamily: "var(--font-display)",
+          fontSize: "1.05rem",
+          fontWeight: 600,
+          color: current ? "#A07823" : "#0A1A2F",
+        }}
+      >
+        {price}
+      </Typography>
+      {current && <TagPill label="CURRENT" tone="gold" size="sm" />}
     </Stack>
+  );
+}
+
+function InvoiceStatusPill({ status }: { status: InvoiceStatus }) {
+  const map: Record<InvoiceStatus, { label: string; bg: string; fg: string; border: string }> = {
+    paid: { label: "Paid", bg: "rgba(34,108,78,0.1)", fg: "#1F5C40", border: "rgba(34,108,78,0.28)" },
+    open: { label: "Open", bg: "rgba(217,168,75,0.14)", fg: "#A07823", border: "rgba(217,168,75,0.32)" },
+    due: { label: "Due", bg: "rgba(217,168,75,0.14)", fg: "#A07823", border: "rgba(217,168,75,0.32)" },
+    failed: { label: "Failed", bg: "rgba(220,60,60,0.1)", fg: "#8C1D1D", border: "rgba(220,60,60,0.26)" },
+  };
+  const p = map[status];
+  return (
+    <Box
+      component="span"
+      sx={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 0.5,
+        px: 0.85,
+        height: 20,
+        borderRadius: 0.75,
+        bgcolor: p.bg,
+        color: p.fg,
+        border: `1px solid ${p.border}`,
+        fontSize: "0.66rem",
+        fontWeight: 700,
+        letterSpacing: "0.06em",
+        textTransform: "uppercase",
+      }}
+    >
+      <Box sx={{ width: 5, height: 5, borderRadius: "50%", bgcolor: p.fg }} />
+      {p.label}
+    </Box>
+  );
+}
+
+function DocLink({ href, label, meta }: { href: string; label: string; meta?: string }) {
+  return (
+    <Box
+      component={Link}
+      href={href}
+      target={href.startsWith("/") ? undefined : "_blank"}
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: 1,
+        py: 0.75,
+        textDecoration: "none",
+        color: "#0A1A2F",
+        borderRadius: 1,
+        px: 1,
+        ml: -1,
+        "&:hover": { bgcolor: "rgba(14,42,61,0.04)", color: "#A07823" },
+      }}
+    >
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Typography sx={{ fontSize: "0.84rem", fontWeight: 600 }} noWrap>
+          {label}
+        </Typography>
+        {meta && <Typography sx={portalText.meta}>{meta}</Typography>}
+      </Box>
+      <OpenInNewOutlinedIcon sx={{ fontSize: 14, color: "#9CA3AB", flexShrink: 0 }} />
+    </Box>
   );
 }

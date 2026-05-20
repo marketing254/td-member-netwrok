@@ -310,7 +310,10 @@ export default function LegalShell({
 
                   <Box sx={{ pl: { xs: 0, sm: 6.5 } }}>
                     {s.body && (
-                      <Typography sx={{ color: "text.primary", fontSize: "0.98rem", lineHeight: 1.75, mb: s.items?.length ? 1.5 : 0 }}>
+                      <Typography
+                        component="div"
+                        sx={{ color: "text.primary", fontSize: "0.98rem", lineHeight: 1.75, mb: s.items?.length ? 1.5 : 0 }}
+                      >
                         {s.body}
                       </Typography>
                     )}

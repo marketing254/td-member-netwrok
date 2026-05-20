@@ -1,28 +1,14 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-async function requireAdmin() {
-  const { sessionClaims, userId } = await auth();
-  if (!userId) return { ok: false as const, status: 401, message: "Sign in required." };
-
-  // Role enforcement is OFF in dev (NEXT_PUBLIC_ENFORCE_ROLES unset) per STATUS_REPORT.md
-  // When it flips on, only role:'admin' may pass.
-  const enforce = process.env.NEXT_PUBLIC_ENFORCE_ROLES === "true";
-  const role = (sessionClaims as { metadata?: { role?: string } } | null)?.metadata?.role;
-  if (enforce && role !== "admin") {
-    return { ok: false as const, status: 403, message: "Admin only." };
-  }
-  return { ok: true as const };
-}
+// Open-portal phase: no auth gate. Admin pages are accessible to anyone with
+// the URL while we test. Wire role enforcement back in once the magic-link
+// session ships.
 
 export async function GET() {
-  const gate = await requireAdmin();
-  if (!gate.ok) return NextResponse.json({ error: gate.message }, { status: gate.status });
-
   try {
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
@@ -41,9 +27,6 @@ export async function GET() {
 }
 
 export async function PATCH(req: Request) {
-  const gate = await requireAdmin();
-  if (!gate.ok) return NextResponse.json({ error: gate.message }, { status: gate.status });
-
   let body: { id?: string; status?: string };
   try {
     body = await req.json();

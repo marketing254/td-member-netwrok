@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { ClerkProvider } from "@clerk/nextjs";
 import { Fraunces, Manrope } from "next/font/google";
 import Providers from "@/components/Providers";
 import SmoothScroll from "@/components/SmoothScroll";
@@ -59,11 +58,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${manrope.variable} ${fraunces.variable}`}>
       <body>
-        <ClerkProvider>
-          <Providers>
-            <SmoothScroll>{children}</SmoothScroll>
-          </Providers>
-        </ClerkProvider>
+        <Providers>
+          <SmoothScroll>{children}</SmoothScroll>
+        </Providers>
       </body>
     </html>
   );

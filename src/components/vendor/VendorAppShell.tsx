@@ -1,14 +1,13 @@
 "use client";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useClerk } from "@clerk/nextjs";
+import { useSignOut } from "@/lib/auth/identity";
 import {
   AppBar,
   Avatar,
   Badge,
   Box,
-  Button,
   Chip,
   Container,
   Divider,
@@ -29,6 +28,7 @@ import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 import StoreOutlinedIcon from "@mui/icons-material/StoreOutlined";
+import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import ManageAccountsOutlinedIcon from "@mui/icons-material/ManageAccountsOutlined";
 import GavelOutlinedIcon from "@mui/icons-material/GavelOutlined";
 import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
@@ -37,21 +37,38 @@ import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import KeyboardArrowDownOutlinedIcon from "@mui/icons-material/KeyboardArrowDownOutlined";
 import VerifiedUserOutlinedIcon from "@mui/icons-material/VerifiedUserOutlined";
+import KeyboardDoubleArrowLeftRoundedIcon from "@mui/icons-material/KeyboardDoubleArrowLeftRounded";
+import KeyboardDoubleArrowRightRoundedIcon from "@mui/icons-material/KeyboardDoubleArrowRightRounded";
 import Logo from "@/components/brand/Logo";
 import { vendor } from "@/lib/vendorData";
 
-const SIDEBAR_W = 264;
+const SIDEBAR_W_EXPANDED = 240;
+const SIDEBAR_W_COLLAPSED = 64;
+const COLLAPSE_KEY = "vendor-sidebar-collapsed";
 
 const navItems = [
   { href: "/vendor", label: "Overview", icon: DashboardOutlinedIcon },
   { href: "/vendor/profile", label: "Company profile", icon: StoreOutlinedIcon },
+  { href: "/vendor/catalog", label: "Catalog", icon: Inventory2OutlinedIcon },
   { href: "/vendor/offers", label: "Offers", icon: LocalOfferOutlinedIcon },
   { href: "/vendor/redemptions", label: "Redemptions", icon: ReceiptLongOutlinedIcon },
   { href: "/vendor/account", label: "Account & billing", icon: ManageAccountsOutlinedIcon },
   { href: "/vendor/agreement", label: "Agreement", icon: GavelOutlinedIcon },
 ];
 
-function SidebarContent({ pathname, onClose }: { pathname: string; onClose?: () => void }) {
+function SidebarContent({
+  pathname,
+  collapsed,
+  onClose,
+  onToggleCollapse,
+  showCollapseToggle,
+}: {
+  pathname: string;
+  collapsed: boolean;
+  onClose?: () => void;
+  onToggleCollapse?: () => void;
+  showCollapseToggle?: boolean;
+}) {
   return (
     <Box
       sx={{
@@ -61,94 +78,144 @@ function SidebarContent({ pathname, onClose }: { pathname: string; onClose?: () 
         bgcolor: "#0A1726",
         color: "common.white",
         backgroundImage:
-          "radial-gradient(120% 60% at 50% -20%, rgba(217,168,75,0.12) 0%, transparent 60%)",
+          "radial-gradient(120% 60% at 50% -20%, rgba(217,168,75,0.10) 0%, transparent 60%)",
+        transition: "all 240ms cubic-bezier(0.16, 1, 0.3, 1)",
+        overflow: "hidden",
       }}
     >
-      <Box sx={{ px: 3, pt: 3, pb: 2 }}>
-        <Logo dark height={30} href="/vendor" />
-        <Typography variant="body2" sx={{ mt: 1.25, color: "rgba(255,255,255,0.55)", fontSize: "0.68rem", letterSpacing: "0.18em", fontWeight: 700, textTransform: "uppercase" }}>
-          Partner Portal
-        </Typography>
-      </Box>
+      <Stack
+        direction="row"
+        sx={{
+          alignItems: "center",
+          justifyContent: collapsed ? "center" : "space-between",
+          px: collapsed ? 0 : 2,
+          pt: 2.25,
+          pb: 1.75,
+          flexShrink: 0,
+        }}
+      >
+        {!collapsed ? (
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <Logo dark height={44} href="/vendor" />
+          </Box>
+        ) : (
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%" }}>
+            <Logo dark height={36} href="/vendor" />
+          </Box>
+        )}
+        {showCollapseToggle && !collapsed && (
+          <IconButton
+            onClick={onToggleCollapse}
+            size="small"
+            sx={{
+              color: "rgba(255,255,255,0.45)",
+              "&:hover": { color: "#F0C16E", bgcolor: "rgba(255,255,255,0.04)" },
+            }}
+            aria-label="Collapse sidebar"
+          >
+            <KeyboardDoubleArrowLeftRoundedIcon sx={{ fontSize: 18 }} />
+          </IconButton>
+        )}
+      </Stack>
 
-      <Box sx={{ px: 2.25, pb: 1 }}>
-        <Box
-          sx={{
-            p: 2,
-            borderRadius: "14px",
-            border: "1px solid rgba(255,255,255,0.08)",
-            bgcolor: "rgba(255,255,255,0.03)",
-          }}
-        >
-          <Stack direction="row" spacing={1.25} sx={{ alignItems: "center", mb: 1.5 }}>
-            <Avatar
-              sx={{
-                bgcolor: "rgba(217,168,75,0.18)",
-                color: "secondary.light",
-                width: 38,
-                height: 38,
-                fontWeight: 700,
-                fontSize: "0.9rem",
-                border: "1px solid rgba(217,168,75,0.4)",
-              }}
-            >
-              {vendor.avatarInitials}
-            </Avatar>
-            <Box sx={{ minWidth: 0, flex: 1 }}>
-              <Typography sx={{ color: "common.white", fontWeight: 600, fontSize: "0.9rem", lineHeight: 1.2 }} noWrap>
-                {vendor.displayName}
-              </Typography>
-              <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.7)", fontSize: "0.72rem" }} noWrap>
-                {vendor.category}
-              </Typography>
-            </Box>
-          </Stack>
-          <Stack direction="row" spacing={0.75} sx={{ flexWrap: "wrap", gap: 0.5 }}>
-            <Chip
-              icon={<VerifiedUserOutlinedIcon sx={{ fontSize: 12 }} />}
-              label={vendor.verified ? "VERIFIED" : "PENDING"}
-              size="small"
-              sx={{
-                bgcolor: vendor.verified ? "rgba(34,108,78,0.18)" : "rgba(217,168,75,0.16)",
-                color: vendor.verified ? "#A8E6BD" : "secondary.light",
-                border: vendor.verified ? "1px solid rgba(34,108,78,0.4)" : "1px solid rgba(217,168,75,0.35)",
-                fontSize: "0.6rem",
-                height: 20,
-                fontWeight: 700,
-                letterSpacing: "0.06em",
-                "& .MuiChip-icon": { color: "inherit" },
-              }}
-            />
-            <Chip
-              label="FOUNDING PARTNER"
-              size="small"
-              sx={{
-                bgcolor: "rgba(217,168,75,0.14)",
-                color: "secondary.light",
-                border: "1px solid rgba(217,168,75,0.3)",
-                fontSize: "0.6rem",
-                height: 20,
-                fontWeight: 700,
-                letterSpacing: "0.06em",
-              }}
-            />
-          </Stack>
+      {!collapsed && (
+        <Box sx={{ px: 2, pb: 1.5, flexShrink: 0 }}>
+          <Typography
+            sx={{
+              color: "rgba(255,255,255,0.4)",
+              fontSize: "0.62rem",
+              letterSpacing: "0.22em",
+              fontWeight: 700,
+              textTransform: "uppercase",
+            }}
+          >
+            Partner Portal
+          </Typography>
         </Box>
-      </Box>
+      )}
 
-      <Box sx={{ px: 2.25, py: 1.5, flex: 1 }}>
-        <Typography
-          sx={{
-            color: "rgba(255,255,255,0.4)",
-            fontSize: "0.65rem",
-            letterSpacing: "0.18em",
-            fontWeight: 700,
-            mb: 1,
-            px: 1,
-          }}
-        >
-          NAVIGATE
-        </Typography>
+      {!collapsed && (
+        <Box sx={{ px: 1.75, pb: 1.25, flexShrink: 0 }}>
+          <Box
+            sx={{
+              p: 1.5,
+              borderRadius: 1.5,
+              border: "1px solid rgba(255,255,255,0.08)",
+              bgcolor: "rgba(255,255,255,0.03)",
+            }}
+          >
+            <Stack direction="row" spacing={1.25} sx={{ alignItems: "center", mb: 1 }}>
+              <Avatar
+                sx={{
+                  bgcolor: "rgba(217,168,75,0.18)",
+                  color: "secondary.light",
+                  width: 32,
+                  height: 32,
+                  fontWeight: 700,
+                  fontSize: "0.78rem",
+                  border: "1px solid rgba(217,168,75,0.4)",
+                }}
+              >
+                {vendor.avatarInitials}
+              </Avatar>
+              <Box sx={{ minWidth: 0, flex: 1 }}>
+                <Typography sx={{ color: "common.white", fontWeight: 600, fontSize: "0.82rem", lineHeight: 1.2 }} noWrap>
+                  {vendor.displayName}
+                </Typography>
+                <Typography sx={{ color: "rgba(255,255,255,0.6)", fontSize: "0.68rem" }} noWrap>
+                  {vendor.category}
+                </Typography>
+              </Box>
+            </Stack>
+            <Stack direction="row" spacing={0.5} sx={{ flexWrap: "wrap", gap: 0.5 }}>
+              <Chip
+                icon={<VerifiedUserOutlinedIcon sx={{ fontSize: 11 }} />}
+                label={vendor.verified ? "VERIFIED" : "PENDING"}
+                size="small"
+                sx={{
+                  bgcolor: vendor.verified ? "rgba(34,108,78,0.18)" : "rgba(217,168,75,0.16)",
+                  color: vendor.verified ? "#A8E6BD" : "secondary.light",
+                  border: vendor.verified ? "1px solid rgba(34,108,78,0.4)" : "1px solid rgba(217,168,75,0.35)",
+                  fontSize: "0.55rem",
+                  height: 18,
+                  fontWeight: 700,
+                  letterSpacing: "0.06em",
+                  "& .MuiChip-icon": { color: "inherit" },
+                }}
+              />
+              <Chip
+                label="FOUNDING"
+                size="small"
+                sx={{
+                  bgcolor: "rgba(217,168,75,0.14)",
+                  color: "secondary.light",
+                  border: "1px solid rgba(217,168,75,0.3)",
+                  fontSize: "0.55rem",
+                  height: 18,
+                  fontWeight: 700,
+                  letterSpacing: "0.06em",
+                }}
+              />
+            </Stack>
+          </Box>
+        </Box>
+      )}
+
+      <Box sx={{ px: collapsed ? 1 : 1.5, py: 1, flex: 1, overflowY: "auto" }}>
+        {!collapsed && (
+          <Typography
+            sx={{
+              color: "rgba(255,255,255,0.35)",
+              fontSize: "0.6rem",
+              letterSpacing: "0.18em",
+              fontWeight: 700,
+              mb: 0.75,
+              px: 1,
+            }}
+          >
+            NAVIGATE
+          </Typography>
+        )}
         <Stack spacing={0.25}>
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -156,7 +223,7 @@ function SidebarContent({ pathname, onClose }: { pathname: string; onClose?: () 
               item.href === "/vendor"
                 ? pathname === "/vendor"
                 : pathname.startsWith(item.href);
-            return (
+            const node = (
               <Box
                 key={item.href}
                 component={Link}
@@ -165,64 +232,99 @@ function SidebarContent({ pathname, onClose }: { pathname: string; onClose?: () 
                 sx={{
                   display: "flex",
                   alignItems: "center",
-                  gap: 1.5,
-                  px: 1.5,
-                  py: 1.1,
-                  borderRadius: 2,
+                  gap: collapsed ? 0 : 1.25,
+                  justifyContent: collapsed ? "center" : "flex-start",
+                  px: collapsed ? 0 : 1.25,
+                  py: 1,
+                  borderRadius: 1.5,
                   color: active ? "common.white" : "rgba(255,255,255,0.65)",
                   bgcolor: active ? "rgba(217,168,75,0.12)" : "transparent",
                   border: "1px solid",
                   borderColor: active ? "rgba(217,168,75,0.25)" : "transparent",
                   textDecoration: "none",
-                  fontSize: "0.9rem",
+                  fontSize: "0.84rem",
                   fontWeight: active ? 600 : 500,
-                  transition: "background-color 180ms ease, color 180ms ease, border-color 180ms ease",
+                  transition: "all 160ms ease",
                   "&:hover": {
                     bgcolor: active ? "rgba(217,168,75,0.16)" : "rgba(255,255,255,0.05)",
                     color: "common.white",
                   },
                 }}
               >
-                <Icon sx={{ fontSize: 20, color: active ? "secondary.light" : "inherit" }} />
-                {item.label}
+                <Icon sx={{ fontSize: 18, color: active ? "secondary.light" : "inherit", flexShrink: 0 }} />
+                {!collapsed && item.label}
               </Box>
+            );
+            return collapsed ? (
+              <Tooltip key={item.href} title={item.label} placement="right" arrow>
+                {node}
+              </Tooltip>
+            ) : (
+              node
             );
           })}
         </Stack>
       </Box>
 
-      <Box sx={{ px: 2.25, pb: 2.5 }}>
-        <Box
-          sx={{
-            p: 2,
-            borderRadius: "14px",
-            border: "1px solid rgba(217,168,75,0.28)",
-            backgroundImage:
-              "linear-gradient(155deg, rgba(217,168,75,0.2) 0%, rgba(14,42,61,0.6) 100%)",
-          }}
-        >
-          <Typography sx={{ fontSize: "0.65rem", letterSpacing: "0.18em", fontWeight: 700, color: "secondary.light", mb: 0.5 }}>
-            NEED HELP?
-          </Typography>
-          <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.85)", fontSize: "0.78rem", lineHeight: 1.5, mb: 1.25 }}>
-            Reach Reshani directly for vendor support, partner@thrivingdentist.com
-          </Typography>
-          <Button
-            href="mailto:partner@thrivingdentist.com"
-            variant="outlined"
-            fullWidth
-            size="small"
+      {!collapsed && (
+        <Box sx={{ px: 1.5, pb: 1.5, flexShrink: 0 }}>
+          <Divider sx={{ borderColor: "rgba(255,255,255,0.06)", mb: 1 }} />
+          <Box
+            component="a"
+            href="mailto:partners@dentalmembernetwork.com"
             sx={{
-              color: "common.white",
-              borderColor: "rgba(255,255,255,0.18)",
-              bgcolor: "rgba(255,255,255,0.04)",
-              "&:hover": { borderColor: "rgba(255,255,255,0.4)", bgcolor: "rgba(255,255,255,0.08)" },
+              display: "flex",
+              alignItems: "center",
+              gap: 1.25,
+              px: 1.25,
+              py: 1,
+              borderRadius: 1.25,
+              color: "rgba(255,255,255,0.65)",
+              textDecoration: "none",
+              transition: "background-color 160ms ease, color 160ms ease",
+              "&:hover": { bgcolor: "rgba(255,255,255,0.04)", color: "common.white" },
             }}
           >
-            Email partner team
-          </Button>
+            <HelpOutlineOutlinedIcon sx={{ fontSize: 16, color: "rgba(255,255,255,0.55)" }} />
+            <Box sx={{ minWidth: 0, flex: 1 }}>
+              <Typography sx={{ fontSize: "0.78rem", fontWeight: 600, color: "inherit", lineHeight: 1.2 }}>
+                Need help?
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: "0.68rem",
+                  color: "rgba(255,255,255,0.45)",
+                  lineHeight: 1.3,
+                  mt: 0.25,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                partners@dentalmembernetwork.com
+              </Typography>
+            </Box>
+          </Box>
         </Box>
-      </Box>
+      )}
+
+      {showCollapseToggle && collapsed && (
+        <Box sx={{ pb: 1.5, display: "flex", justifyContent: "center", flexShrink: 0 }}>
+          <Tooltip title="Expand sidebar" placement="right" arrow>
+            <IconButton
+              onClick={onToggleCollapse}
+              size="small"
+              sx={{
+                color: "rgba(255,255,255,0.5)",
+                "&:hover": { color: "#F0C16E", bgcolor: "rgba(255,255,255,0.04)" },
+              }}
+              aria-label="Expand sidebar"
+            >
+              <KeyboardDoubleArrowRightRoundedIcon sx={{ fontSize: 18 }} />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      )}
     </Box>
   );
 }
@@ -232,14 +334,46 @@ export default function VendorAppShell({ children }: { children: React.ReactNode
   const theme = useTheme();
   const isMd = useMediaQuery(theme.breakpoints.up("md"));
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuAnchor = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
-  const { signOut } = useClerk();
+  const signOut = useSignOut("vendor");
 
-  const handleSignOut = async () => {
+  // Hydrate sidebar state from localStorage after mount. We can't read
+  // localStorage in the initial state (SSR vs client mismatch), so we read
+  // post-mount and setState once. The lint rule below flags this pattern, but
+  // it's the correct shape for one-shot hydration from external storage.
+  useEffect(() => {
+    let stored: string | null = null;
+    try {
+      stored = localStorage.getItem(COLLAPSE_KEY);
+    } catch {
+      stored = null;
+    }
+    if (stored === "1") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setCollapsed(true);
+    }
+  }, []);
+
+  const toggleCollapse = () => {
+    setCollapsed((v) => {
+      const next = !v;
+      try {
+        localStorage.setItem(COLLAPSE_KEY, next ? "1" : "0");
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  };
+
+  const sidebarW = collapsed ? SIDEBAR_W_COLLAPSED : SIDEBAR_W_EXPANDED;
+
+  const handleSignOut = () => {
     setUserMenuOpen(false);
-    await signOut({ redirectUrl: "/" });
+    signOut();
   };
 
   const goTo = (href: string) => {
@@ -253,57 +387,90 @@ export default function VendorAppShell({ children }: { children: React.ReactNode
         <Box
           component="nav"
           sx={{
-            width: SIDEBAR_W,
+            width: sidebarW,
             flexShrink: 0,
             position: "fixed",
             inset: 0,
             right: "auto",
             zIndex: theme.zIndex.appBar - 1,
+            transition: "width 240ms cubic-bezier(0.16, 1, 0.3, 1)",
           }}
         >
-          <SidebarContent pathname={pathname} />
+          <SidebarContent
+            pathname={pathname}
+            collapsed={collapsed}
+            onToggleCollapse={toggleCollapse}
+            showCollapseToggle
+          />
         </Box>
       )}
       {!isMd && (
         <Drawer
           open={drawerOpen}
           onClose={() => setDrawerOpen(false)}
-          slotProps={{ paper: { sx: { width: SIDEBAR_W, border: "none" } } }}
+          slotProps={{ paper: { sx: { width: SIDEBAR_W_EXPANDED, border: "none" } } }}
         >
-          <SidebarContent pathname={pathname} onClose={() => setDrawerOpen(false)} />
+          <SidebarContent
+            pathname={pathname}
+            collapsed={false}
+            onClose={() => setDrawerOpen(false)}
+          />
         </Drawer>
       )}
 
-      <Box sx={{ flex: 1, ml: { md: `${SIDEBAR_W}px` }, minWidth: 0 }}>
+      <Box
+        sx={{
+          flex: 1,
+          ml: { md: `${sidebarW}px` },
+          minWidth: 0,
+          transition: "margin-left 240ms cubic-bezier(0.16, 1, 0.3, 1)",
+        }}
+      >
         <AppBar
           position="sticky"
+          elevation={0}
           sx={{
-            bgcolor: "rgba(244,240,230,0.85)",
+            bgcolor: "rgba(244,240,230,0.92)",
             backdropFilter: "blur(14px)",
             borderBottom: "1px solid",
             borderColor: "divider",
             color: "text.primary",
           }}
         >
-          <Toolbar sx={{ gap: 1.5, minHeight: { xs: 60, md: 68 } }}>
+          <Toolbar sx={{ gap: 1, minHeight: { xs: 52, md: 56 }, px: { xs: 1.5, md: 2 } }}>
             {!isMd && (
-              <IconButton onClick={() => setDrawerOpen(true)} edge="start">
+              <IconButton onClick={() => setDrawerOpen(true)} edge="start" size="small">
                 <MenuOutlinedIcon />
               </IconButton>
             )}
+            {isMd && (
+              <Tooltip title={collapsed ? "Expand sidebar" : "Collapse sidebar"}>
+                <IconButton
+                  onClick={toggleCollapse}
+                  size="small"
+                  sx={{ color: "text.secondary" }}
+                  aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+                >
+                  <MenuOutlinedIcon sx={{ fontSize: 20 }} />
+                </IconButton>
+              </Tooltip>
+            )}
+
             <Box sx={{ flex: 1 }} />
+
             <Tooltip title="Help">
               <IconButton size="small" sx={{ color: "text.secondary" }}>
-                <HelpOutlineOutlinedIcon />
+                <HelpOutlineOutlinedIcon sx={{ fontSize: 18 }} />
               </IconButton>
             </Tooltip>
             <Tooltip title="Notifications">
               <IconButton size="small" sx={{ color: "text.secondary" }}>
                 <Badge color="secondary" variant="dot" overlap="circular">
-                  <NotificationsNoneOutlinedIcon />
+                  <NotificationsNoneOutlinedIcon sx={{ fontSize: 18 }} />
                 </Badge>
               </IconButton>
             </Tooltip>
+
             <Box
               ref={userMenuAnchor}
               component="button"
@@ -311,13 +478,11 @@ export default function VendorAppShell({ children }: { children: React.ReactNode
               sx={{
                 display: "flex",
                 alignItems: "center",
-                gap: 1,
-                pl: { xs: 0, sm: 1.25 },
-                pr: { xs: 0, sm: 1 },
-                py: 0.5,
+                gap: 0.75,
+                pl: { xs: 0.5, sm: 1 },
+                pr: { xs: 0.5, sm: 0.75 },
+                py: 0.25,
                 ml: 0.5,
-                borderLeft: { xs: 0, sm: "1px solid" },
-                borderColor: "divider",
                 bgcolor: "transparent",
                 border: 0,
                 borderRadius: "999px",
@@ -327,24 +492,23 @@ export default function VendorAppShell({ children }: { children: React.ReactNode
                 "&:hover": { bgcolor: "rgba(14,42,61,0.05)" },
               }}
             >
-              <Avatar sx={{ width: 34, height: 34, bgcolor: "primary.main", color: "common.white", fontSize: "0.8rem", fontWeight: 700 }}>
+              <Avatar sx={{ width: 30, height: 30, bgcolor: "primary.main", color: "common.white", fontSize: "0.75rem", fontWeight: 700 }}>
                 {vendor.avatarInitials}
               </Avatar>
               <Box sx={{ display: { xs: "none", lg: "block" }, textAlign: "left" }}>
-                <Typography sx={{ fontSize: "0.85rem", fontWeight: 600, lineHeight: 1.15 }}>
+                <Typography sx={{ fontSize: "0.8rem", fontWeight: 600, lineHeight: 1.15 }}>
                   {vendor.displayName}
                 </Typography>
-                <Typography variant="body2" sx={{ fontSize: "0.7rem", color: "text.secondary" }}>
+                <Typography sx={{ fontSize: "0.66rem", color: "text.secondary" }}>
                   Featured Partner
                 </Typography>
               </Box>
               <KeyboardArrowDownOutlinedIcon
                 sx={{
-                  fontSize: 18,
+                  fontSize: 16,
                   color: "text.secondary",
                   transition: "transform 200ms ease",
                   transform: userMenuOpen ? "rotate(180deg)" : "rotate(0)",
-                  ml: 0.25,
                 }}
               />
             </Box>
@@ -358,65 +522,66 @@ export default function VendorAppShell({ children }: { children: React.ReactNode
                 paper: {
                   sx: {
                     mt: 1,
-                    minWidth: 280,
-                    borderRadius: "16px",
+                    minWidth: 240,
+                    borderRadius: 2,
                     border: "1px solid",
                     borderColor: "divider",
                     boxShadow: "0 24px 48px -20px rgba(14,42,61,0.25)",
-                    overflow: "hidden",
                   },
                 },
                 list: { sx: { py: 0.5 } },
               }}
             >
-              <Box sx={{ px: 2, pt: 1.5, pb: 1.25 }}>
-                <Typography sx={{ fontSize: "0.92rem", fontWeight: 600, lineHeight: 1.2 }} noWrap>
+              <Box sx={{ px: 1.75, pt: 1.25, pb: 1 }}>
+                <Typography sx={{ fontSize: "0.85rem", fontWeight: 600, lineHeight: 1.2 }} noWrap>
                   {vendor.displayName}
                 </Typography>
-                <Typography variant="body2" sx={{ fontSize: "0.74rem", color: "text.secondary" }} noWrap>
+                <Typography sx={{ fontSize: "0.7rem", color: "text.secondary" }} noWrap>
                   {vendor.contactEmail}
                 </Typography>
               </Box>
               <Divider />
-              <MenuItem onClick={() => goTo("/vendor/profile")}>
-                <ListItemIcon><StoreOutlinedIcon fontSize="small" /></ListItemIcon>
+              <MenuItem onClick={() => goTo("/vendor/profile")} sx={{ py: 0.75 }}>
+                <ListItemIcon sx={{ minWidth: 32 }}><StoreOutlinedIcon sx={{ fontSize: 18 }} /></ListItemIcon>
                 <ListItemText
                   primary="Company profile"
-                  slotProps={{ primary: { sx: { fontSize: "0.9rem", fontWeight: 600 } } }}
+                  slotProps={{ primary: { sx: { fontSize: "0.82rem", fontWeight: 500 } } }}
                 />
               </MenuItem>
-              <MenuItem onClick={() => goTo("/vendor/account")}>
-                <ListItemIcon><ManageAccountsOutlinedIcon fontSize="small" /></ListItemIcon>
+              <MenuItem onClick={() => goTo("/vendor/account")} sx={{ py: 0.75 }}>
+                <ListItemIcon sx={{ minWidth: 32 }}><ManageAccountsOutlinedIcon sx={{ fontSize: 18 }} /></ListItemIcon>
                 <ListItemText
                   primary="Account & billing"
-                  slotProps={{ primary: { sx: { fontSize: "0.9rem", fontWeight: 600 } } }}
+                  slotProps={{ primary: { sx: { fontSize: "0.82rem", fontWeight: 500 } } }}
                 />
               </MenuItem>
-              <MenuItem onClick={() => goTo("/vendor/agreement")}>
-                <ListItemIcon><GavelOutlinedIcon fontSize="small" /></ListItemIcon>
+              <MenuItem onClick={() => goTo("/vendor/agreement")} sx={{ py: 0.75 }}>
+                <ListItemIcon sx={{ minWidth: 32 }}><GavelOutlinedIcon sx={{ fontSize: 18 }} /></ListItemIcon>
                 <ListItemText
                   primary="Partnership agreement"
-                  slotProps={{ primary: { sx: { fontSize: "0.9rem", fontWeight: 600 } } }}
+                  slotProps={{ primary: { sx: { fontSize: "0.82rem", fontWeight: 500 } } }}
                 />
               </MenuItem>
               <Divider />
-              <MenuItem onClick={handleSignOut} sx={{ color: "error.main" }}>
-                <ListItemIcon sx={{ color: "error.main" }}><LogoutOutlinedIcon fontSize="small" /></ListItemIcon>
+              <MenuItem onClick={handleSignOut} sx={{ color: "error.main", py: 0.75 }}>
+                <ListItemIcon sx={{ color: "error.main", minWidth: 32 }}>
+                  <LogoutOutlinedIcon sx={{ fontSize: 18 }} />
+                </ListItemIcon>
                 <ListItemText
                   primary="Sign out"
-                  slotProps={{ primary: { sx: { fontSize: "0.9rem", fontWeight: 600 } } }}
+                  slotProps={{ primary: { sx: { fontSize: "0.82rem", fontWeight: 500 } } }}
                 />
               </MenuItem>
             </Menu>
           </Toolbar>
         </AppBar>
 
-        <Box component="main" sx={{ py: { xs: 3, md: 5 } }}>
+        <Box component="main" sx={{ py: { xs: 2.5, md: 3 } }}>
           <Container maxWidth="xl">{children}</Container>
         </Box>
 
         <Divider />
-        <Box sx={{ px: 3, py: 2.5, color: "text.secondary", fontSize: "0.8rem" }}>
+        <Box sx={{ px: 2.5, py: 1.5, color: "text.secondary", fontSize: "0.74rem" }}>
           © 2026 Thriving Dentist Network · Vendor Network · v0.1 prototype
         </Box>
       </Box>

@@ -179,8 +179,8 @@ function VendorSignupInner() {
               <Box component={Link} href="/partners" sx={{ fontSize: "0.85rem", color: "text.secondary", textDecoration: "none", display: { xs: "none", sm: "inline-flex" }, alignItems: "center", gap: 0.5, "&:hover": { color: "text.primary" } }}>
                 <ArrowBackIcon sx={{ fontSize: 14 }} /> Back to partners page
               </Box>
-              <Box component={Link} href="/vendor/signin" sx={{ fontSize: "0.85rem", fontWeight: 600, color: "primary.main", textDecoration: "none" }}>
-                Already a partner? Sign in
+              <Box component={Link} href="/vendor" sx={{ fontSize: "0.85rem", fontWeight: 600, color: "primary.main", textDecoration: "none" }}>
+                Already a partner? Go to portal
               </Box>
             </Stack>
           </Stack>
@@ -821,7 +821,7 @@ function AgreementStep({ form, set }: { form: Form; set: <K extends keyof Form>(
               <Typography variant="body2" sx={{ fontSize: "0.9rem", lineHeight: 1.6 }}>
                 <strong>I have read and agree to the Vendor Network Partnership Agreement above</strong>,
                 including the five commitments, the fee schedule ($0 / $49 / $199), the 12-month initial
-                term, and the right of Thriving Dentist to update terms on 30 days' notice.
+                term, and the right of Thriving Dentist to update terms on 30 days&rsquo; notice.
               </Typography>
             }
             sx={{ alignItems: "flex-start", m: 0 }}
@@ -1010,9 +1010,9 @@ function SuccessCard({ plan, email }: { plan: string; email: string }) {
           NEXT STEP, CHECK YOUR EMAIL
         </Typography>
         <Typography variant="body2" sx={{ color: "text.primary", fontSize: "0.88rem", lineHeight: 1.6 }}>
-          We sent a partner sign-in link to <strong>{email}</strong>. Click it to set your
-          password and access your partner dashboard. Reshani will review and approve your
-          application within 1 business day.
+          We sent a one-time sign-in link to <strong>{email}</strong>. Click it within
+          30 minutes to access your partner portal. Our team will review your application
+          and follow up within 1 business day.
         </Typography>
       </Box>
     </Stack>

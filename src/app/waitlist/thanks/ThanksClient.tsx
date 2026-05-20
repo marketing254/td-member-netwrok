@@ -71,7 +71,9 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 export default function ThanksClient() {
   const params = useSearchParams();
-  const role = params.get("role") === "vendor" ? "vendor" : params.get("role") === "expert" ? "expert" : "member";
+  // Waitlist is members-only. Legacy ?role=vendor/expert links still land here
+  // but the page renders the founding-member version.
+  const role: "member" = "member";
   const again = params.get("again") === "1";
   const reduced = useReducedMotion();
   const [openCard, setOpenCard] = useState<number | null>(null);
@@ -99,7 +101,7 @@ export default function ThanksClient() {
     }
   };
 
-  const roleLabel = role === "vendor" ? "Vendor Partner" : role === "expert" ? "Expert" : "Founding Member";
+  const roleLabel = "Founding Member";
 
   return (
     <>

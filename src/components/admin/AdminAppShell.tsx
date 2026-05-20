@@ -2,7 +2,7 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useClerk } from "@clerk/nextjs";
+import { useSignOut } from "@/lib/auth/identity";
 import {
   AppBar,
   Avatar,
@@ -257,11 +257,11 @@ export default function AdminAppShell({ children }: { children: React.ReactNode 
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuAnchor = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
-  const { signOut } = useClerk();
+  const signOut = useSignOut();
 
-  const handleSignOut = async () => {
+  const handleSignOut = () => {
     setUserMenuOpen(false);
-    await signOut({ redirectUrl: "/" });
+    signOut();
   };
 
   return (

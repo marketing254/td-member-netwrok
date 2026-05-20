@@ -2,7 +2,7 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useClerk, useUser } from "@clerk/nextjs";
+import { useMemberIdentity, useSignOut } from "@/lib/auth/identity";
 import {
   AppBar,
   Avatar,
@@ -247,18 +247,17 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuAnchor = useRef<HTMLButtonElement | null>(null);
   const router = useRouter();
-  const { signOut } = useClerk();
-  const { user } = useUser();
+  const identity = useMemberIdentity();
+  const signOut = useSignOut();
 
-  const displayFirst = user?.firstName ?? member.firstName;
-  const displayLast = user?.lastName ?? member.lastName;
-  const displayEmail = user?.primaryEmailAddress?.emailAddress ?? member.email;
-  const displayInitials =
-    `${displayFirst?.[0] ?? ""}${displayLast?.[0] ?? ""}`.toUpperCase() || member.avatarInitials;
+  const displayFirst = identity.firstName;
+  const displayLast = identity.lastName;
+  const displayEmail = identity.email;
+  const displayInitials = identity.initials;
 
-  const handleSignOut = async () => {
+  const handleSignOut = () => {
     setUserMenuOpen(false);
-    await signOut({ redirectUrl: "/" });
+    signOut();
   };
 
   const goTo = (href: string) => {

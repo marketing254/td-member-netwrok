@@ -1,7 +1,6 @@
 "use client";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
 import {
   Alert,
   Box,
@@ -126,8 +125,6 @@ function AccountPageInner() {
 /* -------------------------------- Profile -------------------------------- */
 
 function ProfilePanel() {
-  const { user, isLoaded } = useUser();
-
   const [firstName, setFirstName] = useState(member.firstName);
   const [lastName, setLastName] = useState(member.lastName);
   const [credential, setCredential] = useState(member.credential);
@@ -138,46 +135,19 @@ function ProfilePanel() {
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Hydrate from Clerk once it loads.
-  useEffect(() => {
-    if (!isLoaded || !user) return;
-    if (user.firstName) setFirstName(user.firstName);
-    if (user.lastName) setLastName(user.lastName);
-    const meta = (user.unsafeMetadata ?? {}) as Record<string, string | undefined>;
-    if (meta.credential) setCredential(meta.credential);
-    if (meta.phone) setPhone(meta.phone);
-    if (meta.practice) setPractice(meta.practice);
-    if (meta.practiceRole) setPracticeRole(meta.practiceRole);
-    if (meta.city) setCity(meta.city);
-  }, [isLoaded, user]);
-
-  const email = user?.primaryEmailAddress?.emailAddress ?? member.email;
+  const email = member.email;
   const avatarInitials = `${firstName[0] ?? ""}${lastName[0] ?? ""}`.toUpperCase();
 
+  // Open-portal phase: there is no auth/persistence layer yet, so saves are
+  // local-state-only and just flash a "Saved" confirmation. Wire this to the
+  // real persistence API when the magic-link session ships.
   const onSave = async () => {
     setSaveState("saving");
     setErrorMsg(null);
-    try {
-      if (user) {
-        await user.update({
-          firstName,
-          lastName,
-          unsafeMetadata: {
-            ...(user.unsafeMetadata ?? {}),
-            credential,
-            phone,
-            practice,
-            practiceRole,
-            city,
-          },
-        });
-      }
+    setTimeout(() => {
       setSaveState("saved");
       setTimeout(() => setSaveState("idle"), 2400);
-    } catch (e) {
-      setSaveState("error");
-      setErrorMsg(e instanceof Error ? e.message : "Could not save changes.");
-    }
+    }, 400);
   };
 
   return (
@@ -392,7 +362,7 @@ function ProfilePanel() {
               color="primary"
               size="large"
               onClick={onSave}
-              disabled={saveState === "saving" || !isLoaded}
+              disabled={saveState === "saving"}
               endIcon={saveState === "saved" ? <CheckCircleOutlinedIcon /> : <ArrowForwardIcon />}
             >
               {saveState === "saving"

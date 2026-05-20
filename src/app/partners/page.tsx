@@ -178,7 +178,7 @@ export default function PartnersPage() {
                   </Button>
                 </Stack>
                 <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.7)", fontSize: "0.82rem" }}>
-                  Already a partner? <Box component={Link} href="/vendor/signin" sx={{ color: "secondary.light", fontWeight: 600, textDecoration: "underline" }}>Sign in to your dashboard</Box>
+                  Already a partner? <Box component={Link} href="/vendor" sx={{ color: "secondary.light", fontWeight: 600, textDecoration: "underline" }}>Sign in to your dashboard</Box>
                 </Typography>
               </Stack>
             </Grid>
@@ -397,7 +397,7 @@ export default function PartnersPage() {
               <Box component={Link} href="/vendor/signup" sx={{ fontSize: "0.85rem", color: "text.secondary", textDecoration: "none", "&:hover": { color: "text.primary" } }}>
                 Apply
               </Box>
-              <Box component={Link} href="/vendor/signin" sx={{ fontSize: "0.85rem", color: "text.secondary", textDecoration: "none", "&:hover": { color: "text.primary" } }}>
+              <Box component={Link} href="/vendor" sx={{ fontSize: "0.85rem", color: "text.secondary", textDecoration: "none", "&:hover": { color: "text.primary" } }}>
                 Partner sign in
               </Box>
             </Stack>

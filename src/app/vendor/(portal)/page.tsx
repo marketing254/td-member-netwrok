@@ -1,395 +1,627 @@
 "use client";
+
 import Link from "next/link";
 import {
   Box,
   Button,
-  Chip,
   Grid,
   LinearProgress,
   Stack,
   Typography,
 } from "@mui/material";
+import type { SvgIconComponent } from "@mui/icons-material";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 import SavingsOutlinedIcon from "@mui/icons-material/SavingsOutlined";
 import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
-import VerifiedUserOutlinedIcon from "@mui/icons-material/VerifiedUserOutlined";
 import AddCircleOutlineOutlinedIcon from "@mui/icons-material/AddCircleOutlineOutlined";
+import VerifiedUserOutlinedIcon from "@mui/icons-material/VerifiedUserOutlined";
 import {
   vendor,
   vendorKpis,
   vendorOwnOffers,
   vendorRedemptions,
-  vendorPlans,
 } from "@/lib/vendorData";
+import {
+  SectionCard,
+  StatusPill,
+  portalText,
+} from "@/components/vendor/PortalUI";
 
 export default function VendorOverview() {
-  const plan = vendorPlans.find((p) => p.id === vendor.planId)!;
   const monthsLeftInWaiver = Math.max(0, 6 - vendor.monthsInProgram);
   const waiverProgress = Math.min(100, (vendor.monthsInProgram / 6) * 100);
+  const firstName = vendor.contactName.split(" ")[0];
+  const activeOffers = vendorOwnOffers.filter((o) => o.status === "published").length;
 
   return (
-    <Stack spacing={4}>
-      {/* Hero */}
+    <Stack spacing={2.5}>
+      {/* NAVY HERO — welcome + KPIs + waiver */}
       <Box
         sx={{
           position: "relative",
           overflow: "hidden",
-          borderRadius: "24px",
-          p: { xs: 3, md: 4.5 },
-          color: "common.white",
-          backgroundImage: "linear-gradient(135deg, #06182A 0%, #0E2A3D 55%, #1B4258 100%)",
+          borderRadius: 2.5,
+          color: "#FFFFFF",
+          backgroundImage: "linear-gradient(135deg, #061322 0%, #0A1A2F 50%, #0F2540 100%)",
+          border: "1px solid rgba(217,168,75,0.18)",
         }}
       >
+        {/* Layered background */}
+        <Box
+          aria-hidden
+          sx={{
+            position: "absolute",
+            inset: 0,
+            background:
+              "radial-gradient(50% 50% at 85% 0%, rgba(240,193,110,0.28) 0%, transparent 55%), radial-gradient(35% 50% at 0% 100%, rgba(42,95,168,0.18) 0%, transparent 60%)",
+            pointerEvents: "none",
+          }}
+        />
         <Box
           aria-hidden
           sx={{
             position: "absolute",
             inset: 0,
             backgroundImage:
-              "radial-gradient(45% 45% at 80% 0%, rgba(217,168,75,0.35) 0%, transparent 60%)",
+              "linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)",
+            backgroundSize: "48px 48px",
+            maskImage: "radial-gradient(ellipse at 80% 50%, black 0%, transparent 75%)",
+            pointerEvents: "none",
           }}
         />
-        <Grid container spacing={4} sx={{ position: "relative", alignItems: "center" }}>
-          <Grid size={{ xs: 12, md: 7 }}>
-            <Stack spacing={1.5}>
-              <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1 }}>
-                <Chip
-                  icon={<VerifiedUserOutlinedIcon sx={{ fontSize: 14 }} />}
+
+        <Box sx={{ position: "relative", p: { xs: 2.5, md: 3 } }}>
+          {/* Top row: title + actions */}
+          <Stack
+            direction={{ xs: "column", md: "row" }}
+            spacing={2}
+            sx={{ justifyContent: "space-between", alignItems: { md: "flex-end" }, mb: { xs: 2.5, md: 3 } }}
+          >
+            <Box>
+              <Stack direction="row" spacing={0.75} sx={{ flexWrap: "wrap", gap: 0.5, mb: 1 }}>
+                <NavyChip
+                  icon={<VerifiedUserOutlinedIcon sx={{ fontSize: 11 }} />}
                   label="VERIFIED PARTNER"
-                  size="small"
-                  sx={{
-                    bgcolor: "rgba(34,108,78,0.18)",
-                    color: "#A8E6BD",
-                    border: "1px solid rgba(34,108,78,0.4)",
-                    fontSize: "0.65rem",
-                    letterSpacing: "0.12em",
-                    fontWeight: 700,
-                    "& .MuiChip-icon": { color: "#A8E6BD" },
-                  }}
+                  tone="green"
                 />
-                <Chip
+                <NavyChip
                   label={`FOUNDING · MONTH ${vendor.monthsInProgram}/12`}
-                  size="small"
-                  sx={{
-                    bgcolor: "rgba(217,168,75,0.16)",
-                    color: "secondary.light",
-                    border: "1px solid rgba(217,168,75,0.35)",
-                    fontSize: "0.65rem",
-                    letterSpacing: "0.12em",
-                    fontWeight: 700,
-                  }}
+                  tone="gold"
                 />
               </Stack>
-              <Typography variant="h2" sx={{ color: "common.white", fontSize: { xs: "2rem", md: "2.75rem" }, mt: 1 }}>
-                Welcome back, {vendor.contactName.split(" ")[0]}.
+              <Typography
+                component="h1"
+                sx={{
+                  fontFamily: "var(--font-display)",
+                  fontSize: { xs: "1.45rem", md: "1.7rem" },
+                  fontWeight: 500,
+                  color: "#FFFFFF",
+                  lineHeight: 1.2,
+                  letterSpacing: "-0.01em",
+                }}
+              >
+                Welcome back, {firstName}.
               </Typography>
-              <Typography sx={{ color: "rgba(255,255,255,0.92)", fontSize: { xs: "1rem", md: "1.08rem" }, lineHeight: 1.55, maxWidth: 540 }}>
-                You delivered <strong>${vendorKpis.savingsDeliveredMonth.toLocaleString()}</strong> in
-                member savings this month across <strong>{vendorKpis.redemptionsThisMonth}</strong> redemptions.
-                {monthsLeftInWaiver > 0
-                  ? ` Your founding waiver covers ${monthsLeftInWaiver} more month${monthsLeftInWaiver === 1 ? "" : "s"}.`
-                  : ""}
+              <Typography
+                sx={{
+                  color: "rgba(255,255,255,0.7)",
+                  fontSize: "0.86rem",
+                  lineHeight: 1.5,
+                  maxWidth: 520,
+                  mt: 0.5,
+                }}
+              >
+                You delivered{" "}
+                <Box component="strong" sx={{ color: "#FFFFFF", fontWeight: 600 }}>
+                  ${vendorKpis.savingsDeliveredMonth.toLocaleString()}
+                </Box>{" "}
+                in member savings this month across{" "}
+                <Box component="strong" sx={{ color: "#FFFFFF", fontWeight: 600 }}>
+                  {vendorKpis.redemptionsThisMonth}
+                </Box>{" "}
+                redemptions.
               </Typography>
-              <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ mt: 1 }}>
-                <Button variant="contained" color="secondary" size="large" component={Link} href="/vendor/offers" startIcon={<AddCircleOutlineOutlinedIcon />}>
-                  Create new offer
-                </Button>
-                <Button
-                  variant="outlined"
-                  size="large"
-                  component={Link}
-                  href="/vendor/redemptions"
-                  sx={{
-                    color: "common.white",
-                    borderColor: "rgba(255,255,255,0.25)",
-                    bgcolor: "rgba(255,255,255,0.04)",
-                    "&:hover": { borderColor: "rgba(255,255,255,0.5)", bgcolor: "rgba(255,255,255,0.08)" },
-                  }}
-                >
-                  View redemptions
-                </Button>
-              </Stack>
-            </Stack>
-          </Grid>
-          <Grid size={{ xs: 12, md: 5 }}>
-            <Box
+            </Box>
+            <Button
+              component={Link}
+              href="/vendor/offers/new"
+              variant="contained"
+              size="small"
+              startIcon={<AddCircleOutlineOutlinedIcon sx={{ fontSize: 16 }} />}
               sx={{
-                p: 2.75,
-                borderRadius: "16px",
-                bgcolor: "rgba(255,255,255,0.08)",
-                border: "1px solid rgba(255,255,255,0.16)",
-                backdropFilter: "blur(8px)",
+                bgcolor: "#D4A44B",
+                color: "#0A1A2F",
+                textTransform: "none",
+                fontSize: "0.84rem",
+                fontWeight: 700,
+                px: 1.75,
+                py: 0.75,
+                boxShadow: "0 4px 14px -4px rgba(212,164,75,0.55)",
+                "&:hover": { bgcolor: "#E6B860", boxShadow: "0 6px 18px -4px rgba(212,164,75,0.7)" },
               }}
             >
-              <Typography variant="overline" sx={{ color: "secondary.light", display: "block", mb: 1.25, fontWeight: 700 }}>
-                FOUNDING WAIVER
-              </Typography>
-              <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "baseline", mb: 1.5 }}>
-                <Typography sx={{ color: "common.white", fontFamily: "var(--font-display)", fontSize: "2.25rem", lineHeight: 1 }}>
-                  {monthsLeftInWaiver}
-                </Typography>
-                <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.85)", fontSize: "0.85rem" }}>
-                  months left at $0
-                </Typography>
-              </Stack>
-              <LinearProgress
-                variant="determinate"
-                value={waiverProgress}
-                sx={{
-                  height: 6,
-                  borderRadius: 999,
-                  bgcolor: "rgba(255,255,255,0.18)",
-                  "& .MuiLinearProgress-bar": {
-                    borderRadius: 999,
-                    backgroundImage: "linear-gradient(90deg, #D9A84B 0%, #F0C16E 100%)",
-                  },
-                }}
+              Create offer
+            </Button>
+          </Stack>
+
+          {/* KPI row — dark cards inside the hero */}
+          <Grid container spacing={1.5}>
+            <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+              <NavyStat
+                icon={ReceiptLongOutlinedIcon}
+                label="Redemptions, MTD"
+                value={String(vendorKpis.redemptionsThisMonth)}
+                footer={`${vendorKpis.redemptionsLifetime} lifetime`}
               />
-              <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.8)", fontSize: "0.78rem", mt: 1.5, lineHeight: 1.5 }}>
-                Months 7–12 will bill at $49/mo (locked launch rate). Standard $199 from month 13.
-              </Typography>
-            </Box>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+              <NavyStat
+                icon={SavingsOutlinedIcon}
+                label="Savings delivered, MTD"
+                value={`$${vendorKpis.savingsDeliveredMonth.toLocaleString()}`}
+                footer={`$${vendorKpis.savingsDeliveredLifetime.toLocaleString()} lifetime`}
+                accent
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+              <NavyStat
+                icon={GroupsOutlinedIcon}
+                label="Inbound leads, MTD"
+                value={String(vendorKpis.leadsThisMonth)}
+                footer="From directory + hotline"
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+              <NavyStat
+                icon={LocalOfferOutlinedIcon}
+                label="Active offers"
+                value={String(activeOffers)}
+                footer={`${vendorKpis.pendingOffersCount} pending review`}
+                accent
+              />
+            </Grid>
           </Grid>
-        </Grid>
-      </Box>
 
-      {/* KPI cards */}
-      <Grid container spacing={2.5}>
-        <Stat
-          icon={ReceiptLongOutlinedIcon}
-          label="Redemptions · this month"
-          value={`${vendorKpis.redemptionsThisMonth}`}
-          footer={`${vendorKpis.redemptionsLifetime} lifetime`}
-        />
-        <Stat
-          icon={SavingsOutlinedIcon}
-          label="Savings delivered · MTD"
-          value={`$${vendorKpis.savingsDeliveredMonth.toLocaleString()}`}
-          footer={`$${vendorKpis.savingsDeliveredLifetime.toLocaleString()} lifetime`}
-          accent="secondary"
-        />
-        <Stat
-          icon={GroupsOutlinedIcon}
-          label="Inbound leads · MTD"
-          value={`${vendorKpis.leadsThisMonth}`}
-          footer="Section 3 attribution window"
-        />
-        <Stat
-          icon={LocalOfferOutlinedIcon}
-          label="Active offers"
-          value={`${vendorOwnOffers.filter((o) => o.status === "published").length}`}
-          footer={`${vendorKpis.pendingOffersCount} pending review`}
-          accent="secondary"
-        />
-      </Grid>
-
-      <Grid container spacing={3}>
-        {/* Recent redemptions */}
-        <Grid size={{ xs: 12, lg: 7 }}>
-          <Box
-            sx={{
-              borderRadius: "20px",
-              border: "1px solid",
-              borderColor: "divider",
-              bgcolor: "common.white",
-              overflow: "hidden",
-            }}
-          >
-            <Box sx={{ p: 2.75, borderBottom: "1px solid", borderColor: "divider" }}>
-              <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "flex-end" }}>
-                <Box>
-                  <Typography variant="overline" sx={{ color: "text.secondary", display: "block" }}>
-                    RECENT REDEMPTIONS
-                  </Typography>
-                  <Typography variant="h5">Members using your offers</Typography>
-                </Box>
-                <Box component={Link} href="/vendor/redemptions" sx={{ color: "primary.main", fontWeight: 600, fontSize: "0.85rem", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 0.5 }}>
-                  See all <ArrowForwardIcon sx={{ fontSize: 16 }} />
-                </Box>
-              </Stack>
-            </Box>
-            <Stack divider={<Box sx={{ borderTop: "1px solid", borderColor: "divider" }} />}>
-              {vendorRedemptions.slice(0, 5).map((r) => (
-                <Stack key={r.id} direction="row" sx={{ p: 2, gap: 1.5, alignItems: "center" }}>
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography sx={{ fontSize: "0.92rem", fontWeight: 600 }} noWrap>
-                      {r.memberDisplay} · {r.city}
-                    </Typography>
-                    <Typography variant="body2" sx={{ fontSize: "0.78rem", color: "text.secondary" }} noWrap>
-                      {r.offerTitle}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ textAlign: "right", flexShrink: 0 }}>
-                    <Typography sx={{ fontWeight: 700, color: "success.dark", fontSize: "0.95rem" }}>
-                      ${r.amountSaved.toLocaleString()}
-                    </Typography>
-                    <Typography variant="body2" sx={{ fontSize: "0.72rem", color: "text.secondary" }}>
-                      {r.redeemedOn}
-                    </Typography>
-                  </Box>
-                </Stack>
-              ))}
-            </Stack>
-          </Box>
-        </Grid>
-
-        {/* Offers status */}
-        <Grid size={{ xs: 12, lg: 5 }}>
-          <Box
-            sx={{
-              borderRadius: "20px",
-              border: "1px solid",
-              borderColor: "divider",
-              bgcolor: "common.white",
-              overflow: "hidden",
-            }}
-          >
-            <Box sx={{ p: 2.75, borderBottom: "1px solid", borderColor: "divider" }}>
-              <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "flex-end" }}>
-                <Box>
-                  <Typography variant="overline" sx={{ color: "text.secondary", display: "block" }}>
-                    YOUR OFFERS
-                  </Typography>
-                  <Typography variant="h5">Status</Typography>
-                </Box>
-                <Box component={Link} href="/vendor/offers" sx={{ color: "primary.main", fontWeight: 600, fontSize: "0.85rem", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 0.5 }}>
-                  Manage <ArrowForwardIcon sx={{ fontSize: 16 }} />
-                </Box>
-              </Stack>
-            </Box>
-            <Stack divider={<Box sx={{ borderTop: "1px solid", borderColor: "divider" }} />}>
-              {vendorOwnOffers.map((o) => (
-                <Box key={o.id} sx={{ p: 2 }}>
-                  <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "flex-start", mb: 0.5, gap: 1 }}>
-                    <Typography sx={{ fontSize: "0.9rem", fontWeight: 600, flex: 1 }} noWrap>
-                      {o.title}
-                    </Typography>
-                    <StatusChip status={o.status} />
-                  </Stack>
-                  <Typography variant="body2" sx={{ fontSize: "0.78rem", color: "text.secondary" }}>
-                    {o.discountLabel} · {o.redemptions} redemptions
-                  </Typography>
-                </Box>
-              ))}
-            </Stack>
-          </Box>
-
-          {/* Plan card */}
+          {/* Founding waiver progress — inline at bottom of hero */}
           <Box
             sx={{
               mt: 2.5,
-              p: 2.75,
-              borderRadius: "20px",
-              border: "1px solid rgba(217,168,75,0.4)",
-              backgroundImage: "linear-gradient(155deg, #FBF6E8 0%, #F4E8C9 100%)",
+              p: 2,
+              borderRadius: 1.5,
+              bgcolor: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              backdropFilter: "blur(4px)",
             }}
           >
-            <Typography variant="overline" sx={{ color: "#A07823", display: "block", fontWeight: 700 }}>
-              YOUR PLAN
-            </Typography>
-            <Typography variant="h5" sx={{ mt: 0.25, mb: 0.75 }}>
-              {plan.name}
-            </Typography>
-            <Typography variant="body2" sx={{ color: "text.secondary", fontSize: "0.86rem", mb: 1.5 }}>
-              {plan.cadenceLabel}
-            </Typography>
-            <Button
-              fullWidth
-              variant="outlined"
-              color="primary"
-              size="small"
-              component={Link}
-              href="/vendor/account"
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={2}
+              sx={{ alignItems: { sm: "center" } }}
             >
-              Manage billing
-            </Button>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Stack direction="row" sx={{ alignItems: "baseline", justifyContent: "space-between", mb: 1 }}>
+                  <Stack direction="row" spacing={1.5} sx={{ alignItems: "baseline" }}>
+                    <Typography
+                      sx={{
+                        fontSize: "0.66rem",
+                        fontWeight: 700,
+                        letterSpacing: "0.18em",
+                        textTransform: "uppercase",
+                        color: "#F0C16E",
+                      }}
+                    >
+                      Founding waiver
+                    </Typography>
+                    <Typography sx={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.7)" }}>
+                      <Box component="strong" sx={{ color: "#FFFFFF", fontWeight: 600 }}>
+                        {monthsLeftInWaiver}
+                      </Box>{" "}
+                      month{monthsLeftInWaiver === 1 ? "" : "s"} left at $0/mo
+                    </Typography>
+                  </Stack>
+                </Stack>
+                <LinearProgress
+                  variant="determinate"
+                  value={waiverProgress}
+                  sx={{
+                    height: 5,
+                    borderRadius: 999,
+                    bgcolor: "rgba(255,255,255,0.1)",
+                    "& .MuiLinearProgress-bar": {
+                      borderRadius: 999,
+                      backgroundImage: "linear-gradient(90deg, #D4A44B 0%, #F0C16E 100%)",
+                    },
+                  }}
+                />
+                <Typography
+                  sx={{
+                    fontSize: "0.74rem",
+                    color: "rgba(255,255,255,0.55)",
+                    mt: 1,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  Months 7-12 bill at $49/mo (launch rate locked). Standard $199/mo from month 13.
+                </Typography>
+              </Box>
+            </Stack>
           </Box>
+        </Box>
+      </Box>
+
+      {/* Below the hero — actionable summary */}
+      <Grid container spacing={2}>
+        {/* This week / nudges */}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <SectionCard title="This week" subtitle="Where to focus" padding="default">
+            <Stack spacing={1.25}>
+              <ActionRow
+                label={`${vendorKpis.pendingOffersCount} offer${vendorKpis.pendingOffersCount === 1 ? "" : "s"} pending team review`}
+                href="/vendor/offers"
+                tone="gold"
+                visible={vendorKpis.pendingOffersCount > 0}
+              />
+              <ActionRow
+                label={`${vendorKpis.leadsThisMonth} new lead${vendorKpis.leadsThisMonth === 1 ? "" : "s"} this month`}
+                href="/vendor/redemptions"
+                tone="navy"
+                visible={vendorKpis.leadsThisMonth > 0}
+              />
+              <ActionRow
+                label="Profile is verified and live in the directory"
+                href="/vendor/profile"
+                tone="green"
+                visible={vendor.verified}
+              />
+              {vendorKpis.pendingOffersCount === 0 && vendorKpis.leadsThisMonth === 0 && (
+                <Typography sx={{ ...portalText.body, fontSize: "0.86rem" }}>
+                  Nothing urgent. Consider adding a new offer to keep the listing fresh.
+                </Typography>
+              )}
+            </Stack>
+          </SectionCard>
+        </Grid>
+
+        {/* Recent redemptions snapshot */}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <SectionCard
+            title="Recent redemptions"
+            subtitle="Latest members using your offers"
+            padding="none"
+            action={
+              <Box
+                component={Link}
+                href="/vendor/redemptions"
+                sx={{
+                  fontSize: "0.78rem",
+                  fontWeight: 600,
+                  color: "#A07823",
+                  textDecoration: "none",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 0.5,
+                  "&:hover": { color: "#7A5B17" },
+                }}
+              >
+                See all <ArrowForwardIcon sx={{ fontSize: 14 }} />
+              </Box>
+            }
+          >
+            <Stack divider={<Box sx={{ borderTop: "1px solid rgba(14,42,61,0.06)" }} />}>
+              {vendorRedemptions.slice(0, 4).map((r) => (
+                <Box
+                  key={r.id}
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: "minmax(0, 1fr) auto",
+                    px: 2,
+                    py: 1.25,
+                    "&:hover": { bgcolor: "rgba(14,42,61,0.02)" },
+                  }}
+                >
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography sx={{ fontSize: "0.84rem", fontWeight: 600, color: "#0A1A2F" }} noWrap>
+                      {r.memberDisplay} · {r.city}
+                    </Typography>
+                    <Typography sx={{ fontSize: "0.74rem", color: "#6A7591" }} noWrap>
+                      {r.offerTitle}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ textAlign: "right" }}>
+                    <Typography sx={{ fontWeight: 700, color: "#1F5C40", fontSize: "0.84rem" }}>
+                      ${r.amountSaved.toLocaleString()}
+                    </Typography>
+                    <Typography sx={{ fontSize: "0.7rem", color: "#7A8590" }}>{r.redeemedOn}</Typography>
+                  </Box>
+                </Box>
+              ))}
+            </Stack>
+          </SectionCard>
+        </Grid>
+
+        {/* Offers status */}
+        <Grid size={{ xs: 12 }}>
+          <SectionCard
+            title="Your offers"
+            subtitle="Status snapshot across all listings"
+            padding="none"
+            action={
+              <Box
+                component={Link}
+                href="/vendor/offers"
+                sx={{
+                  fontSize: "0.78rem",
+                  fontWeight: 600,
+                  color: "#A07823",
+                  textDecoration: "none",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 0.5,
+                  "&:hover": { color: "#7A5B17" },
+                }}
+              >
+                Manage offers <ArrowForwardIcon sx={{ fontSize: 14 }} />
+              </Box>
+            }
+          >
+            <Box
+              sx={{
+                display: { xs: "none", md: "grid" },
+                gridTemplateColumns: "minmax(0, 2fr) 130px 110px 130px",
+                px: 2,
+                py: 1.25,
+                borderBottom: "1px solid rgba(14,42,61,0.06)",
+                bgcolor: "#FBFAF6",
+                fontSize: "0.66rem",
+                fontWeight: 700,
+                color: "#7A8590",
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+              }}
+            >
+              <Box>Offer</Box>
+              <Box>Discount</Box>
+              <Box>Status</Box>
+              <Box>Redemptions</Box>
+            </Box>
+            <Stack divider={<Box sx={{ borderTop: "1px solid rgba(14,42,61,0.06)" }} />}>
+              {vendorOwnOffers.slice(0, 5).map((o) => (
+                <Box
+                  key={o.id}
+                  sx={{
+                    display: { xs: "block", md: "grid" },
+                    gridTemplateColumns: "minmax(0, 2fr) 130px 110px 130px",
+                    alignItems: "center",
+                    px: 2,
+                    py: 1.25,
+                    gap: 1,
+                    "&:hover": { bgcolor: "rgba(14,42,61,0.02)" },
+                  }}
+                >
+                  <Typography sx={{ fontSize: "0.84rem", fontWeight: 600, color: "#0A1A2F" }} noWrap>
+                    {o.title}
+                  </Typography>
+                  <Typography sx={{ display: { xs: "none", md: "block" }, fontSize: "0.82rem", fontWeight: 700, color: "#1F5C40" }}>
+                    {o.discountLabel}
+                  </Typography>
+                  <Box sx={{ display: { xs: "none", md: "block" } }}>
+                    <LegacyOfferStatus status={o.status} />
+                  </Box>
+                  <Typography sx={{ display: { xs: "none", md: "block" }, fontSize: "0.82rem", color: "#5C6770" }}>
+                    {o.redemptions} redemption{o.redemptions === 1 ? "" : "s"}
+                  </Typography>
+
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    sx={{ display: { xs: "flex", md: "none" }, mt: 0.5, flexWrap: "wrap", rowGap: 0.5 }}
+                  >
+                    <Typography sx={{ fontSize: "0.78rem", fontWeight: 700, color: "#1F5C40" }}>
+                      {o.discountLabel}
+                    </Typography>
+                    <LegacyOfferStatus status={o.status} />
+                    <Typography sx={{ fontSize: "0.78rem", color: "#5C6770" }}>
+                      {o.redemptions} redemption{o.redemptions === 1 ? "" : "s"}
+                    </Typography>
+                  </Stack>
+                </Box>
+              ))}
+            </Stack>
+          </SectionCard>
         </Grid>
       </Grid>
     </Stack>
   );
 }
 
-function Stat({
+/**
+ * Small chip used inside the navy hero. White outline + translucent bg.
+ */
+function NavyChip({
+  icon,
+  label,
+  tone,
+}: {
+  icon?: React.ReactNode;
+  label: string;
+  tone: "gold" | "green" | "neutral";
+}) {
+  const palette =
+    tone === "gold"
+      ? { bg: "rgba(217,168,75,0.16)", fg: "#F0C16E", border: "rgba(217,168,75,0.36)" }
+      : tone === "green"
+        ? { bg: "rgba(34,108,78,0.18)", fg: "#A8E6BD", border: "rgba(34,108,78,0.4)" }
+        : { bg: "rgba(255,255,255,0.06)", fg: "#FFFFFF", border: "rgba(255,255,255,0.18)" };
+  return (
+    <Box
+      component="span"
+      sx={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 0.5,
+        px: 1,
+        height: 22,
+        borderRadius: 0.75,
+        bgcolor: palette.bg,
+        color: palette.fg,
+        border: `1px solid ${palette.border}`,
+        fontSize: "0.62rem",
+        fontWeight: 700,
+        letterSpacing: "0.1em",
+      }}
+    >
+      {icon}
+      {label}
+    </Box>
+  );
+}
+
+/**
+ * KPI tile rendered inside the navy hero — translucent dark surface with
+ * white text and gold-accent variants for the highlighted ones.
+ */
+function NavyStat({
   icon: Icon,
   label,
   value,
   footer,
-  accent = "primary",
+  accent,
 }: {
-  icon: React.ElementType<{ sx?: object }>;
+  icon: SvgIconComponent;
   label: string;
   value: string;
   footer?: string;
-  accent?: "primary" | "secondary";
+  accent?: boolean;
 }) {
-  const tint =
-    accent === "secondary"
-      ? { bg: "rgba(217,168,75,0.12)", border: "rgba(217,168,75,0.32)", color: "#A07823" }
-      : { bg: "rgba(14,42,61,0.07)", border: "rgba(14,42,61,0.18)", color: "#0E2A3D" };
   return (
-    <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-      <Box
+    <Box
+      sx={{
+        height: "100%",
+        p: 1.75,
+        borderRadius: 1.5,
+        bgcolor: accent ? "rgba(217,168,75,0.08)" : "rgba(255,255,255,0.04)",
+        border: accent ? "1px solid rgba(217,168,75,0.25)" : "1px solid rgba(255,255,255,0.08)",
+        backdropFilter: "blur(6px)",
+        transition: "border-color 200ms ease, background-color 200ms ease",
+        "&:hover": {
+          bgcolor: accent ? "rgba(217,168,75,0.12)" : "rgba(255,255,255,0.06)",
+          borderColor: accent ? "rgba(217,168,75,0.4)" : "rgba(255,255,255,0.16)",
+        },
+      }}
+    >
+      <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+        <Typography
+          sx={{
+            fontSize: "0.62rem",
+            fontWeight: 700,
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            color: accent ? "#F0C16E" : "rgba(255,255,255,0.55)",
+          }}
+        >
+          {label}
+        </Typography>
+        <Box
+          sx={{
+            width: 24,
+            height: 24,
+            borderRadius: 0.75,
+            display: "grid",
+            placeItems: "center",
+            bgcolor: accent ? "rgba(217,168,75,0.18)" : "rgba(255,255,255,0.06)",
+            border: accent ? "1px solid rgba(217,168,75,0.35)" : "1px solid rgba(255,255,255,0.1)",
+            color: accent ? "#F0C16E" : "rgba(255,255,255,0.8)",
+            flexShrink: 0,
+          }}
+        >
+          <Icon sx={{ fontSize: 14 }} />
+        </Box>
+      </Stack>
+      <Typography
         sx={{
-          height: "100%",
-          p: 2.75,
-          borderRadius: "16px",
-          border: "1px solid",
-          borderColor: "divider",
-          bgcolor: "common.white",
-          display: "flex",
-          flexDirection: "column",
-          gap: 1.25,
+          fontFamily: "var(--font-display)",
+          fontSize: "1.55rem",
+          fontWeight: 600,
+          color: "#FFFFFF",
+          lineHeight: 1.05,
+          letterSpacing: "-0.015em",
         }}
       >
-        <Stack direction="row" spacing={1.25} sx={{ alignItems: "center", justifyContent: "space-between" }}>
-          <Typography variant="body2" sx={{ fontSize: "0.74rem", color: "text.secondary", letterSpacing: "0.04em", fontWeight: 600, textTransform: "uppercase" }}>
-            {label}
-          </Typography>
-          <Box
-            sx={{
-              width: 32,
-              height: 32,
-              borderRadius: 2,
-              bgcolor: tint.bg,
-              border: `1px solid ${tint.border}`,
-              display: "grid",
-              placeItems: "center",
-              color: tint.color,
-            }}
-          >
-            <Icon sx={{ fontSize: 18 }} />
-          </Box>
-        </Stack>
-        <Typography sx={{ fontFamily: "var(--font-display)", fontSize: "2.1rem", lineHeight: 1, color: "text.primary" }}>
-          {value}
+        {value}
+      </Typography>
+      {footer && (
+        <Typography
+          sx={{
+            fontSize: "0.72rem",
+            color: "rgba(255,255,255,0.55)",
+            mt: 0.5,
+            lineHeight: 1.4,
+          }}
+        >
+          {footer}
         </Typography>
-        {footer && (
-          <Typography variant="body2" sx={{ fontSize: "0.78rem", color: "text.secondary" }}>
-            {footer}
-          </Typography>
-        )}
-      </Box>
-    </Grid>
+      )}
+    </Box>
   );
 }
 
-function StatusChip({ status }: { status: string }) {
-  const map: Record<string, { bg: string; color: string; label: string }> = {
-    published: { bg: "rgba(34,108,78,0.12)", color: "#1F5C40", label: "Live" },
-    pending_review: { bg: "rgba(217,168,75,0.16)", color: "#A07823", label: "In review" },
-    draft: { bg: "grey.200", color: "text.secondary", label: "Draft" },
-    paused: { bg: "rgba(14,42,61,0.07)", color: "primary.dark", label: "Paused" },
-    rejected: { bg: "rgba(220,60,60,0.12)", color: "#8C1D1D", label: "Rejected" },
-  };
-  const s = map[status] ?? map.draft;
+function ActionRow({
+  label,
+  href,
+  tone,
+  visible,
+}: {
+  label: string;
+  href: string;
+  tone: "gold" | "navy" | "green";
+  visible: boolean;
+}) {
+  if (!visible) return null;
+  const palette =
+    tone === "gold"
+      ? { bg: "rgba(217,168,75,0.08)", border: "rgba(217,168,75,0.3)", dot: "#A07823", arrow: "#A07823" }
+      : tone === "green"
+        ? { bg: "rgba(34,108,78,0.06)", border: "rgba(34,108,78,0.28)", dot: "#1F5C40", arrow: "#1F5C40" }
+        : { bg: "rgba(14,42,61,0.04)", border: "rgba(14,42,61,0.12)", dot: "#0E2A3D", arrow: "#0E2A3D" };
   return (
-    <Chip
-      label={s.label}
-      size="small"
-      sx={{ bgcolor: s.bg, color: s.color, fontWeight: 700, fontSize: "0.68rem", height: 22 }}
-    />
+    <Box
+      component={Link}
+      href={href}
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: 1.25,
+        px: 1.5,
+        py: 1,
+        borderRadius: 1.25,
+        bgcolor: palette.bg,
+        border: `1px solid ${palette.border}`,
+        textDecoration: "none",
+        color: "inherit",
+        transition: "background-color 160ms ease",
+        "&:hover": { bgcolor: palette.bg.replace(/[\d.]+\)$/, "0.14)") },
+      }}
+    >
+      <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: palette.dot, flexShrink: 0 }} />
+      <Typography sx={{ flex: 1, fontSize: "0.84rem", color: "#0A1A2F", lineHeight: 1.4 }}>
+        {label}
+      </Typography>
+      <ArrowForwardIcon sx={{ fontSize: 14, color: palette.arrow }} />
+    </Box>
   );
+}
+
+function LegacyOfferStatus({ status }: { status: string }) {
+  type ReviewStatusKey = "draft" | "pending_review" | "approved" | "rejected";
+  const map: Record<string, ReviewStatusKey> = {
+    published: "approved",
+    pending_review: "pending_review",
+    draft: "draft",
+    paused: "draft",
+    rejected: "rejected",
+  };
+  const mapped = (map[status] ?? "draft") as ReviewStatusKey;
+  return <StatusPill status={mapped} size="sm" />;
 }

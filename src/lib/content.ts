@@ -100,9 +100,8 @@ export const waitlist = {
     "No spam. Just early access, launch updates, and founding-member opportunities.",
 };
 
-// Role-specific copy for the WaitlistSection LEFT panel. The right panel is
-// the form, the left panel changes when the user toggles Member/Vendor/Expert
-// so the pitch matches what they're signing up for.
+// Copy for the WaitlistSection LEFT panel. Members-only; vendors don't use
+// the waitlist (they apply directly via /vendor/signup).
 export const waitlistByRole = {
   member: {
     eyebrow: "FOUNDING MEMBER",
@@ -114,18 +113,6 @@ export const waitlistByRole = {
       "24/7 expert helpline with a written follow-up plan within 3 business days",
       "Vendor savings averaging $6,000+/year, no per-deal commissions",
       "30-day money-back guarantee, cancel anytime",
-    ],
-  },
-  vendor: {
-    eyebrow: "FOUNDING VENDOR PARTNER",
-    headline: "Six months free. Featured to dentists actively buying.",
-    subtitle:
-      "The founding vendor cohort gets featured placement in the directory, warm introductions to members, and access to the partner hotline from day one.",
-    benefits: [
-      "$0 for the first 6 months, $49/mo for months 7–12, $199/mo standard",
-      "Featured listing + warm-intro routing through the partner hotline",
-      "Co-branded content opportunities (podcast, AMAs, written guides)",
-      "Members already pre-qualified, practice owners actively spending",
     ],
   },
 };

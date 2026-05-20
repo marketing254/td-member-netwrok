@@ -1,217 +1,231 @@
 "use client";
+
+import { useMemo, useState } from "react";
 import {
   Box,
   Button,
-  Chip,
   Grid,
+  IconButton,
+  InputAdornment,
   Stack,
+  TextField,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 import SavingsOutlinedIcon from "@mui/icons-material/SavingsOutlined";
 import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
+import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
+import OpenInNewOutlinedIcon from "@mui/icons-material/OpenInNewOutlined";
 import { vendorKpis, vendorRedemptions } from "@/lib/vendorData";
+import {
+  EmptyState,
+  PageHeader,
+  SectionCard,
+  StatCard,
+  portalText,
+} from "@/components/vendor/PortalUI";
 
 export default function RedemptionsPage() {
+  const [q, setQ] = useState("");
+
+  const filtered = useMemo(() => {
+    const ql = q.trim().toLowerCase();
+    if (!ql) return vendorRedemptions;
+    return vendorRedemptions.filter(
+      (r) =>
+        r.memberDisplay.toLowerCase().includes(ql) ||
+        r.offerTitle.toLowerCase().includes(ql) ||
+        r.city.toLowerCase().includes(ql),
+    );
+  }, [q]);
+
   return (
-    <Stack spacing={4}>
-      <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ justifyContent: "space-between", alignItems: { sm: "flex-end" } }}>
-        <Box>
-          <Typography variant="overline" sx={{ color: "text.secondary", display: "block" }}>
-            REDEMPTIONS
-          </Typography>
-          <Typography variant="h2" sx={{ mt: 0.5, mb: 1, fontSize: { xs: "1.85rem", md: "2.5rem" } }}>
-            Members using your offers
-          </Typography>
-          <Typography sx={{ color: "text.secondary", maxWidth: 620 }}>
-            Member identities are anonymized to first name + city. Use this view to verify
-            attribution on your monthly Vendor Report (Section 3.3).
-          </Typography>
-        </Box>
-        <Button variant="outlined" color="primary" startIcon={<DownloadOutlinedIcon />}>
-          Export CSV
-        </Button>
-      </Stack>
-
-      <Grid container spacing={2.5}>
-        <BigStat
-          icon={ReceiptLongOutlinedIcon}
-          label="Redemptions · this month"
-          value={`${vendorKpis.redemptionsThisMonth}`}
-          footer={`${vendorKpis.redemptionsLifetime} lifetime`}
-        />
-        <BigStat
-          icon={SavingsOutlinedIcon}
-          label="Savings delivered · MTD"
-          value={`$${vendorKpis.savingsDeliveredMonth.toLocaleString()}`}
-          footer={`$${vendorKpis.savingsDeliveredLifetime.toLocaleString()} lifetime`}
-          accent="secondary"
-        />
-        <BigStat
-          icon={GroupsOutlinedIcon}
-          label="Inbound leads · MTD"
-          value={`${vendorKpis.leadsThisMonth}`}
-          footer="Captured via in-portal forms"
-        />
-      </Grid>
-
-      <Box
-        sx={{
-          borderRadius: "20px",
-          border: "1px solid",
-          borderColor: "divider",
-          bgcolor: "common.white",
-          overflow: "hidden",
-        }}
-      >
-        <Box
-          sx={{
-            display: { xs: "none", md: "grid" },
-            gridTemplateColumns: "1.5fr 1.4fr 1fr 0.9fr 0.9fr",
-            alignItems: "center",
-            gap: 2,
-            px: 3,
-            py: 1.5,
-            bgcolor: "grey.50",
-            borderBottom: "1px solid",
-            borderColor: "divider",
-          }}
-        >
-          <Cell head>Member</Cell>
-          <Cell head>Offer</Cell>
-          <Cell head>Date</Cell>
-          <Cell head>Saved</Cell>
-          <Cell head>Commission</Cell>
-        </Box>
-        {vendorRedemptions.map((r, i) => (
-          <Box
-            key={r.id}
+    <Stack spacing={2.5}>
+      <PageHeader
+        eyebrow="REDEMPTIONS"
+        title="Members using your offers"
+        subtitle="Member identities are anonymized to first name + city. Use this view to verify attribution on your monthly Vendor Report (Section 3.3)."
+        actions={
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<DownloadOutlinedIcon sx={{ fontSize: 16 }} />}
             sx={{
-              display: "grid",
-              gridTemplateColumns: { xs: "1fr auto", md: "1.5fr 1.4fr 1fr 0.9fr 0.9fr" },
-              alignItems: "center",
-              gap: 2,
-              px: { xs: 2.5, md: 3 },
-              py: 2,
-              borderBottom: i === vendorRedemptions.length - 1 ? 0 : "1px solid",
-              borderColor: "divider",
-              "&:hover": { bgcolor: "grey.50" },
+              borderColor: "rgba(14,42,61,0.18)",
+              color: "#0A1A2F",
+              textTransform: "none",
+              fontSize: "0.82rem",
+              fontWeight: 600,
+              "&:hover": { borderColor: "#A07823", bgcolor: "rgba(217,168,75,0.06)" },
             }}
           >
-            <Box sx={{ minWidth: 0 }}>
-              <Typography sx={{ fontSize: "0.92rem", fontWeight: 600 }} noWrap>
-                {r.memberDisplay}
-              </Typography>
-              <Typography variant="body2" sx={{ fontSize: "0.78rem", color: "text.secondary" }} noWrap>
-                {r.city}
-              </Typography>
-              {/* mobile-only meta */}
-              <Stack direction="row" spacing={1.5} sx={{ display: { xs: "flex", md: "none" }, mt: 0.75, alignItems: "center", color: "text.secondary" }}>
-                <Typography variant="body2" sx={{ fontSize: "0.75rem" }}>{r.offerTitle}</Typography>
-                <Typography variant="body2" sx={{ fontSize: "0.75rem" }}>·</Typography>
-                <Typography variant="body2" sx={{ fontSize: "0.75rem", fontWeight: 700, color: "success.dark" }}>
-                  ${r.amountSaved.toLocaleString()}
-                </Typography>
-              </Stack>
-            </Box>
-            <Cell>
-              <Box component="span" sx={{ display: { xs: "none", md: "inline" } }}>
-                {r.offerTitle}
-              </Box>
-            </Cell>
-            <Cell>
-              <Box component="span" sx={{ display: { xs: "none", md: "inline" } }}>
-                {r.redeemedOn}
-              </Box>
-            </Cell>
-            <Cell>
-              <Box component="span" sx={{ display: { xs: "none", md: "inline" }, fontWeight: 700, color: "success.dark" }}>
-                ${r.amountSaved.toLocaleString()}
-              </Box>
-            </Cell>
-            <Cell>
-              <Box component="span" sx={{ display: { xs: "none", md: "inline" } }}>
-                {r.commissionAccrued > 0 ? (
-                  `$${r.commissionAccrued.toLocaleString()}`
-                ) : (
-                  <Chip label="Founding · $0" size="small" sx={{ bgcolor: "rgba(217,168,75,0.14)", color: "#A07823", fontWeight: 700, fontSize: "0.68rem", height: 20 }} />
-                )}
-              </Box>
-            </Cell>
-          </Box>
-        ))}
-      </Box>
-    </Stack>
-  );
-}
+            Export CSV
+          </Button>
+        }
+      />
 
-function BigStat({
-  icon: Icon,
-  label,
-  value,
-  footer,
-  accent = "primary",
-}: {
-  icon: React.ElementType<{ sx?: object }>;
-  label: string;
-  value: string;
-  footer?: string;
-  accent?: "primary" | "secondary";
-}) {
-  const tint =
-    accent === "secondary"
-      ? { bg: "rgba(217,168,75,0.12)", border: "rgba(217,168,75,0.32)", color: "#A07823" }
-      : { bg: "rgba(14,42,61,0.07)", border: "rgba(14,42,61,0.18)", color: "#0E2A3D" };
-  return (
-    <Grid size={{ xs: 12, sm: 4 }}>
-      <Box
-        sx={{
-          height: "100%",
-          p: 2.75,
-          borderRadius: "16px",
-          border: "1px solid",
-          borderColor: "divider",
-          bgcolor: "common.white",
-          display: "flex",
-          flexDirection: "column",
-          gap: 1.25,
-        }}
-      >
-        <Stack direction="row" spacing={1.25} sx={{ alignItems: "center", justifyContent: "space-between" }}>
-          <Typography variant="body2" sx={{ fontSize: "0.74rem", color: "text.secondary", letterSpacing: "0.04em", fontWeight: 600, textTransform: "uppercase" }}>
-            {label}
-          </Typography>
-          <Box sx={{ width: 32, height: 32, borderRadius: 2, bgcolor: tint.bg, border: `1px solid ${tint.border}`, display: "grid", placeItems: "center", color: tint.color }}>
-            <Icon sx={{ fontSize: 18 }} />
-          </Box>
-        </Stack>
-        <Typography sx={{ fontFamily: "var(--font-display)", fontSize: "2.2rem", lineHeight: 1, color: "text.primary" }}>
-          {value}
+      <Grid container spacing={2}>
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+          <StatCard
+            icon={ReceiptLongOutlinedIcon}
+            label="Redemptions, MTD"
+            value={String(vendorKpis.redemptionsThisMonth)}
+            footer={`${vendorKpis.redemptionsLifetime} lifetime`}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+          <StatCard
+            icon={SavingsOutlinedIcon}
+            label="Savings delivered, MTD"
+            value={`$${vendorKpis.savingsDeliveredMonth.toLocaleString()}`}
+            footer={`$${vendorKpis.savingsDeliveredLifetime.toLocaleString()} lifetime`}
+            accent="gold"
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+          <StatCard
+            icon={GroupsOutlinedIcon}
+            label="Inbound leads, MTD"
+            value={String(vendorKpis.leadsThisMonth)}
+            footer="Captured via in-portal forms"
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+          <StatCard
+            label="Avg savings / redemption"
+            value={
+              vendorKpis.redemptionsLifetime > 0
+                ? `$${Math.round(vendorKpis.savingsDeliveredLifetime / vendorKpis.redemptionsLifetime).toLocaleString()}`
+                : "—"
+            }
+            footer="Lifetime average"
+            accent="green"
+          />
+        </Grid>
+      </Grid>
+
+      <Stack direction={{ xs: "column", md: "row" }} spacing={1.5} sx={{ alignItems: { md: "center" }, justifyContent: "space-between" }}>
+        <Typography sx={portalText.sectionTitle}>
+          Recent activity · {filtered.length} {filtered.length === 1 ? "row" : "rows"}
         </Typography>
-        {footer && (
-          <Typography variant="body2" sx={{ fontSize: "0.78rem", color: "text.secondary" }}>
-            {footer}
-          </Typography>
-        )}
-      </Box>
-    </Grid>
-  );
-}
+        <TextField
+          size="small"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Search member, offer, city"
+          sx={{
+            minWidth: { md: 320 },
+            "& .MuiOutlinedInput-root": { bgcolor: "#FFFFFF", fontSize: "0.84rem", borderRadius: 2 },
+          }}
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchOutlinedIcon sx={{ fontSize: 16, color: "#7A8590" }} />
+                </InputAdornment>
+              ),
+            },
+          }}
+        />
+      </Stack>
 
-function Cell({ head, children }: { head?: boolean; children?: React.ReactNode }) {
-  return (
-    <Typography
-      variant={head ? "body2" : "body1"}
-      sx={{
-        fontSize: head ? "0.7rem" : "0.9rem",
-        fontWeight: head ? 700 : 500,
-        letterSpacing: head ? "0.06em" : 0,
-        textTransform: head ? "uppercase" : "none",
-        color: head ? "text.secondary" : "text.primary",
-      }}
-    >
-      {children}
-    </Typography>
+      {filtered.length === 0 ? (
+        <EmptyState
+          icon={ReceiptLongOutlinedIcon}
+          title="No matches"
+          body="Adjust the search to see redemptions."
+        />
+      ) : (
+        <SectionCard padding="none">
+          {/* Header */}
+          <Box
+            sx={{
+              display: { xs: "none", md: "grid" },
+              gridTemplateColumns: "minmax(0, 1.5fr) minmax(0, 2fr) 120px 120px 60px",
+              px: 2,
+              py: 1.25,
+              borderBottom: "1px solid rgba(14,42,61,0.06)",
+              bgcolor: "#FBFAF6",
+              fontSize: "0.66rem",
+              fontWeight: 700,
+              color: "#7A8590",
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+            }}
+          >
+            <Box>Member</Box>
+            <Box>Offer</Box>
+            <Box>Date</Box>
+            <Box sx={{ textAlign: "right" }}>Saved</Box>
+            <Box />
+          </Box>
+          <Stack divider={<Box sx={{ borderTop: "1px solid rgba(14,42,61,0.06)" }} />}>
+            {filtered.map((r) => (
+              <Box
+                key={r.id}
+                sx={{
+                  display: { xs: "block", md: "grid" },
+                  gridTemplateColumns: "minmax(0, 1.5fr) minmax(0, 2fr) 120px 120px 60px",
+                  alignItems: "center",
+                  px: 2,
+                  py: 1.25,
+                  gap: 1,
+                  "&:hover": { bgcolor: "rgba(14,42,61,0.02)" },
+                }}
+              >
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography sx={{ fontSize: "0.84rem", fontWeight: 600, color: "#0A1A2F" }} noWrap>
+                    {r.memberDisplay}
+                  </Typography>
+                  <Typography sx={{ fontSize: "0.72rem", color: "#7A8590" }} noWrap>
+                    {r.city}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: { xs: "none", md: "block" }, minWidth: 0 }}>
+                  <Typography sx={{ fontSize: "0.82rem", color: "#0A1A2F" }} noWrap>
+                    {r.offerTitle}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: { xs: "none", md: "block" }, fontSize: "0.78rem", color: "#5C6770" }}>
+                  {r.redeemedOn}
+                </Box>
+                <Box sx={{ display: { xs: "none", md: "block" }, textAlign: "right" }}>
+                  <Typography sx={{ fontSize: "0.86rem", fontWeight: 700, color: "#1F5C40" }}>
+                    ${r.amountSaved.toLocaleString()}
+                  </Typography>
+                  <Typography sx={portalText.meta}>
+                    +${r.commissionAccrued.toLocaleString()} commission
+                  </Typography>
+                </Box>
+                <Box sx={{ display: { xs: "none", md: "flex" }, justifyContent: "flex-end" }}>
+                  <Tooltip title="Open redemption">
+                    <IconButton size="small" sx={{ color: "#5C6770" }}>
+                      <OpenInNewOutlinedIcon sx={{ fontSize: 14 }} />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+
+                {/* Mobile-only meta */}
+                <Stack direction="row" spacing={1.5} sx={{ display: { xs: "flex", md: "none" }, mt: 0.5, flexWrap: "wrap", rowGap: 0.5 }}>
+                  <Typography sx={{ fontSize: "0.78rem", color: "#0A1A2F" }} noWrap>
+                    {r.offerTitle}
+                  </Typography>
+                  <Typography sx={{ fontSize: "0.74rem", color: "#5C6770" }}>{r.redeemedOn}</Typography>
+                  <Typography sx={{ fontSize: "0.82rem", fontWeight: 700, color: "#1F5C40" }}>
+                    ${r.amountSaved.toLocaleString()}
+                  </Typography>
+                </Stack>
+              </Box>
+            ))}
+          </Stack>
+        </SectionCard>
+      )}
+
+      <Typography sx={portalText.meta}>
+        Attribution windows follow Section 3.3 of the partnership agreement. Disputes are resolved within 5 business days of submitting a note in the partner hotline.
+      </Typography>
+    </Stack>
   );
 }

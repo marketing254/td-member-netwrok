@@ -165,75 +165,9 @@ function memberDraft(input: ConfirmationInput): EmailDraft {
   };
 }
 
-function vendorDraft(input: ConfirmationInput): EmailDraft {
-  const submitted = formatDate(input.submittedAt);
-  const companyName = input.signup.practiceName ?? "your company";
-  const agreementUrl = normalizeUrl("/agreement/vendor");
-  return {
-    role: "vendor",
-    subject: "Your Vendor Network partnership application, what happens next",
-    preview:
-      "We received your founding vendor partner application and your file is now in review.",
-    eyebrow: "Vendor Partnership",
-    headline: "Your founding vendor partner application is in review.",
-    accent: "#2E8A57",
-    accentLight: "#6FB287",
-    replyTo: PARTNERSHIPS_EMAIL,
-    intro: [
-      `Hi ${firstName(input.signup.fullName)},`,
-      "Thank you for applying to join the Dental Member Network as a founding vendor partner. We've received your application along with your acceptance of the Vendor Network Partnership Agreement, and your file is now in review.",
-    ],
-    sections: [
-      {
-        title: "Here's what to expect",
-        body:
-          "Within the next 5 business days, our partnerships team will review your application. We're verifying three things primarily: the fit of your service category with what our members need, the strength of the member discount you've committed to, and your ability to deliver responsive service through the partner hotline.",
-      },
-      {
-        title: "If your application is approved",
-        items: [
-          "You'll receive an approval email with onboarding instructions, including how to access the partner dashboard, where to upload your final logo and assets, and how to confirm your directory listing draft before it goes live.",
-          "We'll schedule a 30-minute onboarding call to walk you through the partner hotline setup, lead routing, the Verified Partner badge you can use on your own site, and the editorial calendar for newsletter, podcast, and webinar feature eligibility.",
-          "Your founding partner pricing locks in: $0 for months 1–6, $49/month for months 7–12, and $199/month standard rate from month 13. Cancel anytime with 30 days' written notice through the partner dashboard.",
-        ],
-      },
-      {
-        title: "What you committed to in your application",
-        items: [
-          "Offering our members your best available deal.",
-          "Joining our private partner hotline for member coordination.",
-          "Maintaining the calendar booking link you provided.",
-          "Accepting evolution of network terms with 30 days' notice via the partner dashboard.",
-          "Paying the partnership fee (waived for the first 6 months as a founding partner).",
-        ],
-      },
-      {
-        title: "If we have follow-up questions",
-        body: `We may reach out by email to clarify aspects of your service offering, the specifics of the member discount you've committed to, or your operational capacity. Watch for a message from ${PARTNERSHIPS_EMAIL}.`,
-      },
-    ],
-    cta: {
-      label: "Review the partnership agreement",
-      url: agreementUrl,
-    },
-    closing:
-      "While your application is in review, the partnerships team is happy to answer questions about how the network operates, how leads are routed, or what to expect during onboarding. Just reply to this email.",
-    signoff: [
-      "We're glad you applied. Looking forward to connecting soon.",
-      " The Dental Member Network Team",
-      "Powered by Thriving Dentist",
-    ],
-    footerNote: "Do not reply to this email.",
-    footerLines: [
-      "This is an automated confirmation email for your Dental Member Network vendor application.",
-      `Application reference: ${input.referenceId} · Company: ${companyName} · Submitted: ${submitted}`,
-      `Dental Member Network · ${PARTNERSHIPS_EMAIL} · dentalmembernetwork.com`,
-    ],
-  };
-}
-
 function draftFor(input: ConfirmationInput): EmailDraft {
-  if (input.signup.role === "vendor") return vendorDraft(input);
+  // Waitlist is members-only. Vendors apply via /vendor/signup and receive a
+  // separate magic-link email (see sendVendorMagicLinkEmail).
   return memberDraft(input);
 }
 
@@ -587,5 +521,101 @@ export async function sendWaitlistConfirmationEmail(
     subject: email.subject,
     referenceId: input.referenceId,
   });
+  return { sent: false, reason: "missing_api_key" };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// VENDOR MAGIC LINK
+// Used by /api/vendor/signup and /api/vendor/login (magic mode) to send the
+// one-time sign-in link to the partner email. Reuses the same Gmail/Resend
+// transport stack as the waitlist confirmation; if neither is configured the
+// link is logged so a dev can copy it.
+// ─────────────────────────────────────────────────────────────────────────
+
+type VendorMagicInput = { email: string; link: string };
+
+function buildVendorMagicEmail({ link }: VendorMagicInput): { subject: string; html: string; text: string; replyTo: string } {
+  const subject = "Your partner sign-in link";
+  const safeLink = escapeHtml(link);
+  const html = `<!doctype html>
+<html><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>${escapeHtml(subject)}</title></head>
+<body style="margin:0;padding:0;background:${BRAND.creamSoft};font-family:${FONT_BODY};color:${BRAND.ink};">
+<div style="max-width:560px;margin:0 auto;padding:40px 24px;">
+  <div style="font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:${BRAND.goldDeep};font-weight:700;margin-bottom:16px;">PARTNER PORTAL</div>
+  <h1 style="font-family:${FONT_DISPLAY};font-size:28px;line-height:1.2;font-weight:500;color:${BRAND.ink};margin:0 0 16px;">Your sign-in link</h1>
+  <p style="font-size:15px;line-height:1.65;color:${BRAND.inkSoft};margin:0 0 28px;">
+    Click the button below to access your Dental Member Network partner portal. The link expires in 30 minutes for your security.
+  </p>
+  <a href="${safeLink}" style="display:inline-block;background:${BRAND.ink};color:#FFFFFF;text-decoration:none;padding:14px 28px;border-radius:999px;font-weight:600;font-size:15px;">Sign in to portal →</a>
+  <p style="font-size:13px;line-height:1.6;color:${BRAND.inkMute};margin:28px 0 0;">
+    If the button doesn't work, paste this link into your browser:<br/>
+    <span style="word-break:break-all;color:${BRAND.goldDeep};">${safeLink}</span>
+  </p>
+  <hr style="border:0;border-top:1px solid ${BRAND.line};margin:32px 0;" />
+  <p style="font-size:12px;line-height:1.6;color:${BRAND.inkMute};margin:0;">
+    Didn't request this? You can safely ignore the email — the link won't sign anyone in unless they click it from your inbox.
+  </p>
+</div>
+</body></html>`;
+  const text = `Your Dental Member Network partner sign-in link.\n\nOpen this URL to access the portal (expires in 30 minutes):\n${link}\n\nIf you didn't request this, ignore the email.`;
+  return { subject, html, text, replyTo: PARTNERSHIPS_EMAIL };
+}
+
+export async function sendVendorMagicLinkEmail(input: VendorMagicInput): Promise<SendResult> {
+  if (process.env.WAITLIST_EMAIL_DISABLED === "true") {
+    return { sent: false, reason: "disabled" };
+  }
+
+  const email = buildVendorMagicEmail(input);
+
+  const gmailUser = process.env.GMAIL_USER;
+  const gmailPass = process.env.GMAIL_APP_PASSWORD;
+  const resendKey = process.env.RESEND_API_KEY;
+
+  if (gmailUser && gmailPass) {
+    const nodemailer = (await import("nodemailer")).default;
+    const fromHeader = process.env.WAITLIST_EMAIL_FROM ?? `Dental Member Network <${gmailUser}>`;
+    const transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false,
+      auth: { user: gmailUser, pass: gmailPass },
+    });
+    const info = await transporter.sendMail({
+      from: fromHeader,
+      to: input.email,
+      replyTo: email.replyTo,
+      subject: email.subject,
+      html: email.html,
+      text: email.text,
+    });
+    console.info("[vendor:magic-link:email] sent via Gmail SMTP", { to: input.email, messageId: info.messageId });
+    return { sent: true, id: info.messageId };
+  }
+
+  if (resendKey) {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: FROM_EMAIL,
+        to: [input.email],
+        reply_to: email.replyTo,
+        subject: email.subject,
+        html: email.html,
+        text: email.text,
+      }),
+    });
+    if (!res.ok) {
+      const details = await res.text().catch(() => "");
+      throw new Error(`Resend magic-link email failed with ${res.status}: ${details.slice(0, 300)}`);
+    }
+    const data = (await res.json().catch(() => null)) as { id?: string } | null;
+    console.info("[vendor:magic-link:email] sent via Resend", { to: input.email, messageId: data?.id });
+    return { sent: true, id: data?.id };
+  }
+
+  console.info("[vendor:magic-link:email] no sender configured; preview only", { to: input.email, link: input.link });
   return { sent: false, reason: "missing_api_key" };
 }

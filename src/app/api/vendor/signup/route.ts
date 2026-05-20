@@ -1,16 +1,23 @@
 import { NextResponse } from "next/server";
-import { clerkClient } from "@clerk/nextjs/server";
+import { buildVendorMagicLink } from "@/lib/auth/magicToken";
 
-type ClerkError = { errors?: Array<{ code?: string; message?: string; long_message?: string }> };
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
-function readClerkError(e: unknown): { code?: string; message?: string } {
-  const err = e as ClerkError;
-  const first = err?.errors?.[0];
-  return { code: first?.code, message: first?.long_message ?? first?.message };
-}
+// Open-portal phase: Clerk was removed. Vendor signups are accepted, logged to
+// the server console, and a magic sign-in link is generated for the contact
+// email. The link is logged (and emailed if the SMTP transport env vars exist)
+// so the previewer can click straight into the partner portal. The real path
+// (persist application → queue for team review → email onboarding link) is
+// wired in a later step.
 
 export async function POST(req: Request) {
-  const body = await req.json();
+  let body: Record<string, unknown>;
+  try {
+    body = (await req.json()) as Record<string, unknown>;
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON." }, { status: 400 });
+  }
 
   if (
     !body.companyName ||
@@ -24,26 +31,20 @@ export async function POST(req: Request) {
     );
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-
-  const publicMetadata = {
-    role: "vendor",
-    vendor_status: "pending",
+  const application = {
+    submitted_at: new Date().toISOString(),
     company: body.companyName,
     category: body.category,
     website: body.website,
     plan_id: body.planId,
     contact_name: body.contactName,
+    contact_email: body.contactEmail,
     contact_phone: body.contactPhone ?? "",
-    // Commitment #2, hotline notifications email
     hotline_email: body.hotlineEmail ?? body.contactEmail,
-    // Commitment #3, calendar booking link
     calendar_link: body.calendarLink ?? "",
-    agreement_signed_at: new Date().toISOString(),
+    signature_name: body.signatureName,
+    signature_title: body.signatureTitle,
     agreement_version: "v1.0",
-    agreement_signed_by: body.signatureName,
-    agreement_signed_title: body.signatureTitle,
-    agreement_dual_checkboxes_confirmed: true,
     offer_draft: {
       title: body.offerTitle,
       discount: body.offerDiscount,
@@ -53,59 +54,27 @@ export async function POST(req: Request) {
     },
   };
 
-  const client = await clerkClient();
+  console.log("[vendor:signup] application received", application);
 
-  const tryCreateInvitation = async () =>
-    client.invitations.createInvitation({
-      emailAddress: body.contactEmail,
-      // After accepting, vendors land on their sign-in page (vendor-branded),
-      // sign in/set password, then Clerk forwards them to /vendor.
-      redirectUrl: `${appUrl}/vendor/signin`,
-      publicMetadata,
-    });
+  const email = String(body.contactEmail).trim().toLowerCase();
+  const origin = req.headers.get("origin") ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const link = buildVendorMagicLink(origin, email);
+  console.log(`[vendor:signup:magic-link] for ${email} → ${link}`);
 
   try {
-    const invitation = await tryCreateInvitation();
-    return NextResponse.json({ success: true, invitationId: invitation.id });
-  } catch (e) {
-    const { code, message } = readClerkError(e);
-    console.error("vendor signup failed:", { code, message, raw: e });
-
-    // Case 1, a pending invitation already exists for this email.
-    // Revoke it and retry once. This is the most common dev-loop case.
-    if (code === "duplicate_record" || message?.toLowerCase().includes("already") && message?.toLowerCase().includes("invit")) {
-      try {
-        const list = await client.invitations.getInvitationList({ status: "pending" });
-        const existing = list.data.find((i) => i.emailAddress === body.contactEmail);
-        if (existing) {
-          await client.invitations.revokeInvitation(existing.id);
-          const fresh = await tryCreateInvitation();
-          return NextResponse.json({ success: true, invitationId: fresh.id, retried: true });
-        }
-      } catch (retryErr) {
-        console.error("retry after revoke failed:", retryErr);
-      }
+    const mailer = await import("@/lib/waitlist/confirmationEmail");
+    const sender = (mailer as { sendVendorMagicLinkEmail?: (a: { email: string; link: string }) => Promise<unknown> })
+      .sendVendorMagicLinkEmail;
+    if (typeof sender === "function") {
+      await sender({ email, link });
     }
-
-    // Case 2, a real user already exists with this email.
-    if (code === "form_identifier_exists" || message?.toLowerCase().includes("exists")) {
-      return NextResponse.json(
-        {
-          error: "An account already exists with this email. Sign in at /vendor or use a different email.",
-        },
-        { status: 409 },
-      );
-    }
-
-    // Case 3, bad email format.
-    if (code === "form_param_format_invalid") {
-      return NextResponse.json({ error: "That email address looks invalid." }, { status: 400 });
-    }
-
-    // Fallback, surface Clerk's actual message instead of a generic 500.
-    return NextResponse.json(
-      { error: message ?? "Could not create invitation. Please try again." },
-      { status: 422 },
-    );
+  } catch {
+    // No-op: preview mode tolerates missing transport.
   }
+
+  return NextResponse.json({
+    success: true,
+    status: "pending_review",
+    message: "Application received. We sent a sign-in link to your email — click it to access your partner portal.",
+  });
 }

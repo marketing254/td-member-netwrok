@@ -1,11 +1,11 @@
 "use client";
+
 import { useState } from "react";
 import {
   Alert,
   Avatar,
   Box,
   Button,
-  Chip,
   Grid,
   MenuItem,
   Stack,
@@ -13,8 +13,10 @@ import {
   Typography,
 } from "@mui/material";
 import VerifiedUserOutlinedIcon from "@mui/icons-material/VerifiedUserOutlined";
+import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined";
 import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
 import { vendor, vendorCategories } from "@/lib/vendorData";
+import { PageHeader, SectionCard, StatusPill, TagPill, portalText } from "@/components/vendor/PortalUI";
 
 export default function VendorProfilePage() {
   const [companyName, setCompanyName] = useState(vendor.companyName);
@@ -26,6 +28,7 @@ export default function VendorProfilePage() {
   const [contactEmail, setContactEmail] = useState(vendor.contactEmail);
   const [contactPhone, setContactPhone] = useState(vendor.contactPhone);
   const [billingEmail, setBillingEmail] = useState(vendor.billingEmail);
+  const [calendarLink, setCalendarLink] = useState("https://cal.com/marcus-reilly/intro");
   const [saved, setSaved] = useState(false);
 
   const onSave = () => {
@@ -34,191 +37,319 @@ export default function VendorProfilePage() {
   };
 
   return (
-    <Stack spacing={4}>
-      <Box>
-        <Typography variant="overline" sx={{ color: "text.secondary", display: "block" }}>
-          COMPANY PROFILE
-        </Typography>
-        <Typography variant="h2" sx={{ mt: 0.5, mb: 1, fontSize: { xs: "1.85rem", md: "2.5rem" } }}>
-          Public profile
-        </Typography>
-        <Typography sx={{ color: "text.secondary", maxWidth: 620 }}>
-          Edits go live immediately. Your offer copy is managed separately on the Offers page.
-        </Typography>
-      </Box>
-
-      <Grid container spacing={3}>
-        {/* Identity card */}
-        <Grid size={{ xs: 12, md: 4 }}>
-          <Box
+    <Stack spacing={2.5}>
+      <PageHeader
+        eyebrow="COMPANY PROFILE"
+        title="Public profile"
+        subtitle="What members see in the directory. Edits go live immediately; offer copy is managed separately on the Offers page."
+        actions={
+          <Button
+            variant="contained"
+            size="small"
+            onClick={onSave}
+            startIcon={saved ? <CheckCircleOutlinedIcon sx={{ fontSize: 16 }} /> : undefined}
             sx={{
-              p: 3,
-              borderRadius: "20px",
-              border: "1px solid",
-              borderColor: "divider",
-              bgcolor: "common.white",
-              position: "sticky",
-              top: 88,
+              bgcolor: saved ? "#1F5C40" : "#0A1A2F",
+              textTransform: "none",
+              fontSize: "0.82rem",
+              fontWeight: 600,
+              "&:hover": { bgcolor: saved ? "#19533A" : "#0F2540" },
             }}
           >
-            <Stack spacing={2} sx={{ alignItems: "center", textAlign: "center" }}>
-              <Avatar
-                sx={{
-                  width: 96,
-                  height: 96,
-                  bgcolor: "primary.main",
-                  color: "common.white",
-                  fontFamily: "var(--font-display)",
-                  fontSize: "2.2rem",
-                  fontWeight: 600,
-                }}
-              >
-                {vendor.avatarInitials}
-              </Avatar>
-              <Box>
-                <Typography variant="h5" sx={{ fontSize: "1.1rem" }}>{displayName}</Typography>
-                <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
-                  {category}
+            {saved ? "Saved" : "Save changes"}
+          </Button>
+        }
+      />
+
+      <Grid container spacing={2}>
+        {/* Sidebar */}
+        <Grid size={{ xs: 12, md: 4 }}>
+          <Stack spacing={2}>
+            <SectionCard padding="default">
+              <Stack spacing={1.5} sx={{ alignItems: "center", textAlign: "center" }}>
+                <Box sx={{ position: "relative" }}>
+                  <Avatar
+                    sx={{
+                      width: 72,
+                      height: 72,
+                      bgcolor: "#0A1A2F",
+                      color: "#F0C16E",
+                      fontFamily: "var(--font-display)",
+                      fontSize: "1.6rem",
+                      fontWeight: 600,
+                      border: "2px solid rgba(217,168,75,0.4)",
+                    }}
+                  >
+                    {vendor.avatarInitials}
+                  </Avatar>
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      right: -4,
+                      bottom: -4,
+                      width: 24,
+                      height: 24,
+                      borderRadius: "50%",
+                      bgcolor: "#1F5C40",
+                      color: "#FFFFFF",
+                      display: "grid",
+                      placeItems: "center",
+                      border: "2px solid #FFFFFF",
+                    }}
+                  >
+                    <VerifiedUserOutlinedIcon sx={{ fontSize: 13 }} />
+                  </Box>
+                </Box>
+                <Box>
+                  <Typography sx={{ fontSize: "0.95rem", fontWeight: 700, color: "#0A1A2F" }}>
+                    {displayName}
+                  </Typography>
+                  <Typography sx={portalText.meta}>{category}</Typography>
+                </Box>
+                <Stack direction="row" spacing={0.5} sx={{ flexWrap: "wrap", justifyContent: "center", gap: 0.5 }}>
+                  <TagPill label="VERIFIED" tone="gold" size="sm" />
+                  <TagPill label="FOUNDING" tone="navy" size="sm" />
+                </Stack>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<CloudUploadOutlinedIcon sx={{ fontSize: 14 }} />}
+                  sx={{
+                    mt: 0.5,
+                    borderColor: "rgba(14,42,61,0.18)",
+                    color: "#0A1A2F",
+                    textTransform: "none",
+                    fontSize: "0.78rem",
+                    fontWeight: 600,
+                    "&:hover": { borderColor: "#A07823", bgcolor: "rgba(217,168,75,0.06)" },
+                  }}
+                >
+                  Upload logo
+                </Button>
+              </Stack>
+            </SectionCard>
+
+            <SectionCard title="Listing health" padding="default">
+              <Stack spacing={1.25}>
+                <HealthRow label="Logo" ok />
+                <HealthRow label="Description" ok={description.length >= 60} />
+                <HealthRow label="Website" ok={website.length > 0} />
+                <HealthRow label="Calendar link" ok={calendarLink.length > 0} />
+                <HealthRow label="Contact phone" ok={contactPhone.length > 0} />
+              </Stack>
+            </SectionCard>
+
+            <SectionCard title="Review status" padding="default">
+              <Stack spacing={1}>
+                <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+                  <StatusPill status="approved" size="sm" />
+                  <Typography sx={portalText.body}>Profile is live in the directory.</Typography>
+                </Stack>
+                <Typography sx={portalText.meta}>
+                  Material changes (name, category) trigger a team re-review. Cosmetic edits (description, contact) go live immediately.
                 </Typography>
-              </Box>
-              <Chip
-                icon={<VerifiedUserOutlinedIcon sx={{ fontSize: 14 }} />}
-                label="VERIFIED PARTNER"
-                size="small"
-                sx={{
-                  bgcolor: "rgba(217,168,75,0.14)",
-                  color: "#A07823",
-                  fontWeight: 700,
-                  fontSize: "0.68rem",
-                  letterSpacing: "0.08em",
-                  "& .MuiChip-icon": { color: "#A07823" },
-                }}
-              />
-              <Box sx={{ width: "100%", pt: 1.5, borderTop: "1px solid", borderColor: "divider" }}>
-                <Stack direction="row" sx={{ justifyContent: "space-between", py: 0.75 }}>
-                  <Typography variant="body2" sx={{ color: "text.secondary", fontSize: "0.78rem" }}>
-                    Joined
-                  </Typography>
-                  <Typography sx={{ fontWeight: 600, fontSize: "0.82rem" }}>
-                    {vendor.joinedAt}
-                  </Typography>
-                </Stack>
-                <Stack direction="row" sx={{ justifyContent: "space-between", py: 0.75 }}>
-                  <Typography variant="body2" sx={{ color: "text.secondary", fontSize: "0.78rem" }}>
-                    Agreement
-                  </Typography>
-                  <Typography sx={{ fontWeight: 600, fontSize: "0.82rem" }}>
-                    {vendor.agreementVersion}
-                  </Typography>
-                </Stack>
-                <Stack direction="row" sx={{ justifyContent: "space-between", py: 0.75 }}>
-                  <Typography variant="body2" sx={{ color: "text.secondary", fontSize: "0.78rem" }}>
-                    Status
-                  </Typography>
-                  <Typography sx={{ fontWeight: 600, fontSize: "0.82rem", color: "success.dark", textTransform: "capitalize" }}>
-                    {vendor.status}
-                  </Typography>
-                </Stack>
-              </Box>
-            </Stack>
-          </Box>
+              </Stack>
+            </SectionCard>
+          </Stack>
         </Grid>
 
         {/* Form */}
         <Grid size={{ xs: 12, md: 8 }}>
-          <Stack spacing={3}>
-            <Box
-              sx={{
-                p: { xs: 2.5, md: 3.5 },
-                borderRadius: "20px",
-                border: "1px solid",
-                borderColor: "divider",
-                bgcolor: "common.white",
-              }}
-            >
-              <Typography variant="overline" sx={{ color: "text.secondary", display: "block" }}>
-                COMPANY DETAILS
-              </Typography>
-              <Typography variant="h4" sx={{ mt: 0.25, fontSize: "1.4rem", mb: 2.5 }}>
-                Public listing
-              </Typography>
-              <Grid container spacing={2.25}>
-                <Grid size={{ xs: 12, sm: 8 }}>
-                  <TextField label="Legal company name" value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 4 }}>
-                  <TextField label="Display name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} helperText="Shown in member rewards page" />
+          <Stack spacing={2}>
+            <SectionCard title="Company" padding="default">
+              <Grid container spacing={1.75}>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <FormField
+                    label="Legal company name"
+                    value={companyName}
+                    onChange={setCompanyName}
+                    placeholder="Henry Schein, Inc."
+                  />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField label="Category" select value={category} onChange={(e) => setCategory(e.target.value)}>
+                  <FormField
+                    label="Display name (shown in directory)"
+                    value={displayName}
+                    onChange={setDisplayName}
+                    placeholder="Henry Schein"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <FormField
+                    label="Website"
+                    value={website}
+                    onChange={setWebsite}
+                    placeholder="https://www.henryschein.com"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <FormField
+                    label="Category"
+                    value={category}
+                    onChange={setCategory}
+                    select
+                  >
                     {vendorCategories.map((c) => (
-                      <MenuItem key={c} value={c}>{c}</MenuItem>
+                      <MenuItem key={c} value={c} sx={{ fontSize: "0.84rem" }}>
+                        {c}
+                      </MenuItem>
                     ))}
-                  </TextField>
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField label="Website" value={website} onChange={(e) => setWebsite(e.target.value)} />
+                  </FormField>
                 </Grid>
                 <Grid size={{ xs: 12 }}>
-                  <TextField
-                    label="Public description"
+                  <FormField
+                    label="Description"
                     value={description}
-                    onChange={(e) => setDescription(e.target.value)}
+                    onChange={setDescription}
                     multiline
-                    rows={3}
-                    helperText={`${description.length} / 240 characters`}
-                    slotProps={{ htmlInput: { maxLength: 240 } }}
+                    minRows={3}
+                    placeholder="Short pitch members see in the directory."
+                    helperText={`${description.length}/600`}
                   />
                 </Grid>
               </Grid>
-            </Box>
+            </SectionCard>
 
-            <Box
-              sx={{
-                p: { xs: 2.5, md: 3.5 },
-                borderRadius: "20px",
-                border: "1px solid",
-                borderColor: "divider",
-                bgcolor: "common.white",
-              }}
-            >
-              <Typography variant="overline" sx={{ color: "text.secondary", display: "block" }}>
-                CONTACT
-              </Typography>
-              <Typography variant="h4" sx={{ mt: 0.25, fontSize: "1.4rem", mb: 2.5 }}>
-                Where members and TDN reach you
-              </Typography>
-              <Grid container spacing={2.25}>
+            <SectionCard title="Contact" subtitle="Where members and our team reach you." padding="default">
+              <Grid container spacing={1.75}>
                 <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField label="Primary contact name" value={contactName} onChange={(e) => setContactName(e.target.value)} />
+                  <FormField label="Primary contact name" value={contactName} onChange={setContactName} />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField label="Phone" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} />
+                  <FormField
+                    label="Contact email"
+                    type="email"
+                    value={contactEmail}
+                    onChange={setContactEmail}
+                  />
                 </Grid>
-                <Grid size={{ xs: 12 }}>
-                  <TextField label="Primary email (login)" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} disabled helperText="Email changes go through verification, handled separately." />
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <FormField
+                    label="Contact phone"
+                    type="tel"
+                    value={contactPhone}
+                    onChange={setContactPhone}
+                  />
                 </Grid>
-                <Grid size={{ xs: 12 }}>
-                  <TextField label="Billing email" value={billingEmail} onChange={(e) => setBillingEmail(e.target.value)} helperText="Where invoices and payment receipts go." />
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <FormField
+                    label="Calendar booking link"
+                    value={calendarLink}
+                    onChange={setCalendarLink}
+                    placeholder="https://cal.com/your-handle/intro"
+                    helperText="Members book intros from your profile."
+                  />
                 </Grid>
               </Grid>
-            </Box>
+            </SectionCard>
 
-            {saved && (
-              <Alert severity="success" icon={<CheckCircleOutlinedIcon />} sx={{ borderRadius: "14px" }}>
-                Profile saved.
-              </Alert>
-            )}
+            <SectionCard title="Billing" subtitle="Used for invoices and receipts only — not displayed publicly." padding="default">
+              <Grid container spacing={1.75}>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <FormField
+                    label="Billing email"
+                    type="email"
+                    value={billingEmail}
+                    onChange={setBillingEmail}
+                  />
+                </Grid>
+              </Grid>
+            </SectionCard>
 
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ justifyContent: "flex-end" }}>
-              <Button variant="text" color="primary">Cancel</Button>
-              <Button variant="contained" color="primary" size="large" onClick={onSave}>
-                Save changes
-              </Button>
-            </Stack>
+            <Alert
+              severity="info"
+              sx={{ borderRadius: 1.5, fontSize: "0.82rem", py: 0.75 }}
+            >
+              Material edits (legal name, category change) re-trigger team review. Cosmetic edits (description, contact) go live instantly.
+            </Alert>
           </Stack>
         </Grid>
       </Grid>
     </Stack>
+  );
+}
+
+function HealthRow({ label, ok }: { label: string; ok: boolean }) {
+  return (
+    <Stack direction="row" spacing={1} sx={{ alignItems: "center", justifyContent: "space-between" }}>
+      <Typography sx={{ fontSize: "0.82rem", color: "#3B4A55" }}>{label}</Typography>
+      <Box
+        sx={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 0.5,
+          px: 0.75,
+          height: 18,
+          borderRadius: 0.75,
+          bgcolor: ok ? "rgba(34,108,78,0.1)" : "rgba(217,168,75,0.14)",
+          color: ok ? "#1F5C40" : "#A07823",
+          border: ok ? "1px solid rgba(34,108,78,0.28)" : "1px solid rgba(217,168,75,0.32)",
+          fontSize: "0.62rem",
+          fontWeight: 700,
+          letterSpacing: "0.06em",
+          textTransform: "uppercase",
+        }}
+      >
+        <Box
+          sx={{
+            width: 5,
+            height: 5,
+            borderRadius: "50%",
+            bgcolor: ok ? "#1F5C40" : "#A07823",
+          }}
+        />
+        {ok ? "Complete" : "Add"}
+      </Box>
+    </Stack>
+  );
+}
+
+function FormField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  helperText,
+  multiline,
+  minRows,
+  select,
+  type,
+  children,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  helperText?: string;
+  multiline?: boolean;
+  minRows?: number;
+  select?: boolean;
+  type?: string;
+  children?: React.ReactNode;
+}) {
+  return (
+    <TextField
+      label={label}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      helperText={helperText}
+      multiline={multiline}
+      minRows={minRows}
+      select={select}
+      type={type}
+      fullWidth
+      size="small"
+      slotProps={{
+        inputLabel: { sx: { fontSize: "0.82rem" } },
+        formHelperText: { sx: { fontSize: "0.7rem", ml: 0.5, mt: 0.5 } },
+      }}
+      sx={{
+        "& .MuiOutlinedInput-root": { fontSize: "0.84rem", borderRadius: 1.5 },
+        "& .MuiOutlinedInput-input": { py: 1.1 },
+      }}
+    >
+      {children}
+    </TextField>
   );
 }

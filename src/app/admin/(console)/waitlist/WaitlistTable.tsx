@@ -25,7 +25,7 @@ import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined
 
 export type WaitlistRow = {
   id: string;
-  role: "member" | "vendor";
+  role: "member" | "vendor"; // "vendor" kept for legacy rows but no longer accepted at submit time
   email: string;
   full_name: string;
   practice_name: string | null;
@@ -106,7 +106,7 @@ export default function WaitlistTable({
   const [rows, setRows] = useState<WaitlistRow[]>(initialRows);
   const [counts] = useState<Counts>(initialCounts);
   const [q, setQ] = useState("");
-  const [tab, setTab] = useState<"all" | "member" | "vendor">("all");
+  const [tab, setTab] = useState<"all" | "member">("all");
   const [isPending, startTransition] = useTransition();
 
   const filtered = useMemo(() => {
@@ -224,7 +224,6 @@ export default function WaitlistTable({
         >
           <Tab value="all" label={`All (${rows.length})`} />
           <Tab value="member" label={`Dentists (${rows.filter((r) => r.role === "member").length})`} />
-          <Tab value="vendor" label={`Vendors (${rows.filter((r) => r.role === "vendor").length})`} />
         </Tabs>
         <TextField
           placeholder="Search name, email, practice…"

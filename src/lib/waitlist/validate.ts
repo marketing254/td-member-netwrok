@@ -1,4 +1,8 @@
-export type WaitlistRole = "member" | "vendor";
+// Members are the only ones who use the waitlist; vendors apply directly via
+// /vendor/signup so they can be reviewed and onboarded individually. The role
+// field is kept for future use (e.g. associate, office manager) but every
+// signup today resolves to "member".
+export type WaitlistRole = "member";
 
 export type WaitlistPayload = {
   role: WaitlistRole;
@@ -28,10 +32,11 @@ export function validateWaitlist(body: unknown): ValidationResult {
   }
   const b = body as Record<string, unknown>;
 
-  const role = asString(b.role).toLowerCase();
-  if (role !== "member" && role !== "vendor") {
-    return { ok: false, error: "Pick whether you are joining as a member or a vendor.", field: "role" };
-  }
+  // Anything coming in resolves to "member" — vendors don't use the waitlist.
+  // We still accept legacy `role: "vendor"` payloads to avoid breaking older
+  // clients; they get silently coerced to member.
+  void asString(b.role);
+  const role: WaitlistRole = "member";
 
   const fullName = asString(b.fullName);
   if (fullName.length < 2 || fullName.length > 120) {
@@ -72,6 +77,6 @@ export function validateWaitlist(body: unknown): ValidationResult {
 
   return {
     ok: true,
-    data: { role: role as WaitlistRole, fullName, email, practiceName, phone, cityState, message, source, utm },
+    data: { role, fullName, email, practiceName, phone, cityState, message, source, utm },
   };
 }
