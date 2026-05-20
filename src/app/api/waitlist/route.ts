@@ -18,8 +18,8 @@ const MOCK_MODE = true;
 // In-memory counter for the mock mode. Starts at zero so the hero badge
 // reflects an honest "0 on the list" until someone actually submits the form,
 // and ticks up by 1 per submission. Resets when the dev server restarts.
-type MockCounts = { total: number; members: number; vendors: number; experts: number; last_24h: number };
-const mockCounts: MockCounts = { total: 0, members: 0, vendors: 0, experts: 0, last_24h: 0 };
+type MockCounts = { total: number; members: number; vendors: number; last_24h: number };
+const mockCounts: MockCounts = { total: 0, members: 0, vendors: 0, last_24h: 0 };
 
 function clientIp(req: Request): string {
   const fwd = req.headers.get("x-forwarded-for");
@@ -87,7 +87,6 @@ export async function POST(req: Request) {
     mockCounts.last_24h += 1;
     if (result.data.role === "member") mockCounts.members += 1;
     if (result.data.role === "vendor") mockCounts.vendors += 1;
-    if (result.data.role === "expert") mockCounts.experts += 1;
     await sendConfirmation(result.data, id, createdAt);
     return NextResponse.json({
       ok: true,
@@ -173,7 +172,7 @@ export async function GET() {
   } catch (err) {
     console.error("[waitlist] count read failed:", err);
     return NextResponse.json(
-      { total: 0, members: 0, vendors: 0, experts: 0, last_24h: 0 },
+      { total: 0, members: 0, vendors: 0, last_24h: 0 },
       { status: 200 },
     );
   }

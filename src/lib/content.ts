@@ -46,57 +46,39 @@ export const marqueeBadges = [
   "Vendor Savings Averaging $6K+",
 ];
 
-// FEATURES (Section 6 in doc), verbatim
+// FEATURES → "Why This Network Works" (verbatim from index - test.html)
 export const featuresSection = {
-  eyebrow: "WHAT YOU GET",
-  title:
-    "Six things you would otherwise hire a consultant, a buyer, and an HR firm to do.",
+  eyebrow: "Why This Network Works",
+  title: "The difference is curation, not catalog.",
+  titleEmphasis: "curation, not catalog.",
   subtitle:
-    "Bundled into one membership. Built for the operator side of running a practice.",
+    "Most dental directories are crowded with anyone who paid for a listing. The Dental Member Network is curated, every expert and vendor is vetted by the team that hosts Thriving Dentist.",
 };
 
 export const features = [
   {
-    title: "24/7 Expert Helpline",
+    title: "Vetted Experts",
     summary:
-      "Direct line to business coaches and practice advisors. Every case gets a written summary and a follow-up plan within 3 days.",
-    size: "large",
-    accent: false,
+      "Every expert is reviewed before they're listed. Members get coaches who actually deliver, not just anyone with a website.",
+    icon: "star",
   },
   {
-    title: "Member Directory",
+    title: "Trusted Vendors",
     summary:
-      "500+ practice owners, searchable by city, specialty, revenue.",
-    size: "regular",
-    accent: false,
+      "Vendors commit to giving members the best deal they offer anywhere. Discounts are real and clearly stated.",
+    icon: "check",
   },
   {
-    title: "Vendor Network",
+    title: "Curated Content",
     summary:
-      "Negotiated savings averaging $6,000+ per year.",
-    size: "regular",
-    accent: false,
+      "Free access to years of podcast, webinar, and panel recordings, plus member rates on every paid expert course.",
+    icon: "target",
   },
   {
-    title: "Proven Systems",
+    title: "Lifetime Pricing",
     summary:
-      "Battle-tested templates, checklists, and SOPs. From HR onboarding to expansion playbooks, the work, already done.",
-    size: "regular",
-    accent: false,
-  },
-  {
-    title: "Learning Academy",
-    summary:
-      "Weekly audio, monthly video, live AMAs. Led by practice owners who have actually built what you are trying to build.",
-    size: "regular",
-    accent: true,
-  },
-  {
-    title: "Quarterly Strategy",
-    summary:
-      "Premium tier members get a 90-minute review every quarter.",
-    size: "large",
-    accent: false,
+      "The first 1,000 founding members lock in $49 for life. Founding rate ends after 20 days or the cap, whichever comes first.",
+    icon: "infinity",
   },
 ];
 
@@ -146,18 +128,6 @@ export const waitlistByRole = {
       "Members already pre-qualified, practice owners actively spending",
     ],
   },
-  expert: {
-    eyebrow: "FOUNDING EXPERT PARTNER",
-    headline: "Six months free. 96% revenue share. Curated launch cohort.",
-    subtitle:
-      "Founding experts get on the helpline bench, the expert directory, and the editorial calendar from day one. We curate deliberately to protect member trust.",
-    benefits: [
-      "Free for the first 6 months, then $99/mo with 30-day cancel",
-      "96% revenue share on paid courses, 100% on direct 1:1 bookings",
-      "Helpline bench + monthly live AMAs + co-branded content",
-      "You set your own pricing and keep ownership of your content",
-    ],
-  },
 };
 
 // CTA FORM (Section 13 in doc), bottom-of-page founding-team contact form
@@ -197,10 +167,6 @@ export const faqs = [
       "A searchable directory of 500+ practice owners.",
     ],
     aClose: "Plus proven systems, SOPs, and monthly live AMAs with specialists.",
-  },
-  {
-    q: "What is the expert helpline?",
-    a: "A direct line to business coaches and practice advisors. Call or message 24/7 with any practice problem, staffing, vendor issues, PPO renegotiation, expansion planning, anything. Every case gets a written summary and a follow-up plan within 3 business days. Median first response is under 2 hours.",
   },
   {
     q: "How do the vendor savings work?",
@@ -261,7 +227,6 @@ export const footerLinks = {
   Agreements: [
     { label: "Member Agreement", href: "/agreement/member" },
     { label: "Vendor Partnership Agreement", href: "/agreement/vendor" },
-    { label: "Expert Partner Agreement", href: "/agreement/expert" },
   ],
   Legal: [
     { label: "Refund & Cancellation", href: "/legal/refund" },
@@ -272,8 +237,7 @@ export const footerLinks = {
 export const navLinks = [
   { label: "What You Get", href: "#features" },
   { label: "Pricing", href: "#pricing" },
-  { label: "Vendor", href: "#waitlist" },
-  { label: "Expert", href: "#waitlist" },
+  { label: "Join Waitlist", href: "#waitlist" },
   { label: "FAQ", href: "#faq" },
 ];
 
@@ -296,34 +260,6 @@ export const challengeOptions = [
   "Case acceptance",
   "Marketing",
   "Other",
-];
-
-// Expert form options (new role)
-export const expertSpecialties = [
-  "Practice management",
-  "PPO renegotiation & insurance",
-  "Marketing & SEO",
-  "HR, hiring & team development",
-  "Clinical (CE / continuing education)",
-  "Finance, accounting & tax",
-  "Legal & compliance",
-  "M&A, valuations & exits",
-  "Operations & scaling",
-  "Other",
-];
-
-export const expertExperienceLevels = [
-  "5–10 years",
-  "10–20 years",
-  "20+ years",
-];
-
-export const expertAvailability = [
-  "Helpline only",
-  "Helpline + monthly AMA",
-  "Helpline + 1:1 sessions",
-  "Quarterly strategy reviews",
-  "Custom, let's talk",
 ];
 
 // PRICING (Section 10 in doc), verbatim
@@ -376,24 +312,5 @@ export const pricing = [
     ctaHref: "/#waitlist",
     highlight: false,
     role: "vendor",
-  },
-  {
-    tier: "Expert",
-    audience: "Coaches, consultants, specialists",
-    price: "Apply",
-    cadence: "Revenue share on member sessions",
-    blurb:
-      "Join the helpline bench. Take calls and written cases from practice owners in your specialty, host monthly AMAs, and contribute to the content library.",
-    features: [
-      "Inclusion on the helpline expert bench",
-      "Profile in the expert directory members search",
-      "Monthly live AMA hosting opportunities",
-      "Revenue share on member-paid 1:1 sessions",
-      "Co-branded content (recorded panels, written guides)",
-    ],
-    cta: "Apply as expert",
-    ctaHref: "/#waitlist",
-    highlight: false,
-    role: "expert",
   },
 ];

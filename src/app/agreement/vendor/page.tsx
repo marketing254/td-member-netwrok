@@ -1,24 +1,12 @@
 import {
   Box,
   Button,
-  Chip,
   Container,
-  Divider,
-  Grid,
   Stack,
   Typography,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import VerifiedOutlinedIcon from "@mui/icons-material/VerifiedOutlined";
-import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
-import HandshakeOutlinedIcon from "@mui/icons-material/HandshakeOutlined";
-import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
-import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
-import CampaignOutlinedIcon from "@mui/icons-material/CampaignOutlined";
-import CardGiftcardOutlinedIcon from "@mui/icons-material/CardGiftcardOutlined";
-import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
-import AutorenewOutlinedIcon from "@mui/icons-material/AutorenewOutlined";
-import PaymentsOutlinedIcon from "@mui/icons-material/PaymentsOutlined";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import Header from "@/components/sections/Header";
 import Footer from "@/components/sections/Footer";
 
@@ -28,479 +16,871 @@ export const metadata = {
     "Full Vendor Network Partnership Agreement for the Dental Member Network, five commitments, fee schedule, and legal terms.",
 };
 
-const PARTNERSHIP_POINTS = [
-  {
-    icon: LocalOfferOutlinedIcon,
-    title: "Featured listing in the vendor directory",
-    body: "We create and maintain a dedicated profile page, logo, description, services, contact form, member-exclusive offer, and your calendar link.",
-  },
-  {
-    icon: GroupsOutlinedIcon,
-    title: "Access to the member network for warm introductions",
-    body: "Inquiries from members are routed directly to you by email and via your partner dashboard. All leads are pre-qualified.",
-  },
-  {
-    icon: VerifiedOutlinedIcon,
-    title: "Inclusion in the negotiated deals program",
-    body: "You agree to offer a verifiable member-only discount, preferred pricing tier, or other material benefit not generally available to the public.",
-  },
-  {
-    icon: CampaignOutlinedIcon,
-    title: "Co-branded content opportunities",
-    body: "Priority category placement, quarterly newsletter mentions, one dedicated email to members per year, and eligibility for podcast and webinar features.",
-  },
-  {
-    icon: CardGiftcardOutlinedIcon,
-    title: "Priority placement in new vendor deal announcements",
-    body: "Founding-cohort vendors get top placement in the first member emails, in-app banners, and the launch deals page.",
-  },
-  {
-    icon: VerifiedOutlinedIcon,
-    title: "Verified Partner badge",
-    body: "A \"Dental Member Network Verified Partner\" mark you can use on your site, email signature, and sales materials while the Agreement is active.",
-  },
-];
-
-const COMMITMENTS = [
-  {
-    icon: LocalOfferOutlinedIcon,
-    title: "Offer our members the best deal you have",
-    body: "A discount, bonus, or exclusive benefit at least as good as any offer you make available to comparable customers. If your terms get better elsewhere, ours match or improve.",
-  },
-  {
-    icon: GroupsOutlinedIcon,
-    title: "Join our private partner hotline",
-    body: "Stay responsive during business hours on our private hotline where deals get sorted, leads get triaged, and we share what's working.",
-  },
-  {
-    icon: CalendarMonthOutlinedIcon,
-    title: "Provide a calendar link",
-    body: "A working booking link (Calendly, HubSpot, Cal.com) where members can book a call directly. Keep it live and respond within one business day.",
-  },
-  {
-    icon: AutorenewOutlinedIcon,
-    title: "Accept that we'll evolve the network",
-    body: "We may update terms, benefits, fees, and operating rules on at least 30 days' written notice. If a change materially reduces your benefits, you can terminate with no penalty.",
-  },
-  {
-    icon: PaymentsOutlinedIcon,
-    title: "Pay the fee, waived for your first six months",
-    body: "Standard: $199/mo. Founding partners: $0 for months 1–6, $49 for months 7–12, then $199 from month 13. Cancel with 30 days' notice anytime.",
-  },
-];
-
 const KEY_TERMS = [
-  { label: "Months 1–6", value: "$0", sub: "Waived" },
-  { label: "Months 7–12", value: "$49", sub: "per month" },
+  { label: "Months 1-6", value: "$0", sub: "Waived" },
+  { label: "Months 7-12", value: "$49", sub: "per month" },
   { label: "Month 13+", value: "$199", sub: "per month" },
   { label: "Commitment", value: "12 mo", sub: "Initial term" },
   { label: "Cancel", value: "30 d", sub: "Written notice" },
 ];
 
-const FOUNDING_TERMS = [
-  "0% DMN commission on member transactions",
-  "$0 partnership fee for the first 6 months",
-  "$49/mo locked-in rate for months 7–12",
-  "Member discount honored for the duration of your listing",
-  "30-day cure window on any quality issue before delisting",
-  "Annual pre-pay option: 12 months for the price of 10",
-];
-
-const WHAT_WE_NEED_FROM_YOU = [
-  "Honor the published member discount to any verified DMN member",
-  "Respond to warm introductions within 1 business day",
-  "Use member contact info only for the introduced opportunity",
-  "Never request or store patient data from any member",
-  "Keep your calendar link live with availability open",
-  "Provide responsive, professional service at the level you give your best customers",
-];
-
-const LEGAL_SECTIONS = [
+const COMMITMENTS = [
   {
     num: "01",
-    title: "Member discount details",
-    content: "The member discount you commit to is binding for the term of the Agreement. You can improve it any time, you just can't reduce or withdraw it without written consent. Acceptable formats include percentage off, flat-dollar discount, waived setup fees, bonus inclusions, or preferred payment terms.",
+    title: "Offer our members the best deal you have.",
+    body: "You agree to give DMN members a discount, bonus, or exclusive benefit that is at least as good as any offer you make available to comparable customers. If your terms get better elsewhere, ours match or improve. We promote this deal, it has to be real.",
   },
   {
     num: "02",
-    title: "Confidentiality and member data",
-    content: "Both parties agree to use non-public information only for purposes of this Agreement. Member contact information shared in connection with leads may only be used to respond to and service that lead. You will not sell, transfer, or use member data for unrelated marketing. This survives termination.",
+    title: "Join our private partner hotline.",
+    body: "We host a private hotline that connects our members with vendors in the network. We keep one team member responsive there during business hours, and use it for fast coordination between members and vendors. It's where deals get sorted, leads get triaged, and we share what's working.",
   },
   {
     num: "03",
-    title: "Changes to terms",
-    content: "DMN may modify terms, including pricing, benefits, eligibility, and operating rules, on at least 30 days' prior written notice. If a change materially reduces your benefits or increases fees, you may terminate before it takes effect with no further obligation.",
+    title: "Provide a calendar link.",
+    body: "You give us a working calendar booking link (Calendly, HubSpot, Cal.com, anything) where members can book a call with you directly. We feature it on your profile. You agree to keep it live, keep availability open, and respond to bookings within one business day.",
   },
   {
     num: "04",
-    title: "Term, renewal, and termination",
-    content: "Initial term of 12 months, auto-renewing for successive 12-month terms unless either party gives 30 days' notice. Either party may terminate for convenience on 30 days' notice, or immediately for material breach not cured within 15 days. At termination: profile removed, badge license ends, unpaid fees become due.",
+    title: "Accept that we'll evolve the network.",
+    body: "The network is new. Terms, benefits, fees, and operating rules will change as we learn. We commit to giving you advance notice of every change, the full mechanism is in Section 06.",
   },
   {
     num: "05",
-    title: "Disclaimers and liability",
-    content: "No guarantee of specific leads, conversion rates, or revenue outcomes. The network is provided \"as is.\" Neither party is liable for indirect or consequential damages. Total liability is capped at fees paid in the preceding 12 months. Vendor indemnifies DMN from third-party claims arising from Vendor's products, services, or content.",
-  },
-  {
-    num: "06",
-    title: "Miscellaneous",
-    content: "The parties are independent contractors. Assignment requires prior written consent. This Agreement is the entire agreement and supersedes prior discussions. Electronic signatures via the online form have the same effect as written signatures.",
+    title: "Pay the fee, waived for your first six months.",
+    body: "Founding partners pay nothing for the first six months. Reduced rates apply for the second six months before the standard partner fee takes effect. Full schedule in Section 02.",
   },
 ];
+
+const SCHEDULE = [
+  { period: "Months 1-6", price: "$0", note: "Founding partner waiver, applies automatically" },
+  { period: "Months 7-12", price: "$49", note: "Locked-in launch rate" },
+  { period: "Month 13 onward", price: "$199", note: "Standard partner rate" },
+];
+
+const DISCOUNT_FORMATS = [
+  "A percentage off your standard pricing (typically 3-20%)",
+  "A flat-dollar discount on first purchase or engagement",
+  "A waived setup, onboarding, or implementation fee",
+  "Bonus inclusions, extra hours, bundled products, extended trials",
+  "Preferred payment terms or deferred billing",
+];
+
+const STANDARDS = [
+  "You operate in compliance with all applicable laws, regulations, and professional standards;",
+  "You provide responsive, professional sales and customer support to members, at least at the quality level you give your best customers;",
+  "You have the rights to all logos, copy, and content you give us, and you grant us a non-exclusive license to use them to promote you in the network;",
+  "You will not engage in conduct that damages the DMN brand, including misleading advertising, harassment of members, or violation of professional codes of conduct.",
+];
+
+const sectionTitleSx = {
+  fontFamily: "var(--font-display)",
+  fontSize: { xs: "1.6rem", md: "1.85rem" },
+  fontWeight: 600,
+  color: "#0A1A2F",
+  lineHeight: 1.2,
+  letterSpacing: "-0.01em",
+  pb: 2,
+  mb: 3,
+  borderBottom: "1px solid",
+  borderColor: "rgba(14,42,61,0.1)",
+};
+
+const numAccentSx = {
+  color: "#A07823",
+  fontStyle: "italic",
+  fontWeight: 400,
+  mr: 1.5,
+};
+
+const bodyTextSx = {
+  color: "#2A3654",
+  fontSize: "0.98rem",
+  lineHeight: 1.75,
+  mb: 2,
+};
+
+const subHeadingSx = {
+  fontSize: "1.05rem",
+  fontWeight: 600,
+  color: "#0A1A2F",
+  letterSpacing: "-0.005em",
+  mt: 3,
+  mb: 1.5,
+};
 
 export default function VendorAgreementPage() {
   return (
     <>
       <Header />
+
+      {/* HERO */}
       <Box
-        component="main"
+        component="header"
         sx={{
           position: "relative",
-          bgcolor: "#F7F5F0",
-          minHeight: "100vh",
-          pt: { xs: 4, md: 6 },
-          pb: { xs: 8, md: 12 },
+          bgcolor: "#060D1F",
+          color: "#FFFFFF",
+          pt: { xs: 6, md: 10 },
+          pb: { xs: 12, md: 16 },
+          overflow: "hidden",
         }}
       >
         <Box
           aria-hidden
           sx={{
             position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 320,
+            inset: 0,
             background:
-              "radial-gradient(70% 100% at 50% 0%, rgba(217,168,75,0.12) 0%, transparent 70%)",
+              "radial-gradient(circle at 80% 20%, rgba(42,95,168,0.22), transparent 50%), radial-gradient(circle at 20% 80%, rgba(212,164,75,0.08), transparent 50%)",
             pointerEvents: "none",
           }}
         />
-
         <Container maxWidth="md" sx={{ position: "relative" }}>
-          <Stack direction="row" sx={{ mb: 3, justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1.5 }}>
+          <Stack direction="row" sx={{ mb: 4, alignItems: "center" }}>
             <Button
               href="/#waitlist"
               startIcon={<ArrowBackIcon />}
-              sx={{ color: "text.secondary", "&:hover": { bgcolor: "rgba(14,42,61,0.04)" } }}
+              sx={{
+                color: "rgba(246,241,231,0.7)",
+                "&:hover": { color: "#F0C16E", bgcolor: "rgba(255,255,255,0.04)" },
+              }}
             >
               Back to waitlist
             </Button>
           </Stack>
 
-          <Stack spacing={2.5} sx={{ mb: 5 }}>
-            <Chip
-              icon={<HandshakeOutlinedIcon sx={{ fontSize: 14, color: "#A07823 !important" }} />}
-              label="VENDOR PARTNERSHIP AGREEMENT"
-              size="small"
-              sx={{
-                alignSelf: "flex-start",
-                bgcolor: "rgba(217,168,75,0.1)",
-                color: "#7A5B17",
-                border: "1px solid rgba(217,168,75,0.3)",
-                fontSize: "0.66rem",
-                fontWeight: 700,
-                letterSpacing: "0.14em",
-              }}
-            />
-            <Typography variant="h1" component="h1" sx={{ fontSize: { xs: "2.25rem", md: "3.25rem" } }}>
-              Partnership Agreement
-            </Typography>
-            <Typography
-              sx={{
-                fontFamily: "var(--font-display)",
-                fontStyle: "italic",
-                color: "#A07823",
-                fontSize: { xs: "1.15rem", md: "1.35rem" },
-              }}
-            >
-              Built around five simple commitments.
-            </Typography>
-            <Typography variant="subtitle1" sx={{ color: "text.secondary", maxWidth: 640, lineHeight: 1.65 }}>
-              We bring you the most engaged practice owners in dentistry. You bring the service
-              quality, the best deal in the room, and a calendar link they can book in two clicks.
-              Below are the terms, read them through, then apply at the bottom.
-            </Typography>
-          </Stack>
-
-          {/* Key terms band */}
-          <Grid
-            container
-            sx={{
-              mb: 6,
-              bgcolor: "#FFFFFF",
-              borderRadius: 3,
-              border: "1px solid",
-              borderColor: "divider",
-              boxShadow: "0 30px 80px -40px rgba(14,42,61,0.18)",
-              overflow: "hidden",
-            }}
-          >
-            {KEY_TERMS.map((t) => (
-              <Grid key={t.label} size={{ xs: 6, sm: 2.4 }}>
-                <Box sx={{ py: 3, px: 2, textAlign: "center" }}>
-                  <Typography sx={{ fontSize: "0.65rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "text.disabled", fontWeight: 600 }}>
-                    {t.label}
-                  </Typography>
-                  <Typography sx={{ fontFamily: "var(--font-display)", fontSize: "1.75rem", color: "text.primary", fontWeight: 600, mt: 1, lineHeight: 1.1 }}>
-                    {t.value}
-                  </Typography>
-                  <Typography sx={{ fontSize: "0.72rem", color: "text.disabled", mt: 0.5 }}>
-                    {t.sub}
-                  </Typography>
-                </Box>
-              </Grid>
-            ))}
-          </Grid>
-
-          {/* Main card */}
-          <Box
-            sx={{
-              p: { xs: 3, md: 5 },
-              borderRadius: 4,
-              bgcolor: "#FFFFFF",
-              border: "1px solid",
-              borderColor: "divider",
-              boxShadow: "0 30px 80px -40px rgba(14,42,61,0.18)",
-              position: "relative",
-              overflow: "hidden",
-            }}
+          <Stack
+            direction="row"
+            spacing={1.5}
+            sx={{ mb: 5, alignItems: "center" }}
           >
             <Box
               aria-hidden
               sx={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                height: 3,
-                background: "linear-gradient(90deg, #F0C16E 0%, #D9A84B 50%, #A07823 100%)",
+                width: 36,
+                height: 2,
+                bgcolor: "#D4A44B",
               }}
             />
-
-            {/* ─── The Five Commitments ─── */}
-            <Typography variant="h2" component="h2" sx={{ fontSize: { xs: "1.75rem", md: "2.15rem" }, mb: 1.5 }}>
-              The Five Commitments
+            <Typography
+              sx={{
+                fontSize: "0.78rem",
+                letterSpacing: "0.22em",
+                textTransform: "uppercase",
+                color: "#F2DD9B",
+                fontWeight: 600,
+              }}
+            >
+              Dental Member Network · Vendor Partnership
             </Typography>
-            <Typography sx={{ color: "text.secondary", mb: 4 }}>
-              These are the only things we hold every vendor in the network to. Everything else is operational detail.
-            </Typography>
+          </Stack>
 
-            <Stack spacing={3}>
-              {COMMITMENTS.map(({ icon: Icon, title, body }) => (
-                <Stack key={title} direction="row" spacing={2.5} sx={{ alignItems: "flex-start" }}>
-                  <Box
-                    sx={{
-                      flexShrink: 0,
-                      width: 44,
-                      height: 44,
-                      borderRadius: 2,
-                      display: "grid",
-                      placeItems: "center",
-                      bgcolor: "rgba(217,168,75,0.12)",
-                      color: "#A07823",
-                      border: "1px solid rgba(217,168,75,0.25)",
-                    }}
-                  >
-                    <Icon sx={{ fontSize: 22 }} />
-                  </Box>
-                  <Box sx={{ flex: 1 }}>
-                    <Typography sx={{ color: "text.primary", fontWeight: 600, fontSize: "1.0625rem", mb: 0.75 }}>
-                      {title}
-                    </Typography>
-                    <Typography sx={{ color: "text.secondary", lineHeight: 1.7 }}>{body}</Typography>
-                  </Box>
-                </Stack>
-              ))}
+          <Typography
+            component="h1"
+            sx={{
+              fontFamily: "var(--font-display)",
+              color: "#FFFFFF",
+              fontSize: { xs: "2.5rem", sm: "3.25rem", md: "4.5rem" },
+              fontWeight: 700,
+              lineHeight: 1.05,
+              letterSpacing: "-0.02em",
+              mb: 1,
+            }}
+          >
+            Partnership Agreement
+            <Box
+              component="em"
+              sx={{
+                display: "block",
+                fontStyle: "italic",
+                color: "#D4A44B",
+                fontWeight: 400,
+              }}
+            >
+              Built around five simple commitments.
+            </Box>
+          </Typography>
+
+          <Typography
+            sx={{
+              color: "#C9D4EB",
+              fontSize: { xs: "1rem", md: "1.125rem" },
+              lineHeight: 1.65,
+              maxWidth: 640,
+              mt: 4,
+            }}
+          >
+            We bring you the most engaged practice owners in dentistry. You bring the service
+            quality, the best deal in the room, and a calendar link they can book in two clicks.
+            Below are the terms, read them through, then head to the sign-up form on the home page.
+          </Typography>
+
+          <Stack
+            direction="row"
+            spacing={3}
+            sx={{
+              mt: 7,
+              flexWrap: "wrap",
+              rowGap: 2,
+              color: "#C9D4EB",
+              fontSize: "0.85rem",
+            }}
+          >
+            <Box>
+              <Box component="strong" sx={{ color: "#FFFFFF", fontWeight: 600 }}>
+                Single tier
+              </Box>{" "}
+              · Featured Partner
+            </Box>
+            <Box>
+              <Box component="strong" sx={{ color: "#FFFFFF", fontWeight: 600 }}>
+                $199
+              </Box>
+              /month standard rate
+            </Box>
+            <Box>
+              <Box component="strong" sx={{ color: "#FFFFFF", fontWeight: 600 }}>
+                6 months free
+              </Box>{" "}
+              · Founding partner offer
+            </Box>
+          </Stack>
+        </Container>
+      </Box>
+
+      {/* KEY TERMS BAND (overlapping hero bottom) */}
+      <Container maxWidth="md" sx={{ position: "relative", mt: { xs: -8, md: -10 }, mb: { xs: 6, md: 8 }, zIndex: 2 }}>
+        <Box
+          sx={{
+            bgcolor: "#FFFFFF",
+            borderRadius: 2,
+            border: "1px solid",
+            borderColor: "rgba(14,42,61,0.08)",
+            boxShadow: "0 30px 60px -20px rgba(15,29,58,0.18), 0 8px 20px -10px rgba(15,29,58,0.12)",
+            overflow: "hidden",
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr 1fr", sm: "repeat(5, 1fr)" },
+          }}
+        >
+          {KEY_TERMS.map((t, i) => (
+            <Box
+              key={t.label}
+              sx={{
+                py: 3.5,
+                px: 2.5,
+                textAlign: "center",
+                borderRight: { sm: i < KEY_TERMS.length - 1 ? "1px solid" : "none", xs: "none" },
+                borderBottom: { xs: "1px solid", sm: "none" },
+                borderColor: "rgba(14,42,61,0.06)",
+                "&:last-of-type": { borderBottom: "none" },
+              }}
+            >
+              <Typography
+                sx={{
+                  fontSize: "0.68rem",
+                  letterSpacing: "0.18em",
+                  textTransform: "uppercase",
+                  color: "#6A7591",
+                  fontWeight: 600,
+                }}
+              >
+                {t.label}
+              </Typography>
+              <Typography
+                sx={{
+                  fontFamily: "var(--font-display)",
+                  fontSize: "1.85rem",
+                  color: "#0F1D3A",
+                  fontWeight: 600,
+                  mt: 1,
+                  lineHeight: 1.1,
+                }}
+              >
+                {t.value}
+              </Typography>
+              <Typography sx={{ fontSize: "0.74rem", color: "#6A7591", mt: 0.5 }}>
+                {t.sub}
+              </Typography>
+            </Box>
+          ))}
+        </Box>
+      </Container>
+
+      <Box
+        component="main"
+        sx={{
+          bgcolor: "#F7F4ED",
+          pb: { xs: 8, md: 12 },
+        }}
+      >
+        <Container maxWidth="md">
+          {/* INTRO */}
+          <Box
+            sx={{
+              bgcolor: "#FFFFFF",
+              border: "1px solid",
+              borderColor: "rgba(14,42,61,0.08)",
+              borderLeft: "4px solid #D4A44B",
+              p: { xs: 3, md: 4 },
+              borderRadius: "0 8px 8px 0",
+              mb: { xs: 6, md: 8 },
+            }}
+          >
+            <Typography sx={{ ...bodyTextSx, fontSize: "1.05rem", mb: 2 }}>
+              This Vendor Network Partnership Agreement (the{" "}
+              <Box component="strong" sx={{ color: "#0F1D3A", fontWeight: 600 }}>
+                &ldquo;Agreement&rdquo;
+              </Box>
+              ) is between the{" "}
+              <Box component="strong" sx={{ color: "#0F1D3A", fontWeight: 600 }}>
+                Dental Member Network
+              </Box>{" "}
+              (&ldquo;DMN,&rdquo; &ldquo;we,&rdquo; &ldquo;us&rdquo;) and the{" "}
+              <Box component="strong" sx={{ color: "#0F1D3A", fontWeight: 600 }}>
+                Vendor
+              </Box>{" "}
+              who signs up below (&ldquo;you,&rdquo; &ldquo;Vendor&rdquo;). It takes effect on the date of signup.
+            </Typography>
+            <Typography sx={{ ...bodyTextSx, fontSize: "1.05rem", mb: 0 }}>
+              By joining the network, you agree to five commitments, outlined right below, plus the
+              operational and legal terms that follow. The structure is intentionally short. We&rsquo;d
+              rather have a clear handshake than a 40-page document nobody reads.
+            </Typography>
+          </Box>
+
+          {/* THE FIVE COMMITMENTS */}
+          <Box sx={{ mb: { xs: 8, md: 10 } }}>
+            <Stack spacing={1.5} sx={{ mb: 5, textAlign: "center" }}>
+              <Typography
+                sx={{
+                  fontSize: "0.78rem",
+                  letterSpacing: "0.22em",
+                  textTransform: "uppercase",
+                  color: "#A07823",
+                  fontWeight: 600,
+                }}
+              >
+                The Five Commitments
+              </Typography>
+              <Typography
+                component="h2"
+                sx={{
+                  fontFamily: "var(--font-display)",
+                  fontSize: { xs: "2rem", md: "2.4rem" },
+                  color: "#0F1D3A",
+                  fontWeight: 600,
+                  lineHeight: 1.15,
+                  letterSpacing: "-0.01em",
+                }}
+              >
+                What you agree to as a partner.
+              </Typography>
+              <Typography
+                sx={{
+                  color: "#6A7591",
+                  fontSize: "1rem",
+                  maxWidth: 520,
+                  mx: "auto",
+                  lineHeight: 1.65,
+                }}
+              >
+                These are the only things we hold every vendor in the network to. Everything else is operational detail.
+              </Typography>
             </Stack>
 
-            <Divider sx={{ my: 5 }} />
-
-            {/* ─── What's included ─── */}
-            <Typography variant="h2" component="h2" sx={{ fontSize: { xs: "1.75rem", md: "2.15rem" }, mb: 1.5 }}>
-              What you get as a Vendor Partner
-            </Typography>
-            <Typography sx={{ color: "text.secondary", mb: 4 }}>
-              Six things included in every partnership.
-            </Typography>
-
-            <Stack spacing={3}>
-              {PARTNERSHIP_POINTS.map(({ icon: Icon, title, body }) => (
-                <Stack key={title} direction="row" spacing={2.5} sx={{ alignItems: "flex-start" }}>
-                  <Box
-                    sx={{
-                      flexShrink: 0,
-                      width: 44,
-                      height: 44,
-                      borderRadius: 2,
-                      display: "grid",
-                      placeItems: "center",
-                      bgcolor: "rgba(14,42,61,0.05)",
-                      color: "#0E2A3D",
-                      border: "1px solid rgba(14,42,61,0.1)",
-                    }}
-                  >
-                    <Icon sx={{ fontSize: 22 }} />
-                  </Box>
-                  <Box sx={{ flex: 1 }}>
-                    <Typography sx={{ color: "text.primary", fontWeight: 600, fontSize: "1.0625rem", mb: 0.75 }}>
-                      {title}
-                    </Typography>
-                    <Typography sx={{ color: "text.secondary", lineHeight: 1.7 }}>{body}</Typography>
-                  </Box>
-                </Stack>
-              ))}
-            </Stack>
-
-            <Divider sx={{ my: 5 }} />
-
-            {/* ─── Founding-cohort terms ─── */}
-            <Typography variant="h2" component="h2" sx={{ fontSize: { xs: "1.75rem", md: "2.15rem" }, mb: 1.5 }}>
-              Founding-cohort terms
-            </Typography>
-            <Typography sx={{ color: "text.secondary", mb: 3 }}>
-              The first vendor cohort joins at no cost. We absorb the partnership fee for 6 months so
-              the launch directory is full on day one.
-            </Typography>
-
-            <Grid container spacing={2}>
-              {FOUNDING_TERMS.map((t) => (
-                <Grid key={t} size={{ xs: 12, sm: 6 }}>
-                  <Stack
-                    direction="row"
-                    spacing={1.5}
-                    sx={{
-                      alignItems: "center",
-                      p: 2,
-                      borderRadius: 2.5,
-                      bgcolor: "rgba(46,138,87,0.06)",
-                      border: "1px solid rgba(46,138,87,0.18)",
-                    }}
-                  >
-                    <VerifiedOutlinedIcon sx={{ fontSize: 18, color: "#2E8A57", flexShrink: 0 }} />
-                    <Typography sx={{ color: "text.primary", fontWeight: 500, fontSize: "0.92rem" }}>
-                      {t}
-                    </Typography>
-                  </Stack>
-                </Grid>
-              ))}
-            </Grid>
-
-            <Divider sx={{ my: 5 }} />
-
-            {/* ─── What we need from you ─── */}
-            <Typography variant="h2" component="h2" sx={{ fontSize: { xs: "1.75rem", md: "2.15rem" }, mb: 1.5 }}>
-              What we need from you
-            </Typography>
-            <Typography sx={{ color: "text.secondary", mb: 3 }}>
-              The behavioral commitments built into the partnership. These protect the member relationship.
-            </Typography>
-
-            <Stack spacing={1.5}>
-              {WHAT_WE_NEED_FROM_YOU.map((t) => (
-                <Stack
-                  key={t}
-                  direction="row"
-                  spacing={1.5}
-                  sx={{
-                    alignItems: "flex-start",
-                    p: 2,
-                    borderRadius: 2.5,
-                    bgcolor: "rgba(14,42,61,0.03)",
-                    border: "1px solid rgba(14,42,61,0.08)",
-                  }}
-                >
-                  <ShieldOutlinedIcon sx={{ fontSize: 18, color: "#0E2A3D", flexShrink: 0, mt: "2px" }} />
-                  <Typography sx={{ color: "text.primary", fontSize: "0.95rem", lineHeight: 1.6 }}>
-                    {t}
-                  </Typography>
-                </Stack>
-              ))}
-            </Stack>
-
-            <Divider sx={{ my: 5 }} />
-
-            {/* ─── Legal sections ─── */}
-            <Typography variant="h2" component="h2" sx={{ fontSize: { xs: "1.75rem", md: "2.15rem" }, mb: 1.5 }}>
-              Legal terms
-            </Typography>
-            <Typography sx={{ color: "text.secondary", mb: 4 }}>
-              The operational and legal detail behind the five commitments.
-            </Typography>
-
-            <Stack spacing={3}>
-              {LEGAL_SECTIONS.map((s) => (
+            <Stack spacing={2.5}>
+              {COMMITMENTS.map((c) => (
                 <Box
-                  key={s.num}
+                  key={c.num}
                   sx={{
-                    p: 3,
-                    borderRadius: 2.5,
-                    bgcolor: "rgba(14,42,61,0.02)",
-                    border: "1px solid rgba(14,42,61,0.06)",
+                    bgcolor: "#FFFFFF",
+                    border: "1px solid",
+                    borderColor: "rgba(14,42,61,0.08)",
+                    borderRadius: 2,
+                    p: { xs: 3, md: 4 },
+                    display: "grid",
+                    gridTemplateColumns: { xs: "1fr", sm: "64px 1fr" },
+                    gap: { xs: 1.75, sm: 3 },
+                    alignItems: "flex-start",
+                    transition: "transform 300ms ease, box-shadow 300ms ease",
+                    "&:hover": {
+                      transform: "translateY(-2px)",
+                      boxShadow: "0 12px 24px -12px rgba(10,37,64,0.12)",
+                    },
                   }}
                 >
-                  <Typography sx={{ fontWeight: 600, fontSize: "1rem", mb: 1, color: "text.primary" }}>
-                    <Box component="span" sx={{ color: "#A07823", fontStyle: "italic", mr: 1, fontWeight: 400 }}>
-                      {s.num}
-                    </Box>
-                    {s.title}
-                  </Typography>
-                  <Typography sx={{ color: "text.secondary", fontSize: "0.92rem", lineHeight: 1.7 }}>
-                    {s.content}
-                  </Typography>
+                  <Box
+                    sx={{
+                      width: 56,
+                      height: 56,
+                      borderRadius: "50%",
+                      bgcolor: "#0F1D3A",
+                      color: "#D4A44B",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontFamily: "var(--font-display)",
+                      fontSize: "1.4rem",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {c.num}
+                  </Box>
+                  <Box>
+                    <Typography
+                      component="h3"
+                      sx={{
+                        fontFamily: "var(--font-display)",
+                        fontSize: { xs: "1.25rem", md: "1.4rem" },
+                        color: "#0F1D3A",
+                        fontWeight: 600,
+                        lineHeight: 1.25,
+                        letterSpacing: "-0.005em",
+                        mb: 1.25,
+                      }}
+                    >
+                      {c.title}
+                    </Typography>
+                    <Typography sx={{ color: "#2A3654", fontSize: "0.95rem", lineHeight: 1.7, m: 0 }}>
+                      {c.body}
+                    </Typography>
+                  </Box>
+                </Box>
+              ))}
+            </Stack>
+          </Box>
+
+          {/* SECTION 01 */}
+          <Box component="section" sx={{ mb: { xs: 6, md: 8 } }}>
+            <Typography component="h2" sx={sectionTitleSx}>
+              <Box component="span" sx={numAccentSx}>01</Box>
+              What&rsquo;s included
+            </Typography>
+
+            <Typography sx={subHeadingSx}>Your profile in the directory</Typography>
+            <Typography sx={bodyTextSx}>
+              We create and maintain a dedicated profile page for you in the DMN Vendor Directory,
+              logo, description, services, contact form, member-exclusive offer, and your calendar link.
+            </Typography>
+
+            <Typography sx={subHeadingSx}>Promotion to members</Typography>
+            <Typography sx={bodyTextSx}>
+              You get priority category placement, quarterly newsletter mentions, one dedicated email
+              to members per year, and eligibility for podcast and webinar features at our editorial
+              discretion.
+            </Typography>
+
+            <Typography sx={subHeadingSx}>Lead routing</Typography>
+            <Typography sx={bodyTextSx}>
+              Inquiries from members are routed directly to you by email and via your partner
+              dashboard. All leads are pre-qualified, these are members who chose the network
+              specifically to find someone like you.
+            </Typography>
+
+            <Typography sx={subHeadingSx}>Verified Partner badge</Typography>
+            <Typography sx={bodyTextSx}>
+              You get a &ldquo;DMN Verified Partner&rdquo; mark you can use on your site, email
+              signature, and sales materials while this Agreement is active. The license ends when
+              this Agreement ends.
+            </Typography>
+          </Box>
+
+          {/* SECTION 02 */}
+          <Box component="section" sx={{ mb: { xs: 6, md: 8 } }}>
+            <Typography component="h2" sx={sectionTitleSx}>
+              <Box component="span" sx={numAccentSx}>02</Box>
+              Fees and payment
+            </Typography>
+
+            {/* Schedule table */}
+            <Box
+              sx={{
+                bgcolor: "#FFFFFF",
+                border: "1px solid",
+                borderColor: "rgba(14,42,61,0.1)",
+                borderRadius: 2,
+                overflow: "hidden",
+                mb: 3,
+              }}
+            >
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: { xs: "1fr", sm: "1fr 1.2fr 1.5fr" },
+                  bgcolor: "#0F1D3A",
+                  color: "#FFFFFF",
+                }}
+              >
+                {["Period", "Monthly Fee", "Note"].map((h) => (
+                  <Box
+                    key={h}
+                    sx={{
+                      px: 2.5,
+                      py: 1.75,
+                      fontSize: "0.72rem",
+                      letterSpacing: "0.16em",
+                      textTransform: "uppercase",
+                      fontWeight: 600,
+                      color: "#FFFFFF",
+                      borderBottom: { xs: "1px solid rgba(255,255,255,0.08)", sm: "none" },
+                      "&:last-of-type": { borderBottom: "none" },
+                    }}
+                  >
+                    {h}
+                  </Box>
+                ))}
+              </Box>
+              {SCHEDULE.map((row, i) => (
+                <Box
+                  key={row.period}
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: { xs: "1fr", sm: "1fr 1.2fr 1.5fr" },
+                    borderTop: i === 0 ? "none" : "1px solid",
+                    borderColor: "rgba(14,42,61,0.08)",
+                  }}
+                >
+                  <Box
+                    sx={{
+                      px: 2.5,
+                      py: 2.25,
+                      fontWeight: 600,
+                      color: "#0F1D3A",
+                      fontSize: "0.95rem",
+                      borderRight: { sm: "1px solid", xs: "none" },
+                      borderColor: "rgba(14,42,61,0.08)",
+                    }}
+                  >
+                    {row.period}
+                  </Box>
+                  <Box
+                    sx={{
+                      px: 2.5,
+                      py: 2.25,
+                      fontFamily: "var(--font-display)",
+                      fontSize: "1.45rem",
+                      color: "#0F1D3A",
+                      fontWeight: 600,
+                      borderRight: { sm: "1px solid", xs: "none" },
+                      borderColor: "rgba(14,42,61,0.08)",
+                    }}
+                  >
+                    {row.price}
+                  </Box>
+                  <Box sx={{ px: 2.5, py: 2.25, color: "#6A7591", fontSize: "0.92rem" }}>
+                    {row.note}
+                  </Box>
+                </Box>
+              ))}
+            </Box>
+
+            <Typography sx={bodyTextSx}>
+              Fees are billed in advance and due Net 15 from invoice date. Payments more than 30
+              days past due may accrue late charges at 1.5% per month or the maximum rate permitted
+              by law, whichever is lower. Fees are exclusive of applicable taxes.
+            </Typography>
+
+            <Box
+              sx={{
+                bgcolor: "#F3F6FB",
+                borderLeft: "3px solid #D4A44B",
+                p: 2.5,
+                borderRadius: "0 4px 4px 0",
+                my: 3,
+              }}
+            >
+              <Typography sx={{ color: "#2A3654", fontSize: "0.95rem", lineHeight: 1.65, m: 0 }}>
+                <Box component="strong" sx={{ color: "#0F1D3A", fontWeight: 600 }}>
+                  Annual pre-pay option:
+                </Box>{" "}
+                If you commit to twelve months at the standard rate up front, you get two months
+                free (effectively 10 months for the price of 12). Available after the founding
+                partner period or at any time during the term.
+              </Typography>
+            </Box>
+
+            <Typography sx={subHeadingSx}>No refunds</Typography>
+            <Typography sx={bodyTextSx}>
+              Except as expressly stated in this Agreement, fees are non-refundable.
+            </Typography>
+          </Box>
+
+          {/* SECTION 03 */}
+          <Box component="section" sx={{ mb: { xs: 6, md: 8 } }}>
+            <Typography component="h2" sx={sectionTitleSx}>
+              <Box component="span" sx={numAccentSx}>03</Box>
+              Member discount details
+            </Typography>
+
+            <Typography sx={bodyTextSx}>
+              The member discount you commit to in the sign-up form is binding for the term of this
+              Agreement. You can improve it any time, you just can&rsquo;t reduce or withdraw it
+              without our written consent.
+            </Typography>
+
+            <Typography sx={bodyTextSx}>Acceptable discount formats include:</Typography>
+
+            <Stack component="ul" spacing={1} sx={{ pl: 3, m: 0, mb: 2.5 }}>
+              {DISCOUNT_FORMATS.map((d) => (
+                <Box
+                  key={d}
+                  component="li"
+                  sx={{ color: "#2A3654", fontSize: "0.96rem", lineHeight: 1.65 }}
+                >
+                  {d}
                 </Box>
               ))}
             </Stack>
 
-            <Divider sx={{ my: 5 }} />
-
-            {/* ─── CTA ─── */}
-            <Box
-              sx={{
-                p: 3,
-                borderRadius: 3,
-                bgcolor: "rgba(217,168,75,0.08)",
-                border: "1px dashed rgba(217,168,75,0.45)",
-              }}
-            >
-              <Typography variant="overline" sx={{ color: "#7A5B17", letterSpacing: "0.14em", display: "block", mb: 1 }}>
-                NEXT STEP
-              </Typography>
-              <Typography sx={{ color: "text.primary", fontSize: "1.0625rem", lineHeight: 1.65, mb: 2 }}>
-                Submit the vendor waitlist form on the home page. If your category fits the launch
-                cohort, our partnerships team replies within one business day with a 15-minute intro call.
-              </Typography>
-              <Button
-                href="/#waitlist"
-                variant="contained"
-                color="secondary"
-                endIcon={<HandshakeOutlinedIcon />}
-              >
-                Apply as vendor partner
-              </Button>
-            </Box>
+            <Typography sx={bodyTextSx}>
+              You honor the discount when a member identifies themselves as a DMN member, books
+              through your network calendar link, or is referred via the network&rsquo;s lead routing.
+            </Typography>
           </Box>
 
-          <Stack
-            direction={{ xs: "column", sm: "row" }}
-            spacing={2}
-            sx={{ mt: 5, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", rowGap: 2 }}
-          >
-            <Typography variant="body2" sx={{ color: "text.secondary", fontSize: "0.82rem" }}>
-              Questions? Email{" "}
-              <Box
-                component="a"
-                href="mailto:founding@dentalmembernetwork.com"
-                sx={{ color: "#A07823", textDecoration: "underline", fontWeight: 600 }}
-              >
-                founding@dentalmembernetwork.com
-              </Box>
+          {/* SECTION 04 */}
+          <Box component="section" sx={{ mb: { xs: 6, md: 8 } }}>
+            <Typography component="h2" sx={sectionTitleSx}>
+              <Box component="span" sx={numAccentSx}>04</Box>
+              Standards we hold partners to
             </Typography>
-            <Typography variant="body2" sx={{ color: "text.disabled", fontSize: "0.78rem" }}>
-              Electronic signatures via the online form have the same effect as written signatures.
+
+            <Typography sx={bodyTextSx}>While in the network, you confirm and agree that:</Typography>
+
+            <Stack component="ul" spacing={1} sx={{ pl: 3, m: 0 }}>
+              {STANDARDS.map((s) => (
+                <Box
+                  key={s}
+                  component="li"
+                  sx={{ color: "#2A3654", fontSize: "0.96rem", lineHeight: 1.65 }}
+                >
+                  {s}
+                </Box>
+              ))}
+            </Stack>
+          </Box>
+
+          {/* SECTION 05 */}
+          <Box component="section" sx={{ mb: { xs: 6, md: 8 } }}>
+            <Typography component="h2" sx={sectionTitleSx}>
+              <Box component="span" sx={numAccentSx}>05</Box>
+              Confidentiality and member data
             </Typography>
-          </Stack>
+
+            <Typography sx={bodyTextSx}>
+              Both parties may receive non-public information from the other. Each agrees to use it
+              only for purposes of this Agreement and protect it with at least reasonable care.
+            </Typography>
+
+            <Typography sx={bodyTextSx}>
+              Member contact information shared with you in connection with leads may only be used
+              to respond to and service that lead. You will not sell, transfer, or use member data
+              for unrelated marketing, and you will comply with all applicable data protection laws.
+              This survives termination of this Agreement.
+            </Typography>
+          </Box>
+
+          {/* SECTION 06 */}
+          <Box component="section" sx={{ mb: { xs: 6, md: 8 } }}>
+            <Typography component="h2" sx={sectionTitleSx}>
+              <Box component="span" sx={numAccentSx}>06</Box>
+              Changes to terms
+            </Typography>
+
+            <Typography sx={bodyTextSx}>
+              DMN may modify these terms, including pricing, benefits, eligibility, and operating
+              rules, from time to time. We will provide at least{" "}
+              <Box component="strong" sx={{ color: "#0F1D3A", fontWeight: 600 }}>
+                thirty (30) days&rsquo; prior written notice
+              </Box>{" "}
+              via the partner dashboard.
+            </Typography>
+
+            <Typography sx={bodyTextSx}>
+              If a change materially reduces your benefits or increases your fees, you may terminate
+              this Agreement before the change takes effect with no further obligation, provided you
+              give us written notice within the 30-day notice window.
+            </Typography>
+
+            <Typography sx={bodyTextSx}>
+              Your continued participation after the effective date of a change constitutes
+              acceptance of the updated terms.
+            </Typography>
+          </Box>
+
+          {/* SECTION 07 */}
+          <Box component="section" sx={{ mb: { xs: 6, md: 8 } }}>
+            <Typography component="h2" sx={sectionTitleSx}>
+              <Box component="span" sx={numAccentSx}>07</Box>
+              Term, renewal, and termination
+            </Typography>
+
+            <Typography sx={subHeadingSx}>Initial term and renewal</Typography>
+            <Typography sx={bodyTextSx}>
+              This Agreement starts on the date you submit the sign-up form on the Dental Member
+              Network home page and continues for an initial term of twelve (12) months. It then
+              renews automatically for successive twelve-month terms unless either party gives
+              written notice of non-renewal at least 30 days before the end of the current term.
+            </Typography>
+
+            <Typography sx={subHeadingSx}>Termination for convenience</Typography>
+            <Typography sx={bodyTextSx}>
+              Either party may terminate this Agreement at any time on 30 days&rsquo; prior written
+              notice. You remain responsible for fees accrued through the effective date of
+              termination.
+            </Typography>
+
+            <Typography sx={subHeadingSx}>Termination for cause</Typography>
+            <Typography sx={bodyTextSx}>
+              Either party may terminate immediately on written notice if the other party materially
+              breaches this Agreement and does not cure within 15 days of written notice, becomes
+              insolvent, or engages in conduct that, in our reasonable judgment, materially harms
+              the network.
+            </Typography>
+
+            <Typography sx={subHeadingSx}>What happens at termination</Typography>
+            <Typography sx={bodyTextSx}>
+              Your profile and promotional placements are removed from the network. The Verified
+              Partner badge license ends. Any unpaid accrued fees become immediately due.
+              Provisions that by their nature survive, confidentiality, member data protection,
+              indemnification, and limits of liability, continue to apply.
+            </Typography>
+          </Box>
+
+          {/* SECTION 08 */}
+          <Box component="section" sx={{ mb: { xs: 6, md: 8 } }}>
+            <Typography component="h2" sx={sectionTitleSx}>
+              <Box component="span" sx={numAccentSx}>08</Box>
+              Disclaimers and liability
+            </Typography>
+
+            <Typography sx={bodyTextSx}>
+              We do not guarantee any specific number of leads, conversion rate, or revenue outcome
+              from network participation. Results depend on your products, pricing, sales process,
+              and responsiveness.
+            </Typography>
+
+            <Typography sx={bodyTextSx}>
+              Except as expressly stated here, the network is provided &ldquo;as is.&rdquo; Neither
+              party is liable for indirect, incidental, special, or consequential damages, or for
+              lost profits or revenue. Total cumulative liability of either party is capped at the
+              total fees paid by Vendor under this Agreement in the twelve months immediately
+              preceding the event giving rise to liability.
+            </Typography>
+
+            <Typography sx={bodyTextSx}>
+              Vendor will indemnify DMN from third-party claims arising out of Vendor&rsquo;s
+              products, services, sales practices, breach of this Agreement, or content supplied
+              to the network.
+            </Typography>
+          </Box>
+
+          {/* SECTION 09 */}
+          <Box component="section" sx={{ mb: { xs: 6, md: 8 } }}>
+            <Typography component="h2" sx={sectionTitleSx}>
+              <Box component="span" sx={numAccentSx}>09</Box>
+              Miscellaneous
+            </Typography>
+
+            <Typography sx={bodyTextSx}>
+              The parties are independent contractors, this Agreement does not create a partnership,
+              joint venture, agency, or employment relationship. You may not assign or transfer this
+              Agreement without our prior written consent.
+            </Typography>
+
+            <Typography sx={bodyTextSx}>
+              This Agreement is the entire agreement between the parties on its subject and
+              supersedes prior discussions. Any modification must be by written notice as described
+              in Section 6 or by a signed amendment. If any provision is unenforceable, the
+              remaining provisions stay in effect.
+            </Typography>
+
+            <Typography sx={bodyTextSx}>
+              This Agreement is governed by the laws of the State of{" "}
+              <Box component="em" sx={{ fontStyle: "italic", color: "#6A7591" }}>__________</Box>,
+              and any disputes will be resolved in the state or federal courts located in{" "}
+              <Box component="em" sx={{ fontStyle: "italic", color: "#6A7591" }}>__________</Box>.
+              Electronic signatures and acceptance via this online form have the same effect as
+              original written signatures.
+            </Typography>
+          </Box>
         </Container>
+
+        {/* CTA TO HOME SIGNUP */}
+        <Box
+          sx={{
+            background: "linear-gradient(135deg, #060D1F 0%, #0F1D3A 100%)",
+            py: { xs: 8, md: 10 },
+            px: { xs: 3, md: 4 },
+            textAlign: "center",
+            mt: { xs: 4, md: 6 },
+          }}
+        >
+          <Container maxWidth="sm">
+            <Typography
+              sx={{
+                color: "#D4A44B",
+                fontSize: "0.78rem",
+                letterSpacing: "0.22em",
+                textTransform: "uppercase",
+                fontWeight: 600,
+                mb: 2.5,
+              }}
+            >
+              Ready to Apply
+            </Typography>
+            <Typography
+              component="h2"
+              sx={{
+                fontFamily: "var(--font-display)",
+                color: "#FFFFFF",
+                fontSize: { xs: "2rem", md: "2.6rem" },
+                fontWeight: 600,
+                lineHeight: 1.15,
+                letterSpacing: "-0.01em",
+                mb: 2.5,
+              }}
+            >
+              Become a Founding Partner.
+            </Typography>
+            <Typography
+              sx={{
+                color: "#C9D4EB",
+                fontSize: "1rem",
+                lineHeight: 1.7,
+                mb: 4.5,
+                maxWidth: 540,
+                mx: "auto",
+              }}
+            >
+              Now that you&rsquo;ve read the agreement, head to the sign-up form to lock in
+              founding partner pricing. We review applications within five business days.
+            </Typography>
+            <Button
+              href="/#waitlist"
+              variant="contained"
+              size="large"
+              endIcon={<ArrowForwardIcon />}
+              sx={{
+                bgcolor: "#D4A44B",
+                color: "#0F1D3A",
+                fontFamily: "var(--font-display)",
+                fontSize: "1.05rem",
+                fontWeight: 600,
+                py: 1.75,
+                px: 4.5,
+                borderRadius: "30px",
+                boxShadow: "0 14px 28px -12px rgba(212,164,75,0.55)",
+                "&:hover": { bgcolor: "#E6B860" },
+              }}
+            >
+              Continue to Sign-Up Form
+            </Button>
+          </Container>
+        </Box>
       </Box>
+
       <Footer />
     </>
   );

@@ -1,4 +1,4 @@
-export type WaitlistRole = "member" | "vendor" | "expert";
+export type WaitlistRole = "member" | "vendor";
 
 export type WaitlistPayload = {
   role: WaitlistRole;
@@ -29,8 +29,8 @@ export function validateWaitlist(body: unknown): ValidationResult {
   const b = body as Record<string, unknown>;
 
   const role = asString(b.role).toLowerCase();
-  if (role !== "member" && role !== "vendor" && role !== "expert") {
-    return { ok: false, error: "Pick whether you are joining as a member, vendor, or expert.", field: "role" };
+  if (role !== "member" && role !== "vendor") {
+    return { ok: false, error: "Pick whether you are joining as a member or a vendor.", field: "role" };
   }
 
   const fullName = asString(b.fullName);

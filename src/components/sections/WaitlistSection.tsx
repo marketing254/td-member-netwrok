@@ -23,13 +23,9 @@ import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
 import StoreOutlinedIcon from "@mui/icons-material/StoreOutlined";
-import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   challengeOptions,
-  expertAvailability,
-  expertExperienceLevels,
-  expertSpecialties,
   locationOptions,
   memberRoles,
   waitlist as waitlistCopy,
@@ -39,6 +35,40 @@ import { vendorCategories } from "@/lib/vendorData";
 import type { WaitlistRole } from "@/lib/waitlist/validate";
 
 const MotionBox = motion.create(Box);
+
+const OTHER = "Other";
+
+/**
+ * Animated reveal-input that appears when a parent dropdown's value === "Other".
+ * Slides + fades in over 320ms, contracts back to zero height on hide.
+ */
+function OtherReveal({
+  show,
+  children,
+}: {
+  show: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <AnimatePresence initial={false}>
+      {show && (
+        <motion.div
+          key="other-reveal"
+          initial={{ opacity: 0, height: 0, marginTop: 0 }}
+          animate={{ opacity: 1, height: "auto", marginTop: 14 }}
+          exit={{ opacity: 0, height: 0, marginTop: 0 }}
+          transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+          // overflow:hidden is required for the height animation, but the
+          // TextField's floating label sits 9px ABOVE the input border. We
+          // pad the inner wrapper so the label has room without being clipped.
+          style={{ overflow: "hidden", width: "100%" }}
+        >
+          <Box sx={{ pt: "10px", pb: "2px" }}>{children}</Box>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
 
 export default function WaitlistSection() {
   const router = useRouter();
@@ -50,8 +80,12 @@ export default function WaitlistSection() {
   const [agreed, setAgreed] = useState(false);
   const [authorized, setAuthorized] = useState(false);
 
+  // Track dropdown values so we can reveal the "Other" explanation input.
+  const [memberRoleValue, setMemberRoleValue] = useState("");
+  const [memberChallengeValue, setMemberChallengeValue] = useState("");
+  const [vendorCategoryValue, setVendorCategoryValue] = useState("");
+
   const isVendor = role === "vendor";
-  const isExpert = role === "expert";
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -59,10 +93,6 @@ export default function WaitlistSection() {
 
     if (isVendor && (!agreed || !authorized)) {
       setError("Please confirm both boxes before applying as a vendor partner.");
-      return;
-    }
-    if (isExpert && !agreed) {
-      setError("Please confirm the expert participation notice to apply.");
       return;
     }
 
@@ -88,10 +118,11 @@ export default function WaitlistSection() {
           company_name: fd.get("companyName"),
           website: fd.get("website"),
           category: fd.get("category"),
-          contact_phone: fd.get("contactPhone"),
-          offer_summary: fd.get("offerSummary"),
-          calendar_link: fd.get("calendarLink"),
-          hotline_email: fd.get("hotlineEmail"),
+          category_other: fd.get("categoryOther") ?? "",
+          primary_email: fd.get("email"),
+          secondary_email: fd.get("secondaryEmail") ?? "",
+          primary_phone: fd.get("contactPhone"),
+          secondary_phone: fd.get("secondaryPhone") ?? "",
           signature_name: fd.get("signatureName"),
           signature_title: fd.get("signatureTitle"),
           agreement_version: "1.0",
@@ -100,33 +131,18 @@ export default function WaitlistSection() {
           confirmed_authority: true,
         },
       };
-    } else if (isExpert) {
-      payload = {
-        ...payload,
-        practiceName: fd.get("companyName"),
-        phone: fd.get("contactPhone"),
-        message: String(fd.get("bio") ?? ""),
-        utm: {
-          title: fd.get("title"),
-          specialty: fd.get("specialty"),
-          years_experience: fd.get("yearsExperience"),
-          credentials: fd.get("credentials"),
-          linkedin: fd.get("linkedin"),
-          availability: fd.get("availability"),
-          company_name: fd.get("companyName"),
-          contact_phone: fd.get("contactPhone"),
-          agreement_type: "expert_participation",
-          agreement_accepted_at: new Date().toISOString(),
-        },
-      };
     } else {
       payload = {
         ...payload,
         practiceName: fd.get("practiceName"),
+        phone: fd.get("phone"),
         utm: {
           role_label: fd.get("roleLabel"),
+          role_label_other: fd.get("roleLabelOther") ?? "",
           locations: fd.get("locations"),
           biggest_challenge: fd.get("challenge"),
+          biggest_challenge_other: fd.get("challengeOther") ?? "",
+          phone: fd.get("phone"),
         },
       };
     }
@@ -175,7 +191,6 @@ export default function WaitlistSection() {
 
       <Container maxWidth="lg" sx={{ position: "relative" }}>
         <Grid container spacing={{ xs: 5, md: 7 }} sx={{ alignItems: "flex-start" }}>
-          {/* LEFT, verbatim benefits panel */}
           <Grid size={{ xs: 12, md: 5 }}>
             <MotionBox
               initial={reduced ? false : { opacity: 0, x: -20 }}
@@ -217,23 +232,22 @@ export default function WaitlistSection() {
                     exit={reduced ? { opacity: 0 } : { opacity: 0, y: -6 }}
                     transition={{ duration: 0.45, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
                   >
-                      <Stack spacing={1.5} sx={{ pt: 1.5 }}>
-                        {waitlistByRole[role].benefits.map((b) => (
-                          <Stack key={b} direction="row" spacing={1.5} sx={{ alignItems: "flex-start" }}>
-                            <CheckCircleOutlineIcon sx={{ color: "#A07823", fontSize: 19, mt: "1px", flexShrink: 0 }} />
-                            <Typography variant="body2" sx={{ color: "#0A1A2F", fontSize: "0.95rem", lineHeight: 1.6 }}>
-                              {b}
-                            </Typography>
-                          </Stack>
-                        ))}
-                      </Stack>
+                    <Stack spacing={1.5} sx={{ pt: 1.5 }}>
+                      {waitlistByRole[role].benefits.map((b) => (
+                        <Stack key={b} direction="row" spacing={1.5} sx={{ alignItems: "flex-start" }}>
+                          <CheckCircleOutlineIcon sx={{ color: "#A07823", fontSize: 19, mt: "1px", flexShrink: 0 }} />
+                          <Typography variant="body2" sx={{ color: "#0A1A2F", fontSize: "0.95rem", lineHeight: 1.6 }}>
+                            {b}
+                          </Typography>
+                        </Stack>
+                      ))}
+                    </Stack>
                   </MotionBox>
                 </AnimatePresence>
               </Stack>
             </MotionBox>
           </Grid>
 
-          {/* RIGHT, the form */}
           <Grid size={{ xs: 12, md: 7 }}>
             <MotionBox
               initial={reduced ? false : { opacity: 0, y: 24 }}
@@ -289,11 +303,6 @@ export default function WaitlistSection() {
                 />
 
                 <Stack spacing={2.25}>
-                  {/* Anchor targets for the nav links, invisible spans that scroll-into-view */}
-                  <Box id="waitlist-member" sx={{ position: "absolute", top: -100, height: 1, width: 1, pointerEvents: "none" }} />
-                  <Box id="waitlist-vendor" sx={{ position: "absolute", top: -100, height: 1, width: 1, pointerEvents: "none" }} />
-                  <Box id="waitlist-expert" sx={{ position: "absolute", top: -100, height: 1, width: 1, pointerEvents: "none" }} />
-
                   <ToggleButtonGroup
                     exclusive
                     value={role}
@@ -320,7 +329,7 @@ export default function WaitlistSection() {
                         py: 1.15,
                         textTransform: "none",
                         fontWeight: 600,
-                        fontSize: "0.82rem",
+                        fontSize: "0.85rem",
                         gap: 0.6,
                         transition: "all 350ms cubic-bezier(0.16, 1, 0.3, 1)",
                         "&.Mui-selected": {
@@ -335,16 +344,12 @@ export default function WaitlistSection() {
                     }}
                   >
                     <ToggleButton value="member">
-                      <PersonOutlineOutlinedIcon sx={{ fontSize: 16 }} />
+                      <PersonOutlineOutlinedIcon sx={{ fontSize: 17 }} />
                       Member
                     </ToggleButton>
                     <ToggleButton value="vendor">
-                      <StoreOutlinedIcon sx={{ fontSize: 16 }} />
+                      <StoreOutlinedIcon sx={{ fontSize: 17 }} />
                       Vendor
-                    </ToggleButton>
-                    <ToggleButton value="expert">
-                      <SchoolOutlinedIcon sx={{ fontSize: 16 }} />
-                      Expert
                     </ToggleButton>
                   </ToggleButtonGroup>
 
@@ -368,7 +373,14 @@ export default function WaitlistSection() {
                               <LightField name="website" label="Website" placeholder="https://acmedental.com" autoComplete="url" required />
                             </Grid>
                             <Grid size={{ xs: 12, sm: 6 }}>
-                              <LightField name="category" label="Category" select defaultValue="" required>
+                              <LightField
+                                name="category"
+                                label="Category"
+                                select
+                                value={vendorCategoryValue}
+                                onChange={(e) => setVendorCategoryValue(e.target.value)}
+                                required
+                              >
                                 <MenuItem value="" disabled>
                                   Choose
                                 </MenuItem>
@@ -378,12 +390,20 @@ export default function WaitlistSection() {
                                   </MenuItem>
                                 ))}
                               </LightField>
+                              <OtherReveal show={vendorCategoryValue === OTHER}>
+                                <LightField
+                                  name="categoryOther"
+                                  label="Describe your category"
+                                  placeholder="What kind of product or service do you provide?"
+                                  required
+                                />
+                              </OtherReveal>
                             </Grid>
                             <Grid size={{ xs: 12 }}>
                               <LightField
                                 name="description"
                                 label="What does your company do, in one sentence?"
-                                placeholder="We negotiate PPO contracts on a contingency basis, practices pay only after fee increases land."
+                                placeholder="We negotiate PPO contracts on a contingency basis. Practices pay only after fee increases land."
                                 multiline
                                 minRows={2}
                                 required
@@ -400,44 +420,46 @@ export default function WaitlistSection() {
                               <LightField name="lastName" label="Last name" placeholder="Morgan" autoComplete="family-name" required />
                             </Grid>
                             <Grid size={{ xs: 12, sm: 6 }}>
-                              <LightField name="email" type="email" label="Work email" placeholder="taylor@acme.com" autoComplete="email" required />
-                            </Grid>
-                            <Grid size={{ xs: 12, sm: 6 }}>
-                              <LightField name="contactPhone" label="Phone" placeholder="+1 (555) 010-1234" autoComplete="tel" />
-                            </Grid>
-                          </Grid>
-
-                          <SectionLabel num="03" title="Member offer" />
-                          <Grid container spacing={1.5}>
-                            <Grid size={{ xs: 12 }}>
                               <LightField
-                                name="offerSummary"
-                                label="Discount or value you'll offer DMN members"
-                                placeholder="18% off catalog · First month free · Flat 15% off ongoing services"
-                                multiline
-                                minRows={2}
+                                name="email"
+                                type="email"
+                                label="Primary work email"
+                                placeholder="taylor@acme.com"
+                                autoComplete="email"
                                 required
                               />
                             </Grid>
                             <Grid size={{ xs: 12, sm: 6 }}>
                               <LightField
-                                name="calendarLink"
-                                label="Calendar link for warm intros"
-                                placeholder="https://calendly.com/your-team"
-                                autoComplete="url"
+                                name="secondaryEmail"
+                                type="email"
+                                label="Secondary email (optional)"
+                                placeholder="partnerships@acme.com"
+                                autoComplete="email"
                               />
                             </Grid>
                             <Grid size={{ xs: 12, sm: 6 }}>
                               <LightField
-                                name="hotlineEmail"
-                                label="Email for member helpline notifications"
-                                placeholder="partners@acme.com"
-                                autoComplete="email"
+                                name="contactPhone"
+                                type="tel"
+                                label="Primary phone"
+                                placeholder="+1 (555) 010-1234"
+                                autoComplete="tel"
+                                required
+                              />
+                            </Grid>
+                            <Grid size={{ xs: 12, sm: 6 }}>
+                              <LightField
+                                name="secondaryPhone"
+                                type="tel"
+                                label="Secondary phone (optional)"
+                                placeholder="+1 (555) 010-5678"
+                                autoComplete="tel"
                               />
                             </Grid>
                           </Grid>
 
-                          <SectionLabel num="04" title="Sign on behalf of the company" />
+                          <SectionLabel num="03" title="Sign on behalf of the company" />
                           <Grid container spacing={1.5}>
                             <Grid size={{ xs: 12, sm: 6 }}>
                               <LightField name="signatureName" label="Signer full name" placeholder="Taylor Morgan" autoComplete="name" required />
@@ -503,124 +525,12 @@ export default function WaitlistSection() {
                               }
                               label={
                                 <Typography sx={{ fontSize: "0.82rem", color: "#3B4A55", lineHeight: 1.5 }}>
-                                  I confirm I am authorized to commit my company to this partnership and to the member discount terms above.
+                                  I confirm I am authorized to commit my company to this partnership.
                                 </Typography>
                               }
                               sx={{ alignItems: "flex-start", m: 0 }}
                             />
                           </Stack>
-                        </Stack>
-                      </motion.div>
-                    ) : isExpert ? (
-                      <motion.div
-                        key="expert"
-                        initial={reduced ? false : { opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={reduced ? { opacity: 0 } : { opacity: 0, y: -12 }}
-                        transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-                        style={{ width: "100%", minWidth: 0 }}
-                      >
-                        <Stack spacing={2.25} sx={{ width: "100%", minWidth: 0 }}>
-                          <SectionLabel num="01" title="About you" />
-                          <FieldGrid cols={2}>
-                            <LightField name="firstName" label="First name" placeholder="Dr. Taylor" autoComplete="given-name" required />
-                            <LightField name="lastName" label="Last name" placeholder="Morgan" autoComplete="family-name" required />
-                            <LightField name="email" type="email" label="Email" placeholder="taylor@yourpractice.com" autoComplete="email" required />
-                            <LightField name="contactPhone" label="Phone" placeholder="+1 (555) 010-1234" autoComplete="tel" />
-                            <LightField name="title" label="Title or role" placeholder="Practice Management Coach" autoComplete="organization-title" required />
-                            <LightField name="companyName" label="Company / firm (optional)" placeholder="Morgan Coaching" autoComplete="organization" />
-                          </FieldGrid>
-
-                          <SectionLabel num="02" title="Specialty" />
-                          <FieldGrid cols={2}>
-                            <LightField name="specialty" label="Primary specialty" select defaultValue="" required>
-                              <MenuItem value="" disabled>Choose</MenuItem>
-                              {expertSpecialties.map((s) => (
-                                <MenuItem key={s} value={s}>{s}</MenuItem>
-                              ))}
-                            </LightField>
-                            <LightField name="yearsExperience" label="Years of experience" select defaultValue="" required>
-                              <MenuItem value="" disabled>Choose</MenuItem>
-                              {expertExperienceLevels.map((y) => (
-                                <MenuItem key={y} value={y}>{y}</MenuItem>
-                              ))}
-                            </LightField>
-                            <FullSpan>
-                              <LightField
-                                name="credentials"
-                                label="Credentials, licenses, certifications"
-                                placeholder="DDS · MBA · 20+ practice owner clients · author of …"
-                                required
-                              />
-                            </FullSpan>
-                            <FullSpan>
-                              <LightField
-                                name="linkedin"
-                                label="LinkedIn or portfolio URL"
-                                placeholder="https://linkedin.com/in/yourprofile"
-                                autoComplete="url"
-                              />
-                            </FullSpan>
-                          </FieldGrid>
-
-                          <SectionLabel num="03" title="How you'd like to help" />
-                          <FieldGrid cols={1}>
-                            <LightField name="availability" label="Availability" select defaultValue="" required>
-                              <MenuItem value="" disabled>Choose</MenuItem>
-                              {expertAvailability.map((a) => (
-                                <MenuItem key={a} value={a}>{a}</MenuItem>
-                              ))}
-                            </LightField>
-                            <LightField
-                              name="bio"
-                              label="Short bio (3–4 sentences)"
-                              placeholder="What problem do you solve? Who do you typically work with? What's an example win?"
-                              multiline
-                              minRows={3}
-                              required
-                            />
-                          </FieldGrid>
-
-                          <FormControlLabel
-                            control={
-                              <Checkbox
-                                checked={agreed}
-                                onChange={(e) => setAgreed(e.target.checked)}
-                                size="small"
-                                sx={{
-                                  color: "rgba(14,42,61,0.35)",
-                                  "&.Mui-checked": { color: "#A07823" },
-                                  p: 0.5,
-                                  mr: 0.5,
-                                }}
-                              />
-                            }
-                            label={
-                              <Typography sx={{ fontSize: "0.82rem", color: "#3B4A55", lineHeight: 1.5 }}>
-                                I have read and agree to the{" "}
-                                <Box
-                                  component={Link}
-                                  href="/agreement/expert"
-                                  target="_blank"
-                                  rel="noopener"
-                                  sx={{
-                                    color: "#A07823",
-                                    fontWeight: 700,
-                                    textDecoration: "underline",
-                                    textDecorationColor: "rgba(160,120,35,0.5)",
-                                    textUnderlineOffset: 3,
-                                    "&:hover": { textDecorationColor: "#A07823" },
-                                  }}
-                                >
-                                  Expert Partner Agreement
-                                  <OpenInNewIcon sx={{ fontSize: 12, ml: 0.4, verticalAlign: "middle" }} />
-                                </Box>
-                                . DMN will review my application and follow up before any expert
-                                listing or paid session.
-                              </Typography>
-                            }
-                            sx={{ alignItems: "flex-start", m: 0, mt: 1 }}
-                          />
                         </Stack>
                       </motion.div>
                     ) : (
@@ -639,11 +549,27 @@ export default function WaitlistSection() {
                           <Grid size={{ xs: 12, sm: 6 }}>
                             <LightField name="lastName" label="Last name" placeholder="Morgan" autoComplete="family-name" required />
                           </Grid>
-                          <Grid size={{ xs: 12 }}>
+                          <Grid size={{ xs: 12, sm: 6 }}>
                             <LightField name="email" type="email" label="Email address" placeholder="taylor@practice.com" autoComplete="email" required />
                           </Grid>
+                          <Grid size={{ xs: 12, sm: 6 }}>
+                            <LightField
+                              name="phone"
+                              type="tel"
+                              label="Mobile number"
+                              placeholder="+1 (555) 010-1234"
+                              autoComplete="tel"
+                              required
+                            />
+                          </Grid>
                           <Grid size={{ xs: 12 }}>
-                            <LightField name="roleLabel" label="What best describes your role?" select defaultValue="">
+                            <LightField
+                              name="roleLabel"
+                              label="What best describes your role?"
+                              select
+                              value={memberRoleValue}
+                              onChange={(e) => setMemberRoleValue(e.target.value)}
+                            >
                               <MenuItem value="" disabled>
                                 Choose one
                               </MenuItem>
@@ -653,6 +579,14 @@ export default function WaitlistSection() {
                                 </MenuItem>
                               ))}
                             </LightField>
+                            <OtherReveal show={memberRoleValue === OTHER}>
+                              <LightField
+                                name="roleLabelOther"
+                                label="Explain your role"
+                                placeholder="e.g. Practice administrator, CFO, regional director"
+                                required
+                              />
+                            </OtherReveal>
                           </Grid>
                           <Grid size={{ xs: 12 }}>
                             <LightField name="practiceName" label="Practice name" placeholder="Morgan Dental Group" autoComplete="organization" />
@@ -670,7 +604,13 @@ export default function WaitlistSection() {
                             </LightField>
                           </Grid>
                           <Grid size={{ xs: 12, sm: 6 }}>
-                            <LightField name="challenge" label="Biggest challenge right now?" select defaultValue="">
+                            <LightField
+                              name="challenge"
+                              label="Biggest challenge right now?"
+                              select
+                              value={memberChallengeValue}
+                              onChange={(e) => setMemberChallengeValue(e.target.value)}
+                            >
                               <MenuItem value="" disabled>
                                 Choose
                               </MenuItem>
@@ -681,12 +621,26 @@ export default function WaitlistSection() {
                               ))}
                             </LightField>
                           </Grid>
+                          {memberChallengeValue === OTHER && (
+                            <Grid size={{ xs: 12 }}>
+                              <OtherReveal show>
+                                <LightField
+                                  name="challengeOther"
+                                  label="Describe your biggest challenge"
+                                  placeholder="What's slowing your practice down right now?"
+                                  multiline
+                                  minRows={2}
+                                  required
+                                />
+                              </OtherReveal>
+                            </Grid>
+                          )}
                         </Grid>
                       </motion.div>
                     )}
                   </AnimatePresence>
 
-                  {!isVendor && !isExpert && (
+                  {!isVendor && (
                     <Stack direction="row" spacing={1.25} sx={{ alignItems: "flex-start", color: "#5C6770", mt: 0.5 }}>
                       <LockOutlinedIcon sx={{ fontSize: 14, mt: "3px", flexShrink: 0 }} />
                       <Typography variant="body2" sx={{ color: "#5C6770", fontSize: "0.78rem", lineHeight: 1.55 }}>
@@ -772,11 +726,7 @@ export default function WaitlistSection() {
                     variant="contained"
                     color="secondary"
                     size="large"
-                    disabled={
-                      submitting ||
-                      (isVendor && (!agreed || !authorized)) ||
-                      (isExpert && !agreed)
-                    }
+                    disabled={submitting || (isVendor && (!agreed || !authorized))}
                     fullWidth
                     endIcon={
                       submitting ? (
@@ -799,12 +749,10 @@ export default function WaitlistSection() {
                       ? waitlistCopy.submittingLabel
                       : isVendor
                       ? "Apply as vendor partner"
-                      : isExpert
-                      ? "Apply as expert"
                       : waitlistCopy.submitLabel}
                   </Button>
 
-                  {!isVendor && !isExpert && (
+                  {!isVendor && (
                     <Typography variant="body2" sx={{ color: "#5C6770", fontSize: "0.74rem", textAlign: "center" }}>
                       No payment now. Founding members are billed only when the doors open on launch day.
                     </Typography>
@@ -861,52 +809,7 @@ function SectionLabel({ num, title }: { num: string; title: string }) {
       >
         {title}
       </Typography>
-      <Box
-        sx={{
-          flex: "1 1 0",
-          minWidth: 0,
-          height: 1,
-          bgcolor: "rgba(14,42,61,0.08)",
-        }}
-      />
-    </Box>
-  );
-}
-
-/**
- * CSS Grid wrapper for form fields. Replaces MUI's <Grid container> which
- * can compute widths incorrectly inside overflow:hidden form panels.
- * `cols` = number of equal columns on >=sm; on xs always 1.
- */
-function FieldGrid({
-  cols,
-  children,
-}: {
-  cols: 1 | 2 | 3;
-  children: React.ReactNode;
-}) {
-  return (
-    <Box
-      sx={{
-        display: "grid",
-        gap: 1.5,
-        width: "100%",
-        minWidth: 0,
-        gridTemplateColumns: {
-          xs: "1fr",
-          sm: cols === 1 ? "1fr" : cols === 2 ? "1fr 1fr" : "1fr 1fr 1fr",
-        },
-      }}
-    >
-      {children}
-    </Box>
-  );
-}
-
-function FullSpan({ children }: { children: React.ReactNode }) {
-  return (
-    <Box sx={{ gridColumn: { xs: "1 / -1", sm: "1 / -1" }, minWidth: 0 }}>
-      {children}
+      <Box sx={{ flex: 1, height: 1, bgcolor: "rgba(14,42,61,0.1)" }} />
     </Box>
   );
 }

@@ -3,16 +3,18 @@ import Link from "next/link";
 import { Box, Button, Container, Stack, Typography } from "@mui/material";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import Logo from "@/components/brand/Logo";
-import { brand, footer as footerCopy } from "@/lib/content";
+import { brand, footer as footerCopy, footerLinks } from "@/lib/content";
 
 const FOOTER_NAV = [
   { label: "What you get", href: "/#features" },
   { label: "Pricing", href: "/#pricing" },
-  { label: "Members", href: "/#waitlist-member" },
-  { label: "Vendors", href: "/#waitlist-vendor" },
-  { label: "Experts", href: "/#waitlist-expert" },
+  { label: "Waitlist", href: "/#waitlist" },
   { label: "FAQ", href: "/#faq" },
-  { label: "Vendor agreement", href: "/agreement/vendor" },
+];
+
+const FOOTER_LEGAL = [
+  ...footerLinks.Agreements,
+  ...footerLinks.Legal,
 ];
 
 export default function Footer() {
@@ -137,6 +139,26 @@ export default function Footer() {
             <Typography variant="body2" sx={{ color: "rgba(246,241,231,0.5)", fontSize: "0.74rem", display: { xs: "none", md: "inline" } }}>
               {footerCopy.responseValue}
             </Typography>
+          </Stack>
+
+          <Stack direction="row" spacing={2} sx={{ alignItems: "center", flexWrap: "wrap", rowGap: 0.5 }}>
+            {FOOTER_LEGAL.map((l) => (
+              <Box
+                key={l.href}
+                component={Link}
+                href={l.href}
+                sx={{
+                  color: "rgba(246,241,231,0.55)",
+                  textDecoration: "none",
+                  fontSize: "0.74rem",
+                  fontWeight: 500,
+                  transition: "color 200ms ease",
+                  "&:hover": { color: "secondary.light" },
+                }}
+              >
+                {l.label}
+              </Box>
+            ))}
           </Stack>
 
           <Typography variant="body2" sx={{ color: "rgba(246,241,231,0.5)", fontSize: "0.72rem" }}>

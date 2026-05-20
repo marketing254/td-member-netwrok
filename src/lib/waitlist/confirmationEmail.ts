@@ -165,64 +165,6 @@ function memberDraft(input: ConfirmationInput): EmailDraft {
   };
 }
 
-function expertDraft(input: ConfirmationInput): EmailDraft {
-  const submitted = formatDate(input.submittedAt);
-  return {
-    role: "expert",
-    subject: "Your Dental Member Network expert application, what happens next",
-    preview:
-      "We received your founding expert application. Our team reviews carefully, here's what to expect.",
-    eyebrow: "Expert Application",
-    headline: "Your founding expert application is in review.",
-    accent: "#2AA7B8",
-    accentLight: "#7FD2DE",
-    replyTo: PARTNERSHIPS_EMAIL,
-    intro: [
-      `Hi ${firstName(input.signup.fullName)},`,
-      "Thank you for applying to join the Dental Member Network as a founding expert. We've received your application and it's now in review.",
-    ],
-    sections: [
-      {
-        title: "Here's what to expect",
-        body:
-          "Within the next 5 business days, our team will review your application against our founding expert criteria, primarily your track record serving dental practice owners, the distinctiveness of your coaching or consulting approach, and the fit with our member base. We review carefully because protecting member trust is the whole point of curation.",
-      },
-      {
-        title: "If your application is approved",
-        items: [
-          "You'll receive an approval email with a link to schedule a 30-minute onboarding conversation with our team.",
-          "During onboarding, we'll set up your expert profile, walk you through how to publish your first paid course, and connect you with the Thriving Dentist editorial team for newsletter, podcast, and webinar feature opportunities.",
-          "Your founding offer locks in: free for the first 6 months, then $99/month. No commission on any courses you sell to members during your founding window.",
-        ],
-      },
-      {
-        title: "If we have follow-up questions",
-        body: `We may reach out by email to clarify aspects of your application or request additional information about your coaching approach. Watch for a message from ${PARTNERSHIPS_EMAIL}.`,
-      },
-      {
-        title: "A few things worth knowing while you wait",
-        items: [
-          "Founding expert spots are limited. We're curating launch experts deliberately to cover the full range of practice growth specialties without overlapping too heavily in any one area.",
-          "You set your own course prices. The network handles the platform, payment processing, and member promotion; the pricing and content of your offerings stay entirely yours.",
-          "Members get a discount on every paid course. This is standard across all expert offerings and helps your courses reach more members faster.",
-        ],
-      },
-    ],
-    closing: `If you have questions in the meantime, reply to this email and we'll get back to you within one business day.`,
-    signoff: [
-      "Thanks for your interest in helping us build the network.",
-      " The Dental Member Network Team",
-      "Powered by Thriving Dentist",
-    ],
-    footerNote: "Do not reply to this email.",
-    footerLines: [
-      "This is an automated confirmation email for your Dental Member Network expert application.",
-      `Application reference: ${input.referenceId} · Submitted: ${submitted}`,
-      `Dental Member Network · ${PARTNERSHIPS_EMAIL} · dentalmembernetwork.com`,
-    ],
-  };
-}
-
 function vendorDraft(input: ConfirmationInput): EmailDraft {
   const submitted = formatDate(input.submittedAt);
   const companyName = input.signup.practiceName ?? "your company";
@@ -292,7 +234,6 @@ function vendorDraft(input: ConfirmationInput): EmailDraft {
 
 function draftFor(input: ConfirmationInput): EmailDraft {
   if (input.signup.role === "vendor") return vendorDraft(input);
-  if (input.signup.role === "expert") return expertDraft(input);
   return memberDraft(input);
 }
 
