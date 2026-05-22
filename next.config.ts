@@ -40,7 +40,10 @@ const csp = [
   // Supabase storage public buckets serve images over https; allow data: for
   // base64 placeholders the MUI Image component uses.
   `img-src 'self' data: blob: ${SUPABASE_HTTPS}`,
-  `connect-src 'self' ${SUPABASE_HTTPS} ${SUPABASE_WSS}`,
+  // jsdelivr.net is used by troika-three-text (3D-text library on the
+  // landing page) to fetch unicode font glyph lookup tables on demand.
+  // gstatic.com hosts the actual font WOFF files Google Fonts pulls.
+  `connect-src 'self' ${SUPABASE_HTTPS} ${SUPABASE_WSS} https://cdn.jsdelivr.net https://fonts.gstatic.com`,
   "frame-ancestors 'none'",
   "form-action 'self'",
   "base-uri 'self'",
