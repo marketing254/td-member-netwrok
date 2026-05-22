@@ -120,7 +120,7 @@ export default function VendorOverview() {
                 </Box>
                 <Box
                   component="a"
-                  href="mailto:partners@dentalmembernetwork.com"
+                  href="mailto:partnerships@joindmn.com"
                   sx={{
                     display: "inline-flex",
                     alignItems: "center",

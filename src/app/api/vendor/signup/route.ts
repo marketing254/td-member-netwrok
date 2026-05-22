@@ -196,7 +196,7 @@ export async function POST(req: Request) {
         return NextResponse.json(
           {
             error:
-              "We already have a partner under this email. Sign in instead, or contact partners@dentalmembernetwork.com.",
+              "We already have a partner under this email. Sign in instead, or contact partnerships@joindmn.com.",
           },
           { status: 409 },
         );

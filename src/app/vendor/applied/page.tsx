@@ -264,10 +264,10 @@ export default function VendorAppliedPage() {
               Questions? Email{" "}
               <Box
                 component="a"
-                href="mailto:partners@dentalmembernetwork.com"
+                href="mailto:partnerships@joindmn.com"
                 sx={{ color: "#A07823", fontWeight: 600, textDecoration: "none" }}
               >
-                partners@dentalmembernetwork.com
+                partnerships@joindmn.com
               </Box>
             </Typography>
           </Stack>

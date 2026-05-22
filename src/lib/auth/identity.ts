@@ -87,7 +87,7 @@ export function useVendorIdentity(): PlaceholderIdentity {
         });
       } else {
         // Signed in but no vendor row yet. Show the auth user's email.
-        const email = userData.user.email ?? "partner@dentalmembernetwork.com";
+        const email = userData.user.email ?? "partnerships@joindmn.com";
         setIdentity({
           firstName: "Partner",
           lastName: "",
@@ -111,7 +111,7 @@ export function useAdminIdentity(): PlaceholderIdentity {
   const [identity, setIdentity] = useState<PlaceholderIdentity>(() => ({
     firstName: "Team",
     lastName: "Admin",
-    email: "team@dentalmembernetwork.com",
+    email: "hello@joindmn.com",
     initials: "TA",
     loading: true,
   }));
@@ -147,7 +147,7 @@ export function useAdminIdentity(): PlaceholderIdentity {
           loading: false,
         });
       } else {
-        const email = userData.user.email ?? "team@dentalmembernetwork.com";
+        const email = userData.user.email ?? "hello@joindmn.com";
         setIdentity({
           firstName: "Admin",
           lastName: "",

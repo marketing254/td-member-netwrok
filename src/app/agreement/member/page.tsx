@@ -95,7 +95,7 @@ const sections: LegalSection[] = [
     title: "Contact Information",
     body: "",
     items: [
-      "Email: members@dentalmembernetwork.com",
+      "Email: members@joindmn.com",
       "Phone: available on request",
     ],
   },
@@ -129,7 +129,7 @@ export default function MemberAgreementPage() {
         footnote={
           <>
             Questions before you join? Email{" "}
-            <a href="mailto:members@dentalmembernetwork.com">members@dentalmembernetwork.com</a>{" "}
+            <a href="mailto:members@joindmn.com">members@joindmn.com</a>{" "}
            , we read and respond to every message within one business day.
           </>
         }

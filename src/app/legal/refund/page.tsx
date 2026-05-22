@@ -13,7 +13,7 @@ const sections: LegalSection[] = [
     number: "01",
     title: "30-Day Money-Back Guarantee",
     body:
-      "All new members are eligible for a full refund within their first 30 days. The guarantee applies to first enrollment only, not renewals or re-enrollments. Contact refunds@dentalmembernetwork.com with subject \"30-Day Refund Request.\" Refunds are processed within 5–10 business days.",
+      "All new members are eligible for a full refund within their first 30 days. The guarantee applies to first enrollment only, not renewals or re-enrollments. Contact refunds@joindmn.com with subject \"30-Day Refund Request.\" Refunds are processed within 5–10 business days.",
   },
   {
     number: "02",
@@ -87,7 +87,7 @@ const sections: LegalSection[] = [
     title: "Contact Information",
     body: "",
     items: [
-      "Email: refunds@dentalmembernetwork.com",
+      "Email: refunds@joindmn.com",
       "Phone: available on request",
       "Support hours: Monday–Friday, 9:00 AM – 5:00 PM EST",
     ],
@@ -122,7 +122,7 @@ export default function RefundPolicyPage() {
         footnote={
           <>
             Need a refund or have a question? Email{" "}
-            <a href="mailto:refunds@dentalmembernetwork.com">refunds@dentalmembernetwork.com</a>{" "}
+            <a href="mailto:refunds@joindmn.com">refunds@joindmn.com</a>{" "}
             with the subject line that matches your request. We respond within one business day.
           </>
         }

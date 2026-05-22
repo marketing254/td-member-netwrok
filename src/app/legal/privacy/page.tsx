@@ -66,7 +66,7 @@ const sections: LegalSection[] = [
     number: "05",
     title: "Your Rights",
     body:
-      "You have the right to access, correct, or delete your data. You can opt out of marketing communications at any time. You can request data portability. Contact legal@dentalmembernetwork.com, we respond within 30 days.",
+      "You have the right to access, correct, or delete your data. You can opt out of marketing communications at any time. You can request data portability. Contact hello@joindmn.com, we respond within 30 days.",
   },
   {
     number: "06",
@@ -91,7 +91,7 @@ const sections: LegalSection[] = [
     title: "Contact Information",
     body: "",
     items: [
-      "Email: legal@dentalmembernetwork.com",
+      "Email: hello@joindmn.com",
       "Privacy officer: available on request",
       "Phone: available on request",
     ],
@@ -127,7 +127,7 @@ export default function PrivacyPolicyPage() {
         footnote={
           <>
             Questions about your data or a privacy request? Email{" "}
-            <a href="mailto:legal@dentalmembernetwork.com">legal@dentalmembernetwork.com</a>. We
+            <a href="mailto:hello@joindmn.com">hello@joindmn.com</a>. We
             respond within 30 days as required by applicable privacy law.
           </>
         }

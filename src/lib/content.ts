@@ -7,7 +7,7 @@ export const brand = {
   shortName: "DMN",
   phoneDisplay: "(800) 555-1234",
   phoneTel: "+18005551234",
-  email: "founding@dentalmembernetwork.com",
+  email: "hello@joindmn.com",
   domain: "dentalmembernetwork.com",
   joinUrl: "#waitlist",
   signInUrl: "#waitlist",

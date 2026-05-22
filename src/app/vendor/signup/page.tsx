@@ -163,7 +163,7 @@ function VendorSignupInner() {
           "An invitation has already been sent to this email. Check your inbox or use a different email.",
         );
       } else {
-        setSubmitError(data?.error ?? "Something went wrong. Please try again or contact partner@thrivingdentist.com.");
+        setSubmitError(data?.error ?? "Something went wrong. Please try again or contact partnerships@joindmn.com.");
       }
     } catch {
       setSubmitError("Network error. Please try again.");

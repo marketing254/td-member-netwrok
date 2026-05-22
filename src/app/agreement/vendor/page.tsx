@@ -377,8 +377,8 @@ export default function VendorAgreementPage() {
         footnote={
           <>
             Questions before you apply? Email{" "}
-            <a href="mailto:partners@dentalmembernetwork.com">
-              partners@dentalmembernetwork.com
+            <a href="mailto:partnerships@joindmn.com">
+              partnerships@joindmn.com
             </a>
             . Our team reads and responds within one business day.
           </>

@@ -309,7 +309,7 @@ function SidebarContent({
           <Divider sx={{ borderColor: "rgba(255,255,255,0.06)", mb: 1 }} />
           <Box
             component="a"
-            href="mailto:partners@dentalmembernetwork.com"
+            href="mailto:partnerships@joindmn.com"
             sx={{
               display: "flex",
               alignItems: "center",
@@ -339,7 +339,7 @@ function SidebarContent({
                   textOverflow: "ellipsis",
                 }}
               >
-                partners@dentalmembernetwork.com
+                partnerships@joindmn.com
               </Typography>
             </Box>
           </Box>

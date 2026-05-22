@@ -415,76 +415,111 @@ export function buildWaitlistConfirmationEmail(input: ConfirmationInput): BuiltE
 // ─────────────────────────────────────────────────────────────────────────
 // SENDERS
 //
-// Selection priority:
-//   1. Gmail SMTP if GMAIL_USER + GMAIL_APP_PASSWORD are set
-//      (used during pre-launch testing, works for any recipient,
-//       no DNS or domain verification needed)
-//   2. Resend API if RESEND_API_KEY is set
-//      (used in production once a sending domain is verified at resend.com)
-//   3. Otherwise log-only (preview mode for dev without creds)
+// Single shared transport. Selection priority:
+//   1. Generic SMTP (Rackspace, AWS SES SMTP, Mailgun SMTP, anything)
+//      if SMTP_HOST + SMTP_USER + SMTP_PASS are set.
+//   2. Gmail SMTP if GMAIL_USER + GMAIL_APP_PASSWORD are set (dev/legacy).
+//   3. Resend API if RESEND_API_KEY is set (alternate prod path).
+//   4. Otherwise log-only (preview mode for dev without creds).
+//
+// For DMN we use Rackspace — already configured with mailboxes + passwords.
+// Set these env vars in Vercel:
+//   SMTP_HOST=secure.emailsrvr.com
+//   SMTP_PORT=465
+//   SMTP_USER=hello@joindmn.com
+//   SMTP_PASS=<the password Rackspace provided>
 // ─────────────────────────────────────────────────────────────────────────
 
-async function sendViaGmail(input: ConfirmationInput): Promise<{ id?: string }> {
-  // Lazy-import nodemailer so the module only loads when actually needed.
-  // Keeps cold-start fast and avoids a dependency at edge runtime.
-  const nodemailer = (await import("nodemailer")).default;
-  const email = buildWaitlistConfirmationEmail(input);
+type BuiltMail = { subject: string; html: string; text: string; replyTo: string };
 
-  const user = process.env.GMAIL_USER!;
-  const pass = process.env.GMAIL_APP_PASSWORD!;
-  // Gmail forces the SMTP-authenticated user as the envelope From. Honor
-  // the WAITLIST_EMAIL_FROM display name when present (e.g.
-  // "Dental Member Network <marketingbizycorp@gmail.com>"), otherwise
-  // default to a sensible name.
-  const fromHeader =
-    process.env.WAITLIST_EMAIL_FROM ?? `Dental Member Network <${user}>`;
+/**
+ * Send via whichever transport is configured. Returns the message id on
+ * success or throws on failure. Caller decides whether to swallow the
+ * error or surface it.
+ */
+async function dispatchMail(args: {
+  to: string;
+  from: string;
+  mail: BuiltMail;
+  tag: string;
+}): Promise<{ id?: string; transport: "smtp" | "gmail" | "resend" | "log" }> {
+  const { to, from, mail, tag } = args;
 
-  const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false,
-    auth: { user, pass },
-  });
-
-  const info = await transporter.sendMail({
-    from: fromHeader,
-    to: input.signup.email,
-    replyTo: email.replyTo,
-    subject: email.subject,
-    html: email.html,
-    text: email.text,
-  });
-
-  return { id: info.messageId };
-}
-
-async function sendViaResend(input: ConfirmationInput): Promise<{ id?: string }> {
-  const email = buildWaitlistConfirmationEmail(input);
-  const apiKey = process.env.RESEND_API_KEY!;
-
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: FROM_EMAIL,
-      to: [input.signup.email],
-      reply_to: email.replyTo,
-      subject: email.subject,
-      html: email.html,
-      text: email.text,
-    }),
-  });
-
-  if (!res.ok) {
-    const details = await res.text().catch(() => "");
-    throw new Error(`Resend email failed with ${res.status}: ${details.slice(0, 300)}`);
+  // 1. Generic SMTP (Rackspace + most other providers)
+  const smtpHost = process.env.SMTP_HOST;
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = process.env.SMTP_PASS;
+  if (smtpHost && smtpUser && smtpPass) {
+    const port = Number(process.env.SMTP_PORT ?? "465");
+    const nodemailer = (await import("nodemailer")).default;
+    const transporter = nodemailer.createTransport({
+      host: smtpHost,
+      port,
+      secure: port === 465, // 465 = implicit TLS; 587 = STARTTLS
+      auth: { user: smtpUser, pass: smtpPass },
+    });
+    const info = await transporter.sendMail({
+      from,
+      to,
+      replyTo: mail.replyTo,
+      subject: mail.subject,
+      html: mail.html,
+      text: mail.text,
+    });
+    console.info(`[${tag}] sent via SMTP`, { to, host: smtpHost, messageId: info.messageId });
+    return { id: info.messageId, transport: "smtp" };
   }
 
-  const data = (await res.json().catch(() => null)) as { id?: string } | null;
-  return { id: data?.id };
+  // 2. Gmail (dev fallback)
+  const gmailUser = process.env.GMAIL_USER;
+  const gmailPass = process.env.GMAIL_APP_PASSWORD;
+  if (gmailUser && gmailPass) {
+    const nodemailer = (await import("nodemailer")).default;
+    const transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false,
+      auth: { user: gmailUser, pass: gmailPass },
+    });
+    const info = await transporter.sendMail({
+      from,
+      to,
+      replyTo: mail.replyTo,
+      subject: mail.subject,
+      html: mail.html,
+      text: mail.text,
+    });
+    console.info(`[${tag}] sent via Gmail SMTP`, { to, messageId: info.messageId });
+    return { id: info.messageId, transport: "gmail" };
+  }
+
+  // 3. Resend API (alternate prod path)
+  const resendKey = process.env.RESEND_API_KEY;
+  if (resendKey) {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from,
+        to: [to],
+        reply_to: mail.replyTo,
+        subject: mail.subject,
+        html: mail.html,
+        text: mail.text,
+      }),
+    });
+    if (!res.ok) {
+      const details = await res.text().catch(() => "");
+      throw new Error(`Resend ${tag} failed with ${res.status}: ${details.slice(0, 300)}`);
+    }
+    const data = (await res.json().catch(() => null)) as { id?: string } | null;
+    console.info(`[${tag}] sent via Resend`, { to, messageId: data?.id });
+    return { id: data?.id, transport: "resend" };
+  }
+
+  // 4. No sender configured — log only.
+  console.info(`[${tag}] no sender configured; preview only`, { to, subject: mail.subject });
+  return { transport: "log" };
 }
 
 export async function sendWaitlistConfirmationEmail(
@@ -494,39 +529,17 @@ export async function sendWaitlistConfirmationEmail(
     return { sent: false, reason: "disabled" };
   }
 
-  const gmailUser = process.env.GMAIL_USER;
-  const gmailPass = process.env.GMAIL_APP_PASSWORD;
-  const resendKey = process.env.RESEND_API_KEY;
-
-  if (gmailUser && gmailPass) {
-    const { id } = await sendViaGmail(input);
-    console.info("[waitlist:email] sent via Gmail SMTP", {
-      to: input.signup.email,
-      role: input.signup.role,
-      messageId: id,
-    });
-    return { sent: true, id };
-  }
-
-  if (resendKey) {
-    const { id } = await sendViaResend(input);
-    console.info("[waitlist:email] sent via Resend", {
-      to: input.signup.email,
-      role: input.signup.role,
-      messageId: id,
-    });
-    return { sent: true, id };
-  }
-
-  // No sender configured, log so a dev sees what would have shipped.
-  const email = buildWaitlistConfirmationEmail(input);
-  console.info("[waitlist:email] no sender configured; preview only", {
+  const mail = buildWaitlistConfirmationEmail(input);
+  const result = await dispatchMail({
     to: input.signup.email,
-    role: input.signup.role,
-    subject: email.subject,
-    referenceId: input.referenceId,
+    from: FROM_EMAIL,
+    mail,
+    tag: "waitlist:email",
   });
-  return { sent: false, reason: "missing_api_key" };
+  if (result.transport === "log") {
+    return { sent: false, reason: "missing_api_key" };
+  }
+  return { sent: true, id: result.id };
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -639,56 +652,17 @@ export async function sendVendorApprovalEmail(input: VendorApprovalInput): Promi
     return { sent: false, reason: "disabled" };
   }
 
-  const email = buildVendorApprovalEmail(input);
-  const gmailUser = process.env.GMAIL_USER;
-  const gmailPass = process.env.GMAIL_APP_PASSWORD;
-  const resendKey = process.env.RESEND_API_KEY;
-
-  if (gmailUser && gmailPass) {
-    const nodemailer = (await import("nodemailer")).default;
-    const fromHeader = process.env.WAITLIST_EMAIL_FROM ?? `Dental Member Network <${gmailUser}>`;
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 587,
-      secure: false,
-      auth: { user: gmailUser, pass: gmailPass },
-    });
-    const info = await transporter.sendMail({
-      from: fromHeader,
-      to: input.email,
-      replyTo: email.replyTo,
-      subject: email.subject,
-      html: email.html,
-      text: email.text,
-    });
-    console.info("[vendor:approval:email] sent via Gmail SMTP", { to: input.email, messageId: info.messageId });
-    return { sent: true, id: info.messageId };
+  const mail = buildVendorApprovalEmail(input);
+  const result = await dispatchMail({
+    to: input.email,
+    from: FROM_EMAIL,
+    mail,
+    tag: "vendor:approval",
+  });
+  if (result.transport === "log") {
+    return { sent: false, reason: "missing_api_key" };
   }
-
-  if (resendKey) {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        from: FROM_EMAIL,
-        to: [input.email],
-        reply_to: email.replyTo,
-        subject: email.subject,
-        html: email.html,
-        text: email.text,
-      }),
-    });
-    if (!res.ok) {
-      const details = await res.text().catch(() => "");
-      throw new Error(`Resend approval email failed with ${res.status}: ${details.slice(0, 300)}`);
-    }
-    const data = (await res.json().catch(() => null)) as { id?: string } | null;
-    console.info("[vendor:approval:email] sent via Resend", { to: input.email, messageId: data?.id });
-    return { sent: true, id: data?.id };
-  }
-
-  console.info("[vendor:approval:email] no sender configured; preview only", { to: input.email });
-  return { sent: false, reason: "missing_api_key" };
+  return { sent: true, id: result.id };
 }
 
 export async function sendVendorMagicLinkEmail(input: VendorMagicInput): Promise<SendResult> {
@@ -696,55 +670,15 @@ export async function sendVendorMagicLinkEmail(input: VendorMagicInput): Promise
     return { sent: false, reason: "disabled" };
   }
 
-  const email = buildVendorMagicEmail(input);
-
-  const gmailUser = process.env.GMAIL_USER;
-  const gmailPass = process.env.GMAIL_APP_PASSWORD;
-  const resendKey = process.env.RESEND_API_KEY;
-
-  if (gmailUser && gmailPass) {
-    const nodemailer = (await import("nodemailer")).default;
-    const fromHeader = process.env.WAITLIST_EMAIL_FROM ?? `Dental Member Network <${gmailUser}>`;
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 587,
-      secure: false,
-      auth: { user: gmailUser, pass: gmailPass },
-    });
-    const info = await transporter.sendMail({
-      from: fromHeader,
-      to: input.email,
-      replyTo: email.replyTo,
-      subject: email.subject,
-      html: email.html,
-      text: email.text,
-    });
-    console.info("[vendor:magic-link:email] sent via Gmail SMTP", { to: input.email, messageId: info.messageId });
-    return { sent: true, id: info.messageId };
+  const mail = buildVendorMagicEmail(input);
+  const result = await dispatchMail({
+    to: input.email,
+    from: FROM_EMAIL,
+    mail,
+    tag: "vendor:magic-link",
+  });
+  if (result.transport === "log") {
+    return { sent: false, reason: "missing_api_key" };
   }
-
-  if (resendKey) {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        from: FROM_EMAIL,
-        to: [input.email],
-        reply_to: email.replyTo,
-        subject: email.subject,
-        html: email.html,
-        text: email.text,
-      }),
-    });
-    if (!res.ok) {
-      const details = await res.text().catch(() => "");
-      throw new Error(`Resend magic-link email failed with ${res.status}: ${details.slice(0, 300)}`);
-    }
-    const data = (await res.json().catch(() => null)) as { id?: string } | null;
-    console.info("[vendor:magic-link:email] sent via Resend", { to: input.email, messageId: data?.id });
-    return { sent: true, id: data?.id };
-  }
-
-  console.info("[vendor:magic-link:email] no sender configured; preview only", { to: input.email, link: input.link });
-  return { sent: false, reason: "missing_api_key" };
+  return { sent: true, id: result.id };
 }

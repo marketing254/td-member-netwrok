@@ -142,7 +142,7 @@ export async function POST(req: Request) {
     }
     console.error("[waitlist] insert failed:", error);
     return NextResponse.json(
-      { error: "Could not save your spot. Please try again or email hello@thrivingdentist.com." },
+      { error: "Could not save your spot. Please try again or email hello@joindmn.com." },
       { status: 500 },
     );
   }
