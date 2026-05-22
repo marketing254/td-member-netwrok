@@ -25,7 +25,8 @@ const csp = [
   "default-src 'self'",
   // Next.js inlines small chunks at runtime; 'unsafe-inline' is required
   // unless we switch to strict-dynamic with nonce — leave for now.
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:",
+  // googletagmanager.com hosts gtag.js (Google Analytics 4 loader).
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://www.googletagmanager.com",
   // Three.js (and other 3D / animation libraries) spawn Web Workers from
   // blob: URLs for offloading geometry/physics work to a background thread.
   // Without this directive, browsers fall back to script-src — and even
@@ -38,12 +39,15 @@ const csp = [
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com data:",
   // Supabase storage public buckets serve images over https; allow data: for
-  // base64 placeholders the MUI Image component uses.
-  `img-src 'self' data: blob: ${SUPABASE_HTTPS}`,
+  // base64 placeholders the MUI Image component uses. Google Analytics
+  // also fires beacons as image GETs (the gif/collect endpoints).
+  `img-src 'self' data: blob: ${SUPABASE_HTTPS} https://www.google-analytics.com https://www.googletagmanager.com`,
   // jsdelivr.net is used by troika-three-text (3D-text library on the
   // landing page) to fetch unicode font glyph lookup tables on demand.
   // gstatic.com hosts the actual font WOFF files Google Fonts pulls.
-  `connect-src 'self' ${SUPABASE_HTTPS} ${SUPABASE_WSS} https://cdn.jsdelivr.net https://fonts.gstatic.com`,
+  // google-analytics.com + googletagmanager.com receive GA4 events.
+  // *.analytics.google.com covers regional analytics endpoints.
+  `connect-src 'self' ${SUPABASE_HTTPS} ${SUPABASE_WSS} https://cdn.jsdelivr.net https://fonts.gstatic.com https://www.google-analytics.com https://www.googletagmanager.com https://*.analytics.google.com`,
   "frame-ancestors 'none'",
   "form-action 'self'",
   "base-uri 'self'",
