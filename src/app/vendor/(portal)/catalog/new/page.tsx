@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -8,6 +8,7 @@ import {
   Box,
   Button,
   Chip,
+  CircularProgress,
   IconButton,
   MenuItem,
   Stack,
@@ -21,9 +22,17 @@ import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined
 import MedicalServicesOutlinedIcon from "@mui/icons-material/MedicalServicesOutlined";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
+import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import type { SvgIconComponent } from "@mui/icons-material";
 import { CATALOG_CATEGORIES, type CatalogItemType } from "@/lib/catalogData";
 import { PageHeader } from "@/components/vendor/PortalUI";
+import { createBrowserSupabase } from "@/lib/supabase/browser";
+import {
+  createCatalogItem,
+  fetchCurrentVendor,
+  uploadCatalogMedia,
+} from "@/lib/supabase/vendorQueries";
+import type { VendorsRow } from "@/lib/supabase/types";
 
 const TYPE_OPTIONS: { value: CatalogItemType; label: string; description: string; icon: SvgIconComponent }[] = [
   {
@@ -50,30 +59,51 @@ type FormState = {
   type: CatalogItemType | "";
   name: string;
   category: string;
+  /** Free text used when category === "Other". */
+  categoryOther: string;
   description: string;
   priceLabel: string;
   durationHours: string;
-  images: string[];
-  videos: string[];
+  images: File[];
+  videos: File[];
+  documents: File[];
 };
 
 const empty: FormState = {
   type: "",
   name: "",
   category: "",
+  categoryOther: "",
   description: "",
   priceLabel: "",
   durationHours: "",
   images: [],
   videos: [],
+  documents: [],
 };
 
 export default function CatalogNewPage() {
   const router = useRouter();
+  const [vendor, setVendor] = useState<VendorsRow | null>(null);
+  const [loadingVendor, setLoadingVendor] = useState(true);
   const [form, setForm] = useState<FormState>(empty);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const supabase = createBrowserSupabase();
+    (async () => {
+      const v = await fetchCurrentVendor(supabase);
+      if (!active) return;
+      setVendor(v);
+      setLoadingVendor(false);
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
     setForm((prev) => ({ ...prev, [k]: v }));
@@ -83,29 +113,80 @@ export default function CatalogNewPage() {
     [form.type],
   );
 
+  const canPublish = Boolean(vendor && vendor.status === "approved" && vendor.verified);
+
+  const effectiveCategory =
+    form.category === "Other" ? form.categoryOther.trim() : form.category.trim();
+
   const canSubmit =
+    canPublish &&
     Boolean(form.type) &&
     form.name.trim().length >= 3 &&
-    form.category.trim().length > 0 &&
+    effectiveCategory.length > 0 &&
     form.description.trim().length >= 20 &&
     form.priceLabel.trim().length > 0;
 
   const submit = async () => {
-    if (!canSubmit) return;
+    if (!canSubmit || !form.type || !vendor) return;
     setSubmitting(true);
     setSubmitError(null);
     try {
-      // Preview mode: pretend persistence. Replace with a real POST when the
-      // catalog table lands.
-      await new Promise((r) => setTimeout(r, 500));
+      const supabase = createBrowserSupabase();
+
+      const durationHours = form.type === "course" && form.durationHours
+        ? Number(form.durationHours)
+        : null;
+
+      const result = await createCatalogItem(supabase, {
+        vendor_id: vendor.id,
+        type: form.type,
+        name: form.name.trim(),
+        description: form.description.trim(),
+        category: effectiveCategory,
+        price_label: form.priceLabel.trim(),
+        duration_hours: durationHours,
+      });
+
+      if (!result.ok) {
+        setSubmitError(result.error);
+        setSubmitting(false);
+        return;
+      }
+
+      // Upload media (best effort — surface first error if any)
+      const all: { kind: "image" | "video" | "document"; file: File }[] = [
+        ...form.images.map((f) => ({ kind: "image" as const, file: f })),
+        ...form.videos.map((f) => ({ kind: "video" as const, file: f })),
+        ...form.documents.map((f) => ({ kind: "document" as const, file: f })),
+      ];
+      for (const m of all) {
+        const up = await uploadCatalogMedia(supabase, {
+          vendorId: vendor.id,
+          catalogItemId: result.id,
+          kind: m.kind,
+          file: m.file,
+        });
+        if (!up.ok) {
+          console.warn("[catalog/new] media upload failed:", up.error);
+        }
+      }
+
       setSubmitted(true);
-      setTimeout(() => router.push("/vendor/catalog"), 900);
-    } catch {
+      setTimeout(() => router.push("/vendor/catalog"), 800);
+    } catch (err) {
+      console.error("[catalog/new] submit failed:", err);
       setSubmitError("Could not save the item. Please try again.");
-    } finally {
       setSubmitting(false);
     }
   };
+
+  if (loadingVendor) {
+    return (
+      <Stack sx={{ alignItems: "center", py: 8, gap: 2 }}>
+        <CircularProgress size={28} sx={{ color: "#A07823" }} />
+      </Stack>
+    );
+  }
 
   return (
     <Stack spacing={2.5}>
@@ -133,6 +214,28 @@ export default function CatalogNewPage() {
         />
       </Box>
 
+      {!canPublish && (
+        <Alert
+          severity="warning"
+          icon={<LockOutlinedIcon />}
+          sx={{
+            borderRadius: "14px",
+            border: "1px solid rgba(217,168,75,0.4)",
+            bgcolor: "rgba(217,168,75,0.06)",
+            "& .MuiAlert-icon": { color: "#A07823" },
+          }}
+        >
+          <Typography sx={{ fontWeight: 700, fontSize: "0.95rem", mb: 0.5, color: "#7A5B17" }}>
+            Verification required
+          </Typography>
+          <Typography sx={{ fontSize: "0.86rem", color: "#7A5B17", lineHeight: 1.55 }}>
+            Your partner account is still being reviewed by our team. Once your account is approved
+            and verified you can publish services, products, courses, and offers. We&apos;ll email
+            you the moment that happens — usually within one business day.
+          </Typography>
+        </Alert>
+      )}
+
       {submitted ? (
         <Alert severity="success" sx={{ borderRadius: "14px" }}>
           <strong>Submitted for review.</strong> Redirecting you back to your catalog…
@@ -151,10 +254,12 @@ export default function CatalogNewPage() {
                     role="button"
                     tabIndex={0}
                     onClick={() => {
+                      if (!canPublish) return;
                       set("type", opt.value);
                       set("category", "");
                     }}
                     onKeyDown={(e) => {
+                      if (!canPublish) return;
                       if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
                         set("type", opt.value);
@@ -162,7 +267,8 @@ export default function CatalogNewPage() {
                       }
                     }}
                     sx={{
-                      cursor: "pointer",
+                      cursor: canPublish ? "pointer" : "not-allowed",
+                      opacity: canPublish ? 1 : 0.55,
                       flex: 1,
                       p: 2.5,
                       borderRadius: 2.5,
@@ -170,7 +276,7 @@ export default function CatalogNewPage() {
                       borderColor: active ? "#A07823" : "divider",
                       bgcolor: active ? "rgba(217,168,75,0.06)" : "common.white",
                       transition: "border-color 200ms ease, background-color 200ms ease, transform 200ms ease",
-                      "&:hover": { borderColor: active ? "#A07823" : "rgba(160,120,35,0.4)", transform: "translateY(-2px)" },
+                      "&:hover": canPublish ? { borderColor: active ? "#A07823" : "rgba(160,120,35,0.4)", transform: "translateY(-2px)" } : {},
                       "&:focus-visible": {
                         outline: "2px solid #A07823",
                         outlineOffset: 2,
@@ -213,6 +319,7 @@ export default function CatalogNewPage() {
                   label="Name"
                   required
                   fullWidth
+                  disabled={!canPublish}
                   value={form.name}
                   onChange={(e) => set("name", e.target.value)}
                   placeholder={
@@ -225,28 +332,49 @@ export default function CatalogNewPage() {
                 />
 
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={2.5}>
-                  <TextField
-                    label="Category"
-                    required
-                    select
-                    fullWidth
-                    value={form.category}
-                    onChange={(e) => set("category", e.target.value)}
-                  >
-                    {categoryOptions.map((c) => (
-                      <MenuItem key={c} value={c}>
-                        {c}
-                      </MenuItem>
-                    ))}
-                  </TextField>
+                  <Stack spacing={1.25} sx={{ flex: 1 }}>
+                    <TextField
+                      label="Category"
+                      required
+                      select
+                      fullWidth
+                      disabled={!canPublish}
+                      value={form.category}
+                      onChange={(e) => {
+                        set("category", e.target.value);
+                        if (e.target.value !== "Other") set("categoryOther", "");
+                      }}
+                    >
+                      {categoryOptions.map((c) => (
+                        <MenuItem key={c} value={c}>
+                          {c}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                    {form.category === "Other" && (
+                      <TextField
+                        label="Specify category"
+                        required
+                        fullWidth
+                        autoFocus
+                        disabled={!canPublish}
+                        value={form.categoryOther}
+                        onChange={(e) => set("categoryOther", e.target.value)}
+                        placeholder="e.g. AI tooling, sleep dentistry, payroll"
+                        helperText="Tell us how to label this in the directory."
+                      />
+                    )}
+                  </Stack>
                   <TextField
                     label="Price"
                     required
                     fullWidth
+                    disabled={!canPublish}
                     value={form.priceLabel}
                     onChange={(e) => set("priceLabel", e.target.value)}
                     placeholder='e.g. "$4,200", "Quote", "$99/mo"'
                     helperText="Free-form — any unit. Quotes and ranges are fine."
+                    sx={{ flex: 1 }}
                   />
                 </Stack>
 
@@ -255,6 +383,7 @@ export default function CatalogNewPage() {
                     label="Total duration (hours)"
                     type="number"
                     fullWidth
+                    disabled={!canPublish}
                     value={form.durationHours}
                     onChange={(e) => set("durationHours", e.target.value)}
                     placeholder="e.g. 18"
@@ -269,6 +398,7 @@ export default function CatalogNewPage() {
                   fullWidth
                   multiline
                   rows={4}
+                  disabled={!canPublish}
                   value={form.description}
                   onChange={(e) => set("description", e.target.value)}
                   placeholder="What it is, what's included, who it's for. Aim for 2–3 sentences."
@@ -281,11 +411,11 @@ export default function CatalogNewPage() {
           {/* Media */}
           {form.type && (
             <Section
-              title="Media"
+              title="Media & documents"
               hint={
                 form.type === "course"
-                  ? "Add 1–3 images and at least one preview video."
-                  : "Add 1–4 images. Optional product video helps members evaluate."
+                  ? "Add 1–3 images, at least one preview video, and any course materials as PDFs."
+                  : "Add 1–4 images. Optional product video. Attach spec sheets, brochures, or any supporting PDF."
               }
             >
               <Stack spacing={2}>
@@ -293,7 +423,8 @@ export default function CatalogNewPage() {
                   label="Images"
                   emptyHint="No images yet"
                   items={form.images}
-                  onAdd={(name) => set("images", [...form.images, name])}
+                  disabled={!canPublish}
+                  onAdd={(files) => set("images", [...form.images, ...files])}
                   onRemove={(i) => set("images", form.images.filter((_, idx) => idx !== i))}
                   accept="image"
                 />
@@ -301,14 +432,20 @@ export default function CatalogNewPage() {
                   label={form.type === "course" ? "Videos" : "Video (optional)"}
                   emptyHint="No videos yet"
                   items={form.videos}
-                  onAdd={(name) => set("videos", [...form.videos, name])}
+                  disabled={!canPublish}
+                  onAdd={(files) => set("videos", [...form.videos, ...files])}
                   onRemove={(i) => set("videos", form.videos.filter((_, idx) => idx !== i))}
                   accept="video"
                 />
-                <Alert severity="info" sx={{ borderRadius: "12px" }}>
-                  Real upload to object storage is wired in the next phase. For now, filenames
-                  are tracked locally so you can see the shape of the form.
-                </Alert>
+                <MediaUploader
+                  label="Documents (PDF, spec sheets, brochures)"
+                  emptyHint="No documents yet"
+                  items={form.documents}
+                  disabled={!canPublish}
+                  onAdd={(files) => set("documents", [...form.documents, ...files])}
+                  onRemove={(i) => set("documents", form.documents.filter((_, idx) => idx !== i))}
+                  accept="document"
+                />
               </Stack>
             </Section>
           )}
@@ -326,9 +463,13 @@ export default function CatalogNewPage() {
                 size="large"
                 onClick={submit}
                 disabled={!canSubmit || submitting}
-                endIcon={<ArrowForwardIcon />}
+                endIcon={!canPublish ? <LockOutlinedIcon /> : <ArrowForwardIcon />}
               >
-                {submitting ? "Submitting…" : "Submit for team review"}
+                {!canPublish
+                  ? "Verification required"
+                  : submitting
+                    ? "Submitting…"
+                    : "Submit for team review"}
               </Button>
             </Stack>
           )}
@@ -377,14 +518,27 @@ function MediaUploader({
   onAdd,
   onRemove,
   accept,
+  disabled,
 }: {
   label: string;
   emptyHint: string;
-  items: string[];
-  onAdd: (name: string) => void;
+  items: File[];
+  onAdd: (files: File[]) => void;
   onRemove: (idx: number) => void;
-  accept: "image" | "video";
+  accept: "image" | "video" | "document";
+  disabled?: boolean;
 }) {
+  const acceptAttr =
+    accept === "image"
+      ? "image/*"
+      : accept === "video"
+        ? "video/*"
+        : "application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+  const chipLabel = accept === "image" ? "IMG" : accept === "video" ? "VID" : "DOC";
+  const ctaLabel =
+    accept === "image" ? "Add an image" : accept === "video" ? "Add a video" : "Add a document";
+
   return (
     <Box>
       <Typography sx={{ fontSize: "0.85rem", fontWeight: 700, mb: 1, color: "text.primary" }}>
@@ -397,6 +551,7 @@ function MediaUploader({
           borderRadius: "12px",
           p: 2,
           bgcolor: "rgba(14,42,61,0.02)",
+          opacity: disabled ? 0.6 : 1,
         }}
       >
         {items.length === 0 ? (
@@ -405,9 +560,9 @@ function MediaUploader({
           </Typography>
         ) : (
           <Stack spacing={0.75} sx={{ mb: 1.5 }}>
-            {items.map((name, i) => (
+            {items.map((f, i) => (
               <Stack
-                key={`${name}-${i}`}
+                key={`${f.name}-${i}`}
                 direction="row"
                 spacing={1}
                 sx={{
@@ -421,12 +576,15 @@ function MediaUploader({
                 }}
               >
                 <Chip
-                  label={accept === "image" ? "IMG" : "VID"}
+                  label={chipLabel}
                   size="small"
                   sx={{ bgcolor: "rgba(14,42,61,0.06)", color: "#0E2A3D", fontWeight: 700, fontSize: "0.62rem", height: 20 }}
                 />
                 <Typography sx={{ flex: 1, fontSize: "0.86rem" }} noWrap>
-                  {name}
+                  {f.name}
+                </Typography>
+                <Typography sx={{ fontSize: "0.74rem", color: "text.secondary" }}>
+                  {Math.max(1, Math.round(f.size / 1024))} KB
                 </Typography>
                 <IconButton size="small" onClick={() => onRemove(i)} sx={{ color: "text.secondary" }}>
                   <DeleteOutlineOutlinedIcon fontSize="small" />
@@ -440,6 +598,7 @@ function MediaUploader({
           component="label"
           variant="outlined"
           size="small"
+          disabled={disabled}
           startIcon={<CloudUploadOutlinedIcon />}
           sx={{
             borderColor: "rgba(14,42,61,0.2)",
@@ -447,15 +606,16 @@ function MediaUploader({
             "&:hover": { borderColor: "#A07823", bgcolor: "rgba(217,168,75,0.06)" },
           }}
         >
-          {`Add ${accept === "image" ? "an image" : "a video"}`}
+          {ctaLabel}
           <input
             type="file"
-            accept={accept === "image" ? "image/*" : "video/*"}
+            accept={acceptAttr}
             multiple
             hidden
+            disabled={disabled}
             onChange={(e) => {
               const files = Array.from(e.target.files ?? []);
-              for (const f of files) onAdd(f.name);
+              if (files.length) onAdd(files);
               e.currentTarget.value = "";
             }}
           />

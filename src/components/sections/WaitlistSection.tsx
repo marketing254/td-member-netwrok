@@ -152,7 +152,9 @@ export default function WaitlistSection() {
           setSubmitting(false);
           return;
         }
-        router.push(`/waitlist/thanks?role=vendor`);
+        // Vendors go to their own thank-you page; from there they can click
+        // into the partner portal sign-in once the magic-link email arrives.
+        router.push(`/vendor/applied`);
         return;
       }
 

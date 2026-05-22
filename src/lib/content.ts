@@ -75,9 +75,9 @@ export const features = [
     icon: "target",
   },
   {
-    title: "Lifetime Pricing",
+    title: "Founding Pricing",
     summary:
-      "The first 1,000 founding members lock in $49 for life. Founding rate ends after 20 days or the cap, whichever comes first.",
+      "The first 1,000 founding members lock in $49/month at the founding rate for as long as their membership stays active. Founding rate ends after 20 days or the cap, whichever comes first.",
     icon: "infinity",
   },
 ];
@@ -105,11 +105,11 @@ export const waitlist = {
 export const waitlistByRole = {
   member: {
     eyebrow: "FOUNDING MEMBER",
-    headline: "Lock in $49/month for life. First 100 only.",
+    headline: "Lock in the $49/month founding rate. First 100 only.",
     subtitle:
-      "The waitlist is how we onboard the founding cohort before launch. Get a guaranteed spot, lifetime pricing, and first access to every feature we ship.",
+      "The waitlist is how we onboard the founding cohort before launch. Get a guaranteed spot, the founding rate, and first access to every feature we ship.",
     benefits: [
-      "$49/month locked for life, never increases while you stay active",
+      "$49/month founding rate, never increases while your membership stays active",
       "24/7 expert helpline with a written follow-up plan within 3 business days",
       "Vendor savings averaging $6,000+/year, no per-deal commissions",
       "30-day money-back guarantee, cancel anytime",
@@ -131,7 +131,7 @@ export const ctaForm = {
   reassurances: [
     "30-day money-back guarantee with no retention call.",
     "We do not store any patient data. Ever.",
-    "$49/mo founding rate locked for life, will never increase.",
+    "$49/mo founding rate, never increases while your membership stays active.",
     "Cancel anytime, in two clicks, from your account page.",
   ],
 };
@@ -161,7 +161,7 @@ export const faqs = [
   },
   {
     q: "What is the founding member rate?",
-    a: "$49/month, locked for the life of your membership. This rate is only available to the first 100 members. After those spots fill, the standard price is $199/month. There is also an annual option: $490/year (pay for 10 months, get 12, save $98). Cancel anytime.",
+    a: "$49/month, the founding rate. It never increases for as long as your membership stays active. This rate is only available to the first 100 members. After those spots fill, the standard price is $199/month. There is also an annual option: $490/year (pay for 10 months, get 12, save $98). Cancel anytime.",
   },
   {
     q: "What if I'm not ready to join yet?",
@@ -252,11 +252,11 @@ export const challengeOptions = [
 // PRICING (Section 10 in doc), verbatim
 export const pricingSection = {
   eyebrow: "MEMBERSHIP",
-  title: "One membership. One price. First 100 lock it for life.",
+  title: "One membership. One price. First 100 get the founding rate.",
   subtitle:
-    "No tiers to decode, no upsell ladder. The first 100 founding members pay $49/month, locked for the life of their membership. After that, it's $199.",
+    "No tiers to decode, no upsell ladder. The first 100 founding members pay $49/month, locked at that rate for as long as their membership stays active. After that, it's $199.",
   bottomNote:
-    "30-day money-back guarantee. Cancel anytime. Founding-member rate is locked for the life of your membership, it will never increase.",
+    "30-day money-back guarantee. Cancel anytime. Founding-member rate never increases while your membership stays active.",
 };
 
 export const pricing = [
@@ -264,7 +264,7 @@ export const pricing = [
     tier: "Member",
     audience: "Practice owners and dentists",
     price: "$49",
-    cadence: "/month, locked for life",
+    cadence: "/month, founding rate",
     regularNote: "Regular price will be $199/month after founding spots fill",
     blurb:
       "Full access to every feature in the Dental Member Network. The same membership everyone gets, at a rate that never goes up.",

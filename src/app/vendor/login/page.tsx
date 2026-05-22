@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -8,19 +8,13 @@ import {
   Box,
   Button,
   CircularProgress,
-  Divider,
-  IconButton,
   InputAdornment,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
-import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
-import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
-import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
-import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
 import LinkOutlinedIcon from "@mui/icons-material/LinkOutlined";
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import VerifiedUserOutlinedIcon from "@mui/icons-material/VerifiedUserOutlined";
@@ -29,80 +23,30 @@ import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import type { SvgIconComponent } from "@mui/icons-material";
 import Logo from "@/components/brand/Logo";
 
-type Mode = "password" | "magic";
-
 const HIGHLIGHTS: { icon: SvgIconComponent; label: string }[] = [
   { icon: StorefrontOutlinedIcon, label: "Manage your services, products, and courses" },
   { icon: VerifiedUserOutlinedIcon, label: "Submit offers for team review and track approvals" },
   { icon: CalendarMonthOutlinedIcon, label: "Receive warm member intros and bookings" },
 ];
 
+// Render the dev test/test escape hatch only when explicitly enabled via env.
+// In production NEXT_PUBLIC_SHOW_DEV_LOGIN is unset → no UI for it.
+const SHOW_DEV_LOGIN = process.env.NEXT_PUBLIC_SHOW_DEV_LOGIN === "true";
+
 function LoginInner() {
   const router = useRouter();
   const params = useSearchParams();
   const redirect = params.get("redirect") || "/vendor";
-  const initialToken = params.get("token");
+  const initialError = params.get("error");
 
-  const [mode, setMode] = useState<Mode>("password");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(initialError);
   const [magicSent, setMagicSent] = useState(false);
-  const [verifying, setVerifying] = useState(Boolean(initialToken));
 
-  useEffect(() => {
-    if (!initialToken) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch("/api/vendor/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ mode: "verify", token: initialToken }),
-        });
-        const data = await res.json().catch(() => ({}));
-        if (cancelled) return;
-        if (res.ok) {
-          router.replace(data?.redirect || "/vendor");
-        } else {
-          setVerifying(false);
-          setErr(data?.error ?? "Magic link could not be verified.");
-        }
-      } catch {
-        if (cancelled) return;
-        setVerifying(false);
-        setErr("Network error verifying your link.");
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [initialToken, router]);
-
-  const onSubmitPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setBusy(true);
-    setErr(null);
-    try {
-      const res = await fetch("/api/vendor/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: "password", email: email.trim(), password }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok) {
-        router.replace(redirect);
-      } else {
-        setErr(data?.error ?? "Could not sign in. Please try again.");
-      }
-    } catch {
-      setErr("Network error. Please try again.");
-    } finally {
-      setBusy(false);
-    }
-  };
+  // Dev-only password shortcut state (only mounted when SHOW_DEV_LOGIN is true)
+  const [devUsername, setDevUsername] = useState("");
+  const [devPassword, setDevPassword] = useState("");
 
   const onSubmitMagic = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,16 +71,28 @@ function LoginInner() {
     }
   };
 
-  if (verifying) {
-    return (
-      <Stack spacing={2} sx={{ alignItems: "center", py: 4 }}>
-        <CircularProgress size={24} sx={{ color: "#A07823" }} />
-        <Typography sx={{ color: "#3B4A55", fontSize: "0.88rem" }}>
-          Verifying your sign-in link…
-        </Typography>
-      </Stack>
-    );
-  }
+  const onSubmitDevPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    setErr(null);
+    try {
+      const res = await fetch("/api/vendor/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "password", email: devUsername.trim(), password: devPassword }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        router.replace(redirect);
+      } else {
+        setErr(data?.error ?? "Could not sign in. Please try again.");
+      }
+    } catch {
+      setErr("Network error. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <Stack spacing={2.5}>
@@ -158,12 +114,11 @@ function LoginInner() {
             lineHeight: 1.2,
           }}
         >
-          {mode === "password" ? "Welcome back" : "Sign in by email"}
+          Sign in with a magic link
         </Typography>
         <Typography sx={{ color: "#5C6770", fontSize: "0.86rem", lineHeight: 1.5 }}>
-          {mode === "password"
-            ? "Use your partner credentials to access the portal."
-            : "We'll send a one-time link that expires in 30 minutes."}
+          Enter the email you applied with. We&apos;ll send a one-time sign-in link that expires
+          in 60 minutes. No password to remember, no password to leak.
         </Typography>
       </Stack>
 
@@ -173,83 +128,7 @@ function LoginInner() {
         </Alert>
       )}
 
-      {mode === "password" ? (
-        <Box component="form" onSubmit={onSubmitPassword} noValidate>
-          <Stack spacing={1.75}>
-            <TextField
-              label="Email or username"
-              type="text"
-              size="small"
-              autoComplete="username"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              fullWidth
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <EmailOutlinedIcon sx={{ fontSize: 16, color: "#7A8590" }} />
-                    </InputAdornment>
-                  ),
-                },
-              }}
-            />
-            <TextField
-              label="Password"
-              size="small"
-              type={showPassword ? "text" : "password"}
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              fullWidth
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <LockOutlinedIcon sx={{ fontSize: 16, color: "#7A8590" }} />
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={() => setShowPassword((v) => !v)}
-                        edge="end"
-                        size="small"
-                        aria-label={showPassword ? "Hide password" : "Show password"}
-                      >
-                        {showPassword ? (
-                          <VisibilityOffOutlinedIcon sx={{ fontSize: 16 }} />
-                        ) : (
-                          <VisibilityOutlinedIcon sx={{ fontSize: 16 }} />
-                        )}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                },
-              }}
-            />
-            <Button
-              type="submit"
-              variant="contained"
-              fullWidth
-              disabled={busy}
-              endIcon={busy ? <CircularProgress size={14} sx={{ color: "inherit" }} /> : <ArrowForwardIcon sx={{ fontSize: 16 }} />}
-              sx={{
-                py: 1.2,
-                fontSize: "0.88rem",
-                fontWeight: 600,
-                bgcolor: "#0A1A2F",
-                textTransform: "none",
-                "&:hover": { bgcolor: "#0F2540" },
-              }}
-            >
-              {busy ? "Signing in…" : "Sign in"}
-            </Button>
-          </Stack>
-        </Box>
-      ) : magicSent ? (
+      {magicSent ? (
         <Box
           sx={{
             px: 2,
@@ -260,13 +139,16 @@ function LoginInner() {
           }}
         >
           <Stack direction="row" spacing={1.25} sx={{ alignItems: "flex-start" }}>
-            <CheckCircleRoundedIcon sx={{ color: "#A07823", fontSize: 18, mt: "1px", flexShrink: 0 }} />
+            <CheckCircleRoundedIcon
+              sx={{ color: "#A07823", fontSize: 18, mt: "1px", flexShrink: 0 }}
+            />
             <Box>
               <Typography sx={{ fontWeight: 600, color: "#0A1A2F", fontSize: "0.88rem", mb: 0.25 }}>
                 Check your inbox.
               </Typography>
               <Typography sx={{ color: "#3B4A55", fontSize: "0.8rem", lineHeight: 1.55 }}>
-                We sent a link to <strong>{email}</strong>. It expires in 30 minutes.
+                We sent a sign-in link to <strong>{email}</strong>. Click it within 60 minutes
+                to access the portal.
               </Typography>
             </Box>
           </Stack>
@@ -277,7 +159,14 @@ function LoginInner() {
               setMagicSent(false);
               setEmail("");
             }}
-            sx={{ mt: 1, color: "#A07823", textTransform: "none", fontWeight: 600, fontSize: "0.8rem", px: 0 }}
+            sx={{
+              mt: 1,
+              color: "#A07823",
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: "0.8rem",
+              px: 0,
+            }}
           >
             Use a different email
           </Button>
@@ -309,7 +198,13 @@ function LoginInner() {
               variant="contained"
               fullWidth
               disabled={busy}
-              endIcon={busy ? <CircularProgress size={14} sx={{ color: "inherit" }} /> : <LinkOutlinedIcon sx={{ fontSize: 16 }} />}
+              endIcon={
+                busy ? (
+                  <CircularProgress size={14} sx={{ color: "inherit" }} />
+                ) : (
+                  <LinkOutlinedIcon sx={{ fontSize: 16 }} />
+                )
+              }
               sx={{
                 py: 1.2,
                 fontSize: "0.88rem",
@@ -325,60 +220,83 @@ function LoginInner() {
         </Box>
       )}
 
-      <Divider sx={{ "&::before, &::after": { borderColor: "rgba(14,42,61,0.08)" } }}>
-        <Typography sx={{ color: "#9CA3AB", fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase" }}>
-          or
-        </Typography>
-      </Divider>
-
-      <Button
-        variant="text"
-        size="small"
-        startIcon={mode === "password" ? <LinkOutlinedIcon sx={{ fontSize: 16 }} /> : <LockOutlinedIcon sx={{ fontSize: 16 }} />}
-        onClick={() => {
-          setMode((m) => (m === "password" ? "magic" : "password"));
-          setErr(null);
-          setMagicSent(false);
-        }}
-        sx={{
-          color: "#0A1A2F",
-          fontWeight: 600,
-          textTransform: "none",
-          fontSize: "0.82rem",
-          "&:hover": { bgcolor: "rgba(217,168,75,0.06)", color: "#A07823" },
-        }}
-      >
-        {mode === "password" ? "Email me a sign-in link instead" : "Use email and password"}
-      </Button>
-
-      <Box
-        sx={{
-          mt: 0.5,
-          px: 1.5,
-          py: 1,
-          borderRadius: 1.5,
-          bgcolor: "rgba(217,168,75,0.08)",
-          border: "1px dashed rgba(217,168,75,0.35)",
-        }}
-      >
-        <Typography sx={{ color: "#7A5B17", fontSize: "0.74rem", lineHeight: 1.5 }}>
-          <Box component="span" sx={{ fontWeight: 700, letterSpacing: "0.1em", mr: 0.5 }}>
-            PREVIEW:
-          </Box>
-          use <strong>test</strong> / <strong>test</strong> to enter the portal.
-        </Typography>
-      </Box>
-
       <Typography sx={{ textAlign: "center", color: "#5C6770", fontSize: "0.8rem", pt: 0.5 }}>
         New partner?{" "}
         <Box
           component={Link}
           href="/vendor/signup"
-          sx={{ color: "#A07823", fontWeight: 600, textDecoration: "none", "&:hover": { textDecoration: "underline" } }}
+          sx={{
+            color: "#A07823",
+            fontWeight: 600,
+            textDecoration: "none",
+            "&:hover": { textDecoration: "underline" },
+          }}
         >
           Apply for a partner account
         </Box>
       </Typography>
+
+      {SHOW_DEV_LOGIN && (
+        <Box
+          sx={{
+            mt: 1,
+            p: 1.5,
+            borderRadius: 1.5,
+            border: "1px dashed rgba(217,168,75,0.4)",
+            bgcolor: "rgba(217,168,75,0.04)",
+          }}
+        >
+          <Typography
+            sx={{
+              fontSize: "0.66rem",
+              fontWeight: 700,
+              letterSpacing: "0.14em",
+              color: "#7A5B17",
+              textTransform: "uppercase",
+              mb: 1,
+            }}
+          >
+            Dev preview · skip the email
+          </Typography>
+          <Box component="form" onSubmit={onSubmitDevPassword}>
+            <Stack spacing={1}>
+              <TextField
+                label="Username"
+                size="small"
+                value={devUsername}
+                onChange={(e) => setDevUsername(e.target.value)}
+                placeholder="test"
+                fullWidth
+              />
+              <TextField
+                label="Password"
+                size="small"
+                type="password"
+                value={devPassword}
+                onChange={(e) => setDevPassword(e.target.value)}
+                placeholder="test"
+                fullWidth
+              />
+              <Button
+                type="submit"
+                variant="outlined"
+                size="small"
+                disabled={busy}
+                sx={{
+                  textTransform: "none",
+                  borderColor: "rgba(160,120,35,0.4)",
+                  color: "#7A5B17",
+                  fontSize: "0.78rem",
+                  fontWeight: 600,
+                  "&:hover": { borderColor: "#A07823", bgcolor: "rgba(217,168,75,0.08)" },
+                }}
+              >
+                Sign in with preview credentials
+              </Button>
+            </Stack>
+          </Box>
+        </Box>
+      )}
     </Stack>
   );
 }
@@ -605,42 +523,8 @@ export default function VendorLoginPage() {
             </Stack>
           </Box>
 
-          {/* BOTTOM: pull-quote + credit */}
+          {/* BOTTOM: credit */}
           <Box sx={{ position: "relative" }}>
-            <Box
-              sx={{
-                pl: 2,
-                borderLeft: "2px solid rgba(217,168,75,0.6)",
-                mb: 2.5,
-              }}
-            >
-              <Typography
-                sx={{
-                  fontFamily: "var(--font-display)",
-                  fontStyle: "italic",
-                  fontSize: "1rem",
-                  fontWeight: 400,
-                  lineHeight: 1.45,
-                  color: "rgba(255,255,255,0.88)",
-                  maxWidth: 420,
-                }}
-              >
-                &ldquo;The first network where every lead is a practice owner who already chose
-                to be matched with someone like us.&rdquo;
-              </Typography>
-              <Typography
-                sx={{
-                  fontSize: "0.72rem",
-                  letterSpacing: "0.18em",
-                  textTransform: "uppercase",
-                  color: "#F2DD9B",
-                  fontWeight: 600,
-                  mt: 1.25,
-                }}
-              >
-                Founding Partner · Henry Schein
-              </Typography>
-            </Box>
             <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.72rem" }}>
               © 2026 Dental Member Network · Powered by Thriving Dentist
             </Typography>

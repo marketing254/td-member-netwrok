@@ -33,7 +33,7 @@ const sections: LegalSection[] = [
     number: "03",
     title: "Auto-Renewal",
     body:
-      "All memberships auto-renew unless cancelled before renewal. Founding member pricing ($49/month or $490/year) is locked for life while continuously active. If membership lapses, founding pricing is no longer available. A reminder is sent before annual renewals.",
+      "All memberships auto-renew unless cancelled before renewal. Founding member pricing ($49/month or $490/year) never increases while your membership remains continuously active. If your membership lapses, founding pricing is no longer available. A reminder is sent before annual renewals.",
   },
   {
     number: "04",
@@ -119,7 +119,7 @@ export default function MemberAgreementPage() {
         effectiveDate="On member registration"
         lastUpdated="Active draft"
         keyTerms={[
-          { label: "Founding rate", value: "$49/mo", sub: "Locked for life while active" },
+          { label: "Founding rate", value: "$49/mo", sub: "Never increases while active" },
           { label: "Guarantee", value: "30 days", sub: "Full money-back" },
           { label: "Helpline SLA", value: "3 days", sub: "Written follow-up plan" },
           { label: "Cancel", value: "Anytime", sub: "From your portal" },

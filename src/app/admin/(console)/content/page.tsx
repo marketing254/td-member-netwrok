@@ -1,57 +1,132 @@
 "use client";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  Alert,
   Box,
-  Button,
   Chip,
-  Grid,
-  IconButton,
+  CircularProgress,
+  InputAdornment,
+  Snackbar,
   Stack,
   Tab,
   Tabs,
-  Tooltip,
+  TextField,
   Typography,
 } from "@mui/material";
-import { useState } from "react";
-import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
-import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
-import AddCircleOutlineOutlinedIcon from "@mui/icons-material/AddCircleOutlineOutlined";
-import { courses } from "@/lib/memberData";
+import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
+import MedicalServicesOutlinedIcon from "@mui/icons-material/MedicalServicesOutlined";
+import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
+import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
+import type { SvgIconComponent } from "@mui/icons-material";
+import CatalogItemDetailDialog, { type AdminCatalogItem } from "@/components/admin/CatalogItemDetailDialog";
 
-type Tab = "courses" | "resources" | "newsletter" | "podcast";
+type FilterKey = "pending_review" | "approved" | "rejected" | "all";
 
-const TABS: { key: Tab; label: string }[] = [
-  { key: "courses", label: "Courses" },
-  { key: "resources", label: "Resource library" },
-  { key: "newsletter", label: "Newsletter" },
-  { key: "podcast", label: "Podcast" },
+const TABS: { key: FilterKey; label: string }[] = [
+  { key: "pending_review", label: "Pending" },
+  { key: "approved", label: "Approved" },
+  { key: "rejected", label: "Rejected" },
+  { key: "all", label: "All" },
 ];
 
 export default function AdminContentPage() {
-  const [tab, setTab] = useState<Tab>("courses");
+  const [filter, setFilter] = useState<FilterKey>("all");
+  const [q, setQ] = useState("");
+  const [rows, setRows] = useState<AdminCatalogItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const [openItem, setOpenItem] = useState<AdminCatalogItem | null>(null);
+  const [acting, setActing] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/admin/catalog?status=${filter}`, { cache: "no-store" });
+      const body = (await res.json()) as { rows?: AdminCatalogItem[]; error?: string };
+      if (!res.ok || body.error) {
+        setError(body.error ?? `Failed to load (${res.status})`);
+        setRows([]);
+        return;
+      }
+      setRows(body.rows ?? []);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load.");
+      setRows([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [filter]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const filtered = useMemo(() => {
+    if (!q.trim()) return rows;
+    const lc = q.toLowerCase();
+    return rows.filter(
+      (it) =>
+        it.name.toLowerCase().includes(lc) ||
+        it.category.toLowerCase().includes(lc) ||
+        (it.vendors?.company_name ?? "").toLowerCase().includes(lc) ||
+        (it.vendors?.contact_email ?? "").toLowerCase().includes(lc),
+    );
+  }, [rows, q]);
+
+  const counts = useMemo(() => {
+    return {
+      all: rows.length,
+      pending: rows.filter((r) => r.review_status === "pending_review").length,
+      approved: rows.filter((r) => r.review_status === "approved").length,
+      rejected: rows.filter((r) => r.review_status === "rejected").length,
+    };
+  }, [rows]);
+
+  const runAction = async (id: string, action: "approve" | "reject", note?: string) => {
+    setActing(true);
+    try {
+      const res = await fetch("/api/admin/catalog", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id, action, note: note ?? null }),
+      });
+      const body = (await res.json()) as { ok?: boolean; error?: string };
+      if (!res.ok || body.error) {
+        setToast(body.error ?? `Action failed (${res.status})`);
+        return;
+      }
+      setToast(action === "approve" ? "Catalog item approved & vendor notified." : "Catalog item rejected & vendor notified.");
+      setOpenItem(null);
+      await load();
+    } catch (err) {
+      setToast(err instanceof Error ? err.message : "Action failed.");
+    } finally {
+      setActing(false);
+    }
+  };
 
   return (
     <Stack spacing={4}>
-      <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ justifyContent: "space-between", alignItems: { sm: "flex-end" } }}>
-        <Box>
-          <Typography variant="overline" sx={{ color: "text.secondary", display: "block" }}>
-            CONTENT CMS
-          </Typography>
-          <Typography variant="h2" sx={{ mt: 0.5, mb: 1, fontSize: { xs: "1.85rem", md: "2.5rem" } }}>
-            Manage member content
-          </Typography>
-          <Typography sx={{ color: "text.secondary", maxWidth: 620 }}>
-            Lester is the primary author. Any admin can edit; publishing requires a different admin to approve (2-eyes rule).
-          </Typography>
-        </Box>
-        <Button variant="contained" color="primary" startIcon={<AddCircleOutlineOutlinedIcon />}>
-          New {tab === "courses" ? "course" : tab === "resources" ? "resource" : tab === "newsletter" ? "newsletter" : "episode"}
-        </Button>
-      </Stack>
+      <Box>
+        <Typography variant="overline" sx={{ color: "text.secondary", display: "block" }}>
+          CATALOG
+        </Typography>
+        <Typography variant="h2" sx={{ mt: 0.5, mb: 1, fontSize: { xs: "1.85rem", md: "2.5rem" } }}>
+          Vendor catalog — every item
+        </Typography>
+        <Typography sx={{ color: "text.secondary", maxWidth: 720 }}>
+          Read-only browser of every service, product, and course any vendor has submitted. Click a row to see the full listing exactly as the vendor sees it, then approve or reject pending submissions inline.
+        </Typography>
+      </Box>
+
+      {error && <Alert severity="error">{error}</Alert>}
 
       <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
         <Tabs
-          value={tab}
-          onChange={(_, v) => setTab(v)}
+          value={filter}
+          onChange={(_, v) => setFilter(v as FilterKey)}
           sx={{
             "& .MuiTab-root": { textTransform: "none", fontWeight: 600, fontSize: "0.95rem" },
             "& .Mui-selected": { color: "primary.main" },
@@ -59,92 +134,208 @@ export default function AdminContentPage() {
           }}
         >
           {TABS.map((t) => (
-            <Tab key={t.key} value={t.key} label={t.label} />
+            <Tab
+              key={t.key}
+              value={t.key}
+              label={
+                <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+                  <Box>{t.label}</Box>
+                  <Chip
+                    size="small"
+                    label={
+                      t.key === "all"
+                        ? counts.all
+                        : t.key === "pending_review"
+                          ? counts.pending
+                          : t.key === "approved"
+                            ? counts.approved
+                            : counts.rejected
+                    }
+                    sx={{
+                      height: 20,
+                      fontSize: "0.7rem",
+                      bgcolor: filter === t.key ? "rgba(217,168,75,0.18)" : "grey.100",
+                      color: filter === t.key ? "#A07823" : "text.secondary",
+                      fontWeight: 700,
+                    }}
+                  />
+                </Stack>
+              }
+            />
           ))}
         </Tabs>
       </Box>
 
-      {tab === "courses" && (
-        <Grid container spacing={2.5}>
-          {courses.map((c) => (
-            <Grid key={c.slug} size={{ xs: 12, md: 6, lg: 4 }}>
-              <Box
-                sx={{
-                  height: "100%",
-                  borderRadius: "20px",
-                  overflow: "hidden",
-                  border: "1px solid",
-                  borderColor: "divider",
-                  bgcolor: "common.white",
-                }}
-              >
-                <Box
-                  sx={{
-                    height: 92,
-                    backgroundImage: c.thumbAccent,
-                    position: "relative",
-                  }}
-                >
-                  <Stack direction="row" sx={{ p: 1.5, justifyContent: "space-between" }}>
-                    <Chip
-                      label={c.category}
-                      size="small"
-                      sx={{ bgcolor: "rgba(255,255,255,0.95)", color: "primary.dark", fontWeight: 700, fontSize: "0.65rem", height: 22 }}
-                    />
-                    <Chip
-                      label="PUBLISHED"
-                      size="small"
-                      sx={{ bgcolor: "rgba(34,108,78,0.18)", color: "#0F3525", fontWeight: 700, fontSize: "0.62rem", height: 22, letterSpacing: "0.08em" }}
-                    />
-                  </Stack>
-                </Box>
-                <Box sx={{ p: 2.5 }}>
-                  <Typography sx={{ fontSize: "1rem", fontWeight: 600, lineHeight: 1.3, mb: 1.25, minHeight: 50 }}>
-                    {c.title}
-                  </Typography>
-                  <Stack direction="row" spacing={2} sx={{ mb: 2, fontSize: "0.78rem", color: "text.secondary" }}>
-                    <Typography variant="body2" sx={{ fontSize: "0.78rem" }}>
-                      {c.lessons.length} lessons
-                    </Typography>
-                    <Typography variant="body2" sx={{ fontSize: "0.78rem" }}>
-                      {c.quiz.length} quiz Qs
-                    </Typography>
-                    <Typography variant="body2" sx={{ fontSize: "0.78rem" }}>
-                      {c.ceCredits} CE
-                    </Typography>
-                  </Stack>
-                  <Stack direction="row" spacing={1} sx={{ pt: 2, borderTop: "1px solid", borderColor: "divider" }}>
-                    <Typography variant="body2" sx={{ fontSize: "0.74rem", color: "text.secondary", flex: 1 }}>
-                      Created by {c.instructor}
-                    </Typography>
-                    <Tooltip title="Preview">
-                      <IconButton size="small" sx={{ color: "text.secondary" }}>
-                        <VisibilityOutlinedIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Edit">
-                      <IconButton size="small" sx={{ color: "text.secondary" }}>
-                        <EditOutlinedIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </Stack>
-                </Box>
-              </Box>
-            </Grid>
-          ))}
-        </Grid>
-      )}
+      <TextField
+        placeholder="Search by item name, category, vendor, or email…"
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        size="small"
+        slotProps={{
+          input: {
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchOutlinedIcon sx={{ color: "text.secondary", fontSize: 18 }} />
+              </InputAdornment>
+            ),
+          },
+        }}
+        sx={{ maxWidth: 520 }}
+      />
 
-      {(tab === "resources" || tab === "newsletter" || tab === "podcast") && (
+      {loading ? (
+        <Stack sx={{ py: 6, alignItems: "center" }}>
+          <CircularProgress size={24} sx={{ color: "#A07823" }} />
+        </Stack>
+      ) : filtered.length === 0 ? (
         <Box sx={{ p: 6, textAlign: "center", borderRadius: "20px", border: "1px dashed", borderColor: "divider", bgcolor: "common.white" }}>
           <Typography variant="h5" sx={{ fontSize: "1.15rem", mb: 1 }}>
-            {tab === "resources" ? "Resource library coming soon" : tab === "newsletter" ? "Newsletter manager coming soon" : "Podcast manager coming soon"}
+            {q ? `No items match "${q}".` : filter === "pending_review" ? "Queue is clear." : "Nothing here yet."}
           </Typography>
-          <Typography variant="body2" sx={{ color: "text.secondary", maxWidth: 480, mx: "auto" }}>
-            CMS for {tab === "resources" ? "templates, calculators, SOPs" : tab === "newsletter" ? "monthly member newsletter" : "member-only audio episodes"} ships in Phase 1.5. Lester provides content; any admin can edit and publish.
+          <Typography variant="body2" sx={{ color: "text.secondary" }}>
+            {q
+              ? "Try a different search term."
+              : filter === "pending_review"
+                ? "Vendors will submit new items here as they fill out their catalog."
+                : "Items in this state will show up here as they happen."}
           </Typography>
         </Box>
+      ) : (
+        <Stack spacing={1.5}>
+          {filtered.map((it) => {
+            const Icon: SvgIconComponent =
+              it.type === "service"
+                ? MedicalServicesOutlinedIcon
+                : it.type === "product"
+                  ? Inventory2OutlinedIcon
+                  : SchoolOutlinedIcon;
+            const heroImage = it.catalog_media.find((m) => m.kind === "image");
+            const pending = it.review_status === "pending_review";
+
+            return (
+              <Box
+                key={it.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => setOpenItem(it)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setOpenItem(it);
+                  }
+                }}
+                sx={{
+                  p: { xs: 1.75, md: 2 },
+                  borderRadius: "14px",
+                  border: "1px solid",
+                  borderColor: pending ? "rgba(217,168,75,0.4)" : "divider",
+                  bgcolor: pending ? "rgba(217,168,75,0.04)" : "common.white",
+                  cursor: "pointer",
+                  transition: "border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease",
+                  "&:hover": {
+                    borderColor: "#A07823",
+                    transform: "translateY(-1px)",
+                    boxShadow: "0 12px 24px -16px rgba(14,42,61,0.18)",
+                  },
+                  "&:focus-visible": { outline: "2px solid #A07823", outlineOffset: 2 },
+                }}
+              >
+                <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
+                  {heroImage ? (
+                    <Box
+                      sx={{
+                        width: { xs: 56, md: 72 },
+                        height: { xs: 56, md: 72 },
+                        borderRadius: 1.25,
+                        overflow: "hidden",
+                        flexShrink: 0,
+                        bgcolor: "rgba(14,42,61,0.04)",
+                      }}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={heroImage.url} alt={it.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    </Box>
+                  ) : (
+                    <Box
+                      sx={{
+                        width: { xs: 56, md: 72 },
+                        height: { xs: 56, md: 72 },
+                        borderRadius: 1.25,
+                        bgcolor: "rgba(217,168,75,0.12)",
+                        color: "#A07823",
+                        display: "grid",
+                        placeItems: "center",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Icon sx={{ fontSize: 26 }} />
+                    </Box>
+                  )}
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", flexWrap: "wrap", gap: 0.5, mb: 0.25 }}>
+                      <Box sx={{ color: "#A07823", display: "inline-flex" }}>
+                        <Icon sx={{ fontSize: 13 }} />
+                      </Box>
+                      <Typography sx={{ fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#7A8590" }}>
+                        {it.type} · {it.category}
+                      </Typography>
+                      <ReviewStatusChip status={it.review_status} />
+                    </Stack>
+                    <Typography sx={{ fontSize: "0.96rem", fontWeight: 600, lineHeight: 1.25 }} noWrap>
+                      {it.name}
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontSize: "0.78rem", color: "text.secondary", mt: 0.25 }} noWrap>
+                      {it.vendors?.company_name ?? "—"} · {it.price_label}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: { xs: "none", sm: "block" }, flexShrink: 0, textAlign: "right" }}>
+                    <Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>
+                      {(it.submitted_for_review_at ?? it.created_at).slice(0, 10)}
+                    </Typography>
+                    <Typography sx={{ fontSize: "0.7rem", color: "text.secondary", mt: 0.25 }}>
+                      {it.offer_count} offer{it.offer_count === 1 ? "" : "s"} · {it.catalog_media.length} media
+                    </Typography>
+                  </Box>
+                </Stack>
+              </Box>
+            );
+          })}
+        </Stack>
       )}
+
+      <CatalogItemDetailDialog
+        item={openItem}
+        open={!!openItem}
+        onClose={() => setOpenItem(null)}
+        onAction={runAction}
+        busy={acting}
+      />
+
+      <Snackbar
+        open={!!toast}
+        autoHideDuration={4000}
+        onClose={() => setToast(null)}
+        message={toast ?? ""}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      />
     </Stack>
+  );
+}
+
+function ReviewStatusChip({ status }: { status: string }) {
+  const map: Record<string, { bg: string; color: string; label: string }> = {
+    pending_review: { bg: "rgba(217,168,75,0.16)", color: "#A07823", label: "PENDING" },
+    approved: { bg: "rgba(34,108,78,0.12)", color: "#1F5C40", label: "APPROVED" },
+    rejected: { bg: "rgba(220,60,60,0.12)", color: "#8C1D1D", label: "REJECTED" },
+    draft: { bg: "rgba(14,42,61,0.07)", color: "primary.dark", label: "DRAFT" },
+    needs_changes: { bg: "rgba(217,168,75,0.16)", color: "#A07823", label: "NEEDS CHANGES" },
+  };
+  const s = map[status] ?? map.pending_review;
+  return (
+    <Chip
+      label={s.label}
+      size="small"
+      sx={{ bgcolor: s.bg, color: s.color, fontWeight: 700, fontSize: "0.58rem", letterSpacing: "0.1em", height: 18 }}
+    />
   );
 }

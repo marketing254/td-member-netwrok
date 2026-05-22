@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -20,18 +20,24 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
+import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import MedicalServicesOutlinedIcon from "@mui/icons-material/MedicalServicesOutlined";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
-import {
-  REDEMPTION_LIMIT_OPTIONS,
-  catalogItems,
-  getCatalogItem,
-  type CatalogItem,
-} from "@/lib/catalogData";
+import { REDEMPTION_LIMIT_OPTIONS } from "@/lib/catalogData";
 import { PageHeader } from "@/components/vendor/PortalUI";
+import { createBrowserSupabase } from "@/lib/supabase/browser";
+import {
+  createOffer,
+  fetchCurrentVendor,
+  fetchVendorCatalog,
+  type CatalogItemWithMedia,
+} from "@/lib/supabase/vendorQueries";
+import type { CatalogItemsRow, VendorsRow } from "@/lib/supabase/types";
 
-function TypeIcon({ type, size = 18 }: { type: CatalogItem["type"]; size?: number }) {
+type CatalogType = CatalogItemsRow["type"];
+
+function TypeIcon({ type, size = 18 }: { type: CatalogType; size?: number }) {
   const Icon =
     type === "service"
       ? MedicalServicesOutlinedIcon
@@ -76,11 +82,11 @@ function OfferNewInner() {
   const router = useRouter();
   const preselect = params.get("catalog") ?? "";
 
-  const [form, setForm] = useState<FormState>(() => ({
-    ...empty,
-    catalogItemId:
-      preselect && catalogItems.some((c) => c.id === preselect) ? preselect : "",
-  }));
+  const [catalogItems, setCatalogItems] = useState<CatalogItemWithMedia[]>([]);
+  const [vendor, setVendor] = useState<VendorsRow | null>(null);
+  const [loadingCatalog, setLoadingCatalog] = useState(true);
+
+  const [form, setForm] = useState<FormState>(() => ({ ...empty }));
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -88,12 +94,40 @@ function OfferNewInner() {
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
     setForm((prev) => ({ ...prev, [k]: v }));
 
+  useEffect(() => {
+    let active = true;
+    const supabase = createBrowserSupabase();
+    (async () => {
+      const v = await fetchCurrentVendor(supabase);
+      if (!active) return;
+      if (!v) {
+        setLoadingCatalog(false);
+        return;
+      }
+      setVendor(v);
+      const data = await fetchVendorCatalog(supabase, v.id);
+      if (!active) return;
+      setCatalogItems(data);
+      // Preselect if URL has one and it's a valid item.
+      if (preselect && data.some((c) => c.id === preselect)) {
+        setForm((prev) => ({ ...prev, catalogItemId: preselect }));
+      }
+      setLoadingCatalog(false);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [preselect]);
+
   const item = useMemo(
-    () => (form.catalogItemId ? getCatalogItem(form.catalogItemId) : undefined),
-    [form.catalogItemId],
+    () => (form.catalogItemId ? catalogItems.find((c) => c.id === form.catalogItemId) : undefined),
+    [form.catalogItemId, catalogItems],
   );
 
+  const canPublish = Boolean(vendor && vendor.status === "approved" && vendor.verified);
+
   const canSubmit =
+    canPublish &&
     Boolean(form.catalogItemId) &&
     form.headline.trim().length >= 5 &&
     form.discountValue.trim().length > 0 &&
@@ -104,21 +138,43 @@ function OfferNewInner() {
     (form.redemptionLimit !== "custom" || form.customLimit.trim().length > 0);
 
   const submit = async () => {
-    if (!canSubmit) return;
+    if (!canSubmit || !vendor) return;
     setSubmitting(true);
     setSubmitError(null);
     try {
-      // Preview mode persistence. Replace with a real POST once the offers
-      // table is in place.
-      await new Promise((r) => setTimeout(r, 500));
+      const supabase = createBrowserSupabase();
+      const limit =
+        form.redemptionLimit === "custom" ? form.customLimit.trim() : form.redemptionLimit;
+
+      const result = await createOffer(supabase, {
+        vendor_id: vendor.id,
+        catalog_item_id: form.catalogItemId,
+        headline: form.headline.trim(),
+        discount_value: form.discountValue.trim(),
+        promo_code: form.promoCode.trim() || null,
+        description: form.description.trim(),
+        terms: form.terms.trim(),
+        valid_from: form.validFrom,
+        valid_to: form.validTo,
+        redemption_limit_per_member: limit,
+      });
+
+      if (!result.ok) {
+        setSubmitError(result.error);
+        setSubmitting(false);
+        return;
+      }
+
       setSubmitted(true);
-      setTimeout(() => router.push("/vendor/offers"), 900);
-    } catch {
+      setTimeout(() => router.push("/vendor/offers"), 800);
+    } catch (err) {
+      console.error("[offers/new] submit failed:", err);
       setSubmitError("Could not save the offer. Please try again.");
-    } finally {
       setSubmitting(false);
     }
   };
+
+  void loadingCatalog;
 
   return (
     <Stack spacing={2.5}>
@@ -145,6 +201,28 @@ function OfferNewInner() {
           subtitle="An offer is a discount or bonus attached to one of your catalog items. Pick the item, fill in the details, and submit for team review."
         />
       </Box>
+
+      {!canPublish && (
+        <Alert
+          severity="warning"
+          icon={<LockOutlinedIcon />}
+          sx={{
+            borderRadius: "14px",
+            border: "1px solid rgba(217,168,75,0.4)",
+            bgcolor: "rgba(217,168,75,0.06)",
+            "& .MuiAlert-icon": { color: "#A07823" },
+          }}
+        >
+          <Typography sx={{ fontWeight: 700, fontSize: "0.95rem", mb: 0.5, color: "#7A5B17" }}>
+            Verification required
+          </Typography>
+          <Typography sx={{ fontSize: "0.86rem", color: "#7A5B17", lineHeight: 1.55 }}>
+            Your partner account is still being reviewed by our team. Once approved and verified
+            you can publish offers. We&apos;ll email you the moment that happens — usually within
+            one business day.
+          </Typography>
+        </Alert>
+      )}
 
       {submitted ? (
         <Alert severity="success" sx={{ borderRadius: "14px" }}>
@@ -231,7 +309,7 @@ function OfferNewInner() {
                           />
                         </Stack>
                         <Typography variant="body2" sx={{ color: "text.secondary", fontSize: "0.82rem" }}>
-                          {c.category} · {c.priceLabel}
+                          {c.category} · {c.price_label}
                         </Typography>
                       </Box>
                     </Box>
@@ -399,9 +477,21 @@ function OfferNewInner() {
                 size="large"
                 onClick={submit}
                 disabled={!canSubmit || submitting}
-                endIcon={submitting ? <CircularProgress size={16} sx={{ color: "inherit" }} /> : <ArrowForwardIcon />}
+                endIcon={
+                  !canPublish ? (
+                    <LockOutlinedIcon />
+                  ) : submitting ? (
+                    <CircularProgress size={16} sx={{ color: "inherit" }} />
+                  ) : (
+                    <ArrowForwardIcon />
+                  )
+                }
               >
-                {submitting ? "Submitting…" : "Submit for team review"}
+                {!canPublish
+                  ? "Verification required"
+                  : submitting
+                    ? "Submitting…"
+                    : "Submit for team review"}
               </Button>
             </Stack>
           )}

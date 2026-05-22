@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Box,
   Button,
+  CircularProgress,
   IconButton,
   InputAdornment,
   Stack,
@@ -22,13 +23,15 @@ import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
+import { createBrowserSupabase } from "@/lib/supabase/browser";
 import {
-  catalogItems,
-  getOffersForItem,
-  type CatalogItem,
-  type Offer,
-  type ReviewStatus,
-} from "@/lib/catalogData";
+  fetchCurrentVendor,
+  fetchVendorCatalog,
+  fetchVendorOffers,
+  type CatalogItemWithMedia,
+  type OfferWithCatalog,
+} from "@/lib/supabase/vendorQueries";
+import type { CatalogItemsRow, ReviewStatus } from "@/lib/supabase/types";
 import {
   EmptyState,
   PageHeader,
@@ -38,7 +41,9 @@ import {
   portalText,
 } from "@/components/vendor/PortalUI";
 
-function TypeIcon({ type, size = 16 }: { type: CatalogItem["type"]; size?: number }) {
+type CatalogType = CatalogItemsRow["type"];
+
+function TypeIcon({ type, size = 16 }: { type: CatalogType; size?: number }) {
   const Icon =
     type === "service"
       ? MedicalServicesOutlinedIcon
@@ -58,46 +63,71 @@ const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
 ];
 
 export default function VendorOffersPage() {
+  const [loading, setLoading] = useState(true);
+  const [hasCatalog, setHasCatalog] = useState(false);
+  const [offers, setOffers] = useState<OfferWithCatalog[]>([]);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [q, setQ] = useState("");
 
-  const allOffersWithItem = useMemo(() => {
-    const list: { offer: Offer; item: CatalogItem }[] = [];
-    for (const item of catalogItems) {
-      for (const offer of getOffersForItem(item.id)) {
-        list.push({ offer, item });
+  useEffect(() => {
+    let active = true;
+    const supabase = createBrowserSupabase();
+    (async () => {
+      const v = await fetchCurrentVendor(supabase);
+      if (!active) return;
+      if (!v) {
+        setLoading(false);
+        return;
       }
-    }
-    return list;
+
+      const [catalogData, offerData] = await Promise.all([
+        fetchVendorCatalog(supabase, v.id),
+        fetchVendorOffers(supabase, v.id),
+      ]);
+      if (!active) return;
+      setHasCatalog((catalogData as CatalogItemWithMedia[]).length > 0);
+      setOffers(offerData);
+      setLoading(false);
+    })();
+    return () => {
+      active = false;
+    };
   }, []);
 
   const counts = useMemo(() => {
     const acc: Record<StatusFilter, number> = {
-      all: allOffersWithItem.length,
+      all: offers.length,
       approved: 0,
       pending_review: 0,
       draft: 0,
       rejected: 0,
       needs_changes: 0,
     };
-    for (const { offer } of allOffersWithItem) acc[offer.reviewStatus] += 1;
+    for (const o of offers) acc[o.review_status] += 1;
     return acc;
-  }, [allOffersWithItem]);
+  }, [offers]);
 
   const filtered = useMemo(() => {
     const ql = q.trim().toLowerCase();
-    return allOffersWithItem.filter(({ offer, item }) => {
-      if (statusFilter !== "all" && offer.reviewStatus !== statusFilter) return false;
+    return offers.filter((o) => {
+      if (statusFilter !== "all" && o.review_status !== statusFilter) return false;
       if (!ql) return true;
       return (
-        offer.headline.toLowerCase().includes(ql) ||
-        offer.promoCode.toLowerCase().includes(ql) ||
-        item.name.toLowerCase().includes(ql)
+        o.headline.toLowerCase().includes(ql) ||
+        (o.promo_code ?? "").toLowerCase().includes(ql) ||
+        (o.catalog_items?.name ?? "").toLowerCase().includes(ql)
       );
     });
-  }, [allOffersWithItem, statusFilter, q]);
+  }, [offers, statusFilter, q]);
 
-  const hasAnyItem = catalogItems.length > 0;
+  if (loading) {
+    return (
+      <Stack sx={{ alignItems: "center", py: 8, gap: 2 }}>
+        <CircularProgress size={28} sx={{ color: "#A07823" }} />
+        <Typography sx={{ color: "#5C6770", fontSize: "0.88rem" }}>Loading offers…</Typography>
+      </Stack>
+    );
+  }
 
   return (
     <Stack spacing={2.5}>
@@ -111,7 +141,7 @@ export default function VendorOffersPage() {
             href="/vendor/offers/new"
             variant="contained"
             size="small"
-            disabled={!hasAnyItem}
+            disabled={!hasCatalog}
             startIcon={<AddCircleOutlineOutlinedIcon sx={{ fontSize: 16 }} />}
             sx={{
               bgcolor: "#0A1A2F",
@@ -126,7 +156,7 @@ export default function VendorOffersPage() {
         }
       />
 
-      {!hasAnyItem ? (
+      {!hasCatalog ? (
         <EmptyState
           icon={Inventory2OutlinedIcon}
           title="Add a catalog item first"
@@ -177,7 +207,7 @@ export default function VendorOffersPage() {
                     color: "#5C6770",
                     "&.Mui-selected": { color: "#0A1A2F" },
                   },
-                  "& .MuiTabs-indicator": { backgroundColor: "#A07823", height: 2, borderRadius: "2px 2px 0 0" },
+                  "& .MuiTabs-indicator": { backgroundColor: "#A07823", height: 2 },
                 }}
               >
                 {STATUS_FILTERS.map((t) => (
@@ -237,7 +267,6 @@ export default function VendorOffersPage() {
             />
           ) : (
             <SectionCard padding="none">
-              {/* Table header */}
               <Box
                 sx={{
                   display: { xs: "none", md: "grid" },
@@ -262,8 +291,8 @@ export default function VendorOffersPage() {
                 <Box />
               </Box>
               <Stack divider={<Box sx={{ borderTop: "1px solid rgba(14,42,61,0.06)" }} />}>
-                {filtered.map(({ offer, item }) => (
-                  <OfferRow key={offer.id} offer={offer} item={item} />
+                {filtered.map((o) => (
+                  <OfferRow key={o.id} offer={o} />
                 ))}
               </Stack>
             </SectionCard>
@@ -278,7 +307,8 @@ export default function VendorOffersPage() {
   );
 }
 
-function OfferRow({ offer, item }: { offer: Offer; item: CatalogItem }) {
+function OfferRow({ offer }: { offer: OfferWithCatalog }) {
+  const item = offer.catalog_items;
   return (
     <Box
       sx={{
@@ -291,53 +321,50 @@ function OfferRow({ offer, item }: { offer: Offer; item: CatalogItem }) {
         "&:hover": { bgcolor: "rgba(14,42,61,0.02)" },
       }}
     >
-      {/* Offer + attached item */}
       <Box sx={{ minWidth: 0 }}>
-        <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", flexWrap: "wrap", gap: 0.5, mb: 0.25 }}>
-          <Typography sx={{ fontSize: "0.88rem", fontWeight: 600, color: "#0A1A2F" }} noWrap>
-            {offer.headline}
-          </Typography>
-        </Stack>
+        <Typography sx={{ fontSize: "0.88rem", fontWeight: 600, color: "#0A1A2F" }} noWrap>
+          {offer.headline}
+        </Typography>
         <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", flexWrap: "wrap", gap: 0.5 }}>
-          <Box sx={{ color: "#7A8590", display: "inline-flex" }}>
-            <TypeIcon type={item.type} size={13} />
-          </Box>
-          <Typography sx={{ fontSize: "0.74rem", color: "#5C6770" }} noWrap>
-            {item.name}
-          </Typography>
+          {item && (
+            <>
+              <Box sx={{ color: "#7A8590", display: "inline-flex" }}>
+                <TypeIcon type={item.type} size={13} />
+              </Box>
+              <Typography sx={{ fontSize: "0.74rem", color: "#5C6770" }} noWrap>
+                {item.name}
+              </Typography>
+            </>
+          )}
           <Typography sx={{ fontSize: "0.7rem", color: "#9CA3AB" }}>·</Typography>
-          <TagPill label={`limit ${offer.redemptionLimitPerMember}`} tone="neutral" size="sm" />
+          <TagPill label={`limit ${offer.redemption_limit_per_member}`} tone="neutral" size="sm" />
         </Stack>
-        {offer.reviewNote && (
+        {offer.review_note && (
           <Typography sx={{ fontSize: "0.72rem", color: "#7A5B17", fontStyle: "italic", mt: 0.5 }}>
-            Team note: {offer.reviewNote}
+            Team note: {offer.review_note}
           </Typography>
         )}
       </Box>
 
-      {/* Discount */}
       <Box sx={{ display: { xs: "none", md: "block" } }}>
         <Typography sx={{ fontSize: "0.82rem", fontWeight: 700, color: "#1F5C40" }} noWrap>
-          {offer.discountValue}
+          {offer.discount_value}
         </Typography>
       </Box>
 
-      {/* Status */}
       <Box sx={{ display: { xs: "none", md: "block" } }}>
-        <StatusPill status={offer.reviewStatus} size="sm" />
+        <StatusPill status={offer.review_status} size="sm" />
       </Box>
 
-      {/* Validity */}
       <Box sx={{ display: { xs: "none", md: "block" } }}>
         <Typography sx={{ fontSize: "0.78rem", color: "#0A1A2F" }} noWrap>
-          {offer.validFrom}
+          {offer.valid_from}
         </Typography>
         <Typography sx={{ fontSize: "0.72rem", color: "#7A8590" }} noWrap>
-          to {offer.validTo}
+          to {offer.valid_to}
         </Typography>
       </Box>
 
-      {/* Promo code */}
       <Box sx={{ display: { xs: "none", md: "block" } }}>
         <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
           <Box
@@ -353,9 +380,9 @@ function OfferRow({ offer, item }: { offer: Offer; item: CatalogItem }) {
               border: "1px dashed rgba(217,168,75,0.3)",
             }}
           >
-            {offer.promoCode || "—"}
+            {offer.promo_code || "—"}
           </Box>
-          {offer.promoCode && (
+          {offer.promo_code && (
             <Tooltip title="Copy code">
               <IconButton size="small" sx={{ color: "#7A8590" }}>
                 <ContentCopyOutlinedIcon sx={{ fontSize: 13 }} />
@@ -365,7 +392,6 @@ function OfferRow({ offer, item }: { offer: Offer; item: CatalogItem }) {
         </Stack>
       </Box>
 
-      {/* Actions */}
       <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
         <Tooltip title="Edit offer">
           <IconButton size="small" sx={{ color: "#5C6770" }}>
@@ -374,7 +400,6 @@ function OfferRow({ offer, item }: { offer: Offer; item: CatalogItem }) {
         </Tooltip>
       </Box>
 
-      {/* Mobile-only meta strip */}
       <Stack
         direction="row"
         spacing={1.5}
@@ -386,12 +411,12 @@ function OfferRow({ offer, item }: { offer: Offer; item: CatalogItem }) {
           gridColumn: "1 / -1",
         }}
       >
-        <StatusPill status={offer.reviewStatus} size="sm" />
+        <StatusPill status={offer.review_status} size="sm" />
         <Typography sx={{ fontSize: "0.74rem", fontWeight: 700, color: "#1F5C40" }}>
-          {offer.discountValue}
+          {offer.discount_value}
         </Typography>
         <Typography sx={{ fontSize: "0.74rem", color: "#5C6770" }}>
-          {offer.validFrom} → {offer.validTo}
+          {offer.valid_from} → {offer.valid_to}
         </Typography>
       </Stack>
     </Box>

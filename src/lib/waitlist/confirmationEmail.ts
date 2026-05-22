@@ -46,13 +46,18 @@ type SendResult =
   | { sent: true; id?: string }
   | { sent: false; reason: "disabled" | "missing_api_key" };
 
+// The website lives at dentalmembernetwork.com — that's where members
+// land, where the portal runs, where links in emails point back to.
+// All outbound mail is sent FROM joindmn.com (and replies route to
+// hello@joindmn.com) to keep dentalmembernetwork.com's inbox reputation
+// pristine. The two domains play different roles on purpose.
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://dentalmembernetwork.com";
-const SUPPORT_EMAIL = process.env.WAITLIST_SUPPORT_EMAIL ?? "hello@dentalmembernetwork.com";
+const SUPPORT_EMAIL = process.env.WAITLIST_SUPPORT_EMAIL ?? "hello@joindmn.com";
 const PARTNERSHIPS_EMAIL =
-  process.env.WAITLIST_PARTNERSHIPS_EMAIL ?? "partnerships@dentalmembernetwork.com";
+  process.env.WAITLIST_PARTNERSHIPS_EMAIL ?? "partnerships@joindmn.com";
 const FROM_EMAIL =
   process.env.WAITLIST_EMAIL_FROM ??
-  "Dental Member Network <hello@dentalmembernetwork.com>";
+  "Dental Member Network <hello@joindmn.com>";
 
 // Brand palette, used inline in the email HTML
 const BRAND = {
@@ -121,17 +126,17 @@ function memberDraft(input: ConfirmationInput): EmailDraft {
   const submitted = formatDate(input.submittedAt);
   return {
     role: "member",
-    subject: "Welcome to the Dental Member Network, your lifetime spot is locked in",
+    subject: "Welcome to the Dental Member Network — your founding spot is locked in",
     preview:
-      "Your founding membership is confirmed. $49/month locked in, for life. Here's what happens next.",
+      "Your founding membership is confirmed. $49/month at the founding rate. Here's what happens next.",
     eyebrow: "Founding Member",
-    headline: "Your lifetime spot is locked in.",
+    headline: "Your founding spot is locked in.",
     accent: BRAND.gold,
     accentLight: BRAND.goldLight,
     replyTo: SUPPORT_EMAIL,
     intro: [
       `Hi ${firstName(input.signup.fullName)},`,
-      "Welcome to the Dental Member Network. Your founding membership is confirmed and your $49/month lifetime price is locked in, for life. No surprise increases, ever.",
+      "Welcome to the Dental Member Network. Your founding membership is confirmed and your $49/month founding rate is locked in — it never increases for as long as your membership stays active.",
     ],
     sections: [
       {
@@ -144,7 +149,7 @@ function memberDraft(input: ConfirmationInput): EmailDraft {
       {
         title: "A few things to know",
         items: [
-          "Your founding member status is permanent. As we add features over time, you keep access at the same $49/month lifetime price.",
+          "Your founding member status is permanent. As we add features over time, you keep access at the same $49/month founding rate for as long as your membership stays active.",
           'Member discounts on vendor products and services are clearly marked in the Vendor Directory, just look for the "Member Benefit" panel on each vendor\'s card.',
           "If you registered with a practice email, feel free to invite your office manager or team members to set up their own accounts. The first 1,000 founding spots are still open.",
         ],
@@ -560,6 +565,130 @@ function buildVendorMagicEmail({ link }: VendorMagicInput): { subject: string; h
 </body></html>`;
   const text = `Your Dental Member Network partner sign-in link.\n\nOpen this URL to access the portal (expires in 30 minutes):\n${link}\n\nIf you didn't request this, ignore the email.`;
   return { subject, html, text, replyTo: PARTNERSHIPS_EMAIL };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// VENDOR APPROVAL NOTIFICATION
+// Sent by /api/admin/vendors/[id]/approve when the team marks a vendor
+// approved+verified. Reuses the same transport stack.
+// ─────────────────────────────────────────────────────────────────────────
+
+type VendorApprovalInput = {
+  email: string;
+  contactName: string;
+  companyName: string;
+  portalUrl: string;
+};
+
+function buildVendorApprovalEmail({
+  contactName,
+  companyName,
+  portalUrl,
+}: VendorApprovalInput): { subject: string; html: string; text: string; replyTo: string } {
+  const subject = `You're verified — ${companyName} is live on the network`;
+  const safePortal = escapeHtml(portalUrl);
+  const safeName = escapeHtml(contactName);
+  const safeCompany = escapeHtml(companyName);
+  const html = `<!doctype html>
+<html><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>${escapeHtml(subject)}</title></head>
+<body style="margin:0;padding:0;background:${BRAND.creamSoft};font-family:${FONT_BODY};color:${BRAND.ink};">
+<div style="max-width:580px;margin:0 auto;padding:44px 24px;">
+  <div style="font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:#1F5C40;font-weight:700;margin-bottom:18px;">PARTNER VERIFIED</div>
+  <h1 style="font-family:${FONT_DISPLAY};font-size:30px;line-height:1.18;font-weight:500;color:${BRAND.ink};margin:0 0 18px;letter-spacing:-.02em;">You're in, ${safeName}.</h1>
+  <p style="font-size:16px;line-height:1.7;color:${BRAND.inkSoft};margin:0 0 14px;">
+    Our team reviewed <strong>${safeCompany}</strong> and we're delighted to confirm your partner account is now approved and verified.
+  </p>
+  <p style="font-size:16px;line-height:1.7;color:${BRAND.inkSoft};margin:0 0 28px;">
+    Your verified badge is live, and you can now publish services, products, courses, and member offers in the directory. Submissions still go through team review, but the publish gate is open.
+  </p>
+  <a href="${safePortal}" style="display:inline-block;background:${BRAND.ink};color:#FFFFFF;text-decoration:none;padding:14px 28px;border-radius:999px;font-weight:600;font-size:15px;">Open your portal →</a>
+  <hr style="border:0;border-top:1px solid ${BRAND.line};margin:36px 0 24px;" />
+  <h2 style="font-family:${FONT_BODY};font-size:14px;font-weight:700;color:${BRAND.ink};letter-spacing:.005em;margin:0 0 10px;">What's next</h2>
+  <ul style="font-size:14.5px;line-height:1.75;color:${BRAND.inkSoft};margin:0;padding-left:20px;">
+    <li>Add your first catalog items — services, products, or courses.</li>
+    <li>Attach member offers (discounts, bonuses) to each item.</li>
+    <li>Upload your logo, spec sheets, and any supporting documents.</li>
+    <li>The first 6 months are on us — you'll add a payment method ahead of month 7.</li>
+  </ul>
+  <p style="font-size:13px;line-height:1.65;color:${BRAND.inkMute};margin:32px 0 0;">
+    Questions? Reply to this email and our partnerships team will get back to you.
+  </p>
+</div>
+</body></html>`;
+  const text = `You're in, ${contactName}.
+
+Our team reviewed ${companyName} and your partner account is now approved and verified.
+
+You can now publish services, products, courses, and member offers in the directory.
+
+Open your portal: ${portalUrl}
+
+What's next:
+- Add your first catalog items (services, products, courses)
+- Attach member offers to each item
+- Upload your logo and supporting documents
+- The first 6 months are on us — you'll add a payment method ahead of month 7
+
+Questions? Reply to this email.`;
+  return { subject, html, text, replyTo: PARTNERSHIPS_EMAIL };
+}
+
+export async function sendVendorApprovalEmail(input: VendorApprovalInput): Promise<SendResult> {
+  if (process.env.WAITLIST_EMAIL_DISABLED === "true") {
+    return { sent: false, reason: "disabled" };
+  }
+
+  const email = buildVendorApprovalEmail(input);
+  const gmailUser = process.env.GMAIL_USER;
+  const gmailPass = process.env.GMAIL_APP_PASSWORD;
+  const resendKey = process.env.RESEND_API_KEY;
+
+  if (gmailUser && gmailPass) {
+    const nodemailer = (await import("nodemailer")).default;
+    const fromHeader = process.env.WAITLIST_EMAIL_FROM ?? `Dental Member Network <${gmailUser}>`;
+    const transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false,
+      auth: { user: gmailUser, pass: gmailPass },
+    });
+    const info = await transporter.sendMail({
+      from: fromHeader,
+      to: input.email,
+      replyTo: email.replyTo,
+      subject: email.subject,
+      html: email.html,
+      text: email.text,
+    });
+    console.info("[vendor:approval:email] sent via Gmail SMTP", { to: input.email, messageId: info.messageId });
+    return { sent: true, id: info.messageId };
+  }
+
+  if (resendKey) {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: FROM_EMAIL,
+        to: [input.email],
+        reply_to: email.replyTo,
+        subject: email.subject,
+        html: email.html,
+        text: email.text,
+      }),
+    });
+    if (!res.ok) {
+      const details = await res.text().catch(() => "");
+      throw new Error(`Resend approval email failed with ${res.status}: ${details.slice(0, 300)}`);
+    }
+    const data = (await res.json().catch(() => null)) as { id?: string } | null;
+    console.info("[vendor:approval:email] sent via Resend", { to: input.email, messageId: data?.id });
+    return { sent: true, id: data?.id };
+  }
+
+  console.info("[vendor:approval:email] no sender configured; preview only", { to: input.email });
+  return { sent: false, reason: "missing_api_key" };
 }
 
 export async function sendVendorMagicLinkEmail(input: VendorMagicInput): Promise<SendResult> {

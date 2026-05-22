@@ -1,7 +1,7 @@
 "use client";
 import { Suspense, useMemo, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Alert,
   Box,
@@ -97,6 +97,7 @@ export default function VendorSignupPage() {
 }
 
 function VendorSignupInner() {
+  const router = useRouter();
   const params = useSearchParams();
   const initialPlan = (params.get("plan") as VendorPlanId) || "founding";
   const [step, setStep] = useState(0);
@@ -151,7 +152,12 @@ function VendorSignupInner() {
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
+        // Hand off to the dedicated vendor thank-you page (which links to
+        // /vendor/login). Set submitted state too so if the redirect is
+        // slow the user sees acknowledgement.
         setSubmitted(true);
+        router.push("/vendor/applied");
+        return;
       } else if (res.status === 409) {
         setSubmitError(
           "An invitation has already been sent to this email. Check your inbox or use a different email.",
@@ -197,7 +203,7 @@ function VendorSignupInner() {
             Become a Featured Partner
           </Typography>
           <Typography variant="body1" sx={{ color: "text.secondary", maxWidth: 560, mx: "auto" }}>
-            Five quick steps · about 6 minutes · review by Reshani within 1 business day
+            Five quick steps · about 6 minutes · reviewed by our team within 1 business day
           </Typography>
         </Stack>
 
@@ -499,7 +505,7 @@ function OfferStep({ form, set }: { form: Form; set: <K extends keyof Form>(k: K
         icon={<VerifiedUserOutlinedIcon />}
         sx={{ borderRadius: "12px" }}
       >
-        Your offer goes through a quick review by Reshani before it appears in the member rewards page, usually within 24 hours.
+        Your offer goes through a quick review by our team before it appears in the member rewards page, usually within 24 hours.
       </Alert>
     </Stack>
   );
@@ -883,7 +889,7 @@ function ReviewStep({ form }: { form: Form }) {
           Review your application
         </Typography>
         <Typography variant="body2" sx={{ color: "text.secondary" }}>
-          Make sure everything looks right. After submission, Reshani reviews within 1 business day.
+          Make sure everything looks right. After submission, our team reviews within 1 business day.
         </Typography>
       </Box>
 

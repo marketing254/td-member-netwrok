@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Box,
   Button,
+  CircularProgress,
   IconButton,
   InputAdornment,
   Stack,
@@ -21,11 +22,13 @@ import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
+import { createBrowserSupabase } from "@/lib/supabase/browser";
 import {
-  catalogItems,
-  type CatalogItem,
-  type CatalogItemType,
-} from "@/lib/catalogData";
+  fetchCurrentVendor,
+  fetchVendorCatalog,
+  type CatalogItemWithMedia,
+} from "@/lib/supabase/vendorQueries";
+import type { CatalogItemsRow } from "@/lib/supabase/types";
 import {
   EmptyState,
   PageHeader,
@@ -34,14 +37,16 @@ import {
   TagPill,
 } from "@/components/vendor/PortalUI";
 
-const TYPE_FILTERS: { key: "all" | CatalogItemType; label: string }[] = [
+type CatalogType = CatalogItemsRow["type"];
+
+const TYPE_FILTERS: { key: "all" | CatalogType; label: string }[] = [
   { key: "all", label: "All" },
   { key: "service", label: "Services" },
   { key: "product", label: "Products" },
   { key: "course", label: "Courses" },
 ];
 
-function TypeIcon({ type, size = 16 }: { type: CatalogItemType; size?: number }) {
+function TypeIcon({ type, size = 16 }: { type: CatalogType; size?: number }) {
   const Icon =
     type === "service"
       ? MedicalServicesOutlinedIcon
@@ -52,35 +57,65 @@ function TypeIcon({ type, size = 16 }: { type: CatalogItemType; size?: number })
 }
 
 export default function VendorCatalogPage() {
-  const [filter, setFilter] = useState<"all" | CatalogItemType>("all");
+  const [loading, setLoading] = useState(true);
+  const [items, setItems] = useState<CatalogItemWithMedia[]>([]);
+  const [filter, setFilter] = useState<"all" | CatalogType>("all");
   const [q, setQ] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    const supabase = createBrowserSupabase();
+    (async () => {
+      const v = await fetchCurrentVendor(supabase);
+      if (!active) return;
+      if (!v) {
+        setLoading(false);
+        return;
+      }
+      const data = await fetchVendorCatalog(supabase, v.id);
+      if (!active) return;
+      setItems(data);
+      setLoading(false);
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const rows = useMemo(() => {
     const ql = q.trim().toLowerCase();
-    return catalogItems.filter((c) => {
+    return items.filter((c) => {
       if (filter !== "all" && c.type !== filter) return false;
       if (!ql) return true;
       return (
         c.name.toLowerCase().includes(ql) ||
         c.category.toLowerCase().includes(ql) ||
-        c.tagline.toLowerCase().includes(ql) ||
-        c.tags.some((t) => t.toLowerCase().includes(ql))
+        (c.tagline ?? "").toLowerCase().includes(ql)
       );
     });
-  }, [filter, q]);
+  }, [items, filter, q]);
 
   const counts = useMemo(() => {
-    const acc = { all: catalogItems.length, service: 0, product: 0, course: 0 };
-    for (const c of catalogItems) acc[c.type] += 1;
+    const acc = { all: items.length, service: 0, product: 0, course: 0 };
+    for (const c of items) acc[c.type] += 1;
     return acc;
-  }, []);
+  }, [items]);
+
+  if (loading) {
+    return (
+      <Stack sx={{ alignItems: "center", py: 8, gap: 2 }}>
+        <CircularProgress size={28} sx={{ color: "#A07823" }} />
+        <Typography sx={{ color: "#5C6770", fontSize: "0.88rem" }}>Loading catalog…</Typography>
+      </Stack>
+    );
+  }
 
   return (
     <Stack spacing={2.5}>
       <PageHeader
         eyebrow="CATALOG"
         title="Services, products & courses"
-        subtitle="Each row is a single listing. Click a row to see full media, highlights, and attached offers."
+        subtitle="Each row is a single listing. Click to see full details, media, and attached offers."
         actions={
           <Button
             component={Link}
@@ -101,7 +136,6 @@ export default function VendorCatalogPage() {
         }
       />
 
-      {/* Filter + search */}
       <Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>
         <Box
           sx={{
@@ -128,7 +162,7 @@ export default function VendorCatalogPage() {
                 color: "#5C6770",
                 "&.Mui-selected": { color: "#0A1A2F" },
               },
-              "& .MuiTabs-indicator": { backgroundColor: "#A07823", height: 2, borderRadius: "2px 2px 0 0" },
+              "& .MuiTabs-indicator": { backgroundColor: "#A07823", height: 2 },
             }}
           >
             {TYPE_FILTERS.map((t) => (
@@ -166,11 +200,7 @@ export default function VendorCatalogPage() {
           placeholder="Search items"
           sx={{
             minWidth: { md: 280 },
-            "& .MuiOutlinedInput-root": {
-              bgcolor: "#FFFFFF",
-              fontSize: "0.84rem",
-              borderRadius: 2,
-            },
+            "& .MuiOutlinedInput-root": { bgcolor: "#FFFFFF", fontSize: "0.84rem", borderRadius: 2 },
           }}
           slotProps={{
             input: {
@@ -185,12 +215,8 @@ export default function VendorCatalogPage() {
       </Stack>
 
       {rows.length === 0 ? (
-        q ? (
-          <EmptyState
-            icon={SearchOutlinedIcon}
-            title="No results"
-            body={`No catalog items match "${q}". Clear the search or try a different filter.`}
-          />
+        q || filter !== "all" ? (
+          <EmptyState icon={SearchOutlinedIcon} title="No results" body="Adjust the filter or search." />
         ) : (
           <EmptyState
             icon={Inventory2OutlinedIcon}
@@ -218,7 +244,6 @@ export default function VendorCatalogPage() {
         )
       ) : (
         <SectionCard padding="none">
-          {/* Header row */}
           <Box
             sx={{
               display: { xs: "none", md: "grid" },
@@ -255,8 +280,10 @@ export default function VendorCatalogPage() {
   );
 }
 
-function CatalogRow({ item }: { item: CatalogItem }) {
-  const hero = item.images[0];
+function CatalogRow({ item }: { item: CatalogItemWithMedia }) {
+  const hero = item.catalog_media.find((m) => m.kind === "image");
+  const updatedOn = (item.updated_at ?? "").slice(0, 10);
+
   return (
     <Box
       component={Link}
@@ -270,11 +297,9 @@ function CatalogRow({ item }: { item: CatalogItem }) {
         gap: { xs: 1.5, md: 1.5 },
         px: 2,
         py: 1.5,
-        transition: "background-color 140ms ease",
         "&:hover": { bgcolor: "rgba(14,42,61,0.025)" },
       }}
     >
-      {/* Thumb */}
       <Box
         sx={{
           width: 56,
@@ -302,33 +327,15 @@ function CatalogRow({ item }: { item: CatalogItem }) {
         )}
       </Box>
 
-      {/* Name + category */}
       <Box sx={{ minWidth: 0, flex: { xs: 1, md: "unset" } }}>
-        <Typography
-          sx={{
-            fontSize: "0.9rem",
-            fontWeight: 600,
-            color: "#0A1A2F",
-            lineHeight: 1.3,
-            mb: 0.25,
-          }}
-          noWrap
-        >
+        <Typography sx={{ fontSize: "0.9rem", fontWeight: 600, color: "#0A1A2F", mb: 0.25 }} noWrap>
           {item.name}
         </Typography>
-        <Typography
-          sx={{
-            fontSize: "0.74rem",
-            color: "#6A7591",
-            lineHeight: 1.3,
-          }}
-          noWrap
-        >
-          {item.category} · Updated {item.updatedOn}
+        <Typography sx={{ fontSize: "0.74rem", color: "#6A7591" }} noWrap>
+          {item.category} · Updated {updatedOn}
         </Typography>
       </Box>
 
-      {/* Type */}
       <Box sx={{ display: { xs: "none", md: "block" } }}>
         <TagPill
           label={item.type}
@@ -337,27 +344,23 @@ function CatalogRow({ item }: { item: CatalogItem }) {
         />
       </Box>
 
-      {/* Status */}
       <Box sx={{ display: { xs: "none", md: "block" } }}>
-        <StatusPill status={item.reviewStatus} size="sm" />
+        <StatusPill status={item.review_status} size="sm" />
       </Box>
 
-      {/* Price */}
       <Box sx={{ display: { xs: "none", md: "block" } }}>
         <Typography sx={{ fontSize: "0.84rem", fontWeight: 700, color: "#0A1A2F" }} noWrap>
-          {item.priceLabel}
+          {item.price_label}
         </Typography>
       </Box>
 
-      {/* Offers count */}
       <Box sx={{ display: { xs: "none", md: "flex" }, alignItems: "center", gap: 0.5 }}>
         <LocalOfferOutlinedIcon sx={{ fontSize: 14, color: "#A07823" }} />
         <Typography sx={{ fontSize: "0.82rem", fontWeight: 600, color: "#0A1A2F" }}>
-          {item.offerCount}
+          {item.offer_count}
         </Typography>
       </Box>
 
-      {/* Chevron */}
       <Box sx={{ display: { xs: "none", md: "flex" }, justifyContent: "flex-end" }}>
         <Tooltip title="Open details">
           <IconButton size="small" sx={{ color: "#9CA3AB", pointerEvents: "none" }}>
@@ -366,23 +369,28 @@ function CatalogRow({ item }: { item: CatalogItem }) {
         </Tooltip>
       </Box>
 
-      {/* Mobile-only meta row */}
       <Stack
         direction="row"
         spacing={1}
-        sx={{ display: { xs: "flex", md: "none" }, flexWrap: "wrap", rowGap: 0.5, mt: 0.5, gridColumn: "1 / -1" }}
+        sx={{
+          display: { xs: "flex", md: "none" },
+          flexWrap: "wrap",
+          rowGap: 0.5,
+          mt: 0.5,
+          gridColumn: "1 / -1",
+        }}
       >
         <TagPill
           label={item.type}
           tone={item.type === "product" ? "navy" : item.type === "course" ? "gold" : "neutral"}
           size="sm"
         />
-        <StatusPill status={item.reviewStatus} size="sm" />
+        <StatusPill status={item.review_status} size="sm" />
         <Typography sx={{ fontSize: "0.78rem", fontWeight: 700, color: "#0A1A2F" }}>
-          {item.priceLabel}
+          {item.price_label}
         </Typography>
         <Typography sx={{ fontSize: "0.78rem", color: "#A07823", fontWeight: 600 }}>
-          {item.offerCount} offer{item.offerCount === 1 ? "" : "s"}
+          {item.offer_count} offer{item.offer_count === 1 ? "" : "s"}
         </Typography>
       </Stack>
     </Box>

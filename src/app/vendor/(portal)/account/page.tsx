@@ -1,9 +1,11 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Box,
   Button,
+  CircularProgress,
   Divider,
   Grid,
   IconButton,
@@ -12,25 +14,66 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import CreditCardOutlinedIcon from "@mui/icons-material/CreditCardOutlined";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 import OpenInNewOutlinedIcon from "@mui/icons-material/OpenInNewOutlined";
-import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
-import { vendor, vendorPlans } from "@/lib/vendorData";
+import VolunteerActivismOutlinedIcon from "@mui/icons-material/VolunteerActivismOutlined";
 import { PageHeader, SectionCard, StatCard, TagPill, portalText } from "@/components/vendor/PortalUI";
+import { createBrowserSupabase } from "@/lib/supabase/browser";
+import { fetchCurrentVendor } from "@/lib/supabase/vendorQueries";
+import type { VendorsRow } from "@/lib/supabase/types";
 
 type InvoiceStatus = "paid" | "open" | "due" | "failed";
-const sampleInvoices: { id: string; number: string; date: string; amount: number; status: InvoiceStatus; period: string }[] = [
-  { id: "inv-2026-05", number: "TDN-V-2026-0501", date: "May 01, 2026", amount: 0, status: "paid", period: "Founding waiver, month 2 of 6" },
-  { id: "inv-2026-04", number: "TDN-V-2026-0401", date: "Apr 24, 2026", amount: 0, status: "paid", period: "Founding waiver, month 1 of 6 (pro-rated)" },
-];
+
+// Invoices aren't wired yet (no billing engine connected). Once Stripe or
+// similar lands, replace with a real fetch. For now this is an empty list
+// so the UI shows the "no invoices yet" state honestly.
+const sampleInvoices: { id: string; number: string; date: string; amount: number; status: InvoiceStatus; period: string }[] = [];
+
+const PLAN_LABELS: Record<string, { name: string; cadenceLabel: string }> = {
+  founding: { name: "Founding Partner", cadenceLabel: "12-month founding cohort · waived months 1-6" },
+  standard: { name: "Standard Partner", cadenceLabel: "$199/month, month-to-month" },
+};
 
 export default function VendorAccountPage() {
-  const plan = vendorPlans.find((p) => p.id === vendor.planId)!;
-  const monthsLeftInWaiver = Math.max(0, 6 - vendor.monthsInProgram);
-  const waiverProgress = Math.min(100, (vendor.monthsInProgram / 6) * 100);
-  const nextBill = monthsLeftInWaiver > 0 ? "$0.00" : vendor.monthsInProgram < 12 ? "$49.00" : "$199.00";
+  const [loading, setLoading] = useState(true);
+  const [vendor, setVendor] = useState<VendorsRow | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const supabase = createBrowserSupabase();
+    (async () => {
+      const v = await fetchCurrentVendor(supabase);
+      if (!active) return;
+      setVendor(v);
+      setLoading(false);
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (loading) {
+    return (
+      <Stack sx={{ alignItems: "center", py: 8, gap: 2 }}>
+        <CircularProgress size={28} sx={{ color: "#A07823" }} />
+        <Typography sx={{ color: "#5C6770", fontSize: "0.88rem" }}>Loading account…</Typography>
+      </Stack>
+    );
+  }
+
+  if (!vendor) {
+    return (
+      <SectionCard padding="default">
+        <Typography sx={portalText.sectionTitle}>No vendor profile found.</Typography>
+      </SectionCard>
+    );
+  }
+
+  const plan = PLAN_LABELS[vendor.plan_id ?? "founding"] ?? PLAN_LABELS.founding;
+  const monthsLeftInWaiver = Math.max(0, 6 - vendor.months_in_program);
+  const waiverProgress = Math.min(100, (vendor.months_in_program / 6) * 100);
+  const nextBill = monthsLeftInWaiver > 0 ? "$0.00" : vendor.months_in_program < 12 ? "$49.00" : "$199.00";
 
   return (
     <Stack spacing={2.5}>
@@ -60,7 +103,7 @@ export default function VendorAccountPage() {
         <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
           <StatCard
             label="Months in program"
-            value={`${vendor.monthsInProgram}/12`}
+            value={`${vendor.months_in_program}/12`}
             footer="Founding term"
           />
         </Grid>
@@ -125,19 +168,19 @@ export default function VendorAccountPage() {
                   period="Months 1-6"
                   price="$0/mo"
                   note="Founding waiver, applies automatically"
-                  current={vendor.monthsInProgram <= 6}
+                  current={vendor.months_in_program <= 6}
                 />
                 <LadderRow
                   period="Months 7-12"
                   price="$49/mo"
                   note="Locked launch rate"
-                  current={vendor.monthsInProgram > 6 && vendor.monthsInProgram <= 12}
+                  current={vendor.months_in_program > 6 && vendor.months_in_program <= 12}
                 />
                 <LadderRow
                   period="Month 13+"
                   price="$199/mo"
                   note="Standard partner rate"
-                  current={vendor.monthsInProgram > 12}
+                  current={vendor.months_in_program > 12}
                 />
               </Stack>
 
@@ -171,41 +214,31 @@ export default function VendorAccountPage() {
             <SectionCard
               title="Payment method"
               padding="default"
-              action={
-                <Button
-                  size="small"
-                  startIcon={<EditOutlinedIcon sx={{ fontSize: 14 }} />}
-                  sx={{
-                    textTransform: "none",
-                    fontSize: "0.78rem",
-                    color: "#A07823",
-                    "&:hover": { bgcolor: "rgba(217,168,75,0.06)" },
-                  }}
-                >
-                  Update
-                </Button>
-              }
+              action={<TagPill label="WAIVED" tone="gold" size="sm" />}
             >
-              <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+              <Stack direction="row" spacing={1.5} sx={{ alignItems: "flex-start" }}>
                 <Box
                   sx={{
                     width: 40,
                     height: 40,
                     borderRadius: 1.5,
-                    bgcolor: "rgba(14,42,61,0.06)",
-                    border: "1px solid rgba(14,42,61,0.1)",
-                    color: "#0A1A2F",
+                    bgcolor: "rgba(217,168,75,0.12)",
+                    border: "1px solid rgba(217,168,75,0.3)",
+                    color: "#A07823",
                     display: "grid",
                     placeItems: "center",
+                    flexShrink: 0,
                   }}
                 >
-                  <CreditCardOutlinedIcon sx={{ fontSize: 18 }} />
+                  <VolunteerActivismOutlinedIcon sx={{ fontSize: 18 }} />
                 </Box>
-                <Box sx={{ flex: 1 }}>
-                  <Typography sx={{ fontSize: "0.88rem", fontWeight: 600, color: "#0A1A2F" }}>
-                    Visa · 4242
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography sx={{ fontSize: "0.88rem", fontWeight: 700, color: "#0A1A2F", mb: 0.25 }}>
+                    No payment method required yet
                   </Typography>
-                  <Typography sx={portalText.meta}>Expires 12/2027 · billing email {vendor.billingEmail}</Typography>
+                  <Typography sx={{ ...portalText.body, fontSize: "0.82rem" }}>
+                    Your first {monthsLeftInWaiver === 6 ? "6 months" : `${monthsLeftInWaiver} month${monthsLeftInWaiver === 1 ? "" : "s"}`} are <Box component="strong" sx={{ color: "#7A5B17" }}>completely free</Box> as a founding partner. We&apos;ll ask you to add a card a few weeks before month 7 — billing email is {vendor.billing_email ?? vendor.contact_email}.
+                  </Typography>
                 </Box>
               </Stack>
             </SectionCard>

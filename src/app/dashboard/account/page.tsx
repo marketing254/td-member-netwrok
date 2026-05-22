@@ -430,7 +430,7 @@ function SubscriptionPanel() {
               {subscription.isLifetimeLocked && (
                 <Chip
                   icon={<LockOutlinedIcon sx={{ fontSize: 14 }} />}
-                  label="LIFETIME LOCK"
+                  label="FOUNDING RATE LOCKED"
                   size="small"
                   sx={{
                     bgcolor: "rgba(217,168,75,0.16)",
@@ -493,8 +493,8 @@ function SubscriptionPanel() {
             <Typography variant="h4">Upgrade or compare tiers</Typography>
           </Box>
           <Typography variant="body2" sx={{ color: "text.secondary", maxWidth: 360 }}>
-            Your founding rate is locked for life on this product. Upgrading to Pro or Premium
-            preserves your $49 founding seat, you only pay the difference.
+            Your founding rate never increases while your membership stays active. Upgrading to
+            Pro or Premium preserves your $49 founding seat, you only pay the difference.
           </Typography>
         </Stack>
 
@@ -734,7 +734,7 @@ function BillingPanel() {
           >
             <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between", mb: 1.5 }}>
               <Typography variant="overline" sx={{ color: "text.secondary", fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", fontSize: "0.74rem" }}>
-                LIFETIME PAID
+                TOTAL PAID
               </Typography>
               <Box
                 sx={{

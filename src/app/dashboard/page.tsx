@@ -75,7 +75,7 @@ export default function DashboardOverview() {
           <Grid size={{ xs: 12, md: 7 }}>
             <Stack spacing={2}>
               <Chip
-                label="FOUNDING MEMBER · LIFETIME $49"
+                label="FOUNDING MEMBER · $49/MO LOCKED"
                 size="small"
                 sx={{
                   alignSelf: "flex-start",

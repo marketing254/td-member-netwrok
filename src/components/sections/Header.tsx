@@ -15,6 +15,7 @@ import {
 import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import LoginOutlinedIcon from "@mui/icons-material/LoginOutlined";
 import Logo from "@/components/brand/Logo";
 import { brand, navLinks } from "@/lib/content";
 
@@ -109,8 +110,8 @@ export default function Header() {
               ))}
             </Box>
 
-            {/* Right side: primary CTA */}
-            <Stack direction="row" spacing={1.25} sx={{ alignItems: "center" }}>
+            {/* Right side: primary CTA + vendor sign-in */}
+            <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
               <Button
                 component={Link}
                 href="/#waitlist"
@@ -136,6 +137,35 @@ export default function Header() {
               >
                 Join the waitlist
               </Button>
+              <Box
+                sx={{
+                  display: { xs: "none", md: "flex" },
+                  alignItems: "center",
+                  gap: 0.5,
+                  fontSize: "0.84rem",
+                }}
+              >
+                <Box component="span" sx={{ color: "#5C6770" }}>
+                  Already a vendor?
+                </Box>
+                <Box
+                  component={Link}
+                  href="/vendor/login"
+                  sx={{
+                    color: "#0A1A2F",
+                    fontWeight: 600,
+                    textDecoration: "none",
+                    borderBottom: "1px solid transparent",
+                    transition: "color 200ms ease, border-color 200ms ease",
+                    "&:hover": {
+                      color: "#A07823",
+                      borderBottomColor: "#A07823",
+                    },
+                  }}
+                >
+                  Sign in
+                </Box>
+              </Box>
 
               <IconButton
                 onClick={() => setDrawer((v) => !v)}
@@ -238,6 +268,25 @@ export default function Header() {
             endIcon={<ArrowForwardIcon />}
           >
             Join the waitlist
+          </Button>
+
+          <Button
+            component={Link}
+            href="/vendor/login"
+            onClick={() => setDrawer(false)}
+            variant="outlined"
+            fullWidth
+            size="large"
+            startIcon={<LoginOutlinedIcon />}
+            sx={{
+              mt: 1.5,
+              borderColor: "rgba(14,42,61,0.18)",
+              color: "#0A1A2F",
+              textTransform: "none",
+              "&:hover": { borderColor: "#A07823", bgcolor: "rgba(217,168,75,0.06)" },
+            }}
+          >
+            Already a vendor? Sign in
           </Button>
         </Box>
       </Drawer>

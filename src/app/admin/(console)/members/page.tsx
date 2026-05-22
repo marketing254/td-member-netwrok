@@ -1,36 +1,52 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  Alert,
   Box,
   Button,
   Chip,
-  IconButton,
+  CircularProgress,
   InputAdornment,
   Stack,
+  Tab,
+  Tabs,
   TextField,
-  Tooltip,
   Typography,
 } from "@mui/material";
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
-import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
-import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
-import { adminMembers } from "@/lib/vendorData";
+
+type MemberRow = {
+  id: string;
+  first_name: string;
+  last_name: string | null;
+  credential: string | null;
+  email: string;
+  phone: string | null;
+  practice_name: string | null;
+  practice_role: string | null;
+  city: string | null;
+  status: "waitlist" | "invited" | "active" | "paused" | "churned";
+  tier: string | null;
+  joined_at: string | null;
+  created_at: string;
+};
+
+type WaitlistRow = {
+  id: string;
+  full_name: string;
+  email: string;
+  practice_name: string | null;
+  city_state: string | null;
+  phone: string | null;
+  status: "new" | "contacted" | "converted" | "declined";
+  created_at: string;
+};
+
+type TabKey = "members" | "waitlist";
 
 export default function AdminMembersPage() {
-  const [q, setQ] = useState("");
-
-  const filtered = useMemo(() => {
-    if (!q.trim()) return adminMembers;
-    const lc = q.toLowerCase();
-    return adminMembers.filter(
-      (m) =>
-        m.name.toLowerCase().includes(lc) ||
-        m.email.toLowerCase().includes(lc) ||
-        m.practice.toLowerCase().includes(lc) ||
-        m.city.toLowerCase().includes(lc),
-    );
-  }, [q]);
+  const [tab, setTab] = useState<TabKey>("members");
 
   return (
     <Stack spacing={4}>
@@ -40,32 +56,100 @@ export default function AdminMembersPage() {
             MEMBERS
           </Typography>
           <Typography variant="h2" sx={{ mt: 0.5, mb: 1, fontSize: { xs: "1.85rem", md: "2.5rem" } }}>
-            All members
+            Members & waitlist
           </Typography>
           <Typography sx={{ color: "text.secondary", maxWidth: 620 }}>
-            {adminMembers.length} total · {adminMembers.filter((m) => m.founding).length} founding · search by name, practice, or email.
+            Active members appear here as they convert from the waitlist. Founding rate is locked at signup and never increases.
           </Typography>
         </Box>
-        <Button variant="outlined" color="primary" startIcon={<DownloadOutlinedIcon />}>
+      </Stack>
+
+      <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+        <Tabs
+          value={tab}
+          onChange={(_, v) => setTab(v as TabKey)}
+          sx={{
+            "& .MuiTab-root": { textTransform: "none", fontWeight: 600, fontSize: "0.95rem" },
+            "& .Mui-selected": { color: "primary.main" },
+            "& .MuiTabs-indicator": { backgroundColor: "secondary.main", height: 3, borderRadius: 999 },
+          }}
+        >
+          <Tab value="members" label="Active members" />
+          <Tab value="waitlist" label="Waitlist signups" />
+        </Tabs>
+      </Box>
+
+      {tab === "members" ? <MembersPanel /> : <WaitlistPanel />}
+    </Stack>
+  );
+}
+
+function MembersPanel() {
+  const [rows, setRows] = useState<MemberRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [q, setQ] = useState("");
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/members", { cache: "no-store" });
+      const body = (await res.json()) as { rows?: MemberRow[]; error?: string };
+      if (!res.ok || body.error) {
+        setError(body.error ?? `Failed to load (${res.status})`);
+        setRows([]);
+        return;
+      }
+      setRows(body.rows ?? []);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const filtered = useMemo(() => {
+    if (!q.trim()) return rows;
+    const lc = q.toLowerCase();
+    return rows.filter(
+      (m) =>
+        `${m.first_name} ${m.last_name ?? ""}`.toLowerCase().includes(lc) ||
+        m.email.toLowerCase().includes(lc) ||
+        (m.practice_name ?? "").toLowerCase().includes(lc) ||
+        (m.city ?? "").toLowerCase().includes(lc),
+    );
+  }, [rows, q]);
+
+  return (
+    <Stack spacing={2.5}>
+      {error && <Alert severity="error">{error}</Alert>}
+
+      <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ justifyContent: "space-between", alignItems: "center" }}>
+        <TextField
+          placeholder="Search members…"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          size="small"
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchOutlinedIcon sx={{ color: "text.secondary", fontSize: 18 }} />
+                </InputAdornment>
+              ),
+            },
+          }}
+          sx={{ maxWidth: 420, flex: 1 }}
+        />
+        <Button variant="outlined" color="primary" startIcon={<DownloadOutlinedIcon />} disabled={rows.length === 0}>
           Export CSV
         </Button>
       </Stack>
-
-      <TextField
-        placeholder="Search members…"
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        slotProps={{
-          input: {
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchOutlinedIcon sx={{ color: "text.secondary", fontSize: 20 }} />
-              </InputAdornment>
-            ),
-          },
-        }}
-        sx={{ maxWidth: 520 }}
-      />
 
       <Box
         sx={{
@@ -79,7 +163,7 @@ export default function AdminMembersPage() {
         <Box
           sx={{
             display: { xs: "none", md: "grid" },
-            gridTemplateColumns: "1.6fr 1.4fr 1fr 0.8fr 0.6fr 0.6fr 0.7fr",
+            gridTemplateColumns: "1.8fr 1.4fr 0.8fr 0.8fr 0.9fr",
             alignItems: "center",
             gap: 2,
             px: 3,
@@ -92,88 +176,194 @@ export default function AdminMembersPage() {
           <Cell head>Member</Cell>
           <Cell head>Practice</Cell>
           <Cell head>Tier</Cell>
+          <Cell head>Status</Cell>
           <Cell head>Joined</Cell>
-          <Cell head>Cases</Cell>
-          <Cell head>CE</Cell>
-          <Box />
         </Box>
 
-        {filtered.map((m, i) => (
-          <Box
-            key={m.id}
-            sx={{
-              display: "grid",
-              gridTemplateColumns: { xs: "1fr auto", md: "1.6fr 1.4fr 1fr 0.8fr 0.6fr 0.6fr 0.7fr" },
-              alignItems: "center",
-              gap: 2,
-              px: { xs: 2.5, md: 3 },
-              py: 2,
-              borderBottom: i === filtered.length - 1 ? 0 : "1px solid",
-              borderColor: "divider",
-              "&:hover": { bgcolor: "grey.50" },
-            }}
-          >
-            <Box sx={{ minWidth: 0 }}>
-              <Typography sx={{ fontSize: "0.92rem", fontWeight: 600 }} noWrap>
-                {m.name}
-              </Typography>
-              <Typography variant="body2" sx={{ fontSize: "0.78rem", color: "text.secondary" }} noWrap>
-                {m.email}
-              </Typography>
-              <Stack direction="row" spacing={0.75} sx={{ display: { xs: "flex", md: "none" }, mt: 0.75, flexWrap: "wrap", gap: 0.5 }}>
-                <TierChip tier={m.tier} founding={m.founding} />
-                <Typography variant="body2" sx={{ fontSize: "0.74rem", color: "text.secondary" }}>
-                  {m.practice} · {m.city}
-                </Typography>
-              </Stack>
-            </Box>
-            <Cell>
-              <Box sx={{ display: { xs: "none", md: "block" }, minWidth: 0 }}>
-                <Typography sx={{ fontSize: "0.88rem", fontWeight: 500 }} noWrap>
-                  {m.practice}
-                </Typography>
-                <Typography variant="body2" sx={{ fontSize: "0.74rem", color: "text.secondary" }} noWrap>
-                  {m.city}
-                </Typography>
-              </Box>
-            </Cell>
-            <Box sx={{ display: { xs: "none", md: "block" } }}>
-              <TierChip tier={m.tier} founding={m.founding} />
-            </Box>
-            <Cell>
-              <Box sx={{ display: { xs: "none", md: "block" }, fontSize: "0.85rem" }}>
-                {m.joinedOn}
-              </Box>
-            </Cell>
-            <Cell>
-              <Box sx={{ display: { xs: "none", md: "block" }, fontWeight: 600 }}>
-                {m.hotlineCases}
-              </Box>
-            </Cell>
-            <Cell>
-              <Box sx={{ display: { xs: "none", md: "block" }, fontWeight: 600 }}>
-                {m.ceCredits}
-              </Box>
-            </Cell>
-            <Stack direction="row" sx={{ justifyContent: "flex-end", gap: 0.5 }}>
-              <Tooltip title="Email member">
-                <IconButton size="small" sx={{ color: "text.secondary" }}>
-                  <EmailOutlinedIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Edit">
-                <IconButton size="small" sx={{ color: "text.secondary" }}>
-                  <EditOutlinedIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            </Stack>
+        {loading ? (
+          <Box sx={{ p: 6, display: "grid", placeItems: "center" }}>
+            <CircularProgress size={24} sx={{ color: "#A07823" }} />
           </Box>
-        ))}
-
-        {filtered.length === 0 && (
+        ) : filtered.length === 0 ? (
           <Box sx={{ p: 6, textAlign: "center" }}>
-            <Typography sx={{ color: "text.secondary" }}>No members match &quot;{q}&quot;.</Typography>
+            <Typography sx={{ color: "text.secondary" }}>
+              {q
+                ? `No members match "${q}".`
+                : "No members yet. They'll appear here as soon as the first waitlist signup converts."}
+            </Typography>
           </Box>
+        ) : (
+          filtered.map((m, i) => (
+            <Box
+              key={m.id}
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", md: "1.8fr 1.4fr 0.8fr 0.8fr 0.9fr" },
+                alignItems: "center",
+                gap: 2,
+                px: { xs: 2.5, md: 3 },
+                py: 2,
+                borderBottom: i === filtered.length - 1 ? 0 : "1px solid",
+                borderColor: "divider",
+                "&:hover": { bgcolor: "grey.50" },
+              }}
+            >
+              <Box sx={{ minWidth: 0 }}>
+                <Typography sx={{ fontSize: "0.92rem", fontWeight: 600 }} noWrap>
+                  {m.first_name} {m.last_name ?? ""}
+                  {m.credential ? `, ${m.credential}` : ""}
+                </Typography>
+                <Typography variant="body2" sx={{ fontSize: "0.78rem", color: "text.secondary" }} noWrap>
+                  {m.email}
+                </Typography>
+              </Box>
+              <Cell>
+                <Box sx={{ display: { xs: "none", md: "block" }, minWidth: 0 }}>
+                  <Typography sx={{ fontSize: "0.86rem", fontWeight: 500 }} noWrap>
+                    {m.practice_name ?? "—"}
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontSize: "0.74rem", color: "text.secondary" }} noWrap>
+                    {m.city ?? ""}
+                  </Typography>
+                </Box>
+              </Cell>
+              <Cell>
+                <Box sx={{ display: { xs: "none", md: "block" } }}>
+                  <TierChip tier={m.tier} />
+                </Box>
+              </Cell>
+              <Cell>
+                <Box sx={{ display: { xs: "none", md: "block" } }}>
+                  <StatusChip status={m.status} />
+                </Box>
+              </Cell>
+              <Cell>
+                <Box sx={{ display: { xs: "none", md: "block" }, fontSize: "0.85rem", color: "text.secondary" }}>
+                  {(m.joined_at ?? m.created_at).slice(0, 10)}
+                </Box>
+              </Cell>
+            </Box>
+          ))
+        )}
+      </Box>
+    </Stack>
+  );
+}
+
+function WaitlistPanel() {
+  const [rows, setRows] = useState<WaitlistRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/waitlist", { cache: "no-store" });
+        const body = (await res.json()) as { rows?: WaitlistRow[]; error?: string };
+        if (!active) return;
+        if (!res.ok || body.error) {
+          setError(body.error ?? `Failed to load (${res.status})`);
+          setRows([]);
+          return;
+        }
+        setRows((body.rows ?? []).filter((r) => "full_name" in r));
+      } catch (err) {
+        if (!active) return;
+        setError(err instanceof Error ? err.message : "Failed to load.");
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  return (
+    <Stack spacing={2.5}>
+      {error && <Alert severity="error">{error}</Alert>}
+      <Box
+        sx={{
+          borderRadius: "20px",
+          border: "1px solid",
+          borderColor: "divider",
+          bgcolor: "common.white",
+          overflow: "hidden",
+        }}
+      >
+        <Box
+          sx={{
+            display: { xs: "none", md: "grid" },
+            gridTemplateColumns: "1.6fr 1.4fr 1fr 0.9fr",
+            alignItems: "center",
+            gap: 2,
+            px: 3,
+            py: 1.5,
+            bgcolor: "grey.50",
+            borderBottom: "1px solid",
+            borderColor: "divider",
+          }}
+        >
+          <Cell head>Name</Cell>
+          <Cell head>Practice</Cell>
+          <Cell head>Status</Cell>
+          <Cell head>Signed up</Cell>
+        </Box>
+
+        {loading ? (
+          <Box sx={{ p: 6, display: "grid", placeItems: "center" }}>
+            <CircularProgress size={24} sx={{ color: "#A07823" }} />
+          </Box>
+        ) : rows.length === 0 ? (
+          <Box sx={{ p: 6, textAlign: "center" }}>
+            <Typography sx={{ color: "text.secondary" }}>No waitlist signups yet.</Typography>
+          </Box>
+        ) : (
+          rows.map((w, i) => (
+            <Box
+              key={w.id}
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", md: "1.6fr 1.4fr 1fr 0.9fr" },
+                alignItems: "center",
+                gap: 2,
+                px: { xs: 2.5, md: 3 },
+                py: 2,
+                borderBottom: i === rows.length - 1 ? 0 : "1px solid",
+                borderColor: "divider",
+              }}
+            >
+              <Box sx={{ minWidth: 0 }}>
+                <Typography sx={{ fontSize: "0.92rem", fontWeight: 600 }} noWrap>
+                  {w.full_name}
+                </Typography>
+                <Typography variant="body2" sx={{ fontSize: "0.78rem", color: "text.secondary" }} noWrap>
+                  {w.email}
+                </Typography>
+              </Box>
+              <Cell>
+                <Box sx={{ display: { xs: "none", md: "block" } }}>
+                  <Typography sx={{ fontSize: "0.86rem" }} noWrap>
+                    {w.practice_name ?? "—"}
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontSize: "0.74rem", color: "text.secondary" }} noWrap>
+                    {w.city_state ?? ""}
+                  </Typography>
+                </Box>
+              </Cell>
+              <Cell>
+                <Box sx={{ display: { xs: "none", md: "block" } }}>
+                  <WaitlistStatusChip status={w.status} />
+                </Box>
+              </Cell>
+              <Cell>
+                <Box sx={{ display: { xs: "none", md: "block" }, fontSize: "0.85rem", color: "text.secondary" }}>
+                  {w.created_at.slice(0, 10)}
+                </Box>
+              </Cell>
+            </Box>
+          ))
         )}
       </Box>
     </Stack>
@@ -182,8 +372,7 @@ export default function AdminMembersPage() {
 
 function Cell({ head, children }: { head?: boolean; children?: React.ReactNode }) {
   return (
-    <Typography
-      variant={head ? "body2" : "body1"}
+    <Box
       sx={{
         fontSize: head ? "0.7rem" : "0.9rem",
         fontWeight: head ? 700 : 500,
@@ -193,27 +382,41 @@ function Cell({ head, children }: { head?: boolean; children?: React.ReactNode }
       }}
     >
       {children}
-    </Typography>
+    </Box>
   );
 }
 
-function TierChip({ tier, founding }: { tier: string; founding: boolean }) {
-  if (founding) {
-    return (
-      <Chip
-        label="Founding"
-        size="small"
-        sx={{ bgcolor: "rgba(217,168,75,0.16)", color: "#A07823", fontWeight: 700, fontSize: "0.7rem", height: 22 }}
-      />
-    );
-  }
+function TierChip({ tier }: { tier: string | null }) {
+  const label = tier ?? "—";
   const map: Record<string, { bg: string; color: string }> = {
-    Premium: { bg: "rgba(14,42,61,0.92)", color: "common.white" },
+    Founding: { bg: "rgba(217,168,75,0.16)", color: "#A07823" },
+    Premium: { bg: "rgba(14,42,61,0.92)", color: "#FFFFFF" },
     Pro: { bg: "rgba(14,42,61,0.07)", color: "primary.dark" },
     Free: { bg: "grey.200", color: "text.secondary" },
   };
-  const s = map[tier] ?? map.Free;
-  return (
-    <Chip label={tier} size="small" sx={{ bgcolor: s.bg, color: s.color, fontWeight: 700, fontSize: "0.7rem", height: 22 }} />
-  );
+  const s = map[label] ?? { bg: "grey.100", color: "text.secondary" };
+  return <Chip label={label} size="small" sx={{ bgcolor: s.bg, color: s.color, fontWeight: 700, fontSize: "0.7rem", height: 22 }} />;
+}
+
+function StatusChip({ status }: { status: string }) {
+  const map: Record<string, { bg: string; color: string; label: string }> = {
+    active: { bg: "rgba(34,108,78,0.12)", color: "#1F5C40", label: "Active" },
+    invited: { bg: "rgba(217,168,75,0.16)", color: "#A07823", label: "Invited" },
+    waitlist: { bg: "rgba(14,42,61,0.07)", color: "primary.dark", label: "Waitlist" },
+    paused: { bg: "grey.200", color: "text.secondary", label: "Paused" },
+    churned: { bg: "rgba(220,60,60,0.1)", color: "#8C1D1D", label: "Churned" },
+  };
+  const s = map[status] ?? map.waitlist;
+  return <Chip label={s.label} size="small" sx={{ bgcolor: s.bg, color: s.color, fontWeight: 700, fontSize: "0.66rem", height: 20 }} />;
+}
+
+function WaitlistStatusChip({ status }: { status: string }) {
+  const map: Record<string, { bg: string; color: string; label: string }> = {
+    new: { bg: "rgba(217,168,75,0.16)", color: "#A07823", label: "New" },
+    contacted: { bg: "rgba(14,42,61,0.07)", color: "primary.dark", label: "Contacted" },
+    converted: { bg: "rgba(34,108,78,0.12)", color: "#1F5C40", label: "Converted" },
+    declined: { bg: "rgba(220,60,60,0.1)", color: "#8C1D1D", label: "Declined" },
+  };
+  const s = map[status] ?? map.new;
+  return <Chip label={s.label} size="small" sx={{ bgcolor: s.bg, color: s.color, fontWeight: 700, fontSize: "0.66rem", height: 20 }} />;
 }

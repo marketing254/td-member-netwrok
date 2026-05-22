@@ -1,12 +1,11 @@
 "use client";
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useSignOut } from "@/lib/auth/identity";
 import {
   AppBar,
   Avatar,
-  Badge,
   Box,
   Chip,
   Container,
@@ -19,7 +18,6 @@ import {
   MenuItem,
   Stack,
   Toolbar,
-  Tooltip,
   Typography,
   useMediaQuery,
 } from "@mui/material";
@@ -33,16 +31,70 @@ import LibraryBooksOutlinedIcon from "@mui/icons-material/LibraryBooksOutlined";
 import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
 import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
 import MarkEmailReadOutlinedIcon from "@mui/icons-material/MarkEmailReadOutlined";
-import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import KeyboardArrowDownOutlinedIcon from "@mui/icons-material/KeyboardArrowDownOutlined";
 import Logo from "@/components/brand/Logo";
-import { adminUsers } from "@/lib/vendorData";
+import NotificationsBell from "@/components/shared/NotificationsBell";
+import { createBrowserSupabase } from "@/lib/supabase/browser";
 
 const SIDEBAR_W = 264;
 
-const navSections: { label: string; items: { href: string; label: string; icon: React.ElementType<{ sx?: object }>; badge?: number }[] }[] = [
+type CurrentAdmin = {
+  email: string;
+  full_name: string;
+  role: string;
+};
+
+type QueueCounts = {
+  vendorsPending: number;
+  offersPending: number;
+  catalogPending: number;
+};
+
+function useCurrentAdmin(): CurrentAdmin | null {
+  const [me, setMe] = useState<CurrentAdmin | null>(null);
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const supabase = createBrowserSupabase();
+      const { data: userData } = await supabase.auth.getUser();
+      const email = userData.user?.email?.toLowerCase();
+      if (!email) return;
+      const { data } = await supabase
+        .from("admin_users")
+        .select("email, full_name, role")
+        .eq("email", email)
+        .maybeSingle();
+      if (!active) return;
+      setMe(
+        data ?? {
+          email,
+          full_name: email.split("@")[0] ?? "Admin",
+          role: "admin",
+        },
+      );
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+  return me;
+}
+
+function initials(full: string): string {
+  return full
+    .split(" ")
+    .map((p) => p[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
+
+type NavItem = { href: string; label: string; icon: React.ElementType<{ sx?: object }>; badgeKey?: keyof QueueCounts };
+
+const navSections: { label: string; items: NavItem[] }[] = [
   {
     label: "OVERVIEW",
     items: [
@@ -54,16 +106,16 @@ const navSections: { label: string; items: { href: string; label: string; icon: 
     label: "PEOPLE",
     items: [
       { href: "/admin/members", label: "Members", icon: PeopleAltOutlinedIcon },
-      { href: "/admin/vendors", label: "Vendors", icon: StoreOutlinedIcon, badge: 3 },
+      { href: "/admin/vendors", label: "Vendors", icon: StoreOutlinedIcon, badgeKey: "vendorsPending" },
       { href: "/admin/admins", label: "Admin team", icon: AdminPanelSettingsOutlinedIcon },
     ],
   },
   {
     label: "OPERATIONS",
     items: [
-      { href: "/admin/offers", label: "Vendor offers", icon: LocalOfferOutlinedIcon, badge: 2 },
-      { href: "/admin/hotline", label: "Hotline triage", icon: SupportAgentOutlinedIcon, badge: 4 },
-      { href: "/admin/content", label: "Content CMS", icon: LibraryBooksOutlinedIcon },
+      { href: "/admin/offers", label: "Vendor offers", icon: LocalOfferOutlinedIcon, badgeKey: "offersPending" },
+      { href: "/admin/hotline", label: "Hotline triage", icon: SupportAgentOutlinedIcon },
+      { href: "/admin/content", label: "Catalog", icon: LibraryBooksOutlinedIcon, badgeKey: "catalogPending" },
     ],
   },
   {
@@ -72,10 +124,19 @@ const navSections: { label: string; items: { href: string; label: string; icon: 
   },
 ];
 
-// Sample logged-in admin = Rushda
-const me = adminUsers.find((a) => a.role === "rushda")!;
-
-function SidebarContent({ pathname, onClose }: { pathname: string; onClose?: () => void }) {
+function SidebarContent({
+  pathname,
+  onClose,
+  me,
+  counts,
+}: {
+  pathname: string;
+  onClose?: () => void;
+  me: CurrentAdmin | null;
+  counts: QueueCounts;
+}) {
+  const displayName = me?.full_name ?? "—";
+  const role = me?.role ?? "admin";
   return (
     <Box
       sx={{
@@ -116,14 +177,14 @@ function SidebarContent({ pathname, onClose }: { pathname: string; onClose?: () 
                 border: "1px solid rgba(217,168,75,0.4)",
               }}
             >
-              {me.name.split(" ").map((p) => p[0]).slice(0, 2).join("")}
+              {initials(displayName)}
             </Avatar>
             <Box sx={{ minWidth: 0, flex: 1 }}>
               <Typography sx={{ color: "common.white", fontWeight: 600, fontSize: "0.9rem", lineHeight: 1.2 }} noWrap>
-                {me.name}
+                {displayName}
               </Typography>
-              <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.7)", fontSize: "0.72rem" }} noWrap>
-                {me.workstream.split(" · ")[0]}
+              <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.7)", fontSize: "0.72rem", textTransform: "capitalize" }} noWrap>
+                {role}
               </Typography>
             </Box>
           </Stack>
@@ -153,6 +214,7 @@ function SidebarContent({ pathname, onClose }: { pathname: string; onClose?: () 
                     item.href === "/admin"
                       ? pathname === "/admin"
                       : pathname.startsWith(item.href);
+                  const badge = item.badgeKey ? counts[item.badgeKey] : 0;
                   return (
                     <Box
                       key={item.href}
@@ -181,9 +243,9 @@ function SidebarContent({ pathname, onClose }: { pathname: string; onClose?: () 
                     >
                       <Icon sx={{ fontSize: 20, color: active ? "secondary.light" : "inherit" }} />
                       <Box sx={{ flex: 1 }}>{item.label}</Box>
-                      {item.badge && item.badge > 0 && (
+                      {badge > 0 && (
                         <Chip
-                          label={item.badge}
+                          label={badge}
                           size="small"
                           sx={{
                             bgcolor: "rgba(217,168,75,0.2)",
@@ -220,15 +282,7 @@ function SidebarContent({ pathname, onClose }: { pathname: string; onClose?: () 
           <Stack direction="row" spacing={2}>
             <Stack>
               <Typography sx={{ fontFamily: "var(--font-display)", color: "common.white", fontSize: "1.4rem", lineHeight: 1 }}>
-                4
-              </Typography>
-              <Typography variant="body2" sx={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.6)" }}>
-                hotline
-              </Typography>
-            </Stack>
-            <Stack>
-              <Typography sx={{ fontFamily: "var(--font-display)", color: "common.white", fontSize: "1.4rem", lineHeight: 1 }}>
-                3
+                {counts.vendorsPending}
               </Typography>
               <Typography variant="body2" sx={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.6)" }}>
                 vendors
@@ -236,10 +290,18 @@ function SidebarContent({ pathname, onClose }: { pathname: string; onClose?: () 
             </Stack>
             <Stack>
               <Typography sx={{ fontFamily: "var(--font-display)", color: "common.white", fontSize: "1.4rem", lineHeight: 1 }}>
-                2
+                {counts.offersPending}
               </Typography>
               <Typography variant="body2" sx={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.6)" }}>
                 offers
+              </Typography>
+            </Stack>
+            <Stack>
+              <Typography sx={{ fontFamily: "var(--font-display)", color: "common.white", fontSize: "1.4rem", lineHeight: 1 }}>
+                {counts.catalogPending}
+              </Typography>
+              <Typography variant="body2" sx={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.6)" }}>
+                catalog
               </Typography>
             </Stack>
           </Stack>
@@ -258,6 +320,38 @@ export default function AdminAppShell({ children }: { children: React.ReactNode 
   const userMenuAnchor = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
   const signOut = useSignOut();
+  const me = useCurrentAdmin();
+
+  const [counts, setCounts] = useState<QueueCounts>({
+    vendorsPending: 0,
+    offersPending: 0,
+    catalogPending: 0,
+  });
+
+  const loadCounts = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/overview", { cache: "no-store" });
+      if (!res.ok) return;
+      const body = (await res.json()) as {
+        vendors?: { pending?: number };
+        offers?: { pending?: number };
+        catalog?: { pending?: number };
+      };
+      setCounts({
+        vendorsPending: body.vendors?.pending ?? 0,
+        offersPending: body.offers?.pending ?? 0,
+        catalogPending: body.catalog?.pending ?? 0,
+      });
+    } catch {
+      // ignore — counts are decorative
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadCounts();
+    const t = setInterval(() => void loadCounts(), 90_000);
+    return () => clearInterval(t);
+  }, [loadCounts]);
 
   const handleSignOut = () => {
     setUserMenuOpen(false);
@@ -268,7 +362,7 @@ export default function AdminAppShell({ children }: { children: React.ReactNode 
     <Box sx={{ minHeight: "100vh", bgcolor: "#F4F0E6", display: "flex" }}>
       {isMd && (
         <Box component="nav" sx={{ width: SIDEBAR_W, flexShrink: 0, position: "fixed", inset: 0, right: "auto", zIndex: theme.zIndex.appBar - 1 }}>
-          <SidebarContent pathname={pathname} />
+          <SidebarContent pathname={pathname} me={me} counts={counts} />
         </Box>
       )}
       {!isMd && (
@@ -277,7 +371,7 @@ export default function AdminAppShell({ children }: { children: React.ReactNode 
           onClose={() => setDrawerOpen(false)}
           slotProps={{ paper: { sx: { width: SIDEBAR_W, border: "none" } } }}
         >
-          <SidebarContent pathname={pathname} onClose={() => setDrawerOpen(false)} />
+          <SidebarContent pathname={pathname} onClose={() => setDrawerOpen(false)} me={me} counts={counts} />
         </Drawer>
       )}
 
@@ -303,13 +397,7 @@ export default function AdminAppShell({ children }: { children: React.ReactNode 
               }}
             />
             <Box sx={{ flex: 1 }} />
-            <Tooltip title="Notifications">
-              <IconButton size="small" sx={{ color: "text.secondary" }}>
-                <Badge color="secondary" variant="dot" overlap="circular">
-                  <NotificationsNoneOutlinedIcon />
-                </Badge>
-              </IconButton>
-            </Tooltip>
+            <NotificationsBell audience="admin" />
             <Box
               ref={userMenuAnchor}
               component="button"
@@ -334,14 +422,14 @@ export default function AdminAppShell({ children }: { children: React.ReactNode 
               }}
             >
               <Avatar sx={{ width: 34, height: 34, bgcolor: "primary.main", color: "common.white", fontSize: "0.8rem", fontWeight: 700 }}>
-                {me.name.split(" ").map((p) => p[0]).slice(0, 2).join("")}
+                {initials(me?.full_name ?? "")}
               </Avatar>
               <Box sx={{ display: { xs: "none", lg: "block" }, textAlign: "left" }}>
                 <Typography sx={{ fontSize: "0.85rem", fontWeight: 600, lineHeight: 1.15 }}>
-                  {me.name}
+                  {me?.full_name ?? "—"}
                 </Typography>
                 <Typography variant="body2" sx={{ fontSize: "0.7rem", color: "text.secondary", textTransform: "capitalize" }}>
-                  Admin · {me.role}
+                  Admin · {me?.role ?? "—"}
                 </Typography>
               </Box>
               <KeyboardArrowDownOutlinedIcon sx={{ fontSize: 18, color: "text.secondary", ml: 0.25 }} />
@@ -369,10 +457,10 @@ export default function AdminAppShell({ children }: { children: React.ReactNode 
             >
               <Box sx={{ px: 2, pt: 1.5, pb: 1.25 }}>
                 <Typography sx={{ fontSize: "0.92rem", fontWeight: 600, lineHeight: 1.2 }}>
-                  {me.name}
+                  {me?.full_name ?? "—"}
                 </Typography>
                 <Typography variant="body2" sx={{ fontSize: "0.74rem", color: "text.secondary" }}>
-                  {me.email}
+                  {me?.email ?? ""}
                 </Typography>
               </Box>
               <Divider />

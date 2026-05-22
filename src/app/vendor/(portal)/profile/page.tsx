@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Alert,
   Avatar,
   Box,
   Button,
+  CircularProgress,
   Grid,
   MenuItem,
   Stack,
@@ -15,26 +16,158 @@ import {
 import VerifiedUserOutlinedIcon from "@mui/icons-material/VerifiedUserOutlined";
 import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined";
 import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
-import { vendor, vendorCategories } from "@/lib/vendorData";
+import { vendorCategories } from "@/lib/vendorData";
 import { PageHeader, SectionCard, StatusPill, TagPill, portalText } from "@/components/vendor/PortalUI";
+import { createBrowserSupabase } from "@/lib/supabase/browser";
+import { fetchCurrentVendor, updateCurrentVendor } from "@/lib/supabase/vendorQueries";
+import type { VendorsRow } from "@/lib/supabase/types";
 
 export default function VendorProfilePage() {
-  const [companyName, setCompanyName] = useState(vendor.companyName);
-  const [displayName, setDisplayName] = useState(vendor.displayName);
-  const [website, setWebsite] = useState(vendor.website);
-  const [category, setCategory] = useState<string>(vendor.category);
-  const [description, setDescription] = useState(vendor.description);
-  const [contactName, setContactName] = useState(vendor.contactName);
-  const [contactEmail, setContactEmail] = useState(vendor.contactEmail);
-  const [contactPhone, setContactPhone] = useState(vendor.contactPhone);
-  const [billingEmail, setBillingEmail] = useState(vendor.billingEmail);
-  const [calendarLink, setCalendarLink] = useState("https://cal.com/marcus-reilly/intro");
+  const [loading, setLoading] = useState(true);
+  const [vendor, setVendor] = useState<VendorsRow | null>(null);
+  const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [logoError, setLogoError] = useState<string | null>(null);
 
-  const onSave = () => {
+  const [companyName, setCompanyName] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [website, setWebsite] = useState("");
+  const [category, setCategory] = useState<string>("");
+  const [description, setDescription] = useState("");
+  const [contactName, setContactName] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
+  const [billingEmail, setBillingEmail] = useState("");
+  const [calendarLink, setCalendarLink] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    const supabase = createBrowserSupabase();
+    (async () => {
+      const v = await fetchCurrentVendor(supabase);
+      if (!active) return;
+      if (v) {
+        setVendor(v);
+        setCompanyName(v.company_name ?? "");
+        setDisplayName(v.display_name ?? "");
+        setWebsite(v.website ?? "");
+        setCategory(v.category ?? "");
+        setDescription(v.description ?? "");
+        setContactName(v.contact_name ?? "");
+        setContactEmail(v.contact_email ?? "");
+        setContactPhone(v.contact_phone ?? "");
+        setBillingEmail(v.billing_email ?? "");
+        setCalendarLink(v.calendar_link ?? "");
+      }
+      setLoading(false);
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const onLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // reset so picking the same file twice re-fires
+    if (!file || !vendor) return;
+    if (file.size > 2 * 1024 * 1024) {
+      setLogoError("Image must be under 2MB.");
+      return;
+    }
+    setUploadingLogo(true);
+    setLogoError(null);
+
+    try {
+      const supabase = createBrowserSupabase();
+      const ext = (file.name.split(".").pop() || "png").toLowerCase().replace(/[^a-z0-9]/g, "");
+      const path = `${vendor.id}/logo-${Date.now()}.${ext}`;
+
+      const { error: upErr } = await supabase.storage
+        .from("vendor-logos")
+        .upload(path, file, {
+          cacheControl: "3600",
+          upsert: true,
+          contentType: file.type,
+        });
+
+      if (upErr) {
+        setLogoError(upErr.message);
+        setUploadingLogo(false);
+        return;
+      }
+
+      const { data: publicUrl } = supabase.storage.from("vendor-logos").getPublicUrl(path);
+
+      const result = await updateCurrentVendor(supabase, { logo_url: publicUrl.publicUrl });
+      if (!result.ok) {
+        setLogoError(result.error ?? "Could not save logo URL.");
+        setUploadingLogo(false);
+        return;
+      }
+
+      // Refresh the row so the UI shows the new logo immediately.
+      const v = await fetchCurrentVendor(supabase);
+      setVendor(v);
+    } catch (err) {
+      console.error("[profile] logo upload failed:", err);
+      setLogoError("Upload failed. Please try again.");
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
+  const onSave = async () => {
+    if (!vendor) return;
+    setSaving(true);
+    setError(null);
+    const supabase = createBrowserSupabase();
+    const result = await updateCurrentVendor(supabase, {
+      company_name: companyName.trim(),
+      display_name: displayName.trim() || companyName.trim(),
+      website: website.trim() || null,
+      category: category || null,
+      description: description.trim() || null,
+      contact_name: contactName.trim(),
+      contact_email: contactEmail.trim(),
+      contact_phone: contactPhone.trim() || null,
+      billing_email: billingEmail.trim() || null,
+      calendar_link: calendarLink.trim() || null,
+    });
+    setSaving(false);
+    if (!result.ok) {
+      setError(result.error ?? "Could not save changes.");
+      return;
+    }
     setSaved(true);
     setTimeout(() => setSaved(false), 2400);
   };
+
+  if (loading) {
+    return (
+      <Stack sx={{ alignItems: "center", py: 8, gap: 2 }}>
+        <CircularProgress size={28} sx={{ color: "#A07823" }} />
+        <Typography sx={{ color: "#5C6770", fontSize: "0.88rem" }}>Loading profile…</Typography>
+      </Stack>
+    );
+  }
+
+  if (!vendor) {
+    return (
+      <SectionCard padding="default">
+        <Typography sx={portalText.sectionTitle}>No vendor profile found.</Typography>
+      </SectionCard>
+    );
+  }
+
+  const initials = (vendor.display_name ?? vendor.company_name ?? "")
+    .split(" ")
+    .map((w) => w[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   return (
     <Stack spacing={2.5}>
@@ -47,7 +180,14 @@ export default function VendorProfilePage() {
             variant="contained"
             size="small"
             onClick={onSave}
-            startIcon={saved ? <CheckCircleOutlinedIcon sx={{ fontSize: 16 }} /> : undefined}
+            disabled={saving}
+            startIcon={
+              saving ? (
+                <CircularProgress size={14} sx={{ color: "inherit" }} />
+              ) : saved ? (
+                <CheckCircleOutlinedIcon sx={{ fontSize: 16 }} />
+              ) : undefined
+            }
             sx={{
               bgcolor: saved ? "#1F5C40" : "#0A1A2F",
               textTransform: "none",
@@ -56,7 +196,7 @@ export default function VendorProfilePage() {
               "&:hover": { bgcolor: saved ? "#19533A" : "#0F2540" },
             }}
           >
-            {saved ? "Saved" : "Save changes"}
+            {saving ? "Saving…" : saved ? "Saved" : "Save changes"}
           </Button>
         }
       />
@@ -69,6 +209,7 @@ export default function VendorProfilePage() {
               <Stack spacing={1.5} sx={{ alignItems: "center", textAlign: "center" }}>
                 <Box sx={{ position: "relative" }}>
                   <Avatar
+                    src={vendor.logo_url ?? undefined}
                     sx={{
                       width: 72,
                       height: 72,
@@ -80,25 +221,27 @@ export default function VendorProfilePage() {
                       border: "2px solid rgba(217,168,75,0.4)",
                     }}
                   >
-                    {vendor.avatarInitials}
+                    {initials || "VP"}
                   </Avatar>
-                  <Box
-                    sx={{
-                      position: "absolute",
-                      right: -4,
-                      bottom: -4,
-                      width: 24,
-                      height: 24,
-                      borderRadius: "50%",
-                      bgcolor: "#1F5C40",
-                      color: "#FFFFFF",
-                      display: "grid",
-                      placeItems: "center",
-                      border: "2px solid #FFFFFF",
-                    }}
-                  >
-                    <VerifiedUserOutlinedIcon sx={{ fontSize: 13 }} />
-                  </Box>
+                  {vendor.verified && (
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        right: -4,
+                        bottom: -4,
+                        width: 24,
+                        height: 24,
+                        borderRadius: "50%",
+                        bgcolor: "#1F5C40",
+                        color: "#FFFFFF",
+                        display: "grid",
+                        placeItems: "center",
+                        border: "2px solid #FFFFFF",
+                      }}
+                    >
+                      <VerifiedUserOutlinedIcon sx={{ fontSize: 13 }} />
+                    </Box>
+                  )}
                 </Box>
                 <Box>
                   <Typography sx={{ fontSize: "0.95rem", fontWeight: 700, color: "#0A1A2F" }}>
@@ -107,13 +250,21 @@ export default function VendorProfilePage() {
                   <Typography sx={portalText.meta}>{category}</Typography>
                 </Box>
                 <Stack direction="row" spacing={0.5} sx={{ flexWrap: "wrap", justifyContent: "center", gap: 0.5 }}>
-                  <TagPill label="VERIFIED" tone="gold" size="sm" />
-                  <TagPill label="FOUNDING" tone="navy" size="sm" />
+                  {vendor.verified && <TagPill label="VERIFIED" tone="gold" size="sm" />}
+                  <TagPill label={(vendor.plan_id ?? "FOUNDING").toUpperCase()} tone="navy" size="sm" />
                 </Stack>
                 <Button
+                  component="label"
                   variant="outlined"
                   size="small"
-                  startIcon={<CloudUploadOutlinedIcon sx={{ fontSize: 14 }} />}
+                  disabled={uploadingLogo}
+                  startIcon={
+                    uploadingLogo ? (
+                      <CircularProgress size={12} sx={{ color: "inherit" }} />
+                    ) : (
+                      <CloudUploadOutlinedIcon sx={{ fontSize: 14 }} />
+                    )
+                  }
                   sx={{
                     mt: 0.5,
                     borderColor: "rgba(14,42,61,0.18)",
@@ -124,8 +275,19 @@ export default function VendorProfilePage() {
                     "&:hover": { borderColor: "#A07823", bgcolor: "rgba(217,168,75,0.06)" },
                   }}
                 >
-                  Upload logo
+                  {uploadingLogo ? "Uploading…" : vendor.logo_url ? "Replace logo" : "Upload logo"}
+                  <input
+                    type="file"
+                    hidden
+                    accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                    onChange={onLogoChange}
+                  />
                 </Button>
+                {logoError && (
+                  <Typography sx={{ fontSize: "0.72rem", color: "#8C1D1D", textAlign: "center", mt: 0.5 }}>
+                    {logoError}
+                  </Typography>
+                )}
               </Stack>
             </SectionCard>
 
@@ -142,8 +304,17 @@ export default function VendorProfilePage() {
             <SectionCard title="Review status" padding="default">
               <Stack spacing={1}>
                 <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-                  <StatusPill status="approved" size="sm" />
-                  <Typography sx={portalText.body}>Profile is live in the directory.</Typography>
+                  <StatusPill
+                    status={vendor.status === "approved" ? "approved" : vendor.status === "pending_review" ? "pending_review" : "draft"}
+                    size="sm"
+                  />
+                  <Typography sx={portalText.body}>
+                    {vendor.status === "approved" && vendor.verified
+                      ? "Profile is live in the directory."
+                      : vendor.status === "approved"
+                        ? "Approved — verification pending."
+                        : "Under team review."}
+                  </Typography>
                 </Stack>
                 <Typography sx={portalText.meta}>
                   Material changes (name, category) trigger a team re-review. Cosmetic edits (description, contact) go live immediately.
@@ -255,6 +426,12 @@ export default function VendorProfilePage() {
                 </Grid>
               </Grid>
             </SectionCard>
+
+            {error && (
+              <Alert severity="error" sx={{ borderRadius: 1.5, fontSize: "0.82rem", py: 0.75 }} onClose={() => setError(null)}>
+                {error}
+              </Alert>
+            )}
 
             <Alert
               severity="info"

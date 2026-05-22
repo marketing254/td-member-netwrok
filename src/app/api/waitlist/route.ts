@@ -9,15 +9,11 @@ import type { WaitlistPayload } from "@/lib/waitlist/validate";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// TESTING MODE
-// While Rushdha is reviewing the thank-you page, the form submits without
-// hitting Supabase. Flip this to `false` (or remove the constant) once the
-// Supabase env vars are wired in production.
-const MOCK_MODE = true;
+// Mock mode is off — Supabase is now wired. Set MOCK_MODE=true locally
+// (via env var) if you want to bypass the DB during a UI-only test session.
+const MOCK_MODE = process.env.WAITLIST_MOCK_MODE === "true";
 
-// In-memory counter for the mock mode. Starts at zero so the hero badge
-// reflects an honest "0 on the list" until someone actually submits the form,
-// and ticks up by 1 per submission. Resets when the dev server restarts.
+// In-memory counter, only used when MOCK_MODE=true. Resets per dev server.
 type MockCounts = { total: number; members: number; last_24h: number };
 const mockCounts: MockCounts = { total: 0, members: 0, last_24h: 0 };
 
@@ -30,7 +26,13 @@ function clientIp(req: Request): string {
 }
 
 function hashIp(ip: string): string {
-  const salt = process.env.IP_HASH_SALT ?? "td-waitlist-default-salt";
+  const salt = process.env.IP_HASH_SALT;
+  if (!salt) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("IP_HASH_SALT is required in production.");
+    }
+    return createHash("sha256").update(`dev-only:${ip}`).digest("hex").slice(0, 32);
+  }
   return createHash("sha256").update(`${salt}:${ip}`).digest("hex").slice(0, 32);
 }
 

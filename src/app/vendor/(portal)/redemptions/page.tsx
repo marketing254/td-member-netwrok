@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Box,
   Button,
+  CircularProgress,
   Grid,
   IconButton,
   InputAdornment,
@@ -18,7 +19,14 @@ import SavingsOutlinedIcon from "@mui/icons-material/SavingsOutlined";
 import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import OpenInNewOutlinedIcon from "@mui/icons-material/OpenInNewOutlined";
-import { vendorKpis, vendorRedemptions } from "@/lib/vendorData";
+import { createBrowserSupabase } from "@/lib/supabase/browser";
+import {
+  fetchCurrentVendor,
+  fetchVendorKpis,
+  fetchVendorRedemptions,
+  type RedemptionWithOffer,
+  type VendorKpis,
+} from "@/lib/supabase/vendorQueries";
 import {
   EmptyState,
   PageHeader,
@@ -28,18 +36,64 @@ import {
 } from "@/components/vendor/PortalUI";
 
 export default function RedemptionsPage() {
+  const [loading, setLoading] = useState(true);
+  const [redemptions, setRedemptions] = useState<RedemptionWithOffer[]>([]);
+  const [kpis, setKpis] = useState<VendorKpis | null>(null);
   const [q, setQ] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    const supabase = createBrowserSupabase();
+    (async () => {
+      const v = await fetchCurrentVendor(supabase);
+      if (!active) return;
+      if (!v) {
+        setLoading(false);
+        return;
+      }
+      const [k, r] = await Promise.all([
+        fetchVendorKpis(supabase, v.id),
+        fetchVendorRedemptions(supabase, v.id),
+      ]);
+      if (!active) return;
+      setKpis(k);
+      setRedemptions(r);
+      setLoading(false);
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const filtered = useMemo(() => {
     const ql = q.trim().toLowerCase();
-    if (!ql) return vendorRedemptions;
-    return vendorRedemptions.filter(
+    if (!ql) return redemptions;
+    return redemptions.filter(
       (r) =>
-        r.memberDisplay.toLowerCase().includes(ql) ||
-        r.offerTitle.toLowerCase().includes(ql) ||
-        r.city.toLowerCase().includes(ql),
+        (r.member_display ?? "").toLowerCase().includes(ql) ||
+        (r.member_city ?? "").toLowerCase().includes(ql) ||
+        (r.offers?.headline ?? "").toLowerCase().includes(ql),
     );
-  }, [q]);
+  }, [redemptions, q]);
+
+  if (loading) {
+    return (
+      <Stack sx={{ alignItems: "center", py: 8, gap: 2 }}>
+        <CircularProgress size={28} sx={{ color: "#A07823" }} />
+        <Typography sx={{ color: "#5C6770", fontSize: "0.88rem" }}>Loading redemptions…</Typography>
+      </Stack>
+    );
+  }
+
+  const k = kpis ?? {
+    redemptionsThisMonth: 0,
+    redemptionsLifetime: 0,
+    savingsDeliveredMonth: 0,
+    savingsDeliveredLifetime: 0,
+    leadsThisMonth: 0,
+    pendingOffersCount: 0,
+    activeOffersCount: 0,
+  };
 
   return (
     <Stack spacing={2.5}>
@@ -71,16 +125,16 @@ export default function RedemptionsPage() {
           <StatCard
             icon={ReceiptLongOutlinedIcon}
             label="Redemptions, MTD"
-            value={String(vendorKpis.redemptionsThisMonth)}
-            footer={`${vendorKpis.redemptionsLifetime} lifetime`}
+            value={String(k.redemptionsThisMonth)}
+            footer={`${k.redemptionsLifetime} lifetime`}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
           <StatCard
             icon={SavingsOutlinedIcon}
             label="Savings delivered, MTD"
-            value={`$${vendorKpis.savingsDeliveredMonth.toLocaleString()}`}
-            footer={`$${vendorKpis.savingsDeliveredLifetime.toLocaleString()} lifetime`}
+            value={`$${k.savingsDeliveredMonth.toLocaleString()}`}
+            footer={`$${k.savingsDeliveredLifetime.toLocaleString()} lifetime`}
             accent="gold"
           />
         </Grid>
@@ -88,16 +142,16 @@ export default function RedemptionsPage() {
           <StatCard
             icon={GroupsOutlinedIcon}
             label="Inbound leads, MTD"
-            value={String(vendorKpis.leadsThisMonth)}
-            footer="Captured via in-portal forms"
+            value={String(k.leadsThisMonth)}
+            footer="Bookings + hotline"
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
           <StatCard
             label="Avg savings / redemption"
             value={
-              vendorKpis.redemptionsLifetime > 0
-                ? `$${Math.round(vendorKpis.savingsDeliveredLifetime / vendorKpis.redemptionsLifetime).toLocaleString()}`
+              k.redemptionsLifetime > 0
+                ? `$${Math.round(k.savingsDeliveredLifetime / k.redemptionsLifetime).toLocaleString()}`
                 : "—"
             }
             footer="Lifetime average"
@@ -134,12 +188,15 @@ export default function RedemptionsPage() {
       {filtered.length === 0 ? (
         <EmptyState
           icon={ReceiptLongOutlinedIcon}
-          title="No matches"
-          body="Adjust the search to see redemptions."
+          title={redemptions.length === 0 ? "No redemptions yet" : "No matches"}
+          body={
+            redemptions.length === 0
+              ? "Redemptions will appear here once members start using your offers."
+              : "Adjust the search to see redemptions."
+          }
         />
       ) : (
         <SectionCard padding="none">
-          {/* Header */}
           <Box
             sx={{
               display: { xs: "none", md: "grid" },
@@ -177,26 +234,26 @@ export default function RedemptionsPage() {
               >
                 <Box sx={{ minWidth: 0 }}>
                   <Typography sx={{ fontSize: "0.84rem", fontWeight: 600, color: "#0A1A2F" }} noWrap>
-                    {r.memberDisplay}
+                    {r.member_display ?? "Member"}
                   </Typography>
                   <Typography sx={{ fontSize: "0.72rem", color: "#7A8590" }} noWrap>
-                    {r.city}
+                    {r.member_city ?? "—"}
                   </Typography>
                 </Box>
                 <Box sx={{ display: { xs: "none", md: "block" }, minWidth: 0 }}>
                   <Typography sx={{ fontSize: "0.82rem", color: "#0A1A2F" }} noWrap>
-                    {r.offerTitle}
+                    {r.offers?.headline ?? "—"}
                   </Typography>
                 </Box>
                 <Box sx={{ display: { xs: "none", md: "block" }, fontSize: "0.78rem", color: "#5C6770" }}>
-                  {r.redeemedOn}
+                  {r.redeemed_on}
                 </Box>
                 <Box sx={{ display: { xs: "none", md: "block" }, textAlign: "right" }}>
                   <Typography sx={{ fontSize: "0.86rem", fontWeight: 700, color: "#1F5C40" }}>
-                    ${r.amountSaved.toLocaleString()}
+                    ${Number(r.amount_saved ?? 0).toLocaleString()}
                   </Typography>
                   <Typography sx={portalText.meta}>
-                    +${r.commissionAccrued.toLocaleString()} commission
+                    +${Number(r.commission_accrued ?? 0).toLocaleString()} commission
                   </Typography>
                 </Box>
                 <Box sx={{ display: { xs: "none", md: "flex" }, justifyContent: "flex-end" }}>
@@ -207,14 +264,13 @@ export default function RedemptionsPage() {
                   </Tooltip>
                 </Box>
 
-                {/* Mobile-only meta */}
                 <Stack direction="row" spacing={1.5} sx={{ display: { xs: "flex", md: "none" }, mt: 0.5, flexWrap: "wrap", rowGap: 0.5 }}>
                   <Typography sx={{ fontSize: "0.78rem", color: "#0A1A2F" }} noWrap>
-                    {r.offerTitle}
+                    {r.offers?.headline ?? "—"}
                   </Typography>
-                  <Typography sx={{ fontSize: "0.74rem", color: "#5C6770" }}>{r.redeemedOn}</Typography>
+                  <Typography sx={{ fontSize: "0.74rem", color: "#5C6770" }}>{r.redeemed_on}</Typography>
                   <Typography sx={{ fontSize: "0.82rem", fontWeight: 700, color: "#1F5C40" }}>
-                    ${r.amountSaved.toLocaleString()}
+                    ${Number(r.amount_saved ?? 0).toLocaleString()}
                   </Typography>
                 </Stack>
               </Box>

@@ -63,7 +63,7 @@ const steps = [
   {
     n: "02",
     title: "Review & agreement",
-    body: "Read the Vendor Network Partnership Agreement. Click-to-agree at the end. Reshani approves new partners within 1 business day.",
+    body: "Read the Vendor Network Partnership Agreement. Click-to-agree at the end. Our team approves new partners within 1 business day.",
   },
   {
     n: "03",

@@ -1,9 +1,11 @@
 "use client";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Box,
   Button,
   Chip,
+  CircularProgress,
   Grid,
   LinearProgress,
   Stack,
@@ -13,20 +15,85 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
 import StoreOutlinedIcon from "@mui/icons-material/StoreOutlined";
 import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
-import SupportAgentOutlinedIcon from "@mui/icons-material/SupportAgentOutlined";
+import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
+import MarkEmailReadOutlinedIcon from "@mui/icons-material/MarkEmailReadOutlined";
 import SavingsOutlinedIcon from "@mui/icons-material/SavingsOutlined";
 import TrendingUpOutlinedIcon from "@mui/icons-material/TrendingUpOutlined";
-import {
-  adminKpis,
-  adminPendingOffers,
-  adminVendors,
-  adminHotlineCases,
-} from "@/lib/vendorData";
+
+type Overview = {
+  vendors: { total: number; pending: number; approved: number; suspended: number; rejected: number; verified: number };
+  members: { total: number; active: number; thisWeek: number };
+  waitlist: { total: number; members: number; vendors: number; last24h: number };
+  offers: { pending: number; approved: number; total: number };
+  catalog: { pending: number; approved: number; total: number };
+  redemptions: { lifetimeCount: number; thisMonthCount: number; lifetimeSavings: number };
+  recentApplications: {
+    id: string;
+    company_name: string;
+    contact_name: string;
+    contact_email: string;
+    status: string;
+    created_at: string;
+    vendor_id: string | null;
+  }[];
+  pendingOffers: {
+    id: string;
+    headline: string;
+    discount_value: string;
+    review_status: string;
+    catalog_items: { name: string; type: string } | null;
+  }[];
+  foundingCap: number;
+};
 
 export default function AdminOverviewPage() {
-  const foundingProgress = (adminKpis.membersTotal / adminKpis.membersFoundingCap) * 100;
-  const pendingVendors = adminVendors.filter((v) => v.status === "pending");
-  const criticalCases = adminHotlineCases.filter((c) => c.urgency === "critical" || c.status === "received");
+  const [data, setData] = useState<Overview | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/overview", { cache: "no-store" });
+        const body = (await res.json()) as Overview & { error?: string };
+        if (!active) return;
+        if (!res.ok || body.error) {
+          setError(body.error ?? `Failed to load (${res.status})`);
+          return;
+        }
+        setData(body);
+      } catch (err) {
+        if (!active) return;
+        setError(err instanceof Error ? err.message : "Failed to load.");
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (loading) {
+    return (
+      <Stack sx={{ alignItems: "center", py: 8 }}>
+        <CircularProgress size={28} sx={{ color: "#A07823" }} />
+      </Stack>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <Stack spacing={2} sx={{ py: 4 }}>
+        <Typography sx={{ color: "error.main" }}>Could not load overview.</Typography>
+        <Typography sx={{ color: "text.secondary", fontSize: "0.85rem" }}>{error}</Typography>
+      </Stack>
+    );
+  }
+
+  const foundingProgress =
+    data.foundingCap > 0 ? (data.members.total / data.foundingCap) * 100 : 0;
 
   return (
     <Stack spacing={4}>
@@ -39,7 +106,7 @@ export default function AdminOverviewPage() {
           Operations dashboard
         </Typography>
         <Typography sx={{ color: "text.secondary", maxWidth: 720 }}>
-          State of the network at a glance. Action queues are highlighted at the top, clear them first.
+          Live state of the network. Action queues are highlighted first — clear those before scrolling.
         </Typography>
       </Box>
 
@@ -50,35 +117,35 @@ export default function AdminOverviewPage() {
         </Typography>
         <Grid container spacing={2.5}>
           <ActionQueue
-            icon={SupportAgentOutlinedIcon}
-            label="Hotline cases"
-            count={criticalCases.length}
-            detail="open or critical"
-            href="/admin/hotline"
-            urgency="critical"
-          />
-          <ActionQueue
             icon={StoreOutlinedIcon}
             label="Vendor approvals"
-            count={pendingVendors.length}
+            count={data.vendors.pending}
             detail="pending review"
-            href="/admin/vendors?filter=pending"
-            urgency="high"
+            href="/admin/vendors?filter=pending_review"
+            urgency={data.vendors.pending > 0 ? "high" : "normal"}
           />
           <ActionQueue
             icon={LocalOfferOutlinedIcon}
             label="Offer reviews"
-            count={adminPendingOffers.length}
-            detail="awaiting Reshani"
+            count={data.offers.pending}
+            detail="awaiting review"
             href="/admin/offers"
-            urgency="high"
+            urgency={data.offers.pending > 0 ? "high" : "normal"}
           />
           <ActionQueue
-            icon={PeopleAltOutlinedIcon}
-            label="New members · 7d"
-            count={adminKpis.membersThisWeek}
-            detail="welcome flow ready"
-            href="/admin/members?filter=recent"
+            icon={Inventory2OutlinedIcon}
+            label="Catalog reviews"
+            count={data.catalog.pending}
+            detail="awaiting review"
+            href="/admin/content"
+            urgency={data.catalog.pending > 0 ? "high" : "normal"}
+          />
+          <ActionQueue
+            icon={MarkEmailReadOutlinedIcon}
+            label="Waitlist · 24h"
+            count={data.waitlist.last24h}
+            detail="new signups"
+            href="/admin/waitlist"
           />
         </Grid>
       </Box>
@@ -92,27 +159,27 @@ export default function AdminOverviewPage() {
           <Stat
             icon={PeopleAltOutlinedIcon}
             label="Total members"
-            value={`${adminKpis.membersTotal}`}
-            footer={`${(foundingProgress).toFixed(1)}% of founding cap (${adminKpis.membersFoundingCap})`}
+            value={`${data.members.total}`}
+            footer={`${foundingProgress.toFixed(1)}% of founding cap (${data.foundingCap}) · ${data.members.thisWeek} this week`}
           />
           <Stat
             icon={StoreOutlinedIcon}
             label="Active vendors"
-            value={`${adminKpis.vendorsActive}`}
-            footer={`${adminKpis.vendorsPending} pending · ${adminKpis.vendorsTotal} total`}
+            value={`${data.vendors.approved}`}
+            footer={`${data.vendors.pending} pending · ${data.vendors.verified} verified · ${data.vendors.total} total`}
             accent="secondary"
           />
           <Stat
             icon={TrendingUpOutlinedIcon}
-            label="Member MRR"
-            value={`$${adminKpis.mrr.toLocaleString()}`}
-            footer={`$${adminKpis.arr.toLocaleString()} ARR · ${(adminKpis.hotlineSlaCompliance * 100).toFixed(0)}% SLA`}
+            label="Redemptions · MTD"
+            value={`${data.redemptions.thisMonthCount}`}
+            footer={`${data.redemptions.lifetimeCount} lifetime`}
           />
           <Stat
             icon={SavingsOutlinedIcon}
-            label="Vendor savings · YTD"
-            value={`$${adminKpis.savingsDeliveredYtd.toLocaleString()}`}
-            footer={`${adminKpis.redemptionsThisMonth} redemptions this month`}
+            label="Vendor savings · lifetime"
+            value={`$${data.redemptions.lifetimeSavings.toLocaleString()}`}
+            footer={`${data.offers.approved} active offers in market`}
             accent="secondary"
           />
         </Grid>
@@ -143,10 +210,10 @@ export default function AdminOverviewPage() {
               FOUNDING COHORT
             </Typography>
             <Typography variant="h3" sx={{ color: "common.white", fontSize: { xs: "1.85rem", md: "2.5rem" }, mt: 0.5, mb: 1 }}>
-              {adminKpis.membersTotal} of {adminKpis.membersFoundingCap.toLocaleString()} seats claimed
+              {data.members.total} of {data.foundingCap.toLocaleString()} seats claimed
             </Typography>
             <Typography sx={{ color: "rgba(255,255,255,0.85)", maxWidth: 540 }}>
-              Once 1,000 founding seats fill, members signing up after pay $199/mo. Lifetime-locked rate is final.
+              Once the founding cap fills, post-cap members pay the standard rate. Founding rate is locked once allocated.
             </Typography>
           </Grid>
           <Grid size={{ xs: 12, md: 5 }}>
@@ -156,7 +223,7 @@ export default function AdminOverviewPage() {
               </Typography>
               <LinearProgress
                 variant="determinate"
-                value={foundingProgress}
+                value={Math.min(100, foundingProgress)}
                 sx={{
                   height: 6,
                   borderRadius: 999,
@@ -169,7 +236,7 @@ export default function AdminOverviewPage() {
                 }}
               />
               <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.78)", fontSize: "0.82rem" }}>
-                {adminKpis.membersFoundingCap - adminKpis.membersTotal} seats remaining
+                {Math.max(0, data.foundingCap - data.members.total)} seats remaining
               </Typography>
             </Box>
           </Grid>
@@ -192,39 +259,43 @@ export default function AdminOverviewPage() {
               <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "flex-end" }}>
                 <Box>
                   <Typography variant="overline" sx={{ color: "text.secondary", display: "block" }}>
-                    HOTLINE TRIAGE
+                    VENDORS
                   </Typography>
-                  <Typography variant="h5">Open cases</Typography>
+                  <Typography variant="h5">Recent applications</Typography>
                 </Box>
-                <Box component={Link} href="/admin/hotline" sx={{ color: "primary.main", fontWeight: 600, fontSize: "0.85rem", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 0.5 }}>
+                <Box component={Link} href="/admin/vendors" sx={{ color: "primary.main", fontWeight: 600, fontSize: "0.85rem", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 0.5 }}>
                   Open queue <ArrowForwardIcon sx={{ fontSize: 16 }} />
                 </Box>
               </Stack>
             </Box>
-            <Stack divider={<Box sx={{ borderTop: "1px solid", borderColor: "divider" }} />}>
-              {adminHotlineCases.slice(0, 4).map((c) => (
-                <Box key={c.id} sx={{ p: 2 }}>
-                  <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "flex-start", gap: 1.5 }}>
-                    <Box sx={{ minWidth: 0, flex: 1 }}>
-                      <Stack direction="row" spacing={0.75} sx={{ mb: 0.5, flexWrap: "wrap" }}>
-                        <Chip label={c.pillar} size="small" sx={{ bgcolor: "rgba(14,42,61,0.07)", color: "primary.dark", fontWeight: 700, fontSize: "0.65rem", height: 20 }} />
-                        <UrgencyChip urgency={c.urgency} />
-                        <CaseStatusChip status={c.status} />
-                      </Stack>
-                      <Typography sx={{ fontSize: "0.92rem", fontWeight: 600 }}>
-                        {c.summary}
+            {data.recentApplications.length === 0 ? (
+              <Box sx={{ p: 3, textAlign: "center", color: "text.secondary" }}>
+                No applications yet.
+              </Box>
+            ) : (
+              <Stack divider={<Box sx={{ borderTop: "1px solid", borderColor: "divider" }} />}>
+                {data.recentApplications.map((a) => (
+                  <Box key={a.id} sx={{ p: 2 }}>
+                    <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "flex-start", gap: 1.5 }}>
+                      <Box sx={{ minWidth: 0, flex: 1 }}>
+                        <Stack direction="row" spacing={0.75} sx={{ mb: 0.5, flexWrap: "wrap" }}>
+                          <VendorStatusChip status={a.status} />
+                        </Stack>
+                        <Typography sx={{ fontSize: "0.92rem", fontWeight: 600 }}>
+                          {a.company_name}
+                        </Typography>
+                        <Typography variant="body2" sx={{ fontSize: "0.78rem", color: "text.secondary", mt: 0.25 }}>
+                          {a.contact_name} · {a.contact_email}
+                        </Typography>
+                      </Box>
+                      <Typography variant="body2" sx={{ fontSize: "0.74rem", color: "text.secondary", flexShrink: 0 }}>
+                        {a.created_at.slice(0, 10)}
                       </Typography>
-                      <Typography variant="body2" sx={{ fontSize: "0.78rem", color: "text.secondary", mt: 0.25 }}>
-                        {c.member} · opened {c.openedAt}
-                      </Typography>
-                    </Box>
-                    <Typography variant="body2" sx={{ fontSize: "0.78rem", color: "#A07823", fontWeight: 700, flexShrink: 0, textAlign: "right" }}>
-                      {c.slaDueIn}
-                    </Typography>
-                  </Stack>
-                </Box>
-              ))}
-            </Stack>
+                    </Stack>
+                  </Box>
+                ))}
+              </Stack>
+            )}
           </Box>
         </Grid>
 
@@ -252,22 +323,22 @@ export default function AdminOverviewPage() {
               </Stack>
             </Box>
             <Stack divider={<Box sx={{ borderTop: "1px solid", borderColor: "divider" }} />}>
-              {adminPendingOffers.map((o) => (
+              {data.pendingOffers.map((o) => (
                 <Stack key={o.id} direction="row" sx={{ p: 2, alignItems: "center", gap: 1.5 }}>
                   <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography sx={{ fontSize: "0.92rem", fontWeight: 600 }}>
-                      {o.title}
+                    <Typography sx={{ fontSize: "0.92rem", fontWeight: 600 }} noWrap>
+                      {o.headline}
                     </Typography>
-                    <Typography variant="body2" sx={{ fontSize: "0.78rem", color: "text.secondary" }}>
-                      {o.vendor} · {o.discountLabel}
+                    <Typography variant="body2" sx={{ fontSize: "0.78rem", color: "text.secondary" }} noWrap>
+                      {o.catalog_items?.name ?? "—"} · {o.discount_value}
                     </Typography>
                   </Box>
-                  <Button variant="outlined" color="primary" size="small">
+                  <Button component={Link} href="/admin/offers" variant="outlined" color="primary" size="small">
                     Review
                   </Button>
                 </Stack>
               ))}
-              {adminPendingOffers.length === 0 && (
+              {data.pendingOffers.length === 0 && (
                 <Box sx={{ p: 3, textAlign: "center", color: "text.secondary" }}>
                   <Typography variant="body2">No pending offers, queue is clear.</Typography>
                 </Box>
@@ -293,7 +364,7 @@ function ActionQueue({
   count: number;
   detail: string;
   href: string;
-  urgency?: "critical" | "high";
+  urgency?: "critical" | "high" | "normal";
 }) {
   const tint = urgency === "critical"
     ? { bg: "rgba(220,60,60,0.12)", border: "rgba(220,60,60,0.32)", color: "#8C1D1D" }
@@ -397,23 +468,15 @@ function Stat({
   );
 }
 
-function UrgencyChip({ urgency }: { urgency: "critical" | "high" | "normal" }) {
-  const map = {
-    critical: { bg: "rgba(220,60,60,0.12)", color: "#8C1D1D", label: "Critical" },
-    high: { bg: "rgba(217,168,75,0.16)", color: "#A07823", label: "High" },
-    normal: { bg: "grey.100", color: "text.secondary", label: "Normal" },
-  } as const;
-  const s = map[urgency];
-  return <Chip label={s.label} size="small" sx={{ bgcolor: s.bg, color: s.color, fontWeight: 700, fontSize: "0.62rem", height: 20 }} />;
-}
-
-function CaseStatusChip({ status }: { status: string }) {
-  const labels: Record<string, string> = {
-    received: "New",
-    triaged: "Triaged",
-    matched: "With expert",
-    replied: "Replied",
-    resolved: "Resolved",
+function VendorStatusChip({ status }: { status: string }) {
+  const map: Record<string, { bg: string; color: string; label: string }> = {
+    pending_review: { bg: "rgba(217,168,75,0.16)", color: "#A07823", label: "Pending" },
+    approved: { bg: "rgba(34,108,78,0.12)", color: "#1F5C40", label: "Approved" },
+    suspended: { bg: "rgba(220,60,60,0.12)", color: "#8C1D1D", label: "Suspended" },
+    rejected: { bg: "rgba(220,60,60,0.08)", color: "#8C1D1D", label: "Rejected" },
   };
-  return <Chip label={labels[status] ?? status} size="small" sx={{ bgcolor: "rgba(14,42,61,0.07)", color: "primary.dark", fontWeight: 700, fontSize: "0.62rem", height: 20 }} />;
+  const s = map[status] ?? map.pending_review;
+  return (
+    <Chip label={s.label} size="small" sx={{ bgcolor: s.bg, color: s.color, fontWeight: 700, fontSize: "0.62rem", height: 20 }} />
+  );
 }

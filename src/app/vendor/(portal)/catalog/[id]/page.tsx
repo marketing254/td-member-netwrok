@@ -1,11 +1,12 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   Box,
   Button,
+  CircularProgress,
   Grid,
   IconButton,
   Stack,
@@ -24,11 +25,16 @@ import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import PlayArrowRoundedIcon from "@mui/icons-material/PlayArrowRounded";
 import PhotoLibraryOutlinedIcon from "@mui/icons-material/PhotoLibraryOutlined";
 import OndemandVideoOutlinedIcon from "@mui/icons-material/OndemandVideoOutlined";
+import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
+import OpenInNewOutlinedIcon from "@mui/icons-material/OpenInNewOutlined";
+import { createBrowserSupabase } from "@/lib/supabase/browser";
 import {
-  getCatalogItem,
-  getOffersForItem,
-  type CatalogItemType,
-} from "@/lib/catalogData";
+  fetchCatalogItem,
+  fetchVendorOffers,
+  type CatalogItemWithMedia,
+  type OfferWithCatalog,
+} from "@/lib/supabase/vendorQueries";
+import type { CatalogItemsRow } from "@/lib/supabase/types";
 import {
   SectionCard,
   StatusPill,
@@ -36,7 +42,9 @@ import {
   portalText,
 } from "@/components/vendor/PortalUI";
 
-function TypeIcon({ type, size = 16 }: { type: CatalogItemType; size?: number }) {
+type CatalogType = CatalogItemsRow["type"];
+
+function TypeIcon({ type, size = 16 }: { type: CatalogType; size?: number }) {
   const Icon =
     type === "service"
       ? MedicalServicesOutlinedIcon
@@ -50,16 +58,87 @@ type RouteParams = Promise<{ id: string }>;
 
 export default function CatalogDetailPage({ params }: { params: RouteParams }) {
   const { id } = use(params);
-  const item = getCatalogItem(id);
-  if (!item) notFound();
-
-  const offers = getOffersForItem(item.id);
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [item, setItem] = useState<CatalogItemWithMedia | null>(null);
+  const [offers, setOffers] = useState<OfferWithCatalog[]>([]);
   const [activeImage, setActiveImage] = useState(0);
-  const heroImage = item.images[activeImage];
+
+  useEffect(() => {
+    let active = true;
+    const supabase = createBrowserSupabase();
+    (async () => {
+      const result = await fetchCatalogItem(supabase, id);
+      if (!active) return;
+      setItem(result);
+
+      if (result) {
+        const allOffers = await fetchVendorOffers(supabase, result.vendor_id);
+        if (!active) return;
+        setOffers(allOffers.filter((o) => o.catalog_item_id === id));
+      }
+      setLoading(false);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [id]);
+
+  const images = useMemo(
+    () => (item?.catalog_media ?? []).filter((m) => m.kind === "image"),
+    [item],
+  );
+  const videos = useMemo(
+    () => (item?.catalog_media ?? []).filter((m) => m.kind === "video"),
+    [item],
+  );
+  const documents = useMemo(
+    () => (item?.catalog_media ?? []).filter((m) => m.kind === "document"),
+    [item],
+  );
+
+  if (loading) {
+    return (
+      <Stack sx={{ alignItems: "center", py: 8, gap: 2 }}>
+        <CircularProgress size={28} sx={{ color: "#A07823" }} />
+        <Typography sx={{ color: "#5C6770", fontSize: "0.88rem" }}>Loading item…</Typography>
+      </Stack>
+    );
+  }
+
+  if (!item) {
+    return (
+      <SectionCard padding="default">
+        <Stack spacing={1.5} sx={{ alignItems: "center", textAlign: "center", py: 4 }}>
+          <Typography sx={portalText.sectionTitle}>Item not found.</Typography>
+          <Typography sx={{ color: "#5C6770", fontSize: "0.88rem" }}>
+            The item may have been removed or you don&apos;t have access.
+          </Typography>
+          <Button
+            onClick={() => router.push("/vendor/catalog")}
+            variant="outlined"
+            size="small"
+            sx={{
+              borderColor: "rgba(14,42,61,0.18)",
+              color: "#0A1A2F",
+              textTransform: "none",
+              fontSize: "0.82rem",
+              mt: 1,
+            }}
+          >
+            Back to catalog
+          </Button>
+        </Stack>
+      </SectionCard>
+    );
+  }
+
+  const heroImage = images[activeImage];
+  const createdOn = (item.created_at ?? "").slice(0, 10);
+  const updatedOn = (item.updated_at ?? "").slice(0, 10);
 
   return (
     <Stack spacing={2.5}>
-      {/* Back link */}
       <Box>
         <Button
           component={Link}
@@ -78,7 +157,6 @@ export default function CatalogDetailPage({ params }: { params: RouteParams }) {
         </Button>
       </Box>
 
-      {/* Header strip */}
       <Stack
         direction={{ xs: "column", sm: "row" }}
         spacing={2}
@@ -114,9 +192,11 @@ export default function CatalogDetailPage({ params }: { params: RouteParams }) {
           >
             {item.name}
           </Typography>
-          <Typography sx={{ fontSize: "0.95rem", color: "#3B4A55", lineHeight: 1.5, maxWidth: 720 }}>
-            {item.tagline}
-          </Typography>
+          {item.tagline && (
+            <Typography sx={{ fontSize: "0.95rem", color: "#3B4A55", lineHeight: 1.5, maxWidth: 720 }}>
+              {item.tagline}
+            </Typography>
+          )}
         </Box>
         <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
           <Button
@@ -153,15 +233,14 @@ export default function CatalogDetailPage({ params }: { params: RouteParams }) {
         </Stack>
       </Stack>
 
-      {/* Status + tags row */}
       <Stack direction="row" spacing={0.75} sx={{ flexWrap: "wrap", gap: 0.5 }}>
-        <StatusPill status={item.reviewStatus} />
-        {item.tags.map((t) => (
+        <StatusPill status={item.review_status} />
+        {(item.tags ?? []).map((t) => (
           <TagPill key={t} label={t} tone="neutral" />
         ))}
       </Stack>
 
-      {item.reviewNote && (
+      {item.review_note && (
         <Box
           sx={{
             bgcolor: "rgba(217,168,75,0.06)",
@@ -175,17 +254,15 @@ export default function CatalogDetailPage({ params }: { params: RouteParams }) {
             <Box component="strong" sx={{ fontWeight: 700, fontStyle: "normal", mr: 0.5 }}>
               Team note:
             </Box>
-            {item.reviewNote}
+            {item.review_note}
           </Typography>
         </Box>
       )}
 
       <Grid container spacing={2}>
-        {/* LEFT: media + content */}
         <Grid size={{ xs: 12, lg: 8 }}>
           <Stack spacing={2}>
-            {/* Hero gallery */}
-            {item.images.length > 0 && (
+            {images.length > 0 && heroImage && (
               <SectionCard padding="none">
                 <Box
                   sx={{
@@ -198,16 +275,11 @@ export default function CatalogDetailPage({ params }: { params: RouteParams }) {
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={heroImage?.url}
-                    alt={heroImage?.caption ?? item.name}
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                      display: "block",
-                    }}
+                    src={heroImage.url}
+                    alt={heroImage.caption ?? item.name}
+                    style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                   />
-                  {heroImage?.caption && (
+                  {heroImage.caption && (
                     <Box
                       sx={{
                         position: "absolute",
@@ -227,7 +299,7 @@ export default function CatalogDetailPage({ params }: { params: RouteParams }) {
                     </Box>
                   )}
                 </Box>
-                {item.images.length > 1 && (
+                {images.length > 1 && (
                   <Stack
                     direction="row"
                     spacing={0.75}
@@ -239,9 +311,9 @@ export default function CatalogDetailPage({ params }: { params: RouteParams }) {
                       overflowX: "auto",
                     }}
                   >
-                    {item.images.map((img, i) => (
+                    {images.map((img, i) => (
                       <Box
-                        key={i}
+                        key={img.id}
                         role="button"
                         tabIndex={0}
                         onClick={() => setActiveImage(i)}
@@ -261,16 +333,14 @@ export default function CatalogDetailPage({ params }: { params: RouteParams }) {
                           borderColor: i === activeImage ? "#A07823" : "rgba(14,42,61,0.08)",
                           cursor: "pointer",
                           opacity: i === activeImage ? 1 : 0.7,
-                          transition: "all 160ms ease",
                           "&:hover": { opacity: 1, borderColor: "#A07823" },
-                          "&:focus-visible": { outline: "2px solid #A07823", outlineOffset: 1 },
                         }}
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={img.url}
                           alt={img.caption ?? ""}
-                          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
                         />
                       </Box>
                     ))}
@@ -279,15 +349,13 @@ export default function CatalogDetailPage({ params }: { params: RouteParams }) {
               </SectionCard>
             )}
 
-            {/* Description */}
             <SectionCard title="About this listing">
               <Typography sx={{ ...portalText.body, fontSize: "0.9rem", lineHeight: 1.65 }}>
                 {item.description}
               </Typography>
             </SectionCard>
 
-            {/* Highlights */}
-            {item.highlights.length > 0 && (
+            {item.highlights && item.highlights.length > 0 && (
               <SectionCard title="Highlights">
                 <Stack spacing={1.25}>
                   {item.highlights.map((h) => (
@@ -302,16 +370,15 @@ export default function CatalogDetailPage({ params }: { params: RouteParams }) {
               </SectionCard>
             )}
 
-            {/* Videos */}
-            {item.videos.length > 0 && (
+            {videos.length > 0 && (
               <SectionCard
                 title="Videos"
-                subtitle={`${item.videos.length} video${item.videos.length === 1 ? "" : "s"}`}
+                subtitle={`${videos.length} video${videos.length === 1 ? "" : "s"}`}
                 padding="default"
               >
                 <Grid container spacing={1.5}>
-                  {item.videos.map((v, i) => (
-                    <Grid key={i} size={{ xs: 12, sm: 6 }}>
+                  {videos.map((v) => (
+                    <Grid key={v.id} size={{ xs: 12, sm: 6 }}>
                       <Box
                         component="a"
                         href={v.url}
@@ -324,8 +391,7 @@ export default function CatalogDetailPage({ params }: { params: RouteParams }) {
                           borderRadius: 1.5,
                           overflow: "hidden",
                           border: "1px solid rgba(14,42,61,0.08)",
-                          transition: "border-color 160ms ease, transform 160ms ease",
-                          "&:hover": { borderColor: "#A07823", transform: "translateY(-1px)" },
+                          "&:hover": { borderColor: "#A07823" },
                         }}
                       >
                         <Box
@@ -334,25 +400,17 @@ export default function CatalogDetailPage({ params }: { params: RouteParams }) {
                             width: "100%",
                             aspectRatio: "16 / 9",
                             bgcolor: "#0A1A2F",
-                            overflow: "hidden",
                           }}
                         >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={v.thumbnail}
-                            alt={v.title}
-                            style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.85, display: "block" }}
-                          />
-                          <Box
-                            sx={{
-                              position: "absolute",
-                              inset: 0,
-                              display: "grid",
-                              placeItems: "center",
-                              color: "#FFFFFF",
-                              textShadow: "0 2px 8px rgba(0,0,0,0.6)",
-                            }}
-                          >
+                          {v.thumbnail_url && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={v.thumbnail_url}
+                              alt={v.caption ?? ""}
+                              style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.85 }}
+                            />
+                          )}
+                          <Box sx={{ position: "absolute", inset: 0, display: "grid", placeItems: "center" }}>
                             <Box
                               sx={{
                                 width: 44,
@@ -362,35 +420,37 @@ export default function CatalogDetailPage({ params }: { params: RouteParams }) {
                                 display: "grid",
                                 placeItems: "center",
                                 color: "#0A1A2F",
-                                boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
                               }}
                             >
                               <PlayArrowRoundedIcon sx={{ fontSize: 28 }} />
                             </Box>
                           </Box>
-                          <Box
-                            sx={{
-                              position: "absolute",
-                              right: 8,
-                              bottom: 8,
-                              px: 0.85,
-                              py: 0.25,
-                              borderRadius: 0.5,
-                              bgcolor: "rgba(10,26,47,0.85)",
-                              color: "#FFFFFF",
-                              fontSize: "0.7rem",
-                              fontWeight: 600,
-                              letterSpacing: "0.04em",
-                            }}
-                          >
-                            {v.durationLabel}
+                          {v.duration_label && (
+                            <Box
+                              sx={{
+                                position: "absolute",
+                                right: 8,
+                                bottom: 8,
+                                px: 0.85,
+                                py: 0.25,
+                                borderRadius: 0.5,
+                                bgcolor: "rgba(10,26,47,0.85)",
+                                color: "#FFFFFF",
+                                fontSize: "0.7rem",
+                                fontWeight: 600,
+                              }}
+                            >
+                              {v.duration_label}
+                            </Box>
+                          )}
+                        </Box>
+                        {v.caption && (
+                          <Box sx={{ p: 1.25 }}>
+                            <Typography sx={{ fontSize: "0.85rem", fontWeight: 600, color: "#0A1A2F" }}>
+                              {v.caption}
+                            </Typography>
                           </Box>
-                        </Box>
-                        <Box sx={{ p: 1.25 }}>
-                          <Typography sx={{ fontSize: "0.85rem", fontWeight: 600, color: "#0A1A2F", lineHeight: 1.3 }}>
-                            {v.title}
-                          </Typography>
-                        </Box>
+                        )}
                       </Box>
                     </Grid>
                   ))}
@@ -398,7 +458,67 @@ export default function CatalogDetailPage({ params }: { params: RouteParams }) {
               </SectionCard>
             )}
 
-            {/* Attached offers */}
+            {documents.length > 0 && (
+              <SectionCard
+                title="Documents"
+                subtitle={`${documents.length} file${documents.length === 1 ? "" : "s"} attached`}
+                padding="none"
+              >
+                <Stack divider={<Box sx={{ borderTop: "1px solid rgba(14,42,61,0.06)" }} />}>
+                  {documents.map((d) => {
+                    const filename = d.url.split("/").pop() ?? "document";
+                    const sizeKb = d.file_size_bytes
+                      ? Math.max(1, Math.round(d.file_size_bytes / 1024))
+                      : null;
+                    return (
+                      <Box
+                        key={d.id}
+                        component="a"
+                        href={d.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1.5,
+                          px: 2,
+                          py: 1.5,
+                          textDecoration: "none",
+                          color: "inherit",
+                          "&:hover": { bgcolor: "rgba(217,168,75,0.05)" },
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: 1,
+                            display: "grid",
+                            placeItems: "center",
+                            bgcolor: "rgba(217,168,75,0.12)",
+                            color: "#A07823",
+                            flexShrink: 0,
+                          }}
+                        >
+                          <DescriptionOutlinedIcon sx={{ fontSize: 18 }} />
+                        </Box>
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Typography sx={{ fontSize: "0.86rem", fontWeight: 600, color: "#0A1A2F" }} noWrap>
+                            {d.caption || filename}
+                          </Typography>
+                          <Typography sx={{ fontSize: "0.74rem", color: "#7A8590" }}>
+                            {(d.mime_type ?? "Document").replace("application/", "").toUpperCase()}
+                            {sizeKb ? ` · ${sizeKb} KB` : ""}
+                          </Typography>
+                        </Box>
+                        <OpenInNewOutlinedIcon sx={{ fontSize: 16, color: "#9CA3AB" }} />
+                      </Box>
+                    );
+                  })}
+                </Stack>
+              </SectionCard>
+            )}
+
             <SectionCard
               title="Attached offers"
               subtitle={`${offers.length} offer${offers.length === 1 ? "" : "s"} on this item`}
@@ -436,7 +556,6 @@ export default function CatalogDetailPage({ params }: { params: RouteParams }) {
                         gridTemplateColumns: { xs: "1fr", md: "minmax(0, 2fr) 110px 110px 120px" },
                         gap: 1,
                         alignItems: "center",
-                        "&:hover": { bgcolor: "rgba(14,42,61,0.02)" },
                       }}
                     >
                       <Box sx={{ minWidth: 0 }}>
@@ -452,14 +571,14 @@ export default function CatalogDetailPage({ params }: { params: RouteParams }) {
                       </Box>
                       <Box sx={{ display: { xs: "none", md: "block" } }}>
                         <Typography sx={{ fontSize: "0.82rem", fontWeight: 700, color: "#1F5C40" }}>
-                          {o.discountValue}
+                          {o.discount_value}
                         </Typography>
                       </Box>
                       <Box sx={{ display: { xs: "none", md: "block" } }}>
-                        <StatusPill status={o.reviewStatus} size="sm" />
+                        <StatusPill status={o.review_status} size="sm" />
                       </Box>
                       <Box sx={{ display: { xs: "none", md: "block" }, color: "#7A8590", fontSize: "0.74rem" }}>
-                        {o.validFrom} → {o.validTo}
+                        {o.valid_from} → {o.valid_to}
                       </Box>
                     </Box>
                   ))}
@@ -469,34 +588,33 @@ export default function CatalogDetailPage({ params }: { params: RouteParams }) {
           </Stack>
         </Grid>
 
-        {/* RIGHT: metadata sidebar */}
         <Grid size={{ xs: 12, lg: 4 }}>
           <Stack spacing={2} sx={{ position: { lg: "sticky" }, top: { lg: 76 } }}>
             <SectionCard title="Details" padding="default">
               <Stack spacing={1.25}>
-                <MetaRow label="Price" value={item.priceLabel} highlight />
-                {item.durationHours !== undefined && (
-                  <MetaRow label="Duration" value={`${item.durationHours} hours`} />
+                <MetaRow label="Price" value={item.price_label} highlight />
+                {item.duration_hours !== null && item.duration_hours !== undefined && (
+                  <MetaRow label="Duration" value={`${item.duration_hours} hours`} />
                 )}
-                {item.moduleCount !== undefined && (
-                  <MetaRow label="Modules" value={`${item.moduleCount}`} />
+                {item.module_count !== null && item.module_count !== undefined && (
+                  <MetaRow label="Modules" value={`${item.module_count}`} />
                 )}
-                {item.ceCredits !== undefined && (
-                  <MetaRow label="CE credits" value={`${item.ceCredits}`} />
+                {item.ce_credits !== null && item.ce_credits !== undefined && (
+                  <MetaRow label="CE credits" value={`${item.ce_credits}`} />
                 )}
                 <MetaRow label="Category" value={item.category} />
-                <MetaRow label="Created" value={item.createdOn} />
-                <MetaRow label="Updated" value={item.updatedOn} />
+                <MetaRow label="Created" value={createdOn} />
+                <MetaRow label="Updated" value={updatedOn} />
               </Stack>
             </SectionCard>
 
             <SectionCard title="Performance" padding="default">
               <Stack spacing={1.25}>
-                <MetaRow label="Attached offers" value={`${item.offerCount}`} />
-                <MetaRow label="Lifetime redemptions" value={`${item.redemptionsLifetime}`} />
+                <MetaRow label="Attached offers" value={`${item.offer_count}`} />
+                <MetaRow label="Lifetime redemptions" value={`${item.redemptions_lifetime}`} />
                 <MetaRow
                   label="Media"
-                  value={`${item.images.length} images · ${item.videos.length} videos`}
+                  value={`${images.length} images · ${videos.length} videos · ${documents.length} docs`}
                 />
               </Stack>
             </SectionCard>
@@ -506,30 +624,22 @@ export default function CatalogDetailPage({ params }: { params: RouteParams }) {
                 <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
                   <PhotoLibraryOutlinedIcon sx={{ fontSize: 16 }} />
                   <Typography sx={{ fontSize: "0.82rem", fontWeight: 600, color: "#0A1A2F" }}>
-                    {item.images.length}
+                    {images.length}
                   </Typography>
                 </Stack>
                 <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
                   <OndemandVideoOutlinedIcon sx={{ fontSize: 16 }} />
                   <Typography sx={{ fontSize: "0.82rem", fontWeight: 600, color: "#0A1A2F" }}>
-                    {item.videos.length}
+                    {videos.length}
+                  </Typography>
+                </Stack>
+                <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
+                  <DescriptionOutlinedIcon sx={{ fontSize: 16 }} />
+                  <Typography sx={{ fontSize: "0.82rem", fontWeight: 600, color: "#0A1A2F" }}>
+                    {documents.length}
                   </Typography>
                 </Stack>
               </Stack>
-              <Button
-                size="small"
-                sx={{
-                  mt: 1.5,
-                  color: "#A07823",
-                  textTransform: "none",
-                  fontSize: "0.78rem",
-                  fontWeight: 600,
-                  px: 0,
-                  "&:hover": { bgcolor: "transparent", color: "#7A5B17" },
-                }}
-              >
-                Manage media →
-              </Button>
             </SectionCard>
 
             <Box sx={{ display: "flex", justifyContent: "flex-end", pt: 0.5 }}>

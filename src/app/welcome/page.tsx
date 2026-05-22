@@ -114,7 +114,7 @@ export default function WelcomePage() {
               />
               <Chip
                 icon={<LockOutlinedIcon sx={{ fontSize: 14 }} />}
-                label="LIFETIME $49 LOCKED"
+                label="FOUNDING $49 LOCKED"
                 size="small"
                 sx={{
                   bgcolor: "rgba(255,255,255,0.06)",
@@ -149,8 +149,8 @@ export default function WelcomePage() {
               </Box>
             </Typography>
             <Typography sx={{ color: "rgba(255,255,255,0.88)", fontSize: { xs: "1.05rem", md: "1.18rem" }, maxWidth: 620, lineHeight: 1.55 }}>
-              Welcome to the {brand.shortName}. Your founding rate of ${subscription.priceMonthly}/mo is locked
-              for life on the current product, your hotline access is live, and your vendor codes
+              Welcome to the {brand.shortName}. Your founding rate of ${subscription.priceMonthly}/mo never
+              increases while your membership stays active, your hotline access is live, and your vendor codes
               are ready. Here&apos;s how to start strong.
             </Typography>
           </Stack>
@@ -166,7 +166,7 @@ export default function WelcomePage() {
             }}
           >
             <Grid container spacing={3}>
-              <ConfirmCell label="MEMBERSHIP" value="Founding · $49/mo" sub="Locked for life on this product" />
+              <ConfirmCell label="MEMBERSHIP" value="Founding · $49/mo" sub="Never increases while active" />
               <ConfirmCell label="STATUS" value="Active" sub={`Started ${subscription.startedOn}`} />
               <ConfirmCell label="NEXT RENEWAL" value={subscription.renewsOn} sub={`Auto-renews unless canceled`} />
               <ConfirmCell
@@ -290,8 +290,8 @@ export default function WelcomePage() {
                   The membership is the product.
                 </Typography>
                 <Typography sx={{ color: "rgba(255,255,255,0.88)", maxWidth: 600, lineHeight: 1.6 }}>
-                  No four-figure upsells. No surprise pitches. Your $49 stays $49 for life on the
-                  current product, that&apos;s the deal we made you, and we&apos;ll keep it.
+                  No four-figure upsells. No surprise pitches. Your $49 stays $49 for as long as your
+                  membership stays active — that&apos;s the deal we made you, and we&apos;ll keep it.
                 </Typography>
                 <Stack
                   direction="row"

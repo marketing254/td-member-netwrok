@@ -170,7 +170,7 @@ export const vendorOwnOffers: VendorOfferRow[] = [
     savingsDeliveredYtd: 0,
     expiresOn: "2026-12-31",
     createdOn: "2026-05-02",
-    reviewerNote: "Awaiting Reshani's approval, submitted 2 days ago.",
+    reviewerNote: "Awaiting team approval, submitted 2 days ago.",
   },
   {
     id: "off_004",

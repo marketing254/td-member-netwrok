@@ -6,7 +6,6 @@ import { useSignOut } from "@/lib/auth/identity";
 import {
   AppBar,
   Avatar,
-  Badge,
   Box,
   Chip,
   Container,
@@ -31,7 +30,6 @@ import StoreOutlinedIcon from "@mui/icons-material/StoreOutlined";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import ManageAccountsOutlinedIcon from "@mui/icons-material/ManageAccountsOutlined";
 import GavelOutlinedIcon from "@mui/icons-material/GavelOutlined";
-import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
 import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
@@ -40,7 +38,39 @@ import VerifiedUserOutlinedIcon from "@mui/icons-material/VerifiedUserOutlined";
 import KeyboardDoubleArrowLeftRoundedIcon from "@mui/icons-material/KeyboardDoubleArrowLeftRounded";
 import KeyboardDoubleArrowRightRoundedIcon from "@mui/icons-material/KeyboardDoubleArrowRightRounded";
 import Logo from "@/components/brand/Logo";
-import { vendor } from "@/lib/vendorData";
+import NotificationsBell from "@/components/shared/NotificationsBell";
+import { createBrowserSupabase } from "@/lib/supabase/browser";
+import { fetchCurrentVendor } from "@/lib/supabase/vendorQueries";
+import type { VendorsRow } from "@/lib/supabase/types";
+
+function useCurrentVendorRow(): { vendor: VendorsRow | null; loading: boolean } {
+  const [vendor, setVendor] = useState<VendorsRow | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    const supabase = createBrowserSupabase();
+    (async () => {
+      const v = await fetchCurrentVendor(supabase);
+      if (!active) return;
+      setVendor(v);
+      setLoading(false);
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  return { vendor, loading };
+}
+
+function initialsFromName(s: string | null | undefined): string {
+  const t = (s ?? "").trim();
+  if (!t) return "VP";
+  const parts = t.split(/\s+/);
+  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
+  return (parts[0]![0]! + parts[parts.length - 1]![0]!).toUpperCase();
+}
 
 const SIDEBAR_W_EXPANDED = 240;
 const SIDEBAR_W_COLLAPSED = 64;
@@ -59,16 +89,23 @@ const navItems = [
 function SidebarContent({
   pathname,
   collapsed,
+  vendor,
   onClose,
   onToggleCollapse,
   showCollapseToggle,
 }: {
   pathname: string;
   collapsed: boolean;
+  vendor: VendorsRow | null;
   onClose?: () => void;
   onToggleCollapse?: () => void;
   showCollapseToggle?: boolean;
 }) {
+  const displayName = vendor?.display_name ?? vendor?.company_name ?? "—";
+  const category = vendor?.category ?? "";
+  const isVerified = vendor?.verified === true;
+  const logoUrl = vendor?.logo_url ?? null;
+  const initials = initialsFromName(displayName);
   return (
     <Box
       sx={{
@@ -146,6 +183,7 @@ function SidebarContent({
           >
             <Stack direction="row" spacing={1.25} sx={{ alignItems: "center", mb: 1 }}>
               <Avatar
+                src={logoUrl ?? undefined}
                 sx={{
                   bgcolor: "rgba(217,168,75,0.18)",
                   color: "secondary.light",
@@ -156,26 +194,26 @@ function SidebarContent({
                   border: "1px solid rgba(217,168,75,0.4)",
                 }}
               >
-                {vendor.avatarInitials}
+                {initials}
               </Avatar>
               <Box sx={{ minWidth: 0, flex: 1 }}>
                 <Typography sx={{ color: "common.white", fontWeight: 600, fontSize: "0.82rem", lineHeight: 1.2 }} noWrap>
-                  {vendor.displayName}
+                  {displayName}
                 </Typography>
                 <Typography sx={{ color: "rgba(255,255,255,0.6)", fontSize: "0.68rem" }} noWrap>
-                  {vendor.category}
+                  {category}
                 </Typography>
               </Box>
             </Stack>
             <Stack direction="row" spacing={0.5} sx={{ flexWrap: "wrap", gap: 0.5 }}>
               <Chip
                 icon={<VerifiedUserOutlinedIcon sx={{ fontSize: 11 }} />}
-                label={vendor.verified ? "VERIFIED" : "PENDING"}
+                label={isVerified ? "VERIFIED" : "PENDING"}
                 size="small"
                 sx={{
-                  bgcolor: vendor.verified ? "rgba(34,108,78,0.18)" : "rgba(217,168,75,0.16)",
-                  color: vendor.verified ? "#A8E6BD" : "secondary.light",
-                  border: vendor.verified ? "1px solid rgba(34,108,78,0.4)" : "1px solid rgba(217,168,75,0.35)",
+                  bgcolor: isVerified ? "rgba(34,108,78,0.18)" : "rgba(217,168,75,0.16)",
+                  color: isVerified ? "#A8E6BD" : "secondary.light",
+                  border: isVerified ? "1px solid rgba(34,108,78,0.4)" : "1px solid rgba(217,168,75,0.35)",
                   fontSize: "0.55rem",
                   height: 18,
                   fontWeight: 700,
@@ -371,6 +409,14 @@ export default function VendorAppShell({ children }: { children: React.ReactNode
 
   const sidebarW = collapsed ? SIDEBAR_W_COLLAPSED : SIDEBAR_W_EXPANDED;
 
+  // Live vendor row — replaces the old mock import. Used by both the sidebar
+  // identity card and the top-right user menu so they always agree.
+  const { vendor: currentVendor } = useCurrentVendorRow();
+  const topbarDisplayName = currentVendor?.display_name ?? currentVendor?.company_name ?? "—";
+  const topbarEmail = currentVendor?.contact_email ?? "";
+  const topbarInitials = initialsFromName(topbarDisplayName);
+  const topbarLogo = currentVendor?.logo_url ?? undefined;
+
   const handleSignOut = () => {
     setUserMenuOpen(false);
     signOut();
@@ -399,6 +445,7 @@ export default function VendorAppShell({ children }: { children: React.ReactNode
           <SidebarContent
             pathname={pathname}
             collapsed={collapsed}
+            vendor={currentVendor}
             onToggleCollapse={toggleCollapse}
             showCollapseToggle
           />
@@ -413,6 +460,7 @@ export default function VendorAppShell({ children }: { children: React.ReactNode
           <SidebarContent
             pathname={pathname}
             collapsed={false}
+            vendor={currentVendor}
             onClose={() => setDrawerOpen(false)}
           />
         </Drawer>
@@ -423,6 +471,9 @@ export default function VendorAppShell({ children }: { children: React.ReactNode
           flex: 1,
           ml: { md: `${sidebarW}px` },
           minWidth: 0,
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
           transition: "margin-left 240ms cubic-bezier(0.16, 1, 0.3, 1)",
         }}
       >
@@ -463,13 +514,7 @@ export default function VendorAppShell({ children }: { children: React.ReactNode
                 <HelpOutlineOutlinedIcon sx={{ fontSize: 18 }} />
               </IconButton>
             </Tooltip>
-            <Tooltip title="Notifications">
-              <IconButton size="small" sx={{ color: "text.secondary" }}>
-                <Badge color="secondary" variant="dot" overlap="circular">
-                  <NotificationsNoneOutlinedIcon sx={{ fontSize: 18 }} />
-                </Badge>
-              </IconButton>
-            </Tooltip>
+            <NotificationsBell audience="vendor" />
 
             <Box
               ref={userMenuAnchor}
@@ -492,15 +537,18 @@ export default function VendorAppShell({ children }: { children: React.ReactNode
                 "&:hover": { bgcolor: "rgba(14,42,61,0.05)" },
               }}
             >
-              <Avatar sx={{ width: 30, height: 30, bgcolor: "primary.main", color: "common.white", fontSize: "0.75rem", fontWeight: 700 }}>
-                {vendor.avatarInitials}
+              <Avatar
+                src={topbarLogo}
+                sx={{ width: 30, height: 30, bgcolor: "primary.main", color: "common.white", fontSize: "0.75rem", fontWeight: 700 }}
+              >
+                {topbarInitials}
               </Avatar>
               <Box sx={{ display: { xs: "none", lg: "block" }, textAlign: "left" }}>
                 <Typography sx={{ fontSize: "0.8rem", fontWeight: 600, lineHeight: 1.15 }}>
-                  {vendor.displayName}
+                  {topbarDisplayName}
                 </Typography>
                 <Typography sx={{ fontSize: "0.66rem", color: "text.secondary" }}>
-                  Featured Partner
+                  {currentVendor?.verified ? "Verified Partner" : "Pending Review"}
                 </Typography>
               </Box>
               <KeyboardArrowDownOutlinedIcon
@@ -534,10 +582,10 @@ export default function VendorAppShell({ children }: { children: React.ReactNode
             >
               <Box sx={{ px: 1.75, pt: 1.25, pb: 1 }}>
                 <Typography sx={{ fontSize: "0.85rem", fontWeight: 600, lineHeight: 1.2 }} noWrap>
-                  {vendor.displayName}
+                  {topbarDisplayName}
                 </Typography>
                 <Typography sx={{ fontSize: "0.7rem", color: "text.secondary" }} noWrap>
-                  {vendor.contactEmail}
+                  {topbarEmail}
                 </Typography>
               </Box>
               <Divider />
@@ -555,13 +603,6 @@ export default function VendorAppShell({ children }: { children: React.ReactNode
                   slotProps={{ primary: { sx: { fontSize: "0.82rem", fontWeight: 500 } } }}
                 />
               </MenuItem>
-              <MenuItem onClick={() => goTo("/vendor/agreement")} sx={{ py: 0.75 }}>
-                <ListItemIcon sx={{ minWidth: 32 }}><GavelOutlinedIcon sx={{ fontSize: 18 }} /></ListItemIcon>
-                <ListItemText
-                  primary="Partnership agreement"
-                  slotProps={{ primary: { sx: { fontSize: "0.82rem", fontWeight: 500 } } }}
-                />
-              </MenuItem>
               <Divider />
               <MenuItem onClick={handleSignOut} sx={{ color: "error.main", py: 0.75 }}>
                 <ListItemIcon sx={{ color: "error.main", minWidth: 32 }}>
@@ -576,7 +617,7 @@ export default function VendorAppShell({ children }: { children: React.ReactNode
           </Toolbar>
         </AppBar>
 
-        <Box component="main" sx={{ py: { xs: 2.5, md: 3 } }}>
+        <Box component="main" sx={{ py: { xs: 2.5, md: 3 }, flex: 1 }}>
           <Container maxWidth="xl">{children}</Container>
         </Box>
 

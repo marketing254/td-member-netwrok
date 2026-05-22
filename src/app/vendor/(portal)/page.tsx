@@ -1,9 +1,11 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Box,
   Button,
+  CircularProgress,
   Grid,
   LinearProgress,
   Stack,
@@ -17,27 +19,156 @@ import SavingsOutlinedIcon from "@mui/icons-material/SavingsOutlined";
 import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
 import AddCircleOutlineOutlinedIcon from "@mui/icons-material/AddCircleOutlineOutlined";
 import VerifiedUserOutlinedIcon from "@mui/icons-material/VerifiedUserOutlined";
+import { createBrowserSupabase } from "@/lib/supabase/browser";
 import {
-  vendor,
-  vendorKpis,
-  vendorOwnOffers,
-  vendorRedemptions,
-} from "@/lib/vendorData";
-import {
-  SectionCard,
-  StatusPill,
-  portalText,
-} from "@/components/vendor/PortalUI";
+  fetchCurrentVendor,
+  fetchVendorKpis,
+  fetchVendorOffers,
+  fetchVendorRedemptions,
+  type VendorKpis,
+  type OfferWithCatalog,
+  type RedemptionWithOffer,
+} from "@/lib/supabase/vendorQueries";
+import type { VendorsRow } from "@/lib/supabase/types";
+import { SectionCard, StatusPill, portalText } from "@/components/vendor/PortalUI";
 
 export default function VendorOverview() {
-  const monthsLeftInWaiver = Math.max(0, 6 - vendor.monthsInProgram);
-  const waiverProgress = Math.min(100, (vendor.monthsInProgram / 6) * 100);
-  const firstName = vendor.contactName.split(" ")[0];
-  const activeOffers = vendorOwnOffers.filter((o) => o.status === "published").length;
+  const [loading, setLoading] = useState(true);
+  const [vendor, setVendor] = useState<VendorsRow | null>(null);
+  const [kpis, setKpis] = useState<VendorKpis | null>(null);
+  const [offers, setOffers] = useState<OfferWithCatalog[]>([]);
+  const [redemptions, setRedemptions] = useState<RedemptionWithOffer[]>([]);
+  const [signedInEmail, setSignedInEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const supabase = createBrowserSupabase();
+
+    (async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!active) return;
+      setSignedInEmail(userData.user?.email ?? null);
+
+      const v = await fetchCurrentVendor(supabase);
+      if (!active) return;
+      setVendor(v);
+
+      if (v) {
+        const [kpiData, offerData, redemptionData] = await Promise.all([
+          fetchVendorKpis(supabase, v.id),
+          fetchVendorOffers(supabase, v.id),
+          fetchVendorRedemptions(supabase, v.id, { limit: 5 }),
+        ]);
+        if (!active) return;
+        setKpis(kpiData);
+        setOffers(offerData);
+        setRedemptions(redemptionData);
+      }
+      setLoading(false);
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const firstName = useMemo(() => {
+    if (!vendor) return "Partner";
+    return vendor.contact_name?.split(" ")[0] ?? vendor.display_name ?? "Partner";
+  }, [vendor]);
+
+  if (loading) {
+    return (
+      <Stack sx={{ alignItems: "center", py: 8, gap: 2 }}>
+        <CircularProgress size={28} sx={{ color: "#A07823" }} />
+        <Typography sx={{ color: "#5C6770", fontSize: "0.88rem" }}>Loading your dashboard…</Typography>
+      </Stack>
+    );
+  }
+
+  if (!vendor) {
+    return (
+      <SectionCard padding="default">
+        <Stack spacing={1.5} sx={{ alignItems: "center", textAlign: "center", py: 4 }}>
+          <Typography sx={portalText.sectionTitle}>No vendor profile found.</Typography>
+          {signedInEmail ? (
+            <>
+              <Typography sx={{ color: "#5C6770", fontSize: "0.88rem", maxWidth: 540 }}>
+                You&apos;re signed in as <Box component="strong" sx={{ color: "#0A1A2F" }}>{signedInEmail}</Box>, but no
+                vendor row is linked to that email. If you&apos;re an admin testing the portal, sign out and sign
+                back in with the email used on your vendor application.
+              </Typography>
+              <Stack direction="row" spacing={1.5} sx={{ mt: 1 }}>
+                <Box
+                  component="a"
+                  href="/vendor/login"
+                  sx={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    px: 2,
+                    py: 0.85,
+                    borderRadius: 999,
+                    bgcolor: "#0A1A2F",
+                    color: "#FFFFFF",
+                    fontSize: "0.82rem",
+                    fontWeight: 600,
+                    textDecoration: "none",
+                    "&:hover": { bgcolor: "#0F2540" },
+                  }}
+                >
+                  Sign in as a different account
+                </Box>
+                <Box
+                  component="a"
+                  href="mailto:partners@dentalmembernetwork.com"
+                  sx={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    px: 2,
+                    py: 0.85,
+                    borderRadius: 999,
+                    border: "1px solid rgba(14,42,61,0.18)",
+                    color: "#0A1A2F",
+                    fontSize: "0.82rem",
+                    fontWeight: 600,
+                    textDecoration: "none",
+                    "&:hover": { borderColor: "#A07823", color: "#A07823" },
+                  }}
+                >
+                  Email partners team
+                </Box>
+              </Stack>
+            </>
+          ) : (
+            <Typography sx={{ color: "#5C6770", fontSize: "0.88rem", maxWidth: 540 }}>
+              Your session has expired. Head to{" "}
+              <Box component="a" href="/vendor/login" sx={{ color: "#A07823", fontWeight: 600 }}>
+                /vendor/login
+              </Box>{" "}
+              and request a fresh magic link.
+            </Typography>
+          )}
+        </Stack>
+      </SectionCard>
+    );
+  }
+
+  const k = kpis ?? {
+    redemptionsThisMonth: 0,
+    redemptionsLifetime: 0,
+    savingsDeliveredMonth: 0,
+    savingsDeliveredLifetime: 0,
+    leadsThisMonth: 0,
+    pendingOffersCount: 0,
+    activeOffersCount: 0,
+  };
+
+  const monthsLeftInWaiver = Math.max(0, 6 - vendor.months_in_program);
+  const waiverProgress = Math.min(100, (vendor.months_in_program / 6) * 100);
 
   return (
     <Stack spacing={2.5}>
-      {/* NAVY HERO — welcome + KPIs + waiver */}
+      {/* NAVY HERO */}
       <Box
         sx={{
           position: "relative",
@@ -48,7 +179,6 @@ export default function VendorOverview() {
           border: "1px solid rgba(217,168,75,0.18)",
         }}
       >
-        {/* Layered background */}
         <Box
           aria-hidden
           sx={{
@@ -59,21 +189,8 @@ export default function VendorOverview() {
             pointerEvents: "none",
           }}
         />
-        <Box
-          aria-hidden
-          sx={{
-            position: "absolute",
-            inset: 0,
-            backgroundImage:
-              "linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)",
-            backgroundSize: "48px 48px",
-            maskImage: "radial-gradient(ellipse at 80% 50%, black 0%, transparent 75%)",
-            pointerEvents: "none",
-          }}
-        />
 
         <Box sx={{ position: "relative", p: { xs: 2.5, md: 3 } }}>
-          {/* Top row: title + actions */}
           <Stack
             direction={{ xs: "column", md: "row" }}
             spacing={2}
@@ -83,11 +200,11 @@ export default function VendorOverview() {
               <Stack direction="row" spacing={0.75} sx={{ flexWrap: "wrap", gap: 0.5, mb: 1 }}>
                 <NavyChip
                   icon={<VerifiedUserOutlinedIcon sx={{ fontSize: 11 }} />}
-                  label="VERIFIED PARTNER"
-                  tone="green"
+                  label={vendor.verified ? "VERIFIED PARTNER" : "PENDING REVIEW"}
+                  tone={vendor.verified ? "green" : "gold"}
                 />
                 <NavyChip
-                  label={`FOUNDING · MONTH ${vendor.monthsInProgram}/12`}
+                  label={`${vendor.plan_id?.toUpperCase() ?? "FOUNDING"} · MONTH ${vendor.months_in_program}/12`}
                   tone="gold"
                 />
               </Stack>
@@ -102,26 +219,26 @@ export default function VendorOverview() {
                   letterSpacing: "-0.01em",
                 }}
               >
-                Welcome back, {firstName}.
+                Welcome, {firstName}.
               </Typography>
-              <Typography
-                sx={{
-                  color: "rgba(255,255,255,0.7)",
-                  fontSize: "0.86rem",
-                  lineHeight: 1.5,
-                  maxWidth: 520,
-                  mt: 0.5,
-                }}
-              >
-                You delivered{" "}
-                <Box component="strong" sx={{ color: "#FFFFFF", fontWeight: 600 }}>
-                  ${vendorKpis.savingsDeliveredMonth.toLocaleString()}
-                </Box>{" "}
-                in member savings this month across{" "}
-                <Box component="strong" sx={{ color: "#FFFFFF", fontWeight: 600 }}>
-                  {vendorKpis.redemptionsThisMonth}
-                </Box>{" "}
-                redemptions.
+              <Typography sx={{ color: "rgba(255,255,255,0.7)", fontSize: "0.86rem", lineHeight: 1.5, maxWidth: 520, mt: 0.5 }}>
+                {k.redemptionsThisMonth > 0 ? (
+                  <>
+                    You delivered{" "}
+                    <Box component="strong" sx={{ color: "#FFFFFF", fontWeight: 600 }}>
+                      ${k.savingsDeliveredMonth.toLocaleString()}
+                    </Box>{" "}
+                    in member savings this month across{" "}
+                    <Box component="strong" sx={{ color: "#FFFFFF", fontWeight: 600 }}>
+                      {k.redemptionsThisMonth}
+                    </Box>{" "}
+                    redemptions.
+                  </>
+                ) : vendor.verified ? (
+                  "No member redemptions yet this month. Add or refresh an offer to keep your listing fresh."
+                ) : (
+                  "Your application is under team review. You can set up your catalog and draft offers — they'll go live to members once your profile is approved."
+                )}
               </Typography>
             </Box>
             <Button
@@ -146,22 +263,21 @@ export default function VendorOverview() {
             </Button>
           </Stack>
 
-          {/* KPI row — dark cards inside the hero */}
           <Grid container spacing={1.5}>
             <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
               <NavyStat
                 icon={ReceiptLongOutlinedIcon}
                 label="Redemptions, MTD"
-                value={String(vendorKpis.redemptionsThisMonth)}
-                footer={`${vendorKpis.redemptionsLifetime} lifetime`}
+                value={String(k.redemptionsThisMonth)}
+                footer={`${k.redemptionsLifetime} lifetime`}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
               <NavyStat
                 icon={SavingsOutlinedIcon}
                 label="Savings delivered, MTD"
-                value={`$${vendorKpis.savingsDeliveredMonth.toLocaleString()}`}
-                footer={`$${vendorKpis.savingsDeliveredLifetime.toLocaleString()} lifetime`}
+                value={`$${k.savingsDeliveredMonth.toLocaleString()}`}
+                footer={`$${k.savingsDeliveredLifetime.toLocaleString()} lifetime`}
                 accent
               />
             </Grid>
@@ -169,22 +285,21 @@ export default function VendorOverview() {
               <NavyStat
                 icon={GroupsOutlinedIcon}
                 label="Inbound leads, MTD"
-                value={String(vendorKpis.leadsThisMonth)}
-                footer="From directory + hotline"
+                value={String(k.leadsThisMonth)}
+                footer="Bookings + hotline"
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
               <NavyStat
                 icon={LocalOfferOutlinedIcon}
                 label="Active offers"
-                value={String(activeOffers)}
-                footer={`${vendorKpis.pendingOffersCount} pending review`}
+                value={String(k.activeOffersCount)}
+                footer={`${k.pendingOffersCount} pending review`}
                 accent
               />
             </Grid>
           </Grid>
 
-          {/* Founding waiver progress — inline at bottom of hero */}
           <Box
             sx={{
               mt: 2.5,
@@ -195,87 +310,74 @@ export default function VendorOverview() {
               backdropFilter: "blur(4px)",
             }}
           >
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              spacing={2}
-              sx={{ alignItems: { sm: "center" } }}
-            >
-              <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Stack direction="row" sx={{ alignItems: "baseline", justifyContent: "space-between", mb: 1 }}>
-                  <Stack direction="row" spacing={1.5} sx={{ alignItems: "baseline" }}>
-                    <Typography
-                      sx={{
-                        fontSize: "0.66rem",
-                        fontWeight: 700,
-                        letterSpacing: "0.18em",
-                        textTransform: "uppercase",
-                        color: "#F0C16E",
-                      }}
-                    >
-                      Founding waiver
-                    </Typography>
-                    <Typography sx={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.7)" }}>
-                      <Box component="strong" sx={{ color: "#FFFFFF", fontWeight: 600 }}>
-                        {monthsLeftInWaiver}
-                      </Box>{" "}
-                      month{monthsLeftInWaiver === 1 ? "" : "s"} left at $0/mo
-                    </Typography>
-                  </Stack>
-                </Stack>
-                <LinearProgress
-                  variant="determinate"
-                  value={waiverProgress}
-                  sx={{
-                    height: 5,
-                    borderRadius: 999,
-                    bgcolor: "rgba(255,255,255,0.1)",
-                    "& .MuiLinearProgress-bar": {
-                      borderRadius: 999,
-                      backgroundImage: "linear-gradient(90deg, #D4A44B 0%, #F0C16E 100%)",
-                    },
-                  }}
-                />
+            <Stack direction="row" sx={{ alignItems: "baseline", justifyContent: "space-between", mb: 1 }}>
+              <Stack direction="row" spacing={1.5} sx={{ alignItems: "baseline" }}>
                 <Typography
                   sx={{
-                    fontSize: "0.74rem",
-                    color: "rgba(255,255,255,0.55)",
-                    mt: 1,
-                    lineHeight: 1.5,
+                    fontSize: "0.66rem",
+                    fontWeight: 700,
+                    letterSpacing: "0.18em",
+                    textTransform: "uppercase",
+                    color: "#F0C16E",
                   }}
                 >
-                  Months 7-12 bill at $49/mo (launch rate locked). Standard $199/mo from month 13.
+                  Founding waiver
                 </Typography>
-              </Box>
+                <Typography sx={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.7)" }}>
+                  <Box component="strong" sx={{ color: "#FFFFFF", fontWeight: 600 }}>
+                    {monthsLeftInWaiver}
+                  </Box>{" "}
+                  month{monthsLeftInWaiver === 1 ? "" : "s"} left at $0/mo
+                </Typography>
+              </Stack>
             </Stack>
+            <LinearProgress
+              variant="determinate"
+              value={waiverProgress}
+              sx={{
+                height: 5,
+                borderRadius: 999,
+                bgcolor: "rgba(255,255,255,0.1)",
+                "& .MuiLinearProgress-bar": {
+                  borderRadius: 999,
+                  backgroundImage: "linear-gradient(90deg, #D4A44B 0%, #F0C16E 100%)",
+                },
+              }}
+            />
+            <Typography sx={{ fontSize: "0.74rem", color: "rgba(255,255,255,0.55)", mt: 1, lineHeight: 1.5 }}>
+              Months 7-12 bill at $49/mo (launch rate locked). Standard $199/mo from month 13.
+            </Typography>
           </Box>
         </Box>
       </Box>
 
-      {/* Below the hero — actionable summary */}
+      {/* Below the hero */}
       <Grid container spacing={2}>
-        {/* This week / nudges */}
         <Grid size={{ xs: 12, md: 6 }}>
           <SectionCard title="This week" subtitle="Where to focus" padding="default">
             <Stack spacing={1.25}>
-              <ActionRow
-                label={`${vendorKpis.pendingOffersCount} offer${vendorKpis.pendingOffersCount === 1 ? "" : "s"} pending team review`}
-                href="/vendor/offers"
-                tone="gold"
-                visible={vendorKpis.pendingOffersCount > 0}
-              />
-              <ActionRow
-                label={`${vendorKpis.leadsThisMonth} new lead${vendorKpis.leadsThisMonth === 1 ? "" : "s"} this month`}
-                href="/vendor/redemptions"
-                tone="navy"
-                visible={vendorKpis.leadsThisMonth > 0}
-              />
-              <ActionRow
-                label="Profile is verified and live in the directory"
-                href="/vendor/profile"
-                tone="green"
-                visible={vendor.verified}
-              />
-              {vendorKpis.pendingOffersCount === 0 && vendorKpis.leadsThisMonth === 0 && (
+              {!vendor.verified && (
+                <ActionRow
+                  label="Your application is under review by the team"
+                  href="/vendor/agreement"
+                  tone="gold"
+                />
+              )}
+              {k.pendingOffersCount > 0 && (
+                <ActionRow
+                  label={`${k.pendingOffersCount} offer${k.pendingOffersCount === 1 ? "" : "s"} pending team review`}
+                  href="/vendor/offers"
+                  tone="gold"
+                />
+              )}
+              {vendor.verified && k.leadsThisMonth > 0 && (
+                <ActionRow
+                  label={`${k.leadsThisMonth} new lead${k.leadsThisMonth === 1 ? "" : "s"} this month`}
+                  href="/vendor/redemptions"
+                  tone="navy"
+                />
+              )}
+              {vendor.verified && k.pendingOffersCount === 0 && k.leadsThisMonth === 0 && (
                 <Typography sx={{ ...portalText.body, fontSize: "0.86rem" }}>
                   Nothing urgent. Consider adding a new offer to keep the listing fresh.
                 </Typography>
@@ -284,7 +386,6 @@ export default function VendorOverview() {
           </SectionCard>
         </Grid>
 
-        {/* Recent redemptions snapshot */}
         <Grid size={{ xs: 12, md: 6 }}>
           <SectionCard
             title="Recent redemptions"
@@ -309,39 +410,46 @@ export default function VendorOverview() {
               </Box>
             }
           >
-            <Stack divider={<Box sx={{ borderTop: "1px solid rgba(14,42,61,0.06)" }} />}>
-              {vendorRedemptions.slice(0, 4).map((r) => (
-                <Box
-                  key={r.id}
-                  sx={{
-                    display: "grid",
-                    gridTemplateColumns: "minmax(0, 1fr) auto",
-                    px: 2,
-                    py: 1.25,
-                    "&:hover": { bgcolor: "rgba(14,42,61,0.02)" },
-                  }}
-                >
-                  <Box sx={{ minWidth: 0 }}>
-                    <Typography sx={{ fontSize: "0.84rem", fontWeight: 600, color: "#0A1A2F" }} noWrap>
-                      {r.memberDisplay} · {r.city}
-                    </Typography>
-                    <Typography sx={{ fontSize: "0.74rem", color: "#6A7591" }} noWrap>
-                      {r.offerTitle}
-                    </Typography>
+            {redemptions.length === 0 ? (
+              <Box sx={{ px: 2, py: 3, color: "#9CA3AB", fontSize: "0.84rem" }}>
+                No redemptions yet. They&apos;ll appear here once members start using your offers.
+              </Box>
+            ) : (
+              <Stack divider={<Box sx={{ borderTop: "1px solid rgba(14,42,61,0.06)" }} />}>
+                {redemptions.map((r) => (
+                  <Box
+                    key={r.id}
+                    sx={{
+                      display: "grid",
+                      gridTemplateColumns: "minmax(0, 1fr) auto",
+                      px: 2,
+                      py: 1.25,
+                    }}
+                  >
+                    <Box sx={{ minWidth: 0 }}>
+                      <Typography sx={{ fontSize: "0.84rem", fontWeight: 600, color: "#0A1A2F" }} noWrap>
+                        {r.member_display ?? "Member"}
+                        {r.member_city ? ` · ${r.member_city}` : ""}
+                      </Typography>
+                      <Typography sx={{ fontSize: "0.74rem", color: "#6A7591" }} noWrap>
+                        {r.offers?.headline ?? "—"}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ textAlign: "right" }}>
+                      <Typography sx={{ fontWeight: 700, color: "#1F5C40", fontSize: "0.84rem" }}>
+                        ${Number(r.amount_saved ?? 0).toLocaleString()}
+                      </Typography>
+                      <Typography sx={{ fontSize: "0.7rem", color: "#7A8590" }}>
+                        {r.redeemed_on}
+                      </Typography>
+                    </Box>
                   </Box>
-                  <Box sx={{ textAlign: "right" }}>
-                    <Typography sx={{ fontWeight: 700, color: "#1F5C40", fontSize: "0.84rem" }}>
-                      ${r.amountSaved.toLocaleString()}
-                    </Typography>
-                    <Typography sx={{ fontSize: "0.7rem", color: "#7A8590" }}>{r.redeemedOn}</Typography>
-                  </Box>
-                </Box>
-              ))}
-            </Stack>
+                ))}
+              </Stack>
+            )}
           </SectionCard>
         </Grid>
 
-        {/* Offers status */}
         <Grid size={{ xs: 12 }}>
           <SectionCard
             title="Your offers"
@@ -366,69 +474,64 @@ export default function VendorOverview() {
               </Box>
             }
           >
-            <Box
-              sx={{
-                display: { xs: "none", md: "grid" },
-                gridTemplateColumns: "minmax(0, 2fr) 130px 110px 130px",
-                px: 2,
-                py: 1.25,
-                borderBottom: "1px solid rgba(14,42,61,0.06)",
-                bgcolor: "#FBFAF6",
-                fontSize: "0.66rem",
-                fontWeight: 700,
-                color: "#7A8590",
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-              }}
-            >
-              <Box>Offer</Box>
-              <Box>Discount</Box>
-              <Box>Status</Box>
-              <Box>Redemptions</Box>
-            </Box>
-            <Stack divider={<Box sx={{ borderTop: "1px solid rgba(14,42,61,0.06)" }} />}>
-              {vendorOwnOffers.slice(0, 5).map((o) => (
+            {offers.length === 0 ? (
+              <Box sx={{ px: 2, py: 3, color: "#9CA3AB", fontSize: "0.84rem" }}>
+                No offers yet.{" "}
+                <Box component={Link} href="/vendor/catalog/new" sx={{ color: "#A07823", fontWeight: 600 }}>
+                  Add a catalog item first
+                </Box>
+                , then attach an offer to it.
+              </Box>
+            ) : (
+              <>
                 <Box
-                  key={o.id}
                   sx={{
-                    display: { xs: "block", md: "grid" },
+                    display: { xs: "none", md: "grid" },
                     gridTemplateColumns: "minmax(0, 2fr) 130px 110px 130px",
-                    alignItems: "center",
                     px: 2,
                     py: 1.25,
-                    gap: 1,
-                    "&:hover": { bgcolor: "rgba(14,42,61,0.02)" },
+                    borderBottom: "1px solid rgba(14,42,61,0.06)",
+                    bgcolor: "#FBFAF6",
+                    fontSize: "0.66rem",
+                    fontWeight: 700,
+                    color: "#7A8590",
+                    letterSpacing: "0.1em",
+                    textTransform: "uppercase",
                   }}
                 >
-                  <Typography sx={{ fontSize: "0.84rem", fontWeight: 600, color: "#0A1A2F" }} noWrap>
-                    {o.title}
-                  </Typography>
-                  <Typography sx={{ display: { xs: "none", md: "block" }, fontSize: "0.82rem", fontWeight: 700, color: "#1F5C40" }}>
-                    {o.discountLabel}
-                  </Typography>
-                  <Box sx={{ display: { xs: "none", md: "block" } }}>
-                    <LegacyOfferStatus status={o.status} />
-                  </Box>
-                  <Typography sx={{ display: { xs: "none", md: "block" }, fontSize: "0.82rem", color: "#5C6770" }}>
-                    {o.redemptions} redemption{o.redemptions === 1 ? "" : "s"}
-                  </Typography>
-
-                  <Stack
-                    direction="row"
-                    spacing={1}
-                    sx={{ display: { xs: "flex", md: "none" }, mt: 0.5, flexWrap: "wrap", rowGap: 0.5 }}
-                  >
-                    <Typography sx={{ fontSize: "0.78rem", fontWeight: 700, color: "#1F5C40" }}>
-                      {o.discountLabel}
-                    </Typography>
-                    <LegacyOfferStatus status={o.status} />
-                    <Typography sx={{ fontSize: "0.78rem", color: "#5C6770" }}>
-                      {o.redemptions} redemption{o.redemptions === 1 ? "" : "s"}
-                    </Typography>
-                  </Stack>
+                  <Box>Offer</Box>
+                  <Box>Discount</Box>
+                  <Box>Status</Box>
+                  <Box>Valid</Box>
                 </Box>
-              ))}
-            </Stack>
+                <Stack divider={<Box sx={{ borderTop: "1px solid rgba(14,42,61,0.06)" }} />}>
+                  {offers.slice(0, 5).map((o) => (
+                    <Box
+                      key={o.id}
+                      sx={{
+                        display: { xs: "block", md: "grid" },
+                        gridTemplateColumns: "minmax(0, 2fr) 130px 110px 130px",
+                        px: 2,
+                        py: 1.25,
+                      }}
+                    >
+                      <Typography sx={{ fontSize: "0.84rem", fontWeight: 600, color: "#0A1A2F" }} noWrap>
+                        {o.headline}
+                      </Typography>
+                      <Typography sx={{ display: { xs: "none", md: "block" }, fontSize: "0.82rem", fontWeight: 700, color: "#1F5C40" }}>
+                        {o.discount_value}
+                      </Typography>
+                      <Box sx={{ display: { xs: "none", md: "block" } }}>
+                        <StatusPill status={o.review_status} size="sm" />
+                      </Box>
+                      <Typography sx={{ display: { xs: "none", md: "block" }, fontSize: "0.78rem", color: "#5C6770" }}>
+                        {o.valid_from} → {o.valid_to}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Stack>
+              </>
+            )}
           </SectionCard>
         </Grid>
       </Grid>
@@ -436,9 +539,6 @@ export default function VendorOverview() {
   );
 }
 
-/**
- * Small chip used inside the navy hero. White outline + translucent bg.
- */
 function NavyChip({
   icon,
   label,
@@ -478,10 +578,6 @@ function NavyChip({
   );
 }
 
-/**
- * KPI tile rendered inside the navy hero — translucent dark surface with
- * white text and gold-accent variants for the highlighted ones.
- */
 function NavyStat({
   icon: Icon,
   label,
@@ -504,11 +600,6 @@ function NavyStat({
         bgcolor: accent ? "rgba(217,168,75,0.08)" : "rgba(255,255,255,0.04)",
         border: accent ? "1px solid rgba(217,168,75,0.25)" : "1px solid rgba(255,255,255,0.08)",
         backdropFilter: "blur(6px)",
-        transition: "border-color 200ms ease, background-color 200ms ease",
-        "&:hover": {
-          bgcolor: accent ? "rgba(217,168,75,0.12)" : "rgba(255,255,255,0.06)",
-          borderColor: accent ? "rgba(217,168,75,0.4)" : "rgba(255,255,255,0.16)",
-        },
       }}
     >
       <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center", mb: 1 }}>
@@ -552,14 +643,7 @@ function NavyStat({
         {value}
       </Typography>
       {footer && (
-        <Typography
-          sx={{
-            fontSize: "0.72rem",
-            color: "rgba(255,255,255,0.55)",
-            mt: 0.5,
-            lineHeight: 1.4,
-          }}
-        >
+        <Typography sx={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.55)", mt: 0.5, lineHeight: 1.4 }}>
           {footer}
         </Typography>
       )}
@@ -567,18 +651,7 @@ function NavyStat({
   );
 }
 
-function ActionRow({
-  label,
-  href,
-  tone,
-  visible,
-}: {
-  label: string;
-  href: string;
-  tone: "gold" | "navy" | "green";
-  visible: boolean;
-}) {
-  if (!visible) return null;
+function ActionRow({ label, href, tone }: { label: string; href: string; tone: "gold" | "navy" | "green" }) {
   const palette =
     tone === "gold"
       ? { bg: "rgba(217,168,75,0.08)", border: "rgba(217,168,75,0.3)", dot: "#A07823", arrow: "#A07823" }
@@ -600,28 +673,11 @@ function ActionRow({
         border: `1px solid ${palette.border}`,
         textDecoration: "none",
         color: "inherit",
-        transition: "background-color 160ms ease",
-        "&:hover": { bgcolor: palette.bg.replace(/[\d.]+\)$/, "0.14)") },
       }}
     >
       <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: palette.dot, flexShrink: 0 }} />
-      <Typography sx={{ flex: 1, fontSize: "0.84rem", color: "#0A1A2F", lineHeight: 1.4 }}>
-        {label}
-      </Typography>
+      <Typography sx={{ flex: 1, fontSize: "0.84rem", color: "#0A1A2F", lineHeight: 1.4 }}>{label}</Typography>
       <ArrowForwardIcon sx={{ fontSize: 14, color: palette.arrow }} />
     </Box>
   );
-}
-
-function LegacyOfferStatus({ status }: { status: string }) {
-  type ReviewStatusKey = "draft" | "pending_review" | "approved" | "rejected";
-  const map: Record<string, ReviewStatusKey> = {
-    published: "approved",
-    pending_review: "pending_review",
-    draft: "draft",
-    paused: "draft",
-    rejected: "rejected",
-  };
-  const mapped = (map[status] ?? "draft") as ReviewStatusKey;
-  return <StatusPill status={mapped} size="sm" />;
 }

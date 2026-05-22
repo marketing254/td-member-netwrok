@@ -44,3 +44,8 @@ next-env.d.ts
 
 # clerk configuration (can include secrets)
 /.clerk/
+-supabase
++supabase/.branches/
++supabase/.temp/
++supabase/.env
++supabase/migrations/0009_admin_rushdha_gmail.sql

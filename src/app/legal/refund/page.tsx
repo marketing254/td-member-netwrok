@@ -29,7 +29,7 @@ const sections: LegalSection[] = [
     number: "03",
     title: "Founding Member Pricing",
     body:
-      "$49/month or $490/year is locked for life while your membership is active. If you cancel and later re-enroll, the founding rate is no longer available, the standard rate of $199/month applies. Contact us about a temporary pause before cancelling.",
+      "$49/month or $490/year is the founding rate; it never increases for as long as your membership stays continuously active. If you cancel and later re-enroll, the founding rate is no longer available, the standard rate of $199/month applies. Contact us about a temporary pause before cancelling.",
   },
   {
     number: "04",

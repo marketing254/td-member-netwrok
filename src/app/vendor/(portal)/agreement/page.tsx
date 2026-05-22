@@ -1,25 +1,54 @@
 "use client";
+import { useEffect, useState } from "react";
 import {
   Box,
-  Button,
   Chip,
+  CircularProgress,
   Grid,
   Stack,
   Typography,
 } from "@mui/material";
 import GavelOutlinedIcon from "@mui/icons-material/GavelOutlined";
 import VerifiedUserOutlinedIcon from "@mui/icons-material/VerifiedUserOutlined";
-import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import {
-  vendor,
   vendorAgreementKeyTerms,
   vendorAgreementMeta,
   vendorAgreementSections,
   vendorCommitments,
   vendorFeeSchedule,
 } from "@/lib/vendorData";
+import { createBrowserSupabase } from "@/lib/supabase/browser";
+import { fetchCurrentVendor } from "@/lib/supabase/vendorQueries";
+import type { VendorsRow } from "@/lib/supabase/types";
 
 export default function VendorAgreementPage() {
+  const [vendor, setVendor] = useState<VendorsRow | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    const supabase = createBrowserSupabase();
+    (async () => {
+      const v = await fetchCurrentVendor(supabase);
+      if (!active) return;
+      setVendor(v);
+      setLoading(false);
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (loading) {
+    return (
+      <Stack sx={{ alignItems: "center", py: 8, gap: 2 }}>
+        <CircularProgress size={28} sx={{ color: "#A07823" }} />
+      </Stack>
+    );
+  }
+
+  const signedAt = vendor?.agreement_signed_at?.slice(0, 10) ?? "—";
+  const version = vendor?.agreement_version ?? "v1.0";
   return (
     <Stack spacing={4}>
       <Box>
@@ -44,7 +73,7 @@ export default function VendorAgreementPage() {
         }}
       >
         <Grid container spacing={3} sx={{ alignItems: "center" }}>
-          <Grid size={{ xs: 12, md: 7 }}>
+          <Grid size={{ xs: 12 }}>
             <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", mb: 1 }}>
               <VerifiedUserOutlinedIcon sx={{ color: "success.dark", fontSize: 28 }} />
               <Typography variant="overline" sx={{ color: "success.dark", fontWeight: 700, letterSpacing: "0.18em" }}>
@@ -58,18 +87,8 @@ export default function VendorAgreementPage() {
               {vendorAgreementMeta.tagline}
             </Typography>
             <Typography variant="body2" sx={{ color: "text.secondary", fontSize: "0.9rem" }}>
-              Click-to-signed by your authorized representative on {vendor.agreementSignedAt} · version {vendor.agreementVersion}
+              Click-to-signed by your authorized representative on {signedAt} · version {version}
             </Typography>
-          </Grid>
-          <Grid size={{ xs: 12, md: 5 }}>
-            <Stack direction="row" spacing={1.5} sx={{ justifyContent: { md: "flex-end" }, flexWrap: "wrap", gap: 1 }}>
-              <Button variant="outlined" color="primary" startIcon={<DownloadOutlinedIcon />}>
-                Download PDF
-              </Button>
-              <Button variant="text" color="primary">
-                Request changes
-              </Button>
-            </Stack>
           </Grid>
         </Grid>
       </Box>
