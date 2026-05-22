@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import {
   Box,
   Button,
@@ -16,7 +15,6 @@ import {
 } from "@mui/material";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
-import OpenInNewOutlinedIcon from "@mui/icons-material/OpenInNewOutlined";
 import VolunteerActivismOutlinedIcon from "@mui/icons-material/VolunteerActivismOutlined";
 import { PageHeader, SectionCard, StatCard, TagPill, portalText } from "@/components/vendor/PortalUI";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
@@ -264,26 +262,6 @@ export default function VendorAccountPage() {
                 Start cancellation
               </Button>
             </SectionCard>
-
-            <SectionCard title="Documents" padding="default">
-              <Stack spacing={0.75}>
-                <DocLink
-                  href="/agreement/vendor"
-                  label="Partnership agreement"
-                  meta="Active draft · signed at signup"
-                />
-                <DocLink
-                  href="/legal/refund"
-                  label="Refund & cancellation policy"
-                  meta="Public"
-                />
-                <DocLink
-                  href="/legal/privacy"
-                  label="Privacy policy"
-                  meta="Public"
-                />
-              </Stack>
-            </SectionCard>
           </Stack>
         </Grid>
       </Grid>
@@ -465,32 +443,3 @@ function InvoiceStatusPill({ status }: { status: InvoiceStatus }) {
   );
 }
 
-function DocLink({ href, label, meta }: { href: string; label: string; meta?: string }) {
-  return (
-    <Box
-      component={Link}
-      href={href}
-      target={href.startsWith("/") ? undefined : "_blank"}
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        gap: 1,
-        py: 0.75,
-        textDecoration: "none",
-        color: "#0A1A2F",
-        borderRadius: 1,
-        px: 1,
-        ml: -1,
-        "&:hover": { bgcolor: "rgba(14,42,61,0.04)", color: "#A07823" },
-      }}
-    >
-      <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography sx={{ fontSize: "0.84rem", fontWeight: 600 }} noWrap>
-          {label}
-        </Typography>
-        {meta && <Typography sx={portalText.meta}>{meta}</Typography>}
-      </Box>
-      <OpenInNewOutlinedIcon sx={{ fontSize: 14, color: "#9CA3AB", flexShrink: 0 }} />
-    </Box>
-  );
-}
