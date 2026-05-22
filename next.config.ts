@@ -25,7 +25,16 @@ const csp = [
   "default-src 'self'",
   // Next.js inlines small chunks at runtime; 'unsafe-inline' is required
   // unless we switch to strict-dynamic with nonce — leave for now.
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:",
+  // Three.js (and other 3D / animation libraries) spawn Web Workers from
+  // blob: URLs for offloading geometry/physics work to a background thread.
+  // Without this directive, browsers fall back to script-src — and even
+  // though we allow blob: there, some browsers strictly require an explicit
+  // worker-src for blob workers.
+  "worker-src 'self' blob:",
+  // Same reasoning for child-src (some older Chromium-based browsers
+  // resolve worker creation via child-src instead of worker-src).
+  "child-src 'self' blob:",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com data:",
   // Supabase storage public buckets serve images over https; allow data: for
