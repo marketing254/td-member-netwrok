@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createMiddlewareSupabase } from "@/lib/supabase/middleware-ssr";
 
 /**
- * Auth gates for the portal surfaces.
+ * Auth gates for the portal surfaces + security headers on every response.
  *
  *   /vendor/*  → requires a Supabase session OR the legacy test/test cookie.
  *                Public exceptions: /vendor/login, /vendor/signup, /vendor/applied.
@@ -11,9 +11,54 @@ import { createMiddlewareSupabase } from "@/lib/supabase/middleware-ssr";
  *
  * The middleware also refreshes the Supabase session cookie on every
  * request (createMiddlewareSupabase + getUser handles this automatically).
+ *
+ * Security headers (HSTS, CSP, X-Frame-Options, etc.) are applied here
+ * rather than in next.config.ts so that Vercel's modifyConfig step doesn't
+ * choke on the headers() function (a Next.js 16.2.x + Vercel quirk).
  */
 
 const VENDOR_LEGACY_COOKIE = "vendor_session";
+
+function buildCsp(): string {
+  const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/$/, "");
+  const supabaseHost = supabaseUrl.replace(/^https?:\/\//, "");
+  const supabaseHttps = supabaseHost ? `https://${supabaseHost}` : "";
+  const supabaseWss = supabaseHost ? `wss://${supabaseHost}` : "";
+
+  return [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://www.googletagmanager.com",
+    "worker-src 'self' blob:",
+    "child-src 'self' blob:",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src 'self' https://fonts.gstatic.com data:",
+    `img-src 'self' data: blob: ${supabaseHttps} https://www.google-analytics.com https://www.googletagmanager.com`,
+    `connect-src 'self' ${supabaseHttps} ${supabaseWss} https://cdn.jsdelivr.net https://fonts.gstatic.com https://www.google-analytics.com https://www.googletagmanager.com https://analytics.google.com`,
+    "frame-ancestors 'none'",
+    "form-action 'self'",
+    "base-uri 'self'",
+    "object-src 'none'",
+    "upgrade-insecure-requests",
+  ]
+    .map((d) => d.replace(/\s+/g, " ").trim())
+    .join("; ");
+}
+
+const CSP = buildCsp();
+
+function applySecurityHeaders(res: NextResponse): NextResponse {
+  res.headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
+  res.headers.set("X-Frame-Options", "DENY");
+  res.headers.set("X-Content-Type-Options", "nosniff");
+  res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.headers.set(
+    "Permissions-Policy",
+    "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()",
+  );
+  res.headers.set("X-DNS-Prefetch-Control", "on");
+  res.headers.set("Content-Security-Policy", CSP);
+  return res;
+}
 
 function isPublicVendorPath(pathname: string) {
   return (
@@ -34,7 +79,7 @@ export async function middleware(req: NextRequest) {
   const res = NextResponse.next({ request: req });
 
   // Only run on protected portal paths. Auth callback is always allowed.
-  if (pathname.startsWith("/auth/")) return res;
+  if (pathname.startsWith("/auth/")) return applySecurityHeaders(res);
 
   const isVendor = pathname.startsWith("/vendor") && !isPublicVendorPath(pathname);
   const isAdmin = pathname.startsWith("/admin") && !isPublicAdminPath(pathname);
@@ -48,7 +93,7 @@ export async function middleware(req: NextRequest) {
     } catch {
       // ignore — session refresh is best effort
     }
-    return res;
+    return applySecurityHeaders(res);
   }
 
   // ─────────────────────────────────────────────────────────────────
@@ -57,14 +102,13 @@ export async function middleware(req: NextRequest) {
   if (isVendor) {
     const legacySession = req.cookies.get(VENDOR_LEGACY_COOKIE)?.value;
     if (legacySession) {
-      // Preview test/test session — allow through.
-      return res;
+      return applySecurityHeaders(res);
     }
 
     try {
       const supabase = createMiddlewareSupabase(req, res);
       const { data } = await supabase.auth.getUser();
-      if (data.user) return res;
+      if (data.user) return applySecurityHeaders(res);
     } catch (err) {
       console.error("[middleware:vendor] auth check failed:", err);
     }
@@ -72,7 +116,7 @@ export async function middleware(req: NextRequest) {
     const target = req.nextUrl.clone();
     target.pathname = "/vendor/login";
     target.search = `?redirect=${encodeURIComponent(pathname + search)}`;
-    return NextResponse.redirect(target);
+    return applySecurityHeaders(NextResponse.redirect(target));
   }
 
   // ─────────────────────────────────────────────────────────────────
@@ -86,11 +130,9 @@ export async function middleware(req: NextRequest) {
         const target = req.nextUrl.clone();
         target.pathname = "/admin/login";
         target.search = `?redirect=${encodeURIComponent(pathname + search)}`;
-        return NextResponse.redirect(target);
+        return applySecurityHeaders(NextResponse.redirect(target));
       }
 
-      // Confirm the user has an active admin row. We use the same anon-key
-      // client because the admin_users policy grants self-select.
       const { data: adminRow } = await supabase
         .from("admin_users")
         .select("id, active")
@@ -98,23 +140,22 @@ export async function middleware(req: NextRequest) {
         .maybeSingle();
 
       if (!adminRow || !adminRow.active) {
-        // Signed in but not an admin — kick them to the public homepage.
         const target = req.nextUrl.clone();
         target.pathname = "/admin/login";
         target.search = `?error=${encodeURIComponent("Your account is not an admin.")}`;
-        return NextResponse.redirect(target);
+        return applySecurityHeaders(NextResponse.redirect(target));
       }
 
-      return res;
+      return applySecurityHeaders(res);
     } catch (err) {
       console.error("[middleware:admin] auth check failed:", err);
       const target = req.nextUrl.clone();
       target.pathname = "/admin/login";
-      return NextResponse.redirect(target);
+      return applySecurityHeaders(NextResponse.redirect(target));
     }
   }
 
-  return res;
+  return applySecurityHeaders(res);
 }
 
 export const config = {
