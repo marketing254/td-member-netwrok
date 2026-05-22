@@ -28,6 +28,15 @@ export const dynamic = "force-dynamic";
  * Any failure during bootstrap is logged but does NOT block sign-in — the
  * user can still proceed; the admin queue will surface the issue.
  */
+// Pick the right login page to bounce back to when the magic-link
+// verification fails. Without this every failure used to land on the
+// vendor login page even when an admin was trying to sign in.
+function loginPathForRole(role: string | null): string {
+  if (role === "admin") return "/admin/login";
+  if (role === "member") return "/welcome"; // members don't have a separate login surface yet
+  return "/vendor/login";
+}
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
@@ -37,7 +46,7 @@ export async function GET(request: Request) {
   if (!code) {
     const err = url.searchParams.get("error_description") ?? "Missing code in callback.";
     return NextResponse.redirect(
-      new URL(`/vendor/login?error=${encodeURIComponent(err)}`, url.origin),
+      new URL(`${loginPathForRole(role)}?error=${encodeURIComponent(err)}`, url.origin),
     );
   }
 
@@ -48,7 +57,7 @@ export async function GET(request: Request) {
     console.error("[auth:callback] code exchange failed:", error);
     return NextResponse.redirect(
       new URL(
-        `/vendor/login?error=${encodeURIComponent(error?.message ?? "Sign-in failed.")}`,
+        `${loginPathForRole(role)}?error=${encodeURIComponent(error?.message ?? "Sign-in failed.")}`,
         url.origin,
       ),
     );
