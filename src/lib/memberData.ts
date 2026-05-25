@@ -142,7 +142,7 @@ export const planTiers: PlanTier[] = [
     name: "Founding",
     priceMonthly: 49,
     cadenceLabel: "/month, founding rate",
-    blurb: "First 1,000 owners only. Full access at the lowest rate we will ever offer.",
+    blurb: "First 100 owners only. Full access at the lowest rate we will ever offer.",
     features: [
       "Everything in Pro",
       "Founding-member badge",

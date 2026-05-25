@@ -33,7 +33,7 @@ export const hero = {
   proofPoints: [
     { value: "247+", label: "Practice owners in the waitlist" },
   ],
-  progressLabel: "of 100 founding spots claimed",
+  progressLabel: "founding spots claimed",
 };
 
 // MARQUEE (Section 3 in doc), 6 badges verbatim
@@ -77,7 +77,7 @@ export const features = [
   {
     title: "Founding Pricing",
     summary:
-      "The first 1,000 founding members lock in $49/month at the founding rate for as long as their membership stays active. Founding rate ends after 20 days or the cap, whichever comes first.",
+      "The first 100 founding members lock in $49/month at the founding rate for as long as their membership stays active. Founding rate ends after 20 days or the cap, whichever comes first.",
     icon: "infinity",
   },
 ];
@@ -285,7 +285,7 @@ export const pricing = [
     tier: "Vendor Partner",
     audience: "Suppliers, labs, software, services",
     price: "Apply",
-    cadence: "Founding cohort: $0 for 12 months",
+    cadence: "Founding cohort: $0 for 6 months, $49/mo months 7-12, then $199/mo",
     blurb:
       "Get featured to our member network. Preferred placement, warm introductions, and direct access to practice owners who are actively buying.",
     features: [

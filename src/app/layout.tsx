@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     siteName: "Dental Member Network",
     title: "Dental Member Network, Expert helpline, vendor savings, and the operator playbook",
     description:
-      "24/7 expert helpline, exclusive partner discounts, and a directory of 500+ practice owners. Founding rate $49/mo, never increases while active. First 1,000 only.",
+      "24/7 expert helpline, exclusive partner discounts, and a directory of 500+ practice owners. Founding rate $49/mo, never increases while active. First 100 only.",
     images: [
       {
         url: "/td-logo-horizontal-dark.svg",

@@ -151,7 +151,7 @@ function memberDraft(input: ConfirmationInput): EmailDraft {
         items: [
           "Your founding member status is permanent. As we add features over time, you keep access at the same $49/month founding rate for as long as your membership stays active.",
           'Member discounts on vendor products and services are clearly marked in the Vendor Directory, just look for the "Member Benefit" panel on each vendor\'s card.',
-          "If you registered with a practice email, feel free to invite your office manager or team members to set up their own accounts. The first 1,000 founding spots are still open.",
+          "If you registered with a practice email, feel free to invite your office manager or team members to set up their own accounts. The first 100 founding spots are still open.",
         ],
       },
     ],
