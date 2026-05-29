@@ -6,7 +6,7 @@ import { alpha } from "@mui/material/styles";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 type Props = {
-  /** ISO 8601 string. Defaults to NEXT_PUBLIC_LAUNCH_AT or 2026-06-02T13:00:00Z. */
+  /** ISO 8601 string. Defaults to NEXT_PUBLIC_LAUNCH_AT or 2026-06-18T13:00:00Z. */
   target?: string;
   /** "dark" = light text on dark bg. "light" = dark text on light bg. */
   variant?: "dark" | "light";
@@ -22,7 +22,7 @@ type Parts = {
   finished: boolean;
 };
 
-const DEFAULT_TARGET = "2026-06-02T13:00:00.000Z";
+const DEFAULT_TARGET = "2026-06-18T13:00:00.000Z";
 const LAUNCH_WINDOW_SECONDS = 14 * 86_400;
 
 function diff(toMs: number): Parts {
