@@ -355,8 +355,8 @@ function WaitlistPanel() {
                 sx={{
                   display: "grid",
                   gridTemplateColumns: { xs: "1fr", md: "1.6fr 1.4fr 0.9fr 0.9fr 1fr" },
-                  alignItems: "center",
-                  gap: 2,
+                  alignItems: { md: "center" },
+                  gap: { xs: 1.5, md: 2 },
                   px: { xs: 2.5, md: 3 },
                   py: 2,
                   borderBottom: i === rows.length - 1 ? 0 : "1px solid",
@@ -370,6 +370,28 @@ function WaitlistPanel() {
                   <Typography variant="body2" sx={{ fontSize: "0.78rem", color: "text.secondary" }} noWrap>
                     {w.email}
                   </Typography>
+                  {/* Mobile-only: practice + status + date inline */}
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    sx={{
+                      display: { xs: "flex", md: "none" },
+                      mt: 0.75,
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                      gap: 0.75,
+                    }}
+                  >
+                    <WaitlistStatusChip status={w.status} />
+                    {w.practice_name && (
+                      <Typography variant="body2" sx={{ fontSize: "0.74rem", color: "text.secondary" }}>
+                        {w.practice_name}
+                      </Typography>
+                    )}
+                    <Typography variant="body2" sx={{ fontSize: "0.74rem", color: "text.secondary" }}>
+                      · {w.created_at.slice(0, 10)}
+                    </Typography>
+                  </Stack>
                 </Box>
                 <Cell>
                   <Box sx={{ display: { xs: "none", md: "block" } }}>
@@ -391,12 +413,19 @@ function WaitlistPanel() {
                     {w.created_at.slice(0, 10)}
                   </Box>
                 </Cell>
-                <Box sx={{ display: { xs: "none", md: "flex" }, justifyContent: "flex-end" }}>
+                {/* Activate button — visible on every screen size */}
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: { xs: "flex-start", md: "flex-end" },
+                    alignItems: "center",
+                  }}
+                >
                   {activatingId === w.id ? (
                     <CircularProgress size={18} sx={{ color: "#A07823" }} />
                   ) : isActive ? (
                     <Typography sx={{ fontSize: "0.72rem", color: "#1F5C40", fontWeight: 600 }}>
-                      Activated
+                      ✓ Activated
                     </Typography>
                   ) : (
                     <Button
@@ -406,14 +435,14 @@ function WaitlistPanel() {
                       sx={{
                         bgcolor: "#0A1A2F",
                         textTransform: "none",
-                        fontSize: "0.72rem",
+                        fontSize: "0.74rem",
                         fontWeight: 600,
-                        px: 1.5,
-                        py: 0.4,
+                        px: 1.75,
+                        py: 0.5,
                         "&:hover": { bgcolor: "#0F2540" },
                       }}
                     >
-                      Activate
+                      Activate member
                     </Button>
                   )}
                 </Box>

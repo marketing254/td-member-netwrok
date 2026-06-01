@@ -93,28 +93,37 @@ export default function Footer() {
           </Button>
         </Stack>
 
-        {/* Bottom row: contact + copyright + legal, single thin row */}
+        {/* Bottom row: contact + copyright + legal.
+            DESKTOP: single thin row (contact left, legal center, copyright right).
+            MOBILE:  vertically stacked groups with healthy spacing, so links
+            don't run together and tap targets stay comfortable. */}
         <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={{ xs: 1, sm: 3 }}
+          direction={{ xs: "column", md: "row" }}
+          spacing={{ xs: 1.75, md: 3 }}
           sx={{
             mt: 2.5,
             pt: 2,
             borderTop: "1px solid rgba(246,241,231,0.08)",
-            alignItems: { sm: "center" },
+            alignItems: { xs: "flex-start", md: "center" },
             justifyContent: "space-between",
             color: "rgba(246,241,231,0.45)",
             fontSize: "0.74rem",
-            flexWrap: "wrap",
-            rowGap: 1,
           }}
         >
-          <Stack direction="row" spacing={2} sx={{ alignItems: "center", flexWrap: "wrap", rowGap: 0.5 }}>
+          {/* Contact */}
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={{ xs: 0.5, sm: 1.5 }}
+            sx={{
+              alignItems: { xs: "flex-start", sm: "center" },
+              fontSize: "0.78rem",
+            }}
+          >
             <Box
               component="a"
               href={`tel:${brand.phoneTel}`}
               sx={{
-                color: "rgba(246,241,231,0.7)",
+                color: "rgba(246,241,231,0.78)",
                 textDecoration: "none",
                 fontWeight: 600,
                 "&:hover": { color: "secondary.light" },
@@ -122,33 +131,60 @@ export default function Footer() {
             >
               {brand.phoneDisplay}
             </Box>
-            <Box component="span">·</Box>
+            <Box
+              component="span"
+              sx={{ display: { xs: "none", sm: "inline" }, color: "rgba(246,241,231,0.3)" }}
+            >
+              ·
+            </Box>
             <Box
               component="a"
               href={`mailto:${brand.email}`}
               sx={{
-                color: "rgba(246,241,231,0.7)",
+                color: "rgba(246,241,231,0.78)",
                 textDecoration: "none",
                 fontWeight: 600,
                 "&:hover": { color: "secondary.light" },
+                wordBreak: "break-word",
               }}
             >
               {brand.email}
             </Box>
-            <Box component="span" sx={{ display: { xs: "none", md: "inline" } }}>·</Box>
-            <Typography variant="body2" sx={{ color: "rgba(246,241,231,0.5)", fontSize: "0.74rem", display: { xs: "none", md: "inline" } }}>
+            <Box
+              component="span"
+              sx={{ display: { xs: "none", md: "inline" }, color: "rgba(246,241,231,0.3)" }}
+            >
+              ·
+            </Box>
+            <Typography
+              variant="body2"
+              sx={{
+                color: "rgba(246,241,231,0.5)",
+                fontSize: "0.74rem",
+                display: { xs: "none", md: "inline" },
+              }}
+            >
               {footerCopy.responseValue}
             </Typography>
           </Stack>
 
-          <Stack direction="row" spacing={2} sx={{ alignItems: "center", flexWrap: "wrap", rowGap: 0.5 }}>
+          {/* Legal links — wrap onto multiple lines on mobile with comfortable gap */}
+          <Stack
+            direction="row"
+            sx={{
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: { xs: 1.25, md: 2 },
+              rowGap: { xs: 0.75, md: 0.5 },
+            }}
+          >
             {FOOTER_LEGAL.map((l) => (
               <Box
                 key={l.href}
                 component={Link}
                 href={l.href}
                 sx={{
-                  color: "rgba(246,241,231,0.55)",
+                  color: "rgba(246,241,231,0.6)",
                   textDecoration: "none",
                   fontSize: "0.74rem",
                   fontWeight: 500,
@@ -161,7 +197,15 @@ export default function Footer() {
             ))}
           </Stack>
 
-          <Typography variant="body2" sx={{ color: "rgba(246,241,231,0.5)", fontSize: "0.72rem" }}>
+          {/* Copyright */}
+          <Typography
+            variant="body2"
+            sx={{
+              color: "rgba(246,241,231,0.45)",
+              fontSize: "0.72rem",
+              lineHeight: 1.55,
+            }}
+          >
             {footerCopy.copyright}
           </Typography>
         </Stack>
