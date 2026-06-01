@@ -83,9 +83,7 @@ function isVideo(kind: string): boolean {
 }
 
 /**
- * Kinds we can preview inline as a PDF iframe.
- * (Excludes slide_deck — PowerPoint can't render in-browser without an
- *  external Office viewer; we offer Download for those.)
+ * Kinds we can preview inline as a PDF iframe directly from Supabase.
  */
 const PDF_KINDS = new Set([
   "action_guide",
@@ -97,6 +95,34 @@ const PDF_KINDS = new Set([
 
 function isPdf(kind: string): boolean {
   return PDF_KINDS.has(kind);
+}
+
+/**
+ * PowerPoint slide decks — browsers can't render .pptx natively, but
+ * Microsoft Office Online has a free public embed viewer that does.
+ */
+function isOffice(kind: string): boolean {
+  return kind === "slide_deck";
+}
+
+/**
+ * Anything we can show inline in the player canvas (with the right iframe).
+ */
+function isPreviewable(kind: string): boolean {
+  return isPdf(kind) || isOffice(kind);
+}
+
+/**
+ * Build the iframe src for a previewable file:
+ *   - PDFs: Supabase URL directly with native PDF reader hash params
+ *   - Slide decks: Microsoft Office Online embed viewer wrapping the URL
+ */
+function previewSrc(kind: string, url: string): string {
+  if (isOffice(kind)) {
+    return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`;
+  }
+  // PDF
+  return `${url}#view=FitH&toolbar=1`;
 }
 
 async function markProgress(resourceId: string, action: "view" | "complete") {
@@ -291,12 +317,15 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
             <Box
               sx={{
                 position: "relative",
-                ...(activeResource && isPdf(activeResource.kind) && activeResource.external_url
+                ...(activeResource &&
+                isPreviewable(activeResource.kind) &&
+                activeResource.external_url
                   ? { height: { xs: 520, md: 720 } }
                   : { aspectRatio: "16 / 9" }),
                 bgcolor: "var(--ink)",
                 backgroundImage:
-                  activeResource && (isVideo(activeResource.kind) || isPdf(activeResource.kind))
+                  activeResource &&
+                  (isVideo(activeResource.kind) || isPreviewable(activeResource.kind))
                     ? "none"
                     : visual.gradient,
                 display: "grid",
@@ -315,10 +344,15 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
                   onEnded={() => void markProgress(activeResource.id, "complete")}
                   style={{ width: "100%", height: "100%", display: "block", background: "#000" }}
                 />
-              ) : activeResource && isPdf(activeResource.kind) && activeResource.external_url ? (
+              ) : activeResource &&
+                isPreviewable(activeResource.kind) &&
+                activeResource.external_url ? (
                 <Box
                   component="iframe"
-                  src={`${activeResource.external_url}#view=FitH&toolbar=1`}
+                  // key forces a remount when switching between previewable lessons,
+                  // so the iframe loads the new URL even if React would otherwise reuse it.
+                  key={activeResource.id}
+                  src={previewSrc(activeResource.kind, activeResource.external_url)}
                   title={activeResource.title}
                   onLoad={() => void markProgress(activeResource.id, "view")}
                   sx={{
@@ -346,7 +380,7 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
                   </Typography>
                   {activeResource &&
                     !isVideo(activeResource.kind) &&
-                    !isPdf(activeResource.kind) && (
+                    !isPreviewable(activeResource.kind) && (
                       <Typography
                         sx={{
                           fontSize: "0.78rem",
@@ -402,7 +436,7 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
                       spacing={1}
                       sx={{ flexShrink: 0, flexWrap: "wrap", rowGap: 1 }}
                     >
-                      {isPdf(activeResource.kind) && (
+                      {isPreviewable(activeResource.kind) && (
                         <Button
                           component="a"
                           href={activeResource.external_url}

@@ -42,7 +42,10 @@ function buildCsp(): string {
     // from Supabase Storage are blocked because default-src 'self' falls back.
     `media-src 'self' blob: ${supabaseHttps}`,
     `connect-src 'self' ${supabaseHttps} ${supabaseWss} https://cdn.jsdelivr.net https://fonts.gstatic.com https://www.google-analytics.com https://www.googletagmanager.com https://analytics.google.com https://vercel.live https://*.pusher.com wss://*.pusher.com`,
-    "frame-src 'self' https://vercel.live",
+    // frame-src controls <iframe> sources. Supabase is needed so the resource
+    // viewer can render PDFs inline; Microsoft Office Online viewer is needed
+    // for slide decks (.pptx).
+    `frame-src 'self' ${supabaseHttps} https://view.officeapps.live.com https://vercel.live`,
     "frame-ancestors 'none'",
     "form-action 'self'",
     "base-uri 'self'",
