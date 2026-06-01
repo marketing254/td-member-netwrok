@@ -11,17 +11,14 @@ import {
 } from "@mui/material";
 import type { SvgIconComponent } from "@mui/icons-material";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import LibraryBooksOutlinedIcon from "@mui/icons-material/LibraryBooksOutlined";
-import PlayArrowRoundedIcon from "@mui/icons-material/PlayArrowRounded";
 import GavelOutlinedIcon from "@mui/icons-material/GavelOutlined";
 import PolicyOutlinedIcon from "@mui/icons-material/PolicyOutlined";
 import RuleFolderOutlinedIcon from "@mui/icons-material/RuleFolderOutlined";
 import { useCurrentMember } from "@/lib/hooks/useCurrentMember";
-import { visualForTopic } from "@/components/member/topicVisuals";
+import { KitCover } from "@/components/member/KitCover";
 import {
   EditorialHeader,
   EditorialSection,
-  InlineTag,
   MetricStrip,
   editorialText,
   ink,
@@ -143,7 +140,6 @@ export default function DashboardHome() {
   return (
     <Box sx={{ color: ink.primary }}>
       <EditorialHeader
-        index="01"
         eyebrow={`Member portal · ${member?.tier === "founding" ? "Founding cohort" : "Member"}`}
         title={`Welcome back, ${firstName}.`}
         standfirst={
@@ -208,16 +204,13 @@ export default function DashboardHome() {
         />
       </Box>
 
-      {/* Section 02 — Continue / Begin */}
+      {/* Continue / Begin */}
       <EditorialSection
-        index="02"
         eyebrow={recentlyViewed.length > 0 ? "Continue" : "Begin"}
         title={
           recentlyViewed.length > 0 ? "Pick up where you left off" : "Recommended starting kits"
         }
-        actions={
-          <SeeAllLink href="/dashboard/resources" label="All kits" />
-        }
+        actions={<SeeAllLink href="/dashboard/resources" label="All kits" />}
       >
         {resourcesLoading ? (
           <Stack sx={{ alignItems: "center", py: 4 }}>
@@ -234,20 +227,18 @@ export default function DashboardHome() {
                 sm: "repeat(2, 1fr)",
                 lg: "repeat(4, 1fr)",
               },
-              gap: 0,
-              borderTop: "1px solid var(--paper-rule)",
+              gap: { xs: 2.5, md: 3 },
             }}
           >
-            {(recentlyViewed.length > 0 ? recentlyViewed : topics.slice(0, 4)).map((t, i) => (
-              <EditorialKitTile key={t.slug} topic={t} index={i} />
+            {(recentlyViewed.length > 0 ? recentlyViewed : topics.slice(0, 4)).map((t) => (
+              <DashboardKitTile key={t.slug} topic={t} />
             ))}
           </Box>
         )}
       </EditorialSection>
 
-      {/* Section 03 — Documents */}
+      {/* Documents */}
       <EditorialSection
-        index="03"
         eyebrow="Reference"
         title="Agreements & policies"
         standfirst="What you signed, plus the policies that govern your membership."
@@ -265,14 +256,12 @@ export default function DashboardHome() {
             icon={GavelOutlinedIcon}
             label="Member agreement"
             meta="What you signed at signup"
-            index="i"
           />
           <DocLink
             href="/legal/refund"
             icon={RuleFolderOutlinedIcon}
             label="Refund & cancellation"
             meta="30-day money-back guarantee"
-            index="ii"
             borderLeft
           />
           <DocLink
@@ -280,14 +269,13 @@ export default function DashboardHome() {
             icon={PolicyOutlinedIcon}
             label="Privacy policy"
             meta="What we do with your data"
-            index="iii"
             borderLeft
           />
         </Box>
       </EditorialSection>
 
-      {/* Section 04 — Help */}
-      <EditorialSection index="04" eyebrow="Support" title="Need a hand?" rule={false}>
+      {/* Help */}
+      <EditorialSection eyebrow="Support" title="Need a hand?" rule={false}>
         <Stack
           direction={{ xs: "column", sm: "row" }}
           spacing={2}
@@ -367,14 +355,12 @@ function DocLink({
   icon: Icon,
   label,
   meta,
-  index,
   borderLeft,
 }: {
   href: string;
   icon: SvgIconComponent;
   label: string;
   meta: string;
-  index: string;
   borderLeft?: boolean;
 }) {
   return (
@@ -384,8 +370,8 @@ function DocLink({
       sx={{
         display: "flex",
         alignItems: "flex-start",
-        gap: 1.5,
-        px: { xs: 1.5, md: 2.5 },
+        gap: 1.25,
+        px: { xs: 1.5, md: 2.25 },
         py: 2,
         textDecoration: "none",
         color: "inherit",
@@ -400,129 +386,79 @@ function DocLink({
       }}
     >
       <Box
-        component="span"
-        className="hk-numeral"
         sx={{
-          fontSize: "0.82rem",
-          color: "var(--gold)",
+          width: 30,
+          height: 30,
+          borderRadius: 0.75,
+          bgcolor: "color-mix(in oklch, var(--gold) 12%, transparent)",
+          color: "var(--gold-deep)",
+          display: "grid",
+          placeItems: "center",
           flexShrink: 0,
-          pt: 0.25,
         }}
       >
-        {index}
+        <Icon sx={{ fontSize: 16 }} />
       </Box>
       <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 0.5 }}>
-          <Icon sx={{ fontSize: 15, color: ink.fade }} />
-          <Typography sx={{ ...editorialText.eyebrow, color: ink.fade }}>{label}</Typography>
-        </Stack>
-        <Typography sx={{ ...editorialText.body, color: ink.soft }}>{meta}</Typography>
+        <Typography
+          sx={{ fontSize: "0.84rem", fontWeight: 600, color: ink.primary, lineHeight: 1.3, mb: 0.25 }}
+        >
+          {label}
+        </Typography>
+        <Typography sx={{ fontSize: "0.72rem", color: ink.fade, lineHeight: 1.4 }}>
+          {meta}
+        </Typography>
       </Box>
-      <ArrowForwardIcon sx={{ fontSize: 14, color: ink.fade, mt: 0.5, flexShrink: 0 }} />
+      <ArrowForwardIcon sx={{ fontSize: 13, color: ink.fade, mt: 0.5, flexShrink: 0 }} />
     </Box>
   );
 }
 
-function EditorialKitTile({ topic, index }: { topic: TopicCard; index: number }) {
-  const visual = visualForTopic(topic.slug);
-  const Icon = visual.icon;
+function DashboardKitTile({ topic }: { topic: TopicCard }) {
   const progressPct =
     topic.resourceCount > 0
       ? Math.round((topic.viewedCount / topic.resourceCount) * 100)
       : 0;
   const completed = topic.completedCount === topic.resourceCount && topic.resourceCount > 0;
+  const inProgress = topic.viewedCount > 0 && topic.viewedCount < topic.resourceCount;
 
   return (
     <Box
       component={Link}
       href={`/dashboard/resources/${topic.slug}`}
       sx={{
-        position: "relative",
         display: "flex",
         flexDirection: "column",
         textDecoration: "none",
         color: "inherit",
-        px: { xs: 1.5, md: 2 },
-        py: 2,
-        borderRight: { sm: index % 2 === 0 ? "1px solid var(--paper-rule)" : "none", lg: index < 3 ? "1px solid var(--paper-rule)" : "none" },
-        borderBottom: { xs: "1px solid var(--paper-rule)", lg: "1px solid var(--paper-rule)" },
-        transition: "background-color var(--dur-fast) var(--ease-out)",
-        "&:hover": { bgcolor: "color-mix(in oklch, var(--gold) 5%, transparent)" },
-        "&:focus-visible": { outline: "2px solid var(--gold)", outlineOffset: -2 },
+        transition: "transform var(--dur-base) var(--ease-out)",
+        "&:hover": { transform: "translateY(-2px)" },
+        "&:focus-visible": {
+          outline: "2px solid var(--gold)",
+          outlineOffset: 4,
+          borderRadius: "4px",
+        },
       }}
     >
-      <Box
-        sx={{
-          position: "relative",
-          aspectRatio: "16 / 10",
-          backgroundImage: visual.gradient,
-          borderRadius: 1,
-          overflow: "hidden",
-          mb: 1.5,
-        }}
-      >
-        <Icon
-          sx={{
-            position: "absolute",
-            right: -16,
-            bottom: -16,
-            fontSize: 130,
-            color: visual.iconColor,
-            opacity: 0.22,
-            transform: "rotate(-10deg)",
-          }}
+      <Box sx={{ mb: 1.25 }}>
+        <KitCover
+          slug={topic.slug}
+          title={topic.title}
+          videoCount={topic.videoCount}
+          resourceCount={topic.resourceCount}
+          isFree={topic.isFree}
+          completed={completed}
+          inProgress={inProgress}
+          progressPct={progressPct}
         />
-        {topic.videoCount > 0 && (
-          <Box
-            sx={{
-              position: "absolute",
-              inset: 0,
-              display: "grid",
-              placeItems: "center",
-              pointerEvents: "none",
-            }}
-          >
-            <Box
-              sx={{
-                width: 36,
-                height: 36,
-                borderRadius: "50%",
-                bgcolor: "var(--paper)",
-                color: "var(--ink)",
-                display: "grid",
-                placeItems: "center",
-              }}
-            >
-              <PlayArrowRoundedIcon sx={{ fontSize: 20 }} />
-            </Box>
-          </Box>
-        )}
-        {topic.viewedCount > 0 && (
-          <Box
-            sx={{
-              position: "absolute",
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: 2,
-              bgcolor: "rgba(255,255,255,0.2)",
-            }}
-          >
-            <Box sx={{ height: "100%", width: `${progressPct}%`, bgcolor: visual.accent }} />
-          </Box>
-        )}
       </Box>
-
-      <Stack direction="row" spacing={0.5} sx={{ mb: 0.5 }}>
-        {topic.isFree && <InlineTag label="Free" tone="leaf" />}
-        {completed && <InlineTag label="Done" tone="ink" />}
-      </Stack>
-      <Typography sx={{ ...editorialText.heading, fontSize: "0.95rem", mb: 0.25 }}>
-        {topic.title}
-      </Typography>
       <Typography sx={{ ...editorialText.meta, mt: "auto" }}>
         {topic.resourceCount} {topic.resourceCount === 1 ? "item" : "items"}
-        {topic.videoCount > 0 ? ` · ${topic.videoCount} video${topic.videoCount === 1 ? "" : "s"}` : ""}
+        {topic.viewedCount > 0
+          ? ` · ${topic.viewedCount} done`
+          : topic.videoCount > 0
+            ? ` · ${topic.videoCount} video${topic.videoCount === 1 ? "" : "s"}`
+            : ""}
       </Typography>
     </Box>
   );

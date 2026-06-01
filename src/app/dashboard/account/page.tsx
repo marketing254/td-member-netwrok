@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Alert,
@@ -59,18 +59,21 @@ function formatJoined(iso: string | null): string {
 
 export default function MemberProfilePage() {
   const { member, loading } = useCurrentMember();
-  const [form, setForm] = useState<Partial<CurrentMember>>({});
+  // Edits live in `draft`. The displayed `form` overlays the loaded member
+  // with any local edits, so a fresh member fetch automatically populates
+  // every untouched field without needing to sync via useEffect.
+  const [draft, setDraft] = useState<Partial<CurrentMember>>({});
+  const form: Partial<CurrentMember> = useMemo(
+    () => ({ ...(member ?? {}), ...draft }),
+    [member, draft],
+  );
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (member) setForm(member);
-  }, [member]);
-
   const set = <K extends keyof CurrentMember>(k: K, v: CurrentMember[K]) =>
-    setForm((prev) => ({ ...prev, [k]: v }));
+    setDraft((prev) => ({ ...prev, [k]: v }));
 
   const onSave = async () => {
     setSaving(true);
@@ -141,7 +144,6 @@ export default function MemberProfilePage() {
   return (
     <Box sx={{ color: ink.primary }}>
       <EditorialHeader
-        index="03"
         eyebrow="Account"
         title="Your profile"
         standfirst="What's on file for your membership. Edits go live immediately — contact the team to update your sign-in email."
@@ -229,15 +231,9 @@ export default function MemberProfilePage() {
 
             {/* Membership panel */}
             <Box sx={{ borderTop: "1px solid var(--ink-rule)", pt: 2 }}>
-              <Stack direction="row" spacing={1.25} sx={{ alignItems: "baseline", mb: 1.25 }}>
-                <Box
-                  component="span"
-                  className="hk-numeral"
-                  sx={{ fontSize: "0.88rem", color: "var(--gold)" }}
-                >
-                  i
-                </Box>
+              <Stack direction="row" spacing={1} sx={{ alignItems: "baseline", mb: 1.25 }}>
                 <Typography sx={editorialText.eyebrow}>Membership</Typography>
+                <Box aria-hidden sx={{ flex: 1, height: "1px", bgcolor: "var(--paper-rule)" }} />
               </Stack>
               <Stack spacing={1}>
                 <MetaRow label="Tier" value={isFounding ? "Founding member" : "Member"} />
@@ -263,15 +259,9 @@ export default function MemberProfilePage() {
 
             {/* Documents panel */}
             <Box sx={{ borderTop: "1px solid var(--paper-rule)", pt: 2 }}>
-              <Stack direction="row" spacing={1.25} sx={{ alignItems: "baseline", mb: 1.25 }}>
-                <Box
-                  component="span"
-                  className="hk-numeral"
-                  sx={{ fontSize: "0.88rem", color: "var(--gold)" }}
-                >
-                  ii
-                </Box>
+              <Stack direction="row" spacing={1} sx={{ alignItems: "baseline", mb: 1.25 }}>
                 <Typography sx={editorialText.eyebrow}>Documents</Typography>
+                <Box aria-hidden sx={{ flex: 1, height: "1px", bgcolor: "var(--paper-rule)" }} />
               </Stack>
               <Stack>
                 <DocLink
@@ -297,15 +287,9 @@ export default function MemberProfilePage() {
 
             {/* Help panel */}
             <Box sx={{ borderTop: "1px solid var(--paper-rule)", pt: 2 }}>
-              <Stack direction="row" spacing={1.25} sx={{ alignItems: "baseline", mb: 1.25 }}>
-                <Box
-                  component="span"
-                  className="hk-numeral"
-                  sx={{ fontSize: "0.88rem", color: "var(--gold)" }}
-                >
-                  iii
-                </Box>
+              <Stack direction="row" spacing={1} sx={{ alignItems: "baseline", mb: 1.25 }}>
                 <Typography sx={editorialText.eyebrow}>Support</Typography>
+                <Box aria-hidden sx={{ flex: 1, height: "1px", bgcolor: "var(--paper-rule)" }} />
               </Stack>
               <Typography sx={{ ...editorialText.body, mb: 1 }}>
                 Questions about your account or how the network works? Reach out — we read every email.
@@ -334,7 +318,6 @@ export default function MemberProfilePage() {
         <Grid size={{ xs: 12, md: 8 }}>
           <Stack spacing={3.5}>
             <EditorialSection
-              index="i"
               eyebrow="Identity"
               standfirst="How you appear in member communications."
               rule
@@ -384,7 +367,6 @@ export default function MemberProfilePage() {
             </EditorialSection>
 
             <EditorialSection
-              index="ii"
               eyebrow="Practice"
               standfirst="Used to tailor resource recommendations."
               rule={false}

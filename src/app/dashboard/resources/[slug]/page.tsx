@@ -25,11 +25,7 @@ import InsertDriveFileOutlinedIcon from "@mui/icons-material/InsertDriveFileOutl
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import type { SvgIconComponent } from "@mui/icons-material";
 import { visualForTopic } from "@/components/member/topicVisuals";
-import {
-  InlineTag,
-  editorialText,
-  ink,
-} from "@/components/member/Editorial";
+import { InlineTag, editorialText, ink } from "@/components/member/Editorial";
 
 type Progress = {
   last_viewed_at: string | null;
@@ -114,12 +110,6 @@ async function markProgress(resourceId: string, action: "view" | "complete") {
   }
 }
 
-function romanize(n: number): string {
-  // i ii iii iv v vi vii viii ix x — falls back to digit beyond 10
-  const lookup = ["i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x"];
-  return lookup[n - 1] ?? String(n);
-}
-
 export default function ResourceKitDetailPage({ params }: { params: RouteParams }) {
   const { slug } = use(params);
   const [resources, setResources] = useState<ResourceItem[]>([]);
@@ -180,15 +170,17 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
   const videos = useMemo(() => orderedResources.filter((r) => isVideo(r.kind)), [orderedResources]);
   const downloads = useMemo(() => orderedResources.filter((r) => !isVideo(r.kind)), [orderedResources]);
 
-  useEffect(() => {
-    if (activeId) return;
+  // Derive the active resource. When the user hasn't picked anything explicitly
+  // (activeId === null), fall back to the first playable video so the player
+  // has something to show as soon as the kit loads.
+  const fallbackActiveId = useMemo(() => {
     const firstVideo = videos.find((v) => v.external_url) ?? videos[0];
-    if (firstVideo) setActiveId(firstVideo.id);
-  }, [videos, activeId]);
-
+    return firstVideo?.id ?? null;
+  }, [videos]);
+  const effectiveActiveId = activeId ?? fallbackActiveId;
   const activeResource = useMemo(
-    () => orderedResources.find((r) => r.id === activeId) ?? null,
-    [orderedResources, activeId],
+    () => orderedResources.find((r) => r.id === effectiveActiveId) ?? null,
+    [orderedResources, effectiveActiveId],
   );
 
   const topicTitle = resources[0]?.topic_title ?? "Resource Kit";
@@ -241,23 +233,16 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
     <Box sx={{ color: ink.primary }}>
       <BackLink />
 
-      {/* Editorial header (numbered, no nav-card) */}
-      <Box sx={{ pb: 2.5, mb: 2.5, borderBottom: "1px solid var(--ink-rule)" }}>
+      {/* Header — title + tags + progress meter (one balanced row) */}
+      <Box sx={{ pb: 2.5, mb: 3, borderBottom: "1px solid var(--ink-rule)" }}>
         <Stack
           direction={{ xs: "column", md: "row" }}
           spacing={2}
           sx={{ justifyContent: "space-between", alignItems: { md: "flex-end" } }}
         >
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Stack direction="row" spacing={1.25} sx={{ alignItems: "baseline", mb: 1 }}>
-              <Box
-                component="span"
-                className="hk-numeral"
-                sx={{ fontSize: "1.05rem", color: "var(--gold)" }}
-              >
-                Kit
-              </Box>
-              <Typography sx={editorialText.eyebrow}>{topicTitle ? "Resource pack" : "—"}</Typography>
+            <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", mb: 1 }}>
+              <Typography sx={editorialText.eyebrow}>Resource kit</Typography>
               {isFree && <InlineTag label="Free" tone="leaf" />}
             </Stack>
             <Typography component="h1" sx={editorialText.display}>
@@ -269,7 +254,7 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
               </Typography>
             )}
           </Box>
-          <Box sx={{ flexShrink: 0 }}>
+          <Box sx={{ flexShrink: 0, minWidth: 160 }}>
             <Typography sx={{ ...editorialText.eyebrow, mb: 0.75 }}>Your progress</Typography>
             <Stack direction="row" spacing={1.25} sx={{ alignItems: "center" }}>
               <Box
@@ -297,158 +282,143 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
         </Stack>
       </Box>
 
-      <Grid container spacing={3}>
-        {/* PLAYER COLUMN */}
+      {/* PLAYER + CURRICULUM — Udemy-style balanced split */}
+      <Grid container spacing={{ xs: 3, lg: 4 }}>
+        {/* Player column */}
         <Grid size={{ xs: 12, lg: 8 }}>
-          <Stack spacing={2.5}>
-            <Box>
-              <Box
-                sx={{
-                  position: "relative",
-                  aspectRatio: "16 / 9",
-                  bgcolor: "var(--ink)",
-                  backgroundImage: activeResource && isVideo(activeResource.kind) ? "none" : visual.gradient,
-                  display: "grid",
-                  placeItems: "center",
-                  overflow: "hidden",
-                  borderRadius: 1,
-                }}
-              >
-                {activeResource && isVideo(activeResource.kind) && activeResource.external_url ? (
-                  <video
-                    ref={videoRef}
-                    src={activeResource.external_url}
-                    controls
-                    playsInline
-                    onPlay={() => void markProgress(activeResource.id, "view")}
-                    onEnded={() => void markProgress(activeResource.id, "complete")}
-                    style={{ width: "100%", height: "100%", display: "block", background: "#000" }}
-                  />
-                ) : (
-                  <Stack spacing={1.5} sx={{ alignItems: "center", color: "var(--paper)", textAlign: "center", px: 3 }}>
-                    <TopicIcon sx={{ fontSize: 56, color: visual.iconColor, opacity: 0.95 }} />
-                    <Typography
+          <Box>
+            <Box
+              sx={{
+                position: "relative",
+                aspectRatio: "16 / 9",
+                bgcolor: "var(--ink)",
+                backgroundImage:
+                  activeResource && isVideo(activeResource.kind) ? "none" : visual.gradient,
+                display: "grid",
+                placeItems: "center",
+                overflow: "hidden",
+                borderRadius: 1,
+              }}
+            >
+              {activeResource && isVideo(activeResource.kind) && activeResource.external_url ? (
+                <video
+                  ref={videoRef}
+                  src={activeResource.external_url}
+                  controls
+                  playsInline
+                  onPlay={() => void markProgress(activeResource.id, "view")}
+                  onEnded={() => void markProgress(activeResource.id, "complete")}
+                  style={{ width: "100%", height: "100%", display: "block", background: "#000" }}
+                />
+              ) : (
+                <Stack
+                  spacing={1.5}
+                  sx={{ alignItems: "center", color: "var(--paper)", textAlign: "center", px: 3 }}
+                >
+                  <TopicIcon sx={{ fontSize: 56, color: visual.iconColor, opacity: 0.95 }} />
+                  <Typography
+                    sx={{
+                      fontFamily: "var(--font-display)",
+                      fontSize: "1.05rem",
+                      color: "var(--paper)",
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    {activeResource ? activeResource.title : "Pick a lesson to begin"}
+                  </Typography>
+                  {activeResource && !isVideo(activeResource.kind) && (
+                    <Button
+                      component="a"
+                      href={activeResource.external_url ?? "#"}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      download
+                      onClick={() => void markProgress(activeResource.id, "view")}
+                      variant="contained"
+                      size="small"
+                      disableElevation
+                      startIcon={<DownloadOutlinedIcon sx={{ fontSize: 14 }} />}
                       sx={{
-                        fontFamily: "var(--font-display)",
-                        fontSize: "1.05rem",
-                        color: "var(--paper)",
-                        lineHeight: 1.2,
+                        bgcolor: "var(--paper)",
+                        color: "var(--ink)",
+                        textTransform: "none",
+                        fontSize: "0.8rem",
+                        fontWeight: 600,
+                        borderRadius: 0.5,
+                        px: 1.75,
+                        "&:hover": {
+                          bgcolor: "color-mix(in oklch, var(--paper) 90%, var(--gold))",
+                        },
                       }}
                     >
-                      {activeResource ? activeResource.title : "Pick a lesson to begin"}
-                    </Typography>
-                    {activeResource && !isVideo(activeResource.kind) && (
-                      <Button
-                        component="a"
-                        href={activeResource.external_url ?? "#"}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        download
-                        onClick={() => void markProgress(activeResource.id, "view")}
-                        variant="contained"
-                        size="small"
-                        disableElevation
-                        startIcon={<DownloadOutlinedIcon sx={{ fontSize: 14 }} />}
-                        sx={{
-                          bgcolor: "var(--paper)",
-                          color: "var(--ink)",
-                          textTransform: "none",
-                          fontSize: "0.8rem",
-                          fontWeight: 600,
-                          borderRadius: 0.5,
-                          px: 1.75,
-                          "&:hover": { bgcolor: "color-mix(in oklch, var(--paper) 90%, var(--gold))" },
-                        }}
-                      >
-                        Download {KIND_META[activeResource.kind]?.badge ?? "file"}
-                      </Button>
-                    )}
-                  </Stack>
-                )}
-              </Box>
-
-              {/* Active lesson meta */}
-              {activeResource && (
-                <Box sx={{ pt: 1.5 }}>
-                  <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 0.5 }}>
-                    <InlineTag label={KIND_META[activeResource.kind]?.badge ?? "Item"} tone="ink" />
-                    {activeResource.duration_label && (
-                      <Typography sx={editorialText.meta}>{activeResource.duration_label}</Typography>
-                    )}
-                    {activeResource.progress?.completed_at && (
-                      <Stack direction="row" spacing={0.4} sx={{ alignItems: "center" }}>
-                        <CheckCircleRoundedIcon sx={{ fontSize: 14, color: "var(--leaf)" }} />
-                        <Typography sx={{ fontSize: "0.7rem", color: "var(--leaf)", fontWeight: 700 }}>
-                          Completed
-                        </Typography>
-                      </Stack>
-                    )}
-                  </Stack>
-                  <Typography sx={{ ...editorialText.heading, mb: 0.5 }}>
-                    {activeResource.title}
-                  </Typography>
-                  {activeResource.description && (
-                    <Typography sx={editorialText.body}>{activeResource.description}</Typography>
+                      Download {KIND_META[activeResource.kind]?.badge ?? "file"}
+                    </Button>
                   )}
-                </Box>
+                </Stack>
               )}
             </Box>
 
-            {/* Downloads */}
-            {downloads.length > 0 && (
-              <Box>
-                <Stack direction="row" spacing={1.5} sx={{ alignItems: "baseline", mb: 1.5 }}>
-                  <Box
-                    component="span"
-                    className="hk-numeral"
-                    sx={{ fontSize: "0.92rem", color: "var(--gold)" }}
-                  >
-                    ii
-                  </Box>
-                  <Box aria-hidden sx={{ width: 18, height: "1px", bgcolor: "var(--ink-rule)" }} />
-                  <Typography sx={editorialText.eyebrow}>Kit downloads</Typography>
+            {/* Active lesson meta — balanced strip below player */}
+            {activeResource && (
+              <Box sx={{ pt: 2 }}>
+                <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 0.75 }}>
+                  <InlineTag
+                    label={KIND_META[activeResource.kind]?.badge ?? "Item"}
+                    tone="ink"
+                  />
+                  {activeResource.duration_label && (
+                    <Typography sx={editorialText.meta}>{activeResource.duration_label}</Typography>
+                  )}
+                  {activeResource.progress?.completed_at && (
+                    <Stack direction="row" spacing={0.4} sx={{ alignItems: "center" }}>
+                      <CheckCircleRoundedIcon sx={{ fontSize: 14, color: "var(--leaf)" }} />
+                      <Typography sx={{ fontSize: "0.7rem", color: "var(--leaf)", fontWeight: 700 }}>
+                        Completed
+                      </Typography>
+                    </Stack>
+                  )}
                 </Stack>
-                <Typography sx={{ ...editorialText.heading, mb: 1.5 }}>
-                  Done-for-you PDFs, worksheets, and templates
+                <Typography sx={{ ...editorialText.heading, mb: 0.5 }}>
+                  {activeResource.title}
                 </Typography>
-                <Stack>
-                  {downloads.map((r, i) => (
-                    <DownloadRow key={r.id} resource={r} numeral={romanize(i + 1)} />
-                  ))}
-                </Stack>
+                {activeResource.description && (
+                  <Typography sx={editorialText.body}>{activeResource.description}</Typography>
+                )}
               </Box>
             )}
-          </Stack>
+          </Box>
         </Grid>
 
-        {/* CURRICULUM COLUMN */}
+        {/* Curriculum column */}
         <Grid size={{ xs: 12, lg: 4 }}>
           <Box>
-            <Stack direction="row" spacing={1.5} sx={{ alignItems: "baseline", mb: 1.5 }}>
-              <Box
-                component="span"
-                className="hk-numeral"
-                sx={{ fontSize: "0.92rem", color: "var(--gold)" }}
-              >
-                i
-              </Box>
-              <Box aria-hidden sx={{ width: 18, height: "1px", bgcolor: "var(--ink-rule)" }} />
+            <Stack direction="row" spacing={1} sx={{ alignItems: "baseline", mb: 0.5 }}>
               <Typography sx={editorialText.eyebrow}>Curriculum</Typography>
+              <Box
+                aria-hidden
+                sx={{ flex: 1, height: "1px", bgcolor: "var(--paper-rule)" }}
+              />
             </Stack>
-            <Typography sx={{ ...editorialText.heading, mb: 0.25 }}>
-              {orderedResources.length} {orderedResources.length === 1 ? "item" : "items"} in this kit
-            </Typography>
-            <Typography sx={{ ...editorialText.meta, mb: 1.5 }}>
-              Stream the videos. Download the rest.
-            </Typography>
+            <Stack
+              direction="row"
+              sx={{ justifyContent: "space-between", alignItems: "baseline", mb: 1.5 }}
+            >
+              <Typography sx={editorialText.heading}>
+                {orderedResources.length} {orderedResources.length === 1 ? "item" : "items"}
+              </Typography>
+              <Typography sx={editorialText.meta}>
+                {videos.length} video{videos.length === 1 ? "" : "s"} · {downloads.length} file
+                {downloads.length === 1 ? "" : "s"}
+              </Typography>
+            </Stack>
 
-            <Box sx={{ borderTop: "1px solid var(--ink-rule)" }}>
+            <Box>
               {orderedResources.map((r, idx) => (
                 <CurriculumRow
                   key={r.id}
                   index={idx + 1}
                   resource={r}
-                  active={r.id === activeId}
+                  active={r.id === effectiveActiveId}
                   onSelect={() => {
                     if (isVideo(r.kind) && r.external_url) {
                       playLesson(r);
@@ -462,6 +432,34 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
           </Box>
         </Grid>
       </Grid>
+
+      {/* DOWNLOADS — full-width below, breathing room */}
+      {downloads.length > 0 && (
+        <Box sx={{ mt: { xs: 5, lg: 6 } }}>
+          <Stack direction="row" spacing={1} sx={{ alignItems: "baseline", mb: 0.5 }}>
+            <Typography sx={editorialText.eyebrow}>Kit downloads</Typography>
+            <Box aria-hidden sx={{ flex: 1, height: "1px", bgcolor: "var(--paper-rule)" }} />
+          </Stack>
+          <Typography sx={{ ...editorialText.heading, mb: 0.5 }}>
+            Done-for-you PDFs, worksheets & templates
+          </Typography>
+          <Typography sx={{ ...editorialText.meta, mb: 2 }}>
+            Download what you need — they stay in your library forever.
+          </Typography>
+
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", md: "repeat(2, 1fr)" },
+              gap: { xs: 1.5, md: 2 },
+            }}
+          >
+            {downloads.map((r) => (
+              <DownloadCard key={r.id} resource={r} />
+            ))}
+          </Box>
+        </Box>
+      )}
     </Box>
   );
 }
@@ -524,27 +522,42 @@ function CurriculumRow({
         alignItems: "flex-start",
         gap: 1.25,
         py: 1.25,
-        px: active ? 1.25 : 0.5,
+        px: active ? 1.25 : 0.25,
         cursor: hasUrl ? "pointer" : "default",
         bgcolor: active ? "color-mix(in oklch, var(--gold) 8%, transparent)" : "transparent",
         borderBottom: "1px solid var(--paper-rule)",
-        transition: "background-color var(--dur-fast) var(--ease-out)",
-        "&:hover": hasUrl ? { bgcolor: active ? "color-mix(in oklch, var(--gold) 12%, transparent)" : "color-mix(in oklch, var(--ink) 4%, transparent)" } : {},
+        borderLeft: active ? "2px solid var(--gold)" : "2px solid transparent",
+        transition:
+          "background-color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out)",
+        "&:hover": hasUrl
+          ? {
+              bgcolor: active
+                ? "color-mix(in oklch, var(--gold) 12%, transparent)"
+                : "color-mix(in oklch, var(--ink) 4%, transparent)",
+            }
+          : {},
         "&:focus-visible": { outline: "2px solid var(--gold)", outlineOffset: -2 },
       }}
     >
       <Box
-        component="span"
-        className="hk-numeral"
         sx={{
           minWidth: 22,
-          fontSize: "0.85rem",
-          color: completed ? "var(--leaf)" : active ? "var(--gold-deep)" : ink.fade,
-          pt: 0.2,
-          textAlign: "right",
+          height: 22,
+          borderRadius: "50%",
+          display: "grid",
+          placeItems: "center",
+          flexShrink: 0,
+          bgcolor: completed
+            ? "var(--leaf)"
+            : active
+              ? "var(--ink)"
+              : "color-mix(in oklch, var(--ink) 8%, transparent)",
+          color: completed || active ? "var(--paper)" : ink.fade,
+          fontSize: "0.66rem",
+          fontWeight: 700,
         }}
       >
-        {completed ? "✓" : romanize(index)}
+        {completed ? <CheckCircleRoundedIcon sx={{ fontSize: 13 }} /> : index}
       </Box>
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", mb: 0.25 }}>
@@ -578,15 +591,19 @@ function CurriculumRow({
         </Typography>
       </Box>
       {isVid ? (
-        <PlayArrowRoundedIcon sx={{ fontSize: 16, color: active ? "var(--gold-deep)" : ink.fade, mt: 0.25 }} />
+        <PlayArrowRoundedIcon
+          sx={{ fontSize: 16, color: active ? "var(--gold-deep)" : ink.fade, mt: 0.25 }}
+        />
       ) : (
-        <DownloadOutlinedIcon sx={{ fontSize: 13, color: viewed ? "var(--leaf)" : ink.fade, mt: 0.4 }} />
+        <DownloadOutlinedIcon
+          sx={{ fontSize: 13, color: viewed ? "var(--leaf)" : ink.fade, mt: 0.4 }}
+        />
       )}
     </Box>
   );
 }
 
-function DownloadRow({ resource, numeral }: { resource: ResourceItem; numeral: string }) {
+function DownloadCard({ resource }: { resource: ResourceItem }) {
   const k = KIND_META[resource.kind] ?? KIND_META.other;
   const Icon = k.icon;
   const url = resource.external_url ?? "";
@@ -597,65 +614,78 @@ function DownloadRow({ resource, numeral }: { resource: ResourceItem; numeral: s
     <Box
       sx={{
         display: "flex",
-        alignItems: "center",
+        alignItems: "flex-start",
         gap: 1.5,
-        py: 1.5,
-        borderTop: "1px solid var(--paper-rule)",
-        "&:last-of-type": { borderBottom: "1px solid var(--paper-rule)" },
+        p: 2,
+        border: "1px solid var(--paper-rule)",
+        borderRadius: 1,
+        bgcolor: "var(--paper)",
+        transition: "border-color var(--dur-fast) var(--ease-out)",
+        "&:hover": { borderColor: "var(--ink-rule)" },
       }}
     >
       <Box
-        component="span"
-        className="hk-numeral"
         sx={{
-          minWidth: 22,
-          fontSize: "0.85rem",
-          color: completed ? "var(--leaf)" : ink.fade,
-          textAlign: "right",
+          width: 40,
+          height: 40,
+          borderRadius: 0.75,
+          bgcolor: "color-mix(in oklch, var(--gold) 10%, transparent)",
+          color: "var(--gold-deep)",
+          display: "grid",
+          placeItems: "center",
+          flexShrink: 0,
         }}
       >
-        {completed ? "✓" : numeral}
+        <Icon sx={{ fontSize: 20 }} />
       </Box>
-      <Icon sx={{ fontSize: 18, color: ink.soft, flexShrink: 0 }} />
       <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", mb: 0.15 }}>
+        <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", mb: 0.3 }}>
           <InlineTag label={k.badge} tone="neutral" />
+          {completed && (
+            <Stack direction="row" spacing={0.3} sx={{ alignItems: "center" }}>
+              <CheckCircleRoundedIcon sx={{ fontSize: 11, color: "var(--leaf)" }} />
+              <Typography sx={{ fontSize: "0.6rem", color: "var(--leaf)", fontWeight: 700 }}>
+                Downloaded
+              </Typography>
+            </Stack>
+          )}
         </Stack>
         <Typography
-          sx={{ fontSize: "0.86rem", fontWeight: 600, color: ink.primary, lineHeight: 1.3 }}
-          noWrap
+          sx={{ fontSize: "0.88rem", fontWeight: 600, color: ink.primary, lineHeight: 1.3, mb: 0.25 }}
         >
           {resource.title}
         </Typography>
-        <Typography sx={{ ...editorialText.meta, mt: 0.15 }} noWrap>
-          {meta}
-        </Typography>
+        <Typography sx={{ ...editorialText.meta, mb: 1 }}>{meta}</Typography>
+        <Button
+          component="a"
+          href={url || "#"}
+          target="_blank"
+          rel="noopener noreferrer"
+          download
+          onClick={() => void markProgress(resource.id, "view")}
+          disabled={!url}
+          variant="outlined"
+          size="small"
+          startIcon={<DownloadOutlinedIcon sx={{ fontSize: 13 }} />}
+          sx={{
+            borderColor: "var(--paper-rule)",
+            color: "var(--ink)",
+            textTransform: "none",
+            fontSize: "0.74rem",
+            fontWeight: 600,
+            borderRadius: 0.5,
+            px: 1.25,
+            py: 0.4,
+            "&:hover": {
+              borderColor: "var(--gold)",
+              bgcolor: "color-mix(in oklch, var(--gold) 6%, transparent)",
+            },
+            "&:focus-visible": { outline: "2px solid var(--gold)", outlineOffset: 2 },
+          }}
+        >
+          Download
+        </Button>
       </Box>
-      <Button
-        component="a"
-        href={url || "#"}
-        target="_blank"
-        rel="noopener noreferrer"
-        download
-        onClick={() => void markProgress(resource.id, "view")}
-        disabled={!url}
-        variant="text"
-        size="small"
-        endIcon={<DownloadOutlinedIcon sx={{ fontSize: 13 }} />}
-        sx={{
-          color: "var(--gold-deep)",
-          fontSize: "0.74rem",
-          fontWeight: 700,
-          textTransform: "uppercase",
-          letterSpacing: "0.08em",
-          flexShrink: 0,
-          transition: "color var(--dur-fast) var(--ease-out)",
-          "&:hover": { bgcolor: "transparent", color: "var(--ink)" },
-          "&:focus-visible": { outline: "2px solid var(--gold)", outlineOffset: 2 },
-        }}
-      >
-        Download
-      </Button>
     </Box>
   );
 }
