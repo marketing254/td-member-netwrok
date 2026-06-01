@@ -65,10 +65,14 @@ export function KitCover({
     <Box
       sx={{
         position: "relative",
-        aspectRatio: "16 / 10",
+        // Real cover images are 16:9 (1280x720). Match that exactly so the
+        // images render edge-to-edge with zero cropping. The painted fallback
+        // also works fine at 16:9.
+        aspectRatio: "16 / 9",
         backgroundImage: hasCover ? `url("${coverUrl}")` : visual.gradient,
         backgroundSize: "cover",
         backgroundPosition: "center",
+        bgcolor: "var(--ink, #0A1A2F)",
         overflow: "hidden",
         borderRadius: 1,
         display: "flex",

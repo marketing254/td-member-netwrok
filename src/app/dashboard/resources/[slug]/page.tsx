@@ -13,6 +13,7 @@ import {
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import PlayArrowRoundedIcon from "@mui/icons-material/PlayArrowRounded";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
+import OpenInNewOutlinedIcon from "@mui/icons-material/OpenInNewOutlined";
 import ChecklistOutlinedIcon from "@mui/icons-material/ChecklistOutlined";
 import EditNoteOutlinedIcon from "@mui/icons-material/EditNoteOutlined";
 import SlideshowOutlinedIcon from "@mui/icons-material/SlideshowOutlined";
@@ -81,21 +82,21 @@ function isVideo(kind: string): boolean {
   return kind.startsWith("video_") || kind === "audio";
 }
 
-function formatSize(bytes: number | null): string {
-  if (!bytes || bytes <= 0) return "";
-  const kb = bytes / 1024;
-  if (kb < 900) return `${Math.round(kb)} KB`;
-  return `${(kb / 1024).toFixed(1)} MB`;
-}
+/**
+ * Kinds we can preview inline as a PDF iframe.
+ * (Excludes slide_deck — PowerPoint can't render in-browser without an
+ *  external Office viewer; we offer Download for those.)
+ */
+const PDF_KINDS = new Set([
+  "action_guide",
+  "checklist",
+  "key_takeaways",
+  "worksheet",
+  "email_sequence",
+]);
 
-function buildMeta(r: ResourceItem): string {
-  const k = KIND_META[r.kind] ?? KIND_META.other;
-  const parts: string[] = [];
-  if (r.duration_label) parts.push(r.duration_label);
-  parts.push(k.defaultMeta);
-  const size = formatSize(r.file_size_bytes);
-  if (size) parts.push(size);
-  return parts.join(" · ");
+function isPdf(kind: string): boolean {
+  return PDF_KINDS.has(kind);
 }
 
 async function markProgress(resourceId: string, action: "view" | "complete") {
@@ -290,10 +291,14 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
             <Box
               sx={{
                 position: "relative",
-                aspectRatio: "16 / 9",
+                ...(activeResource && isPdf(activeResource.kind) && activeResource.external_url
+                  ? { height: { xs: 520, md: 720 } }
+                  : { aspectRatio: "16 / 9" }),
                 bgcolor: "var(--ink)",
                 backgroundImage:
-                  activeResource && isVideo(activeResource.kind) ? "none" : visual.gradient,
+                  activeResource && (isVideo(activeResource.kind) || isPdf(activeResource.kind))
+                    ? "none"
+                    : visual.gradient,
                 display: "grid",
                 placeItems: "center",
                 overflow: "hidden",
@@ -309,6 +314,19 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
                   onPlay={() => void markProgress(activeResource.id, "view")}
                   onEnded={() => void markProgress(activeResource.id, "complete")}
                   style={{ width: "100%", height: "100%", display: "block", background: "#000" }}
+                />
+              ) : activeResource && isPdf(activeResource.kind) && activeResource.external_url ? (
+                <Box
+                  component="iframe"
+                  src={`${activeResource.external_url}#view=FitH&toolbar=1`}
+                  title={activeResource.title}
+                  onLoad={() => void markProgress(activeResource.id, "view")}
+                  sx={{
+                    width: "100%",
+                    height: "100%",
+                    border: 0,
+                    bgcolor: "#FFFFFF",
+                  }}
                 />
               ) : (
                 <Stack
@@ -326,39 +344,25 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
                   >
                     {activeResource ? activeResource.title : "Pick a lesson to begin"}
                   </Typography>
-                  {activeResource && !isVideo(activeResource.kind) && (
-                    <Button
-                      component="a"
-                      href={activeResource.external_url ?? "#"}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      download
-                      onClick={() => void markProgress(activeResource.id, "view")}
-                      variant="contained"
-                      size="small"
-                      disableElevation
-                      startIcon={<DownloadOutlinedIcon sx={{ fontSize: 14 }} />}
-                      sx={{
-                        bgcolor: "var(--paper)",
-                        color: "var(--ink)",
-                        textTransform: "none",
-                        fontSize: "0.8rem",
-                        fontWeight: 600,
-                        borderRadius: 0.5,
-                        px: 1.75,
-                        "&:hover": {
-                          bgcolor: "color-mix(in oklch, var(--paper) 90%, var(--gold))",
-                        },
-                      }}
-                    >
-                      Download {KIND_META[activeResource.kind]?.badge ?? "file"}
-                    </Button>
-                  )}
+                  {activeResource &&
+                    !isVideo(activeResource.kind) &&
+                    !isPdf(activeResource.kind) && (
+                      <Typography
+                        sx={{
+                          fontSize: "0.78rem",
+                          color: "rgba(255,255,255,0.7)",
+                          maxWidth: 320,
+                        }}
+                      >
+                        This file format can&apos;t be previewed inline. Use the Download
+                        button below to grab it.
+                      </Typography>
+                    )}
                 </Stack>
               )}
             </Box>
 
-            {/* Active lesson meta — balanced strip below player */}
+            {/* Active lesson meta + actions */}
             {activeResource && (
               <Box sx={{ pt: 2 }}>
                 <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 0.75 }}>
@@ -378,12 +382,92 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
                     </Stack>
                   )}
                 </Stack>
-                <Typography sx={{ ...editorialText.heading, mb: 0.5 }}>
-                  {activeResource.title}
-                </Typography>
-                {activeResource.description && (
-                  <Typography sx={editorialText.body}>{activeResource.description}</Typography>
-                )}
+                <Stack
+                  direction={{ xs: "column", sm: "row" }}
+                  spacing={{ xs: 1.25, sm: 2 }}
+                  sx={{ alignItems: { sm: "flex-start" }, justifyContent: "space-between" }}
+                >
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography sx={{ ...editorialText.heading, mb: 0.5 }}>
+                      {activeResource.title}
+                    </Typography>
+                    {activeResource.description && (
+                      <Typography sx={editorialText.body}>{activeResource.description}</Typography>
+                    )}
+                  </Box>
+                  {/* Action buttons — for any non-video item that has a URL */}
+                  {!isVideo(activeResource.kind) && activeResource.external_url && (
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      sx={{ flexShrink: 0, flexWrap: "wrap", rowGap: 1 }}
+                    >
+                      {isPdf(activeResource.kind) && (
+                        <Button
+                          component="a"
+                          href={activeResource.external_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          variant="outlined"
+                          size="small"
+                          disableElevation
+                          startIcon={<OpenInNewOutlinedIcon sx={{ fontSize: 14 }} />}
+                          sx={{
+                            borderColor: "var(--paper-rule)",
+                            color: "var(--ink)",
+                            textTransform: "none",
+                            fontSize: "0.78rem",
+                            fontWeight: 600,
+                            borderRadius: 0.5,
+                            px: 1.5,
+                            py: 0.6,
+                            "&:hover": {
+                              borderColor: "var(--gold)",
+                              bgcolor: "color-mix(in oklch, var(--gold) 6%, transparent)",
+                            },
+                            "&:focus-visible": {
+                              outline: "2px solid var(--gold)",
+                              outlineOffset: 2,
+                            },
+                          }}
+                        >
+                          Open in new tab
+                        </Button>
+                      )}
+                      <Button
+                        component="a"
+                        href={activeResource.external_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        download
+                        onClick={() => void markProgress(activeResource.id, "view")}
+                        variant="contained"
+                        size="small"
+                        disableElevation
+                        startIcon={<DownloadOutlinedIcon sx={{ fontSize: 14 }} />}
+                        sx={{
+                          bgcolor: "var(--ink)",
+                          color: "var(--paper)",
+                          textTransform: "none",
+                          fontSize: "0.78rem",
+                          fontWeight: 600,
+                          borderRadius: 0.5,
+                          px: 1.5,
+                          py: 0.6,
+                          "&:hover": {
+                            bgcolor: "color-mix(in oklch, var(--ink) 90%, white)",
+                          },
+                          "&:focus-visible": {
+                            outline: "2px solid var(--gold)",
+                            outlineOffset: 2,
+                          },
+                        }}
+                      >
+                        Download
+                      </Button>
+                    </Stack>
+                  )}
+                </Stack>
               </Box>
             )}
           </Box>
@@ -432,34 +516,6 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
           </Box>
         </Grid>
       </Grid>
-
-      {/* DOWNLOADS — full-width below, breathing room */}
-      {downloads.length > 0 && (
-        <Box sx={{ mt: { xs: 5, lg: 6 } }}>
-          <Stack direction="row" spacing={1} sx={{ alignItems: "baseline", mb: 0.5 }}>
-            <Typography sx={editorialText.eyebrow}>Kit downloads</Typography>
-            <Box aria-hidden sx={{ flex: 1, height: "1px", bgcolor: "var(--paper-rule)" }} />
-          </Stack>
-          <Typography sx={{ ...editorialText.heading, mb: 0.5 }}>
-            Done-for-you PDFs, worksheets & templates
-          </Typography>
-          <Typography sx={{ ...editorialText.meta, mb: 2 }}>
-            Download what you need — they stay in your library forever.
-          </Typography>
-
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: { xs: "1fr", md: "repeat(2, 1fr)" },
-              gap: { xs: 1.5, md: 2 },
-            }}
-          >
-            {downloads.map((r) => (
-              <DownloadCard key={r.id} resource={r} />
-            ))}
-          </Box>
-        </Box>
-      )}
     </Box>
   );
 }
@@ -603,89 +659,3 @@ function CurriculumRow({
   );
 }
 
-function DownloadCard({ resource }: { resource: ResourceItem }) {
-  const k = KIND_META[resource.kind] ?? KIND_META.other;
-  const Icon = k.icon;
-  const url = resource.external_url ?? "";
-  const meta = buildMeta(resource);
-  const completed = !!resource.progress?.completed_at;
-
-  return (
-    <Box
-      sx={{
-        display: "flex",
-        alignItems: "flex-start",
-        gap: 1.5,
-        p: 2,
-        border: "1px solid var(--paper-rule)",
-        borderRadius: 1,
-        bgcolor: "var(--paper)",
-        transition: "border-color var(--dur-fast) var(--ease-out)",
-        "&:hover": { borderColor: "var(--ink-rule)" },
-      }}
-    >
-      <Box
-        sx={{
-          width: 40,
-          height: 40,
-          borderRadius: 0.75,
-          bgcolor: "color-mix(in oklch, var(--gold) 10%, transparent)",
-          color: "var(--gold-deep)",
-          display: "grid",
-          placeItems: "center",
-          flexShrink: 0,
-        }}
-      >
-        <Icon sx={{ fontSize: 20 }} />
-      </Box>
-      <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", mb: 0.3 }}>
-          <InlineTag label={k.badge} tone="neutral" />
-          {completed && (
-            <Stack direction="row" spacing={0.3} sx={{ alignItems: "center" }}>
-              <CheckCircleRoundedIcon sx={{ fontSize: 11, color: "var(--leaf)" }} />
-              <Typography sx={{ fontSize: "0.6rem", color: "var(--leaf)", fontWeight: 700 }}>
-                Downloaded
-              </Typography>
-            </Stack>
-          )}
-        </Stack>
-        <Typography
-          sx={{ fontSize: "0.88rem", fontWeight: 600, color: ink.primary, lineHeight: 1.3, mb: 0.25 }}
-        >
-          {resource.title}
-        </Typography>
-        <Typography sx={{ ...editorialText.meta, mb: 1 }}>{meta}</Typography>
-        <Button
-          component="a"
-          href={url || "#"}
-          target="_blank"
-          rel="noopener noreferrer"
-          download
-          onClick={() => void markProgress(resource.id, "view")}
-          disabled={!url}
-          variant="outlined"
-          size="small"
-          startIcon={<DownloadOutlinedIcon sx={{ fontSize: 13 }} />}
-          sx={{
-            borderColor: "var(--paper-rule)",
-            color: "var(--ink)",
-            textTransform: "none",
-            fontSize: "0.74rem",
-            fontWeight: 600,
-            borderRadius: 0.5,
-            px: 1.25,
-            py: 0.4,
-            "&:hover": {
-              borderColor: "var(--gold)",
-              bgcolor: "color-mix(in oklch, var(--gold) 6%, transparent)",
-            },
-            "&:focus-visible": { outline: "2px solid var(--gold)", outlineOffset: 2 },
-          }}
-        >
-          Download
-        </Button>
-      </Box>
-    </Box>
-  );
-}
