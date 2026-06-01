@@ -27,13 +27,22 @@ function buildCsp(): string {
 
   return [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://www.googletagmanager.com",
+    // vercel.live is the Vercel Live feedback widget that gets auto-injected
+    // into preview deployments. It's harmless and Vercel-owned; allowlisting
+    // it just silences the CSP console errors on preview URLs. The same
+    // CSP ships to production (where vercel.live is never loaded), so this
+    // doesn't expand the attack surface for real users.
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://www.googletagmanager.com https://vercel.live",
     "worker-src 'self' blob:",
     "child-src 'self' blob:",
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    "font-src 'self' https://fonts.gstatic.com data:",
-    `img-src 'self' data: blob: ${supabaseHttps} https://www.google-analytics.com https://www.googletagmanager.com`,
-    `connect-src 'self' ${supabaseHttps} ${supabaseWss} https://cdn.jsdelivr.net https://fonts.gstatic.com https://www.google-analytics.com https://www.googletagmanager.com https://analytics.google.com`,
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://vercel.live",
+    "font-src 'self' https://fonts.gstatic.com https://vercel.live https://assets.vercel.com data:",
+    `img-src 'self' data: blob: ${supabaseHttps} https://www.google-analytics.com https://www.googletagmanager.com https://vercel.live https://vercel.com`,
+    // media-src controls <video> and <audio> sources. Without this, videos
+    // from Supabase Storage are blocked because default-src 'self' falls back.
+    `media-src 'self' blob: ${supabaseHttps}`,
+    `connect-src 'self' ${supabaseHttps} ${supabaseWss} https://cdn.jsdelivr.net https://fonts.gstatic.com https://www.google-analytics.com https://www.googletagmanager.com https://analytics.google.com https://vercel.live https://*.pusher.com wss://*.pusher.com`,
+    "frame-src 'self' https://vercel.live",
     "frame-ancestors 'none'",
     "form-action 'self'",
     "base-uri 'self'",

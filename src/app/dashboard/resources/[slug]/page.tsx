@@ -15,7 +15,6 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import PlayArrowRoundedIcon from "@mui/icons-material/PlayArrowRounded";
 import CloseIcon from "@mui/icons-material/Close";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
-import PictureAsPdfOutlinedIcon from "@mui/icons-material/PictureAsPdfOutlined";
 import ChecklistOutlinedIcon from "@mui/icons-material/ChecklistOutlined";
 import EditNoteOutlinedIcon from "@mui/icons-material/EditNoteOutlined";
 import SlideshowOutlinedIcon from "@mui/icons-material/SlideshowOutlined";
@@ -26,6 +25,7 @@ import OndemandVideoOutlinedIcon from "@mui/icons-material/OndemandVideoOutlined
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
 import InsertDriveFileOutlinedIcon from "@mui/icons-material/InsertDriveFileOutlined";
 import type { SvgIconComponent } from "@mui/icons-material";
+import { visualForTopic } from "@/components/member/topicVisuals";
 
 type Progress = {
   last_viewed_at: string | null;
@@ -48,6 +48,7 @@ type ResourceItem = {
   file_size_bytes: number | null;
   duration_label: string | null;
   position: number;
+  is_free: boolean;
   progress: Progress | null;
 };
 
@@ -55,20 +56,111 @@ type RouteParams = Promise<{ slug: string }>;
 
 const KIND_META: Record<
   string,
-  { icon: SvgIconComponent; defaultMeta: string; actionLabel: string; bg: string; fg: string }
+  {
+    icon: SvgIconComponent;
+    defaultMeta: string;
+    actionLabel: string;
+    bg: string;
+    fg: string;
+    badge: string;
+  }
 > = {
-  video_intro: { icon: OndemandVideoOutlinedIcon, defaultMeta: "Short intro video", actionLabel: "Watch", bg: "rgba(220,60,60,0.08)", fg: "#8C1D1D" },
-  video_full: { icon: PlayArrowRoundedIcon, defaultMeta: "Full training session", actionLabel: "Watch", bg: "rgba(220,60,60,0.12)", fg: "#8C1D1D" },
-  video_explainer: { icon: OndemandVideoOutlinedIcon, defaultMeta: "Explainer video", actionLabel: "Watch", bg: "rgba(220,60,60,0.08)", fg: "#8C1D1D" },
-  video_trailer: { icon: OndemandVideoOutlinedIcon, defaultMeta: "Trailer", actionLabel: "Watch", bg: "rgba(220,60,60,0.08)", fg: "#8C1D1D" },
-  audio: { icon: HeadphonesOutlinedIcon, defaultMeta: "Audio episode", actionLabel: "Listen", bg: "rgba(14,42,61,0.06)", fg: "#0E2A3D" },
-  action_guide: { icon: ListAltOutlinedIcon, defaultMeta: "PDF · the full reference", actionLabel: "Download", bg: "rgba(34,80,160,0.08)", fg: "#2C4FA0" },
-  checklist: { icon: ChecklistOutlinedIcon, defaultMeta: "PDF · set up → track → review", actionLabel: "Download", bg: "rgba(34,108,78,0.10)", fg: "#1F5C40" },
-  key_takeaways: { icon: StickyNote2OutlinedIcon, defaultMeta: "PDF · the gist in 2 minutes", actionLabel: "Download", bg: "rgba(217,168,75,0.14)", fg: "#A07823" },
-  worksheet: { icon: EditNoteOutlinedIcon, defaultMeta: "PDF · fillable", actionLabel: "Download", bg: "rgba(217,168,75,0.10)", fg: "#A07823" },
-  slide_deck: { icon: SlideshowOutlinedIcon, defaultMeta: "Slide deck · PowerPoint", actionLabel: "Download", bg: "rgba(160,120,35,0.10)", fg: "#A07823" },
-  email_sequence: { icon: EmailOutlinedIcon, defaultMeta: "PDF · ready-to-send email scripts", actionLabel: "Download", bg: "rgba(14,42,61,0.06)", fg: "#0E2A3D" },
-  other: { icon: InsertDriveFileOutlinedIcon, defaultMeta: "File", actionLabel: "Open", bg: "rgba(14,42,61,0.06)", fg: "#0E2A3D" },
+  video_intro: {
+    icon: OndemandVideoOutlinedIcon,
+    defaultMeta: "Short intro video",
+    actionLabel: "Watch",
+    bg: "rgba(220,60,60,0.10)",
+    fg: "#8C1D1D",
+    badge: "Video",
+  },
+  video_full: {
+    icon: PlayArrowRoundedIcon,
+    defaultMeta: "Full training session",
+    actionLabel: "Watch",
+    bg: "rgba(220,60,60,0.14)",
+    fg: "#8C1D1D",
+    badge: "Full Training",
+  },
+  video_explainer: {
+    icon: OndemandVideoOutlinedIcon,
+    defaultMeta: "Explainer video",
+    actionLabel: "Watch",
+    bg: "rgba(220,60,60,0.10)",
+    fg: "#8C1D1D",
+    badge: "Explainer",
+  },
+  video_trailer: {
+    icon: OndemandVideoOutlinedIcon,
+    defaultMeta: "Trailer",
+    actionLabel: "Watch",
+    bg: "rgba(220,60,60,0.08)",
+    fg: "#8C1D1D",
+    badge: "Trailer",
+  },
+  audio: {
+    icon: HeadphonesOutlinedIcon,
+    defaultMeta: "Audio episode",
+    actionLabel: "Listen",
+    bg: "rgba(14,42,61,0.06)",
+    fg: "#0E2A3D",
+    badge: "Audio",
+  },
+  action_guide: {
+    icon: ListAltOutlinedIcon,
+    defaultMeta: "PDF · the full reference",
+    actionLabel: "Download",
+    bg: "rgba(34,80,160,0.08)",
+    fg: "#2C4FA0",
+    badge: "PDF",
+  },
+  checklist: {
+    icon: ChecklistOutlinedIcon,
+    defaultMeta: "PDF · set up → track → review",
+    actionLabel: "Download",
+    bg: "rgba(34,108,78,0.10)",
+    fg: "#1F5C40",
+    badge: "PDF",
+  },
+  key_takeaways: {
+    icon: StickyNote2OutlinedIcon,
+    defaultMeta: "PDF · the gist in 2 minutes",
+    actionLabel: "Download",
+    bg: "rgba(217,168,75,0.14)",
+    fg: "#A07823",
+    badge: "PDF",
+  },
+  worksheet: {
+    icon: EditNoteOutlinedIcon,
+    defaultMeta: "PDF · fillable",
+    actionLabel: "Download",
+    bg: "rgba(217,168,75,0.10)",
+    fg: "#A07823",
+    badge: "PDF",
+  },
+  slide_deck: {
+    icon: SlideshowOutlinedIcon,
+    defaultMeta: "Slide deck · PowerPoint",
+    actionLabel: "Download",
+    bg: "rgba(160,120,35,0.10)",
+    fg: "#A07823",
+    badge: "Slides",
+  },
+  email_sequence: {
+    icon: EmailOutlinedIcon,
+    defaultMeta: "PDF · ready-to-send email scripts",
+    actionLabel: "Download",
+    bg: "rgba(14,42,61,0.06)",
+    fg: "#0E2A3D",
+    badge: "PDF",
+  },
+  other: {
+    icon: InsertDriveFileOutlinedIcon,
+    defaultMeta: "File",
+    actionLabel: "Open",
+    bg: "rgba(14,42,61,0.06)",
+    fg: "#0E2A3D",
+    badge: "File",
+  },
 };
 
 function isVideo(kind: string): boolean {
@@ -135,6 +227,9 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
     };
   }, [slug]);
 
+  const visual = visualForTopic(slug);
+  const TopicIcon = visual.icon;
+
   const heroVideo = useMemo(() => {
     return (
       resources.find((r) => r.kind === "video_full") ??
@@ -144,13 +239,12 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
     );
   }, [resources]);
 
-  const otherResources = useMemo(() => {
-    if (!heroVideo) return resources;
-    return resources.filter((r) => r.id !== heroVideo.id);
-  }, [resources, heroVideo]);
+  const downloads = useMemo(() => resources.filter((r) => !isVideo(r.kind)), [resources]);
+  const videos = useMemo(() => resources.filter((r) => isVideo(r.kind)), [resources]);
 
   const topicTitle = resources[0]?.topic_title ?? "Resource Kit";
   const topicSummary = resources[0]?.topic_summary ?? null;
+  const isFree = resources.length > 0 && resources.every((r) => r.is_free);
 
   if (loading) {
     return (
@@ -197,175 +291,177 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
     <Stack spacing={3}>
       <BackLink />
 
-      {/* HERO — two-column on desktop, stacks on mobile */}
-      <Box>
-        <Stack direction={{ xs: "column", md: "row" }} spacing={3} sx={{ alignItems: "flex-start" }}>
-          {/* Left column: kit info */}
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography
-              variant="overline"
-              sx={{
-                color: "#A07823",
-                fontSize: "0.62rem",
-                letterSpacing: "0.18em",
-                fontWeight: 700,
-                display: "block",
-              }}
-            >
-              RESOURCE KIT
-            </Typography>
-            <Typography
-              component="h1"
-              sx={{
-                fontFamily: "var(--font-display)",
-                fontSize: { xs: "1.6rem", md: "2rem" },
-                fontWeight: 500,
-                color: "#0A1A2F",
-                letterSpacing: "-0.015em",
-                lineHeight: 1.15,
-                mt: 0.5,
-                mb: 1.25,
-              }}
-            >
-              {topicTitle}
-            </Typography>
-            {topicSummary && (
-              <Typography
-                sx={{
-                  color: "#3B4A55",
-                  fontSize: "0.92rem",
-                  lineHeight: 1.65,
-                  mb: 2,
-                  maxWidth: 520,
-                }}
-              >
-                {topicSummary}
-              </Typography>
-            )}
+      {/* HERO */}
+      <Box
+        sx={{
+          position: "relative",
+          borderRadius: 3,
+          overflow: "hidden",
+          backgroundImage: visual.gradient,
+          color: "#FFFFFF",
+          minHeight: { xs: 240, md: 320 },
+          display: "flex",
+          alignItems: "flex-end",
+          p: { xs: 2.5, md: 4 },
+        }}
+      >
+        {/* Background giant icon */}
+        <TopicIcon
+          sx={{
+            position: "absolute",
+            right: { xs: -40, md: -20 },
+            top: { xs: -30, md: -10 },
+            fontSize: { xs: 280, md: 360 },
+            color: visual.iconColor,
+            opacity: 0.18,
+            transform: "rotate(-10deg)",
+          }}
+        />
 
-            {/* Speaker chip */}
-            <Box
-              sx={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 1.25,
-                p: 1.25,
-                borderRadius: 2,
-                bgcolor: "common.white",
-                border: "1px solid",
-                borderColor: "divider",
-                mb: 2.5,
-              }}
-            >
-              <Box
-                sx={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: "50%",
-                  bgcolor: "rgba(217,168,75,0.18)",
-                  color: "#A07823",
-                  display: "grid",
-                  placeItems: "center",
-                  fontSize: "0.7rem",
-                  fontWeight: 700,
-                }}
-              >
-                GT
-              </Box>
-              <Box>
-                <Typography sx={{ fontSize: "0.8rem", fontWeight: 700, color: "#0A1A2F", lineHeight: 1.2 }}>
-                  Gary Takacs
-                </Typography>
-                <Typography sx={{ fontSize: "0.7rem", color: "text.secondary" }}>
-                  Founder, Thriving Dentist
-                </Typography>
-              </Box>
-            </Box>
-
-            {/* Stats */}
-            <Stack direction="row" spacing={3} sx={{ alignItems: "baseline" }}>
-              <Stat value={`${resources.length}`} label="resources" />
-              {heroVideo?.duration_label && <Stat value={heroVideo.duration_label} label="training" />}
-              <Stat value={`${otherResources.filter((r) => !isVideo(r.kind)).length}`} label="downloads" />
-            </Stack>
+        {/* Play overlay if there's a hero video */}
+        {heroVideo && (
+          <Box
+            role="button"
+            tabIndex={0}
+            onClick={onPlayHero}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onPlayHero();
+              }
+            }}
+            sx={{
+              position: "absolute",
+              top: "50%",
+              right: { xs: "50%", md: 48 },
+              transform: { xs: "translate(50%, -50%)", md: "translate(0, -50%)" },
+              width: { xs: 72, md: 92 },
+              height: { xs: 72, md: 92 },
+              borderRadius: "50%",
+              bgcolor: "rgba(255,255,255,0.95)",
+              display: "grid",
+              placeItems: "center",
+              color: "#0A1A2F",
+              cursor: "pointer",
+              boxShadow: "0 24px 48px -16px rgba(0,0,0,0.5)",
+              transition: "transform 200ms ease",
+              "&:hover": { transform: { xs: "translate(50%, -50%) scale(1.05)", md: "scale(1.05)" } },
+              "&:focus-visible": { outline: "2px solid #FFFFFF", outlineOffset: 4 },
+              zIndex: 2,
+            }}
+          >
+            <PlayArrowRoundedIcon sx={{ fontSize: { xs: 36, md: 48 } }} />
           </Box>
+        )}
 
-          {/* Right column: hero video preview */}
-          {heroVideo && (
-            <Box
-              role="button"
-              tabIndex={0}
-              onClick={onPlayHero}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  onPlayHero();
-                }
-              }}
+        {/* Content */}
+        <Stack spacing={1.5} sx={{ position: "relative", maxWidth: 580, zIndex: 1 }}>
+          <Stack direction="row" spacing={0.75} sx={{ flexWrap: "wrap", gap: 0.5 }}>
+            <Typography
               sx={{
-                position: "relative",
-                width: { xs: "100%", md: 420 },
-                aspectRatio: "16 / 9",
-                borderRadius: 2,
-                overflow: "hidden",
-                cursor: "pointer",
-                flexShrink: 0,
-                bgcolor: "#0A1A2F",
-                backgroundImage:
-                  heroVideo.thumbnail_url
-                    ? `url(${heroVideo.thumbnail_url})`
-                    : "linear-gradient(135deg, #06182A 0%, #0E2A3D 50%, #1B4258 100%)",
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-                border: "1px solid rgba(217,168,75,0.25)",
-                transition: "transform 200ms ease",
-                "&:hover": { transform: "translateY(-2px)" },
-                "&:focus-visible": { outline: "2px solid #A07823", outlineOffset: 2 },
+                fontSize: "0.62rem",
+                letterSpacing: "0.2em",
+                fontWeight: 800,
+                color: visual.accent,
+                textTransform: "uppercase",
               }}
             >
-              <Box
-                aria-hidden
-                sx={{
-                  position: "absolute",
-                  inset: 0,
-                  bgcolor: "rgba(10,26,47,0.35)",
-                }}
-              />
-              <Box sx={{ position: "absolute", inset: 0, display: "grid", placeItems: "center" }}>
-                <Box
-                  sx={{
-                    width: 56,
-                    height: 56,
-                    borderRadius: "50%",
-                    bgcolor: "rgba(255,255,255,0.92)",
-                    display: "grid",
-                    placeItems: "center",
-                    color: "#0A1A2F",
-                    boxShadow: "0 18px 32px -16px rgba(0,0,0,0.5)",
-                  }}
-                >
-                  <PlayArrowRoundedIcon sx={{ fontSize: 30 }} />
-                </Box>
-              </Box>
+              Resource Kit
+            </Typography>
+            {isFree && (
               <Box
                 sx={{
-                  position: "absolute",
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  px: 2,
-                  py: 1.25,
-                  background: "linear-gradient(transparent, rgba(0,0,0,0.6))",
-                  color: "#FFFFFF",
+                  px: 0.85,
+                  py: 0.2,
+                  borderRadius: 999,
+                  bgcolor: "rgba(255,255,255,0.92)",
+                  color: "#1F5C40",
+                  fontSize: "0.56rem",
+                  fontWeight: 800,
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
                 }}
               >
-                <Typography sx={{ fontSize: "0.7rem", letterSpacing: "0.14em", textTransform: "uppercase", color: "#F0C16E", fontWeight: 700 }}>
-                  ▶ Watch the training
-                </Typography>
+                Free
               </Box>
-            </Box>
+            )}
+          </Stack>
+          <Typography
+            component="h1"
+            sx={{
+              fontFamily: "var(--font-display)",
+              fontSize: { xs: "1.5rem", md: "2.1rem" },
+              fontWeight: 500,
+              color: "#FFFFFF",
+              letterSpacing: "-0.015em",
+              lineHeight: 1.12,
+            }}
+          >
+            {topicTitle}
+          </Typography>
+          {topicSummary && (
+            <Typography
+              sx={{
+                color: "rgba(255,255,255,0.85)",
+                fontSize: { xs: "0.85rem", md: "0.96rem" },
+                lineHeight: 1.6,
+                maxWidth: 540,
+              }}
+            >
+              {topicSummary}
+            </Typography>
           )}
+
+          {/* Stat strip */}
+          <Stack
+            direction="row"
+            spacing={2.5}
+            sx={{ mt: 1, alignItems: "baseline", flexWrap: "wrap", rowGap: 1 }}
+          >
+            <Stat value={`${resources.length}`} label="resources" accent={visual.accent} />
+            <Stat value={`${videos.length}`} label={videos.length === 1 ? "video" : "videos"} accent={visual.accent} />
+            <Stat value={`${downloads.length}`} label="downloads" accent={visual.accent} />
+          </Stack>
         </Stack>
+      </Box>
+
+      {/* Speaker card */}
+      <Box
+        sx={{
+          p: 1.75,
+          borderRadius: 2,
+          bgcolor: "common.white",
+          border: "1px solid",
+          borderColor: "divider",
+          display: "flex",
+          alignItems: "center",
+          gap: 1.5,
+        }}
+      >
+        <Box
+          sx={{
+            width: 40,
+            height: 40,
+            borderRadius: "50%",
+            bgcolor: "rgba(217,168,75,0.18)",
+            color: "#A07823",
+            display: "grid",
+            placeItems: "center",
+            fontSize: "0.78rem",
+            fontWeight: 800,
+            flexShrink: 0,
+          }}
+        >
+          GT
+        </Box>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography sx={{ fontSize: "0.82rem", fontWeight: 700, color: "#0A1A2F", lineHeight: 1.2 }}>
+            Gary Takacs
+          </Typography>
+          <Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>
+            Founder, Thriving Dentist · 2,200+ practices coached
+          </Typography>
+        </Box>
       </Box>
 
       {/* What's inside */}
@@ -373,15 +469,15 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
         <Typography
           sx={{
             fontFamily: "var(--font-display)",
-            fontSize: "1.05rem",
+            fontSize: "1.15rem",
             fontWeight: 500,
             color: "#0A1A2F",
-            mb: 0.5,
+            mb: 0.25,
           }}
         >
           What&apos;s inside this kit
         </Typography>
-        <Typography sx={{ fontSize: "0.78rem", color: "text.secondary", mb: 1.5 }}>
+        <Typography sx={{ fontSize: "0.8rem", color: "text.secondary", mb: 2 }}>
           Stream the training, then download the done-for-you tools below.
         </Typography>
 
@@ -392,7 +488,7 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
             gap: 1.25,
           }}
         >
-          {(heroVideo ? [heroVideo, ...otherResources] : resources).map((r) => (
+          {(heroVideo ? [heroVideo, ...resources.filter((r) => r.id !== heroVideo.id)] : resources).map((r) => (
             <ResourceRow
               key={r.id}
               resource={r}
@@ -429,9 +525,9 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
             top: 8,
             right: 8,
             color: "#FFFFFF",
-            bgcolor: "rgba(0,0,0,0.4)",
+            bgcolor: "rgba(0,0,0,0.5)",
             zIndex: 2,
-            "&:hover": { bgcolor: "rgba(0,0,0,0.6)" },
+            "&:hover": { bgcolor: "rgba(0,0,0,0.7)" },
           }}
           size="small"
         >
@@ -443,6 +539,7 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
               src={playerUrl}
               controls
               autoPlay
+              playsInline
               style={{ width: "100%", height: "100%", display: "block" }}
             />
           </Box>
@@ -472,15 +569,15 @@ function BackLink() {
   );
 }
 
-function Stat({ value, label }: { value: string; label: string }) {
+function Stat({ value, label, accent }: { value: string; label: string; accent: string }) {
   return (
     <Box>
       <Typography
         sx={{
           fontFamily: "var(--font-display)",
-          fontSize: "1.15rem",
+          fontSize: "1.25rem",
           fontWeight: 500,
-          color: "#0A1A2F",
+          color: "#FFFFFF",
           lineHeight: 1.1,
         }}
       >
@@ -489,9 +586,9 @@ function Stat({ value, label }: { value: string; label: string }) {
       <Typography
         sx={{
           fontSize: "0.58rem",
-          letterSpacing: "0.14em",
-          fontWeight: 700,
-          color: "text.secondary",
+          letterSpacing: "0.16em",
+          fontWeight: 800,
+          color: accent,
           textTransform: "uppercase",
           mt: 0.25,
         }}
@@ -514,6 +611,7 @@ function ResourceRow({
   const url = resource.external_url ?? "";
   const meta = buildMeta(resource);
   const viewed = !!resource.progress?.last_viewed_at;
+  const completed = !!resource.progress?.completed_at;
   const action = isVideo(resource.kind) ? "Watch" : k.actionLabel;
 
   return (
@@ -522,33 +620,75 @@ function ResourceRow({
         display: "flex",
         alignItems: "center",
         gap: 1.5,
-        p: 1.5,
+        p: 1.75,
         borderRadius: 2,
         border: "1px solid",
-        borderColor: viewed ? "rgba(34,108,78,0.25)" : "divider",
+        borderColor: completed ? "rgba(34,108,78,0.3)" : viewed ? "rgba(217,168,75,0.3)" : "divider",
         bgcolor: "common.white",
-        transition: "border-color 160ms ease",
-        "&:hover": { borderColor: "#A07823" },
+        transition: "all 160ms ease",
+        "&:hover": {
+          borderColor: "#A07823",
+          boxShadow: "0 8px 18px -10px rgba(14,42,61,0.18)",
+        },
       }}
     >
       <Box
         sx={{
-          width: 40,
-          height: 40,
-          borderRadius: 1.25,
+          width: 44,
+          height: 44,
+          borderRadius: 1.5,
           bgcolor: k.bg,
           color: k.fg,
           display: "grid",
           placeItems: "center",
           flexShrink: 0,
+          position: "relative",
         }}
       >
-        <Icon sx={{ fontSize: 20 }} />
+        <Icon sx={{ fontSize: 22 }} />
+        {completed && (
+          <Box
+            sx={{
+              position: "absolute",
+              right: -4,
+              top: -4,
+              width: 16,
+              height: 16,
+              borderRadius: "50%",
+              bgcolor: "#1F5C40",
+              color: "#FFFFFF",
+              fontSize: "0.6rem",
+              display: "grid",
+              placeItems: "center",
+              fontWeight: 700,
+            }}
+          >
+            ✓
+          </Box>
+        )}
       </Box>
       <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", mb: 0.25 }}>
+          <Box
+            component="span"
+            sx={{
+              px: 0.7,
+              py: 0.05,
+              borderRadius: 0.5,
+              bgcolor: k.bg,
+              color: k.fg,
+              fontSize: "0.56rem",
+              fontWeight: 800,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+            }}
+          >
+            {k.badge}
+          </Box>
+        </Stack>
         <Typography
           sx={{
-            fontSize: "0.85rem",
+            fontSize: "0.88rem",
             fontWeight: 700,
             color: "#0A1A2F",
             lineHeight: 1.25,
@@ -575,13 +715,15 @@ function ResourceRow({
           variant="contained"
           onClick={() => url && onPlay(url)}
           disabled={!url}
+          startIcon={<PlayArrowRoundedIcon sx={{ fontSize: 14 }} />}
           sx={{
             bgcolor: "#0A1A2F",
             textTransform: "none",
             fontSize: "0.75rem",
             fontWeight: 600,
             px: 1.5,
-            py: 0.5,
+            py: 0.55,
+            flexShrink: 0,
             "&:hover": { bgcolor: "#0F2540" },
           }}
         >
@@ -605,7 +747,8 @@ function ResourceRow({
             fontSize: "0.75rem",
             fontWeight: 600,
             px: 1.5,
-            py: 0.5,
+            py: 0.55,
+            flexShrink: 0,
             "&:hover": { bgcolor: "#0F2540" },
           }}
         >
