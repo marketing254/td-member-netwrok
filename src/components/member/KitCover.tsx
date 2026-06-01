@@ -5,19 +5,22 @@ import PlayArrowRoundedIcon from "@mui/icons-material/PlayArrowRounded";
 import { visualForTopic } from "@/components/member/topicVisuals";
 
 /**
- * KitCover — magazine-style cover thumbnail for a resource kit.
+ * KitCover — thumbnail for a resource kit.
  *
- * Reads as a real cover image (not "gradient + icon blob"):
- *   - Topic-gradient backdrop
- *   - Diagonal stripe pattern for tactile feel
- *   - Big display-font title set against the gradient
- *   - Topical icon as small support element bottom-left
- *   - Bottom-right: video count or item count
- *   - Optional play button overlay (centred) for video kits
- *   - Subtle progress bar at bottom when viewed
+ * Two modes:
  *
- * Sizes: pass `size="md"` (default — for grid tiles) or `size="sm"` for
- * sidebar mini-tiles.
+ * 1. coverUrl present (real cover image with title baked in):
+ *    - Image fills the card. No title overlay, no stripe pattern, no light wash,
+ *      no bottom text. Just the photo + functional UI.
+ *    - Top-left: status badges (small, clear of any image content)
+ *    - Bottom-right: small play button when the kit has video
+ *    - Bottom: progress bar when viewed
+ *
+ * 2. coverUrl absent (painted gradient fallback):
+ *    - Magazine-style composition with diagonal stripes, the title set in
+ *      display font, count line, centered play button.
+ *
+ * Sizes: pass `size="md"` (default) or `size="sm"` for sidebar mini-tiles.
  */
 export function KitCover({
   slug,
@@ -42,9 +45,8 @@ export function KitCover({
   size?: "sm" | "md";
   /**
    * Optional URL to a real cover image (from Supabase Storage / kit-thumbnails).
-   * When provided, it replaces the painted gradient backdrop. All overlays
-   * (badges, play button, title gradient, progress bar) sit on top of it.
-   * Falls back to the painted gradient when null/undefined.
+   * When provided, the cover is treated as authoritative — we don't paint our
+   * own title or text on top of it.
    */
   coverUrl?: string | null;
 }) {
@@ -52,8 +54,9 @@ export function KitCover({
   const Icon = visual.icon;
   const hasVideo = videoCount > 0;
   const showProgress = progressPct > 0;
+  const hasCover = !!coverUrl;
 
-  // Typography that respects the available space — wraps cleanly, never overflows.
+  // Typography for the painted-gradient fallback
   const titleFontSize = size === "sm"
     ? { xs: "0.92rem" }
     : { xs: "1.05rem", md: "1.2rem" };
@@ -63,7 +66,7 @@ export function KitCover({
       sx={{
         position: "relative",
         aspectRatio: "16 / 10",
-        backgroundImage: coverUrl ? `url("${coverUrl}")` : visual.gradient,
+        backgroundImage: hasCover ? `url("${coverUrl}")` : visual.gradient,
         backgroundSize: "cover",
         backgroundPosition: "center",
         overflow: "hidden",
@@ -74,32 +77,36 @@ export function KitCover({
         isolation: "isolate",
       }}
     >
-      {/* Subtle diagonal stripe pattern — adds tactile depth */}
-      <Box
-        aria-hidden
-        sx={{
-          position: "absolute",
-          inset: 0,
-          opacity: 0.08,
-          backgroundImage:
-            "repeating-linear-gradient(135deg, rgba(255,255,255,0.5) 0 1px, transparent 1px 14px)",
-          pointerEvents: "none",
-        }}
-      />
+      {/* Decorative overlays — only on painted fallback. With a real cover
+          image we let the artwork speak for itself. */}
+      {!hasCover && (
+        <>
+          <Box
+            aria-hidden
+            sx={{
+              position: "absolute",
+              inset: 0,
+              opacity: 0.08,
+              backgroundImage:
+                "repeating-linear-gradient(135deg, rgba(255,255,255,0.5) 0 1px, transparent 1px 14px)",
+              pointerEvents: "none",
+            }}
+          />
+          <Box
+            aria-hidden
+            sx={{
+              position: "absolute",
+              inset: 0,
+              background:
+                "linear-gradient(180deg, rgba(255,255,255,0.10) 0%, transparent 35%, rgba(0,0,0,0.18) 100%)",
+              pointerEvents: "none",
+            }}
+          />
+        </>
+      )}
 
-      {/* Soft top-light gradient — gives the cover dimension */}
-      <Box
-        aria-hidden
-        sx={{
-          position: "absolute",
-          inset: 0,
-          background:
-            "linear-gradient(180deg, rgba(255,255,255,0.10) 0%, transparent 35%, rgba(0,0,0,0.18) 100%)",
-          pointerEvents: "none",
-        }}
-      />
-
-      {/* Status badges (top-left, properly inset) */}
+      {/* Status badges — always at top-left, kept small so they don't crowd
+          a baked-in image title. */}
       {(isFree || completed || inProgress) && (
         <Stack
           direction="row"
@@ -112,8 +119,37 @@ export function KitCover({
         </Stack>
       )}
 
-      {/* Centred play button when the kit has video */}
-      {hasVideo && (
+      {/* Play button.
+          - With a real cover: tucked into the bottom-right, small, so it never
+            covers the title baked into the artwork.
+          - Without a cover: centered, larger, the focal action. */}
+      {hasVideo && hasCover && (
+        <Box
+          sx={{
+            position: "absolute",
+            bottom: 10,
+            right: 10,
+            zIndex: 2,
+            pointerEvents: "none",
+          }}
+        >
+          <Box
+            sx={{
+              width: size === "sm" ? 30 : 36,
+              height: size === "sm" ? 30 : 36,
+              borderRadius: "50%",
+              bgcolor: "rgba(255,255,255,0.94)",
+              color: "var(--ink, #0A1A2F)",
+              display: "grid",
+              placeItems: "center",
+              boxShadow: "0 6px 16px -6px rgba(0,0,0,0.45)",
+            }}
+          >
+            <PlayArrowRoundedIcon sx={{ fontSize: size === "sm" ? 16 : 20 }} />
+          </Box>
+        </Box>
+      )}
+      {hasVideo && !hasCover && (
         <Box
           sx={{
             position: "absolute",
@@ -141,81 +177,82 @@ export function KitCover({
         </Box>
       )}
 
-      {/* Title — set in display font, anchored bottom-left, supports up to 2 lines */}
-      <Box
-        sx={{
-          position: "relative",
-          mt: "auto",
-          px: { xs: 1.5, md: 2 },
-          pb: { xs: 1.5, md: 1.75 },
-          pt: 2,
-          zIndex: 2,
-          // Local gradient under the text for readability against any backdrop
-          backgroundImage:
-            "linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.28) 100%)",
-        }}
-      >
-        <Typography
+      {/* Title + count row — ONLY on painted fallback. With a real cover the
+          image already has its own title; we don't double it up. */}
+      {!hasCover && (
+        <Box
           sx={{
-            fontFamily: "var(--font-display)",
-            fontSize: titleFontSize,
-            lineHeight: 1.18,
-            letterSpacing: "-0.01em",
-            fontWeight: 600,
-            color: "#FFFFFF",
-            display: "-webkit-box",
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: "vertical",
-            overflow: "hidden",
-            textShadow: "0 1px 2px rgba(0,0,0,0.18)",
+            position: "relative",
+            mt: "auto",
+            px: { xs: 1.5, md: 2 },
+            pb: { xs: 1.5, md: 1.75 },
+            pt: 2,
+            zIndex: 2,
+            backgroundImage:
+              "linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.28) 100%)",
           }}
         >
-          {title}
-        </Typography>
+          <Typography
+            sx={{
+              fontFamily: "var(--font-display)",
+              fontSize: titleFontSize,
+              lineHeight: 1.18,
+              letterSpacing: "-0.01em",
+              fontWeight: 600,
+              color: "#FFFFFF",
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+              textShadow: "0 1px 2px rgba(0,0,0,0.18)",
+            }}
+          >
+            {title}
+          </Typography>
 
-        {/* Bottom row: icon + counter */}
-        <Stack
-          direction="row"
-          spacing={0.75}
-          sx={{
-            mt: 1,
-            alignItems: "center",
-            justifyContent: "space-between",
-            color: "rgba(255,255,255,0.85)",
-          }}
-        >
-          <Stack direction="row" spacing={0.6} sx={{ alignItems: "center" }}>
-            <Icon sx={{ fontSize: size === "sm" ? 13 : 15 }} />
-            <Typography
-              sx={{
-                fontSize: "0.6rem",
-                fontWeight: 700,
-                letterSpacing: "0.12em",
-                textTransform: "uppercase",
-              }}
-            >
-              {hasVideo
-                ? `${videoCount} ${videoCount === 1 ? "video" : "videos"}`
-                : `${resourceCount} ${resourceCount === 1 ? "item" : "items"}`}
-            </Typography>
+          <Stack
+            direction="row"
+            spacing={0.75}
+            sx={{
+              mt: 1,
+              alignItems: "center",
+              justifyContent: "space-between",
+              color: "rgba(255,255,255,0.85)",
+            }}
+          >
+            <Stack direction="row" spacing={0.6} sx={{ alignItems: "center" }}>
+              <Icon sx={{ fontSize: size === "sm" ? 13 : 15 }} />
+              <Typography
+                sx={{
+                  fontSize: "0.6rem",
+                  fontWeight: 700,
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                }}
+              >
+                {hasVideo
+                  ? `${videoCount} ${videoCount === 1 ? "video" : "videos"}`
+                  : `${resourceCount} ${resourceCount === 1 ? "item" : "items"}`}
+              </Typography>
+            </Stack>
+            {!hasVideo && resourceCount > 0 && (
+              <Typography
+                sx={{
+                  fontSize: "0.6rem",
+                  fontWeight: 700,
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  opacity: 0.7,
+                }}
+              >
+                Kit
+              </Typography>
+            )}
           </Stack>
-          {!hasVideo && resourceCount > 0 && (
-            <Typography
-              sx={{
-                fontSize: "0.6rem",
-                fontWeight: 700,
-                letterSpacing: "0.12em",
-                textTransform: "uppercase",
-                opacity: 0.7,
-              }}
-            >
-              Kit
-            </Typography>
-          )}
-        </Stack>
-      </Box>
+        </Box>
+      )}
 
-      {/* Progress bar at very bottom */}
+      {/* Progress bar at very bottom — both modes */}
       {showProgress && (
         <Box
           sx={{
