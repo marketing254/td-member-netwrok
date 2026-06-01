@@ -33,7 +33,7 @@ export const dynamic = "force-dynamic";
 // vendor login page even when an admin was trying to sign in.
 function loginPathForRole(role: string | null): string {
   if (role === "admin") return "/admin/login";
-  if (role === "member") return "/welcome"; // members don't have a separate login surface yet
+  if (role === "member") return "/member/login";
   return "/vendor/login";
 }
 
@@ -109,6 +109,25 @@ export async function GET(request: Request) {
           .from("admin_users")
           .update({ last_active_at: new Date().toISOString() })
           .eq("id", adminRow.id);
+      }
+    }
+
+    if (role === "member" || !role) {
+      // Link the active member row to this auth user on first sign-in.
+      // Only members whose admin has flipped status to 'active' can sign in
+      // (signInWithOtp uses shouldCreateUser:false; new auth users are only
+      //  created by /api/admin/members/activate).
+      const { data: memberRow } = await admin
+        .from("members")
+        .select("id, auth_user_id, status")
+        .eq("email", (user.email ?? "").toLowerCase())
+        .maybeSingle();
+
+      if (memberRow && memberRow.status === "active" && !memberRow.auth_user_id) {
+        await admin
+          .from("members")
+          .update({ auth_user_id: user.id })
+          .eq("id", memberRow.id);
       }
     }
 

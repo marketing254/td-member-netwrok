@@ -7,6 +7,7 @@ import {
   Chip,
   CircularProgress,
   InputAdornment,
+  Snackbar,
   Stack,
   Tab,
   Tabs,
@@ -254,31 +255,56 @@ function WaitlistPanel() {
   const [rows, setRows] = useState<WaitlistRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activatingId, setActivatingId] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const load = async () => {
+    try {
+      const res = await fetch("/api/admin/waitlist", { cache: "no-store" });
+      const body = (await res.json()) as { rows?: WaitlistRow[]; error?: string };
+      if (!res.ok || body.error) {
+        setError(body.error ?? `Failed to load (${res.status})`);
+        setRows([]);
+        return;
+      }
+      setRows((body.rows ?? []).filter((r) => "full_name" in r));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    let active = true;
-    (async () => {
-      try {
-        const res = await fetch("/api/admin/waitlist", { cache: "no-store" });
-        const body = (await res.json()) as { rows?: WaitlistRow[]; error?: string };
-        if (!active) return;
-        if (!res.ok || body.error) {
-          setError(body.error ?? `Failed to load (${res.status})`);
-          setRows([]);
-          return;
-        }
-        setRows((body.rows ?? []).filter((r) => "full_name" in r));
-      } catch (err) {
-        if (!active) return;
-        setError(err instanceof Error ? err.message : "Failed to load.");
-      } finally {
-        if (active) setLoading(false);
-      }
-    })();
-    return () => {
-      active = false;
-    };
+    void load();
   }, []);
+
+  const activate = async (signupId: string, fullName: string) => {
+    if (!confirm(`Activate ${fullName}? They'll receive a "portal is ready" email.`)) return;
+    setActivatingId(signupId);
+    try {
+      const res = await fetch("/api/admin/members/activate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ waitlist_signup_id: signupId }),
+      });
+      const body = (await res.json()) as { ok?: boolean; email_sent?: boolean; error?: string };
+      if (!res.ok || body.error) {
+        setToast(body.error ?? `Activate failed (${res.status})`);
+        return;
+      }
+      setToast(
+        body.email_sent
+          ? `Activated. Welcome email sent.`
+          : `Activated. Welcome email FAILED to send — check email config.`,
+      );
+      await load();
+    } catch (err) {
+      setToast(err instanceof Error ? err.message : "Activate failed.");
+    } finally {
+      setActivatingId(null);
+    }
+  };
 
   return (
     <Stack spacing={2.5}>
@@ -295,7 +321,7 @@ function WaitlistPanel() {
         <Box
           sx={{
             display: { xs: "none", md: "grid" },
-            gridTemplateColumns: "1.6fr 1.4fr 1fr 0.9fr",
+            gridTemplateColumns: "1.6fr 1.4fr 0.9fr 0.9fr 1fr",
             alignItems: "center",
             gap: 2,
             px: 3,
@@ -309,6 +335,7 @@ function WaitlistPanel() {
           <Cell head>Practice</Cell>
           <Cell head>Status</Cell>
           <Cell head>Signed up</Cell>
+          <Box />
         </Box>
 
         {loading ? (
@@ -320,52 +347,88 @@ function WaitlistPanel() {
             <Typography sx={{ color: "text.secondary" }}>No waitlist signups yet.</Typography>
           </Box>
         ) : (
-          rows.map((w, i) => (
-            <Box
-              key={w.id}
-              sx={{
-                display: "grid",
-                gridTemplateColumns: { xs: "1fr", md: "1.6fr 1.4fr 1fr 0.9fr" },
-                alignItems: "center",
-                gap: 2,
-                px: { xs: 2.5, md: 3 },
-                py: 2,
-                borderBottom: i === rows.length - 1 ? 0 : "1px solid",
-                borderColor: "divider",
-              }}
-            >
-              <Box sx={{ minWidth: 0 }}>
-                <Typography sx={{ fontSize: "0.92rem", fontWeight: 600 }} noWrap>
-                  {w.full_name}
-                </Typography>
-                <Typography variant="body2" sx={{ fontSize: "0.78rem", color: "text.secondary" }} noWrap>
-                  {w.email}
-                </Typography>
+          rows.map((w, i) => {
+            const isActive = w.status === "converted";
+            return (
+              <Box
+                key={w.id}
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: { xs: "1fr", md: "1.6fr 1.4fr 0.9fr 0.9fr 1fr" },
+                  alignItems: "center",
+                  gap: 2,
+                  px: { xs: 2.5, md: 3 },
+                  py: 2,
+                  borderBottom: i === rows.length - 1 ? 0 : "1px solid",
+                  borderColor: "divider",
+                }}
+              >
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography sx={{ fontSize: "0.92rem", fontWeight: 600 }} noWrap>
+                    {w.full_name}
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontSize: "0.78rem", color: "text.secondary" }} noWrap>
+                    {w.email}
+                  </Typography>
+                </Box>
+                <Cell>
+                  <Box sx={{ display: { xs: "none", md: "block" } }}>
+                    <Typography sx={{ fontSize: "0.86rem" }} noWrap>
+                      {w.practice_name ?? "—"}
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontSize: "0.74rem", color: "text.secondary" }} noWrap>
+                      {w.city_state ?? ""}
+                    </Typography>
+                  </Box>
+                </Cell>
+                <Cell>
+                  <Box sx={{ display: { xs: "none", md: "block" } }}>
+                    <WaitlistStatusChip status={w.status} />
+                  </Box>
+                </Cell>
+                <Cell>
+                  <Box sx={{ display: { xs: "none", md: "block" }, fontSize: "0.85rem", color: "text.secondary" }}>
+                    {w.created_at.slice(0, 10)}
+                  </Box>
+                </Cell>
+                <Box sx={{ display: { xs: "none", md: "flex" }, justifyContent: "flex-end" }}>
+                  {activatingId === w.id ? (
+                    <CircularProgress size={18} sx={{ color: "#A07823" }} />
+                  ) : isActive ? (
+                    <Typography sx={{ fontSize: "0.72rem", color: "#1F5C40", fontWeight: 600 }}>
+                      Activated
+                    </Typography>
+                  ) : (
+                    <Button
+                      size="small"
+                      variant="contained"
+                      onClick={() => activate(w.id, w.full_name)}
+                      sx={{
+                        bgcolor: "#0A1A2F",
+                        textTransform: "none",
+                        fontSize: "0.72rem",
+                        fontWeight: 600,
+                        px: 1.5,
+                        py: 0.4,
+                        "&:hover": { bgcolor: "#0F2540" },
+                      }}
+                    >
+                      Activate
+                    </Button>
+                  )}
+                </Box>
               </Box>
-              <Cell>
-                <Box sx={{ display: { xs: "none", md: "block" } }}>
-                  <Typography sx={{ fontSize: "0.86rem" }} noWrap>
-                    {w.practice_name ?? "—"}
-                  </Typography>
-                  <Typography variant="body2" sx={{ fontSize: "0.74rem", color: "text.secondary" }} noWrap>
-                    {w.city_state ?? ""}
-                  </Typography>
-                </Box>
-              </Cell>
-              <Cell>
-                <Box sx={{ display: { xs: "none", md: "block" } }}>
-                  <WaitlistStatusChip status={w.status} />
-                </Box>
-              </Cell>
-              <Cell>
-                <Box sx={{ display: { xs: "none", md: "block" }, fontSize: "0.85rem", color: "text.secondary" }}>
-                  {w.created_at.slice(0, 10)}
-                </Box>
-              </Cell>
-            </Box>
-          ))
+            );
+          })
         )}
       </Box>
+      <Snackbar
+        open={!!toast}
+        autoHideDuration={4000}
+        onClose={() => setToast(null)}
+        message={toast ?? ""}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      />
     </Stack>
   );
 }

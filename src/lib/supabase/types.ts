@@ -212,6 +212,54 @@ export type MembersRow = {
   status: MemberStatus;
   tier: string | null;
   joined_at: string | null;
+  activated_at: string | null;
+  activated_by: string | null;
+  welcome_sent_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ResourceKind =
+  | "video_intro"
+  | "video_full"
+  | "video_explainer"
+  | "video_trailer"
+  | "audio"
+  | "action_guide"
+  | "checklist"
+  | "key_takeaways"
+  | "worksheet"
+  | "slide_deck"
+  | "email_sequence"
+  | "other";
+
+export type ResourcesRow = {
+  id: string;
+  topic_slug: string;
+  topic_title: string;
+  topic_summary: string | null;
+  title: string;
+  description: string | null;
+  kind: ResourceKind;
+  storage_path: string | null;
+  external_url: string | null;
+  thumbnail_url: string | null;
+  mime_type: string | null;
+  file_size_bytes: number | null;
+  duration_label: string | null;
+  position: number;
+  is_free: boolean;
+  is_published: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type MemberResourceProgressRow = {
+  member_id: string;
+  resource_id: string;
+  last_viewed_at: string | null;
+  completed_at: string | null;
+  watch_seconds: number;
   created_at: string;
   updated_at: string;
 };
@@ -338,6 +386,8 @@ export type Database = {
       auth_audit: Table<AuthAuditRow>;
       email_events: Table<EmailEventsRow>;
       notifications: Table<NotificationsRow>;
+      resources: Table<ResourcesRow>;
+      member_resource_progress: Table<MemberResourceProgressRow>;
     };
     Views: {
       waitlist_counts: View<{

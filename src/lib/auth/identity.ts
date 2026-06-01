@@ -188,6 +188,14 @@ export function useSignOut(target: SignOutTarget = "member") {
     } catch {
       // ignore
     }
-    router.push(target === "vendor" ? "/vendor/login" : target === "admin" ? "/admin/login" : "/");
+    router.push(
+      target === "vendor"
+        ? "/vendor/login"
+        : target === "admin"
+          ? "/admin/login"
+          : target === "member"
+            ? "/member/login"
+            : "/",
+    );
   };
 }

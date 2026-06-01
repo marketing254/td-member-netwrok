@@ -74,6 +74,12 @@ function isPublicAdminPath(pathname: string) {
   return pathname === "/admin/login" || pathname.startsWith("/admin/login/");
 }
 
+function isPublicMemberPath(_pathname: string) {
+  // All /dashboard/* paths are gated. Members enter via /member/login → magic
+  // link → /auth/callback → /dashboard.
+  return false;
+}
+
 export async function middleware(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
   const res = NextResponse.next({ request: req });
@@ -83,8 +89,9 @@ export async function middleware(req: NextRequest) {
 
   const isVendor = pathname.startsWith("/vendor") && !isPublicVendorPath(pathname);
   const isAdmin = pathname.startsWith("/admin") && !isPublicAdminPath(pathname);
+  const isMember = pathname.startsWith("/dashboard") && !isPublicMemberPath(pathname);
 
-  if (!isVendor && !isAdmin) {
+  if (!isVendor && !isAdmin && !isMember) {
     // Outside the gated surfaces — still run Supabase to keep the session
     // cookie fresh so /vendor/login etc. read the latest state.
     try {
@@ -151,6 +158,43 @@ export async function middleware(req: NextRequest) {
       console.error("[middleware:admin] auth check failed:", err);
       const target = req.nextUrl.clone();
       target.pathname = "/admin/login";
+      return applySecurityHeaders(NextResponse.redirect(target));
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  // MEMBER PORTAL  (/dashboard/*)
+  // ─────────────────────────────────────────────────────────────────
+  if (isMember) {
+    try {
+      const supabase = createMiddlewareSupabase(req, res);
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) {
+        const target = req.nextUrl.clone();
+        target.pathname = "/member/login";
+        target.search = `?redirect=${encodeURIComponent(pathname + search)}`;
+        return applySecurityHeaders(NextResponse.redirect(target));
+      }
+
+      // Confirm the user has an active members row.
+      const { data: memberRow } = await supabase
+        .from("members")
+        .select("id, status")
+        .eq("auth_user_id", userData.user.id)
+        .maybeSingle();
+
+      if (!memberRow || memberRow.status !== "active") {
+        const target = req.nextUrl.clone();
+        target.pathname = "/member/login";
+        target.search = `?error=${encodeURIComponent("Your member portal isn't active yet. We'll email you when it is.")}`;
+        return applySecurityHeaders(NextResponse.redirect(target));
+      }
+
+      return applySecurityHeaders(res);
+    } catch (err) {
+      console.error("[middleware:member] auth check failed:", err);
+      const target = req.nextUrl.clone();
+      target.pathname = "/member/login";
       return applySecurityHeaders(NextResponse.redirect(target));
     }
   }
