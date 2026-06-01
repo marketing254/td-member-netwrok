@@ -1,23 +1,67 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   Alert,
+  Avatar,
   Box,
   Button,
   CircularProgress,
+  Grid,
+  MenuItem,
   Snackbar,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
-import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
+import type { SvgIconComponent } from "@mui/icons-material";
+import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
+import GavelOutlinedIcon from "@mui/icons-material/GavelOutlined";
+import RuleFolderOutlinedIcon from "@mui/icons-material/RuleFolderOutlined";
+import PolicyOutlinedIcon from "@mui/icons-material/PolicyOutlined";
+import OpenInNewOutlinedIcon from "@mui/icons-material/OpenInNewOutlined";
 import { useCurrentMember, type CurrentMember } from "@/lib/hooks/useCurrentMember";
+import {
+  EditorialHeader,
+  EditorialSection,
+  InlineTag,
+  editorialText,
+  ink,
+} from "@/components/member/Editorial";
+
+const PRACTICE_ROLES = [
+  "Practice Owner",
+  "Associate Dentist",
+  "Office Manager",
+  "Hygienist",
+  "Other",
+];
+
+function initials(first?: string | null, last?: string | null): string {
+  const a = (first ?? "").trim().charAt(0);
+  const b = (last ?? "").trim().charAt(0);
+  return (a + b).toUpperCase() || "M";
+}
+
+function formatJoined(iso: string | null): string {
+  if (!iso) return "—";
+  try {
+    return new Intl.DateTimeFormat("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    }).format(new Date(iso));
+  } catch {
+    return iso.slice(0, 10);
+  }
+}
 
 export default function MemberProfilePage() {
   const { member, loading } = useCurrentMember();
   const [form, setForm] = useState<Partial<CurrentMember>>({});
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,7 +72,7 @@ export default function MemberProfilePage() {
   const set = <K extends keyof CurrentMember>(k: K, v: CurrentMember[K]) =>
     setForm((prev) => ({ ...prev, [k]: v }));
 
-  const save = async () => {
+  const onSave = async () => {
     setSaving(true);
     setError(null);
     try {
@@ -36,13 +80,13 @@ export default function MemberProfilePage() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          first_name: form.first_name ?? "",
-          last_name: form.last_name ?? "",
-          credential: form.credential ?? "",
-          phone: form.phone ?? "",
-          practice_name: form.practice_name ?? "",
-          practice_role: form.practice_role ?? "",
-          city: form.city ?? "",
+          first_name: (form.first_name ?? "").trim(),
+          last_name: (form.last_name ?? "").trim(),
+          credential: (form.credential ?? "").trim(),
+          phone: (form.phone ?? "").trim(),
+          practice_name: (form.practice_name ?? "").trim(),
+          practice_role: (form.practice_role ?? "").trim(),
+          city: (form.city ?? "").trim(),
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -50,7 +94,9 @@ export default function MemberProfilePage() {
         setError(data?.error ?? `Save failed (${res.status})`);
         return;
       }
+      setSaved(true);
       setToast("Profile saved.");
+      setTimeout(() => setSaved(false), 2400);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed.");
     } finally {
@@ -60,8 +106,9 @@ export default function MemberProfilePage() {
 
   if (loading) {
     return (
-      <Stack sx={{ alignItems: "center", py: 8 }}>
-        <CircularProgress size={24} sx={{ color: "#A07823" }} />
+      <Stack sx={{ alignItems: "center", py: 8, gap: 2 }}>
+        <CircularProgress size={22} sx={{ color: "var(--gold)" }} />
+        <Typography sx={editorialText.meta}>Loading profile…</Typography>
       </Stack>
     );
   }
@@ -70,246 +117,365 @@ export default function MemberProfilePage() {
     return (
       <Box
         sx={{
-          p: 4,
-          borderRadius: 2,
-          border: "1px dashed",
-          borderColor: "divider",
-          bgcolor: "common.white",
+          py: 6,
           textAlign: "center",
+          borderTop: "1px solid var(--paper-rule)",
+          borderBottom: "1px solid var(--paper-rule)",
         }}
       >
-        <Typography sx={{ fontSize: "0.95rem", fontWeight: 600, mb: 0.5 }}>
-          No member profile found
-        </Typography>
-        <Typography sx={{ fontSize: "0.82rem", color: "text.secondary" }}>
+        <Typography sx={{ ...editorialText.heading, mb: 0.5 }}>No member profile found.</Typography>
+        <Typography sx={editorialText.meta}>
           Your session may have expired. Sign in again from the member login page.
         </Typography>
       </Box>
     );
   }
 
+  const memberSince = formatJoined(member.joined_at ?? member.activated_at);
+  const isFounding = member.tier === "founding";
+  const initialsStr = initials(form.first_name ?? member.first_name, form.last_name ?? member.last_name);
+  const displayFirst = form.first_name ?? member.first_name ?? "";
+  const displayLast = form.last_name ?? member.last_name ?? "";
+  const displayCred = form.credential ?? member.credential ?? "";
+
   return (
-    <Stack spacing={2.5}>
-      <Box>
-        <Typography
-          variant="overline"
-          sx={{ color: "#A07823", fontSize: "0.62rem", letterSpacing: "0.18em", fontWeight: 700 }}
-        >
-          PROFILE
-        </Typography>
-        <Typography
-          component="h1"
-          sx={{
-            fontFamily: "var(--font-display)",
-            fontSize: { xs: "1.4rem", md: "1.7rem" },
-            fontWeight: 500,
-            color: "#0A1A2F",
-            letterSpacing: "-0.015em",
-            lineHeight: 1.2,
-            mt: 0.5,
-          }}
-        >
-          Your member profile
-        </Typography>
-        <Typography sx={{ color: "#5C6770", fontSize: "0.82rem", mt: 0.5, maxWidth: 600 }}>
-          Keep your contact info current. The team uses this to match vendor offers and route any
-          1:1 outreach.
-        </Typography>
-      </Box>
-
-      {error && <Alert severity="error">{error}</Alert>}
-
-      <Box
-        sx={{
-          p: { xs: 2, md: 3 },
-          borderRadius: 2,
-          border: "1px solid",
-          borderColor: "divider",
-          bgcolor: "common.white",
-        }}
-      >
-        <Typography
-          sx={{
-            fontSize: "0.66rem",
-            fontWeight: 700,
-            letterSpacing: "0.14em",
-            color: "#A07823",
-            textTransform: "uppercase",
-            mb: 1.5,
-          }}
-        >
-          Identity
-        </Typography>
-
-        <Stack spacing={1.75}>
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-            <TextField
-              label="First name"
-              fullWidth
-              size="small"
-              value={form.first_name ?? ""}
-              onChange={(e) => set("first_name", e.target.value)}
-            />
-            <TextField
-              label="Last name"
-              fullWidth
-              size="small"
-              value={form.last_name ?? ""}
-              onChange={(e) => set("last_name", e.target.value)}
-            />
-            <TextField
-              label="Credential"
-              size="small"
-              sx={{ width: { xs: "100%", sm: 140 } }}
-              placeholder="DDS"
-              value={form.credential ?? ""}
-              onChange={(e) => set("credential", e.target.value)}
-            />
-          </Stack>
-
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-            <TextField
-              label="Email"
-              fullWidth
-              size="small"
-              value={member.email}
-              disabled
-              helperText="Email can't be changed here — contact the team if you need to update it."
-            />
-            <TextField
-              label="Phone"
-              fullWidth
-              size="small"
-              value={form.phone ?? ""}
-              onChange={(e) => set("phone", e.target.value)}
-            />
-          </Stack>
-        </Stack>
-
-        <Typography
-          sx={{
-            fontSize: "0.66rem",
-            fontWeight: 700,
-            letterSpacing: "0.14em",
-            color: "#A07823",
-            textTransform: "uppercase",
-            mt: 3,
-            mb: 1.5,
-          }}
-        >
-          Practice
-        </Typography>
-
-        <Stack spacing={1.75}>
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-            <TextField
-              label="Practice name"
-              fullWidth
-              size="small"
-              value={form.practice_name ?? ""}
-              onChange={(e) => set("practice_name", e.target.value)}
-            />
-            <TextField
-              label="Your role"
-              fullWidth
-              size="small"
-              placeholder="Practice Owner"
-              value={form.practice_role ?? ""}
-              onChange={(e) => set("practice_role", e.target.value)}
-            />
-          </Stack>
-          <TextField
-            label="City / state"
-            fullWidth
-            size="small"
-            value={form.city ?? ""}
-            onChange={(e) => set("city", e.target.value)}
-          />
-        </Stack>
-
-        <Stack direction="row" sx={{ mt: 2.5, justifyContent: "flex-end" }}>
+    <Box sx={{ color: ink.primary }}>
+      <EditorialHeader
+        index="03"
+        eyebrow="Account"
+        title="Your profile"
+        standfirst="What's on file for your membership. Edits go live immediately — contact the team to update your sign-in email."
+        actions={
           <Button
             variant="contained"
-            onClick={save}
+            size="small"
+            disableElevation
+            onClick={onSave}
             disabled={saving}
-            startIcon={saving ? <CircularProgress size={14} sx={{ color: "inherit" }} /> : <SaveOutlinedIcon />}
+            startIcon={
+              saving ? (
+                <CircularProgress size={14} sx={{ color: "inherit" }} />
+              ) : saved ? (
+                <CheckCircleOutlinedIcon sx={{ fontSize: 16 }} />
+              ) : undefined
+            }
             sx={{
-              bgcolor: "#0A1A2F",
+              bgcolor: saved ? "var(--leaf)" : "var(--ink)",
+              color: "var(--paper)",
               textTransform: "none",
-              fontSize: "0.8rem",
+              fontSize: "0.82rem",
               fontWeight: 600,
-              px: 2,
-              "&:hover": { bgcolor: "#0F2540" },
+              borderRadius: 0.75,
+              px: 1.75,
+              py: 0.75,
+              transition: "background-color var(--dur-fast) var(--ease-out)",
+              "&:hover": {
+                bgcolor: saved
+                  ? "color-mix(in oklch, var(--leaf) 90%, black)"
+                  : "color-mix(in oklch, var(--ink) 90%, white)",
+              },
+              "&:focus-visible": { outline: "2px solid var(--gold)", outlineOffset: 2 },
             }}
           >
-            {saving ? "Saving…" : "Save changes"}
+            {saving ? "Saving…" : saved ? "Saved" : "Save changes"}
           </Button>
-        </Stack>
-      </Box>
+        }
+      />
 
-      <Box
-        sx={{
-          p: 2,
-          borderRadius: 2,
-          border: "1px solid",
-          borderColor: "divider",
-          bgcolor: "common.white",
-        }}
-      >
-        <Typography
-          sx={{
-            fontSize: "0.66rem",
-            fontWeight: 700,
-            letterSpacing: "0.14em",
-            color: "text.secondary",
-            textTransform: "uppercase",
-            mb: 1,
-          }}
+      {error && (
+        <Alert
+          severity="error"
+          sx={{ borderRadius: 1, fontSize: "0.82rem", py: 0.75, mb: 2 }}
+          onClose={() => setError(null)}
         >
-          Membership
-        </Typography>
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={3}
-          sx={{ alignItems: { sm: "baseline" } }}
-        >
-          <MetaRow label="Tier" value={member.tier === "founding" ? "Founding member" : "Member"} />
-          <MetaRow
-            label="Joined"
-            value={member.joined_at ? new Date(member.joined_at).toLocaleDateString() : "—"}
-          />
-          <MetaRow label="Status" value={member.status} highlight={member.status === "active"} />
-        </Stack>
-      </Box>
+          {error}
+        </Alert>
+      )}
+
+      <Grid container spacing={4}>
+        {/* SIDEBAR */}
+        <Grid size={{ xs: 12, md: 4 }}>
+          <Stack spacing={3}>
+            {/* Identity card — no chrome, editorial composition */}
+            <Box>
+              <Stack spacing={1.25} sx={{ alignItems: "flex-start" }}>
+                <Avatar
+                  sx={{
+                    width: 64,
+                    height: 64,
+                    bgcolor: "color-mix(in oklch, var(--gold) 18%, transparent)",
+                    color: "var(--gold-deep)",
+                    fontFamily: "var(--font-display)",
+                    fontSize: "1.5rem",
+                    fontWeight: 600,
+                    border: "1px solid color-mix(in oklch, var(--gold) 40%, transparent)",
+                  }}
+                >
+                  {initialsStr}
+                </Avatar>
+                <Box>
+                  <Typography sx={{ ...editorialText.heading, mb: 0.25 }}>
+                    {displayFirst} {displayLast}
+                    {displayCred ? `, ${displayCred}` : ""}
+                  </Typography>
+                  <Typography sx={editorialText.meta}>{member.email}</Typography>
+                </Box>
+                <Stack direction="row" spacing={0.5}>
+                  <InlineTag label={isFounding ? "Founding" : "Member"} tone="gold" />
+                  <InlineTag label={member.status} tone="ink" />
+                </Stack>
+              </Stack>
+            </Box>
+
+            {/* Membership panel */}
+            <Box sx={{ borderTop: "1px solid var(--ink-rule)", pt: 2 }}>
+              <Stack direction="row" spacing={1.25} sx={{ alignItems: "baseline", mb: 1.25 }}>
+                <Box
+                  component="span"
+                  className="hk-numeral"
+                  sx={{ fontSize: "0.88rem", color: "var(--gold)" }}
+                >
+                  i
+                </Box>
+                <Typography sx={editorialText.eyebrow}>Membership</Typography>
+              </Stack>
+              <Stack spacing={1}>
+                <MetaRow label="Tier" value={isFounding ? "Founding member" : "Member"} />
+                <MetaRow label="Status" value={member.status} capitalize />
+                <MetaRow label="Joined" value={memberSince} />
+                <MetaRow label="Rate" value={isFounding ? "$49/mo · locked" : "Standard"} />
+              </Stack>
+              {isFounding && (
+                <Typography
+                  sx={{
+                    mt: 1.5,
+                    fontSize: "0.74rem",
+                    color: "var(--gold-deep)",
+                    lineHeight: 1.55,
+                    fontStyle: "italic",
+                    fontFamily: "var(--font-display)",
+                  }}
+                >
+                  Your founding rate is locked for as long as your membership stays active — it never increases.
+                </Typography>
+              )}
+            </Box>
+
+            {/* Documents panel */}
+            <Box sx={{ borderTop: "1px solid var(--paper-rule)", pt: 2 }}>
+              <Stack direction="row" spacing={1.25} sx={{ alignItems: "baseline", mb: 1.25 }}>
+                <Box
+                  component="span"
+                  className="hk-numeral"
+                  sx={{ fontSize: "0.88rem", color: "var(--gold)" }}
+                >
+                  ii
+                </Box>
+                <Typography sx={editorialText.eyebrow}>Documents</Typography>
+              </Stack>
+              <Stack>
+                <DocLink
+                  href="/agreement/member"
+                  icon={GavelOutlinedIcon}
+                  label="Member agreement"
+                  meta="What you signed at signup"
+                />
+                <DocLink
+                  href="/legal/refund"
+                  icon={RuleFolderOutlinedIcon}
+                  label="Refund & cancellation"
+                  meta="30-day money-back guarantee"
+                />
+                <DocLink
+                  href="/legal/privacy"
+                  icon={PolicyOutlinedIcon}
+                  label="Privacy policy"
+                  meta="What we do with your data"
+                />
+              </Stack>
+            </Box>
+
+            {/* Help panel */}
+            <Box sx={{ borderTop: "1px solid var(--paper-rule)", pt: 2 }}>
+              <Stack direction="row" spacing={1.25} sx={{ alignItems: "baseline", mb: 1.25 }}>
+                <Box
+                  component="span"
+                  className="hk-numeral"
+                  sx={{ fontSize: "0.88rem", color: "var(--gold)" }}
+                >
+                  iii
+                </Box>
+                <Typography sx={editorialText.eyebrow}>Support</Typography>
+              </Stack>
+              <Typography sx={{ ...editorialText.body, mb: 1 }}>
+                Questions about your account or how the network works? Reach out — we read every email.
+              </Typography>
+              <Box
+                component="a"
+                href="mailto:members@joindmn.com"
+                sx={{
+                  fontSize: "0.78rem",
+                  fontWeight: 700,
+                  color: "var(--gold-deep)",
+                  textDecoration: "none",
+                  borderBottom: "1px solid color-mix(in oklch, var(--gold) 40%, transparent)",
+                  pb: "1px",
+                  transition: "color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out)",
+                  "&:hover": { color: "var(--ink)", borderBottomColor: "var(--ink)" },
+                }}
+              >
+                members@joindmn.com →
+              </Box>
+            </Box>
+          </Stack>
+        </Grid>
+
+        {/* MAIN — FORM */}
+        <Grid size={{ xs: 12, md: 8 }}>
+          <Stack spacing={3.5}>
+            <EditorialSection
+              index="i"
+              eyebrow="Identity"
+              standfirst="How you appear in member communications."
+              rule
+            >
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 12, sm: 5 }}>
+                  <FormField
+                    label="First name"
+                    value={form.first_name ?? ""}
+                    onChange={(v) => set("first_name", v)}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 5 }}>
+                  <FormField
+                    label="Last name"
+                    value={form.last_name ?? ""}
+                    onChange={(v) => set("last_name", v)}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 2 }}>
+                  <FormField
+                    label="Credential"
+                    placeholder="DDS"
+                    value={form.credential ?? ""}
+                    onChange={(v) => set("credential", v)}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <FormField
+                    label="Email"
+                    value={member.email}
+                    onChange={() => {}}
+                    disabled
+                    helperText="Contact the team to change your sign-in email."
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <FormField
+                    label="Phone"
+                    type="tel"
+                    placeholder="(555) 123-4567"
+                    value={form.phone ?? ""}
+                    onChange={(v) => set("phone", v)}
+                  />
+                </Grid>
+              </Grid>
+            </EditorialSection>
+
+            <EditorialSection
+              index="ii"
+              eyebrow="Practice"
+              standfirst="Used to tailor resource recommendations."
+              rule={false}
+            >
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <FormField
+                    label="Practice name"
+                    value={form.practice_name ?? ""}
+                    onChange={(v) => set("practice_name", v)}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <FormField
+                    label="Your role"
+                    value={form.practice_role ?? ""}
+                    onChange={(v) => set("practice_role", v)}
+                    select
+                  >
+                    <MenuItem value="" sx={{ fontSize: "0.84rem" }}>
+                      <em>Choose one</em>
+                    </MenuItem>
+                    {PRACTICE_ROLES.map((r) => (
+                      <MenuItem key={r} value={r} sx={{ fontSize: "0.84rem" }}>
+                        {r}
+                      </MenuItem>
+                    ))}
+                  </FormField>
+                </Grid>
+                <Grid size={{ xs: 12 }}>
+                  <FormField
+                    label="City / state"
+                    placeholder="Austin, TX"
+                    value={form.city ?? ""}
+                    onChange={(v) => set("city", v)}
+                  />
+                </Grid>
+              </Grid>
+            </EditorialSection>
+
+            <Typography
+              sx={{
+                ...editorialText.meta,
+                fontStyle: "italic",
+                fontFamily: "var(--font-display)",
+                borderTop: "1px solid var(--paper-rule)",
+                pt: 1.5,
+              }}
+            >
+              Changes save instantly when you hit Save changes. Email and tier are managed by the team — reach out if you need either updated.
+            </Typography>
+          </Stack>
+        </Grid>
+      </Grid>
 
       <Snackbar
         open={!!toast}
-        autoHideDuration={3000}
+        autoHideDuration={2400}
         onClose={() => setToast(null)}
         message={toast ?? ""}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       />
-    </Stack>
+    </Box>
   );
 }
 
 function MetaRow({
   label,
   value,
-  highlight,
+  capitalize,
 }: {
   label: string;
   value: string;
-  highlight?: boolean;
+  capitalize?: boolean;
 }) {
   return (
-    <Stack spacing={0.25}>
+    <Stack
+      direction="row"
+      sx={{
+        justifyContent: "space-between",
+        alignItems: "baseline",
+        py: 0.5,
+        borderBottom: "1px dotted var(--paper-rule)",
+      }}
+    >
       <Typography
         sx={{
-          fontSize: "0.58rem",
-          fontWeight: 700,
-          letterSpacing: "0.12em",
-          color: "text.secondary",
+          fontSize: "0.7rem",
+          fontWeight: 600,
+          letterSpacing: "0.06em",
+          color: ink.fade,
           textTransform: "uppercase",
         }}
       >
@@ -317,14 +483,115 @@ function MetaRow({
       </Typography>
       <Typography
         sx={{
-          fontSize: "0.86rem",
+          fontSize: "0.82rem",
           fontWeight: 600,
-          color: highlight ? "#1F5C40" : "#0A1A2F",
-          textTransform: highlight ? "capitalize" : "none",
+          color: ink.primary,
+          textTransform: capitalize ? "capitalize" : "none",
+          textAlign: "right",
         }}
       >
         {value}
       </Typography>
     </Stack>
+  );
+}
+
+function DocLink({
+  href,
+  icon: Icon,
+  label,
+  meta,
+}: {
+  href: string;
+  icon: SvgIconComponent;
+  label: string;
+  meta: string;
+}) {
+  return (
+    <Box
+      component={Link}
+      href={href}
+      sx={{
+        display: "flex",
+        alignItems: "flex-start",
+        gap: 1.25,
+        py: 1.25,
+        borderTop: "1px solid var(--paper-rule)",
+        textDecoration: "none",
+        color: "inherit",
+        transition: "background-color var(--dur-fast) var(--ease-out)",
+        "&:first-of-type": { borderTop: "none", pt: 0 },
+        "&:hover": { bgcolor: "color-mix(in oklch, var(--gold) 5%, transparent)" },
+        "&:focus-visible": { outline: "2px solid var(--gold)", outlineOffset: 2 },
+      }}
+    >
+      <Icon sx={{ fontSize: 17, color: ink.soft, mt: 0.2, flexShrink: 0 }} />
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Typography sx={{ fontSize: "0.84rem", fontWeight: 600, color: ink.primary, lineHeight: 1.3 }}>
+          {label}
+        </Typography>
+        <Typography sx={{ fontSize: "0.72rem", color: ink.fade, mt: 0.15 }}>{meta}</Typography>
+      </Box>
+      <OpenInNewOutlinedIcon sx={{ fontSize: 13, color: ink.fade, mt: 0.4, flexShrink: 0 }} />
+    </Box>
+  );
+}
+
+function FormField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  helperText,
+  multiline,
+  minRows,
+  select,
+  type,
+  disabled,
+  children,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  helperText?: string;
+  multiline?: boolean;
+  minRows?: number;
+  select?: boolean;
+  type?: string;
+  disabled?: boolean;
+  children?: React.ReactNode;
+}) {
+  return (
+    <TextField
+      label={label}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      helperText={helperText}
+      multiline={multiline}
+      minRows={minRows}
+      select={select}
+      type={type}
+      disabled={disabled}
+      fullWidth
+      size="small"
+      variant="standard"
+      slotProps={{
+        inputLabel: { sx: { fontSize: "0.82rem", color: "var(--ink-fade)" } },
+        formHelperText: { sx: { fontSize: "0.7rem", ml: 0, mt: 0.5, fontStyle: "italic" } },
+      }}
+      sx={{
+        "& .MuiInput-root": { fontSize: "0.86rem" },
+        "& .MuiInput-input": { py: 0.75 },
+        "& .MuiInput-underline:before": { borderBottomColor: "var(--paper-rule)" },
+        "& .MuiInput-underline:hover:not(.Mui-disabled):before": {
+          borderBottomColor: "var(--ink-rule)",
+        },
+        "& .MuiInput-underline:after": { borderBottomColor: "var(--gold)" },
+      }}
+    >
+      {children}
+    </TextField>
   );
 }

@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Box,
-  Chip,
   CircularProgress,
   InputAdornment,
   Stack,
@@ -20,6 +19,12 @@ import {
   CATEGORY_LABELS,
   type TopicCategory,
 } from "@/components/member/topicVisuals";
+import {
+  EditorialHeader,
+  InlineTag,
+  editorialText,
+  ink,
+} from "@/components/member/Editorial";
 
 type ResourceItem = {
   id: string;
@@ -123,7 +128,6 @@ export default function ResourceLibraryPage() {
     return out;
   }, [topics, q, filter]);
 
-  // Available filter chips — only show categories that actually have topics.
   const availableCategories = useMemo(() => {
     const set = new Set<TopicCategory>();
     for (const t of topics) set.add(categoryForSlug(t.slug));
@@ -133,66 +137,42 @@ export default function ResourceLibraryPage() {
   const freeCount = topics.filter((t) => t.isFree).length;
 
   return (
-    <Stack spacing={3}>
-      <Box>
-        <Typography
-          variant="overline"
-          sx={{
-            color: "#A07823",
-            fontSize: "0.62rem",
-            letterSpacing: "0.18em",
-            fontWeight: 700,
-          }}
-        >
-          RESOURCE LIBRARY
-        </Typography>
-        <Typography
-          component="h1"
-          sx={{
-            fontFamily: "var(--font-display)",
-            fontSize: { xs: "1.5rem", md: "1.9rem" },
-            fontWeight: 500,
-            color: "#0A1A2F",
-            letterSpacing: "-0.015em",
-            lineHeight: 1.15,
-            mt: 0.5,
-          }}
-        >
-          Resource Kits
-        </Typography>
-        <Typography
-          sx={{ color: "#5C6770", fontSize: "0.88rem", mt: 0.75, maxWidth: 640, lineHeight: 1.6 }}
-        >
-          Practical, no-fluff training built for practice owners. Each kit is a complete topic
-          pack — video training, action guide, worksheets, checklist, and ready-to-use templates.
-        </Typography>
-      </Box>
+    <Box sx={{ color: ink.primary }}>
+      <EditorialHeader
+        index="02"
+        eyebrow="Resource library"
+        title="Kits for practice owners"
+        standfirst="Each kit is a topic pack — training video, action guide, worksheets, checklist, and ready-to-use templates. Stream the video, download the rest."
+      />
 
-      {/* Filter + search row */}
+      {/* Filter row — text-link style filters (editorial, no bulky chips) */}
       <Stack
         direction={{ xs: "column", md: "row" }}
-        spacing={1.5}
-        sx={{ alignItems: { md: "center" }, justifyContent: "space-between" }}
+        spacing={2}
+        sx={{
+          alignItems: { md: "center" },
+          justifyContent: "space-between",
+          mb: 2.5,
+        }}
       >
-        {/* Filter chips */}
-        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
-          <FilterChip
+        <Box sx={{ display: "flex", flexWrap: "wrap", columnGap: 2, rowGap: 1 }}>
+          <FilterLink
             label="All"
             count={topics.length}
             active={filter === "all"}
             onClick={() => setFilter("all")}
           />
-          <FilterChip
+          <FilterLink
             label="Free"
             count={freeCount}
             active={filter === "free"}
             onClick={() => setFilter("free")}
-            accent
+            tone="leaf"
           />
           {availableCategories
             .filter((c) => c !== "all")
             .map((c) => (
-              <FilterChip
+              <FilterLink
                 key={c}
                 label={CATEGORY_LABELS[c]}
                 count={topics.filter((t) => categoryForSlug(t.slug) === c).length}
@@ -204,42 +184,49 @@ export default function ResourceLibraryPage() {
 
         <TextField
           size="small"
-          placeholder="Search kits…"
+          placeholder="Search kits"
           value={q}
           onChange={(e) => setQ(e.target.value)}
+          variant="standard"
           slotProps={{
             input: {
               startAdornment: (
                 <InputAdornment position="start">
-                  <SearchOutlinedIcon sx={{ fontSize: 16, color: "#7A8590" }} />
+                  <SearchOutlinedIcon sx={{ fontSize: 15, color: ink.fade }} />
                 </InputAdornment>
               ),
             },
           }}
-          sx={{ maxWidth: 280, "& .MuiInputBase-input": { fontSize: "0.84rem" } }}
+          sx={{
+            maxWidth: 240,
+            "& .MuiInputBase-input": { fontSize: "0.84rem", py: 0.5 },
+            "& .MuiInput-underline:before": { borderBottomColor: "var(--paper-rule)" },
+            "& .MuiInput-underline:hover:not(.Mui-disabled):before": {
+              borderBottomColor: "var(--ink-rule)",
+            },
+            "& .MuiInput-underline:after": { borderBottomColor: "var(--gold)" },
+          }}
         />
       </Stack>
 
-      {/* Grid */}
+      {/* Grid — sparser, editorial */}
       {loading ? (
         <Stack sx={{ alignItems: "center", py: 8 }}>
-          <CircularProgress size={22} sx={{ color: "#A07823" }} />
+          <CircularProgress size={20} sx={{ color: "var(--gold)" }} />
         </Stack>
       ) : filtered.length === 0 ? (
         <Box
           sx={{
-            p: 5,
-            borderRadius: 2,
-            border: "1px dashed",
-            borderColor: "divider",
-            bgcolor: "common.white",
+            py: 8,
             textAlign: "center",
+            borderTop: "1px solid var(--paper-rule)",
+            borderBottom: "1px solid var(--paper-rule)",
           }}
         >
-          <Typography sx={{ fontSize: "0.92rem", fontWeight: 600, mb: 0.5 }}>
-            {q ? `No kits match "${q}".` : "No kits available in this filter."}
+          <Typography sx={{ ...editorialText.heading, mb: 0.5 }}>
+            {q ? `No kits match "${q}"` : "No kits in this filter"}
           </Typography>
-          <Typography sx={{ fontSize: "0.78rem", color: "text.secondary" }}>
+          <Typography sx={editorialText.meta}>
             Try a different filter or clear the search.
           </Typography>
         </Box>
@@ -252,84 +239,70 @@ export default function ResourceLibraryPage() {
               sm: "repeat(2, 1fr)",
               lg: "repeat(3, 1fr)",
             },
-            gap: 2,
+            gap: { xs: 2.5, md: 3 },
+            rowGap: { xs: 3, md: 4 },
           }}
         >
           {filtered.map((t) => (
-            <KitCard key={t.slug} topic={t} />
+            <KitTile key={t.slug} topic={t} />
           ))}
         </Box>
       )}
-    </Stack>
+    </Box>
   );
 }
 
-function FilterChip({
+function FilterLink({
   label,
   count,
   active,
   onClick,
-  accent,
+  tone,
 }: {
   label: string;
   count: number;
   active: boolean;
   onClick: () => void;
-  accent?: boolean;
+  tone?: "leaf";
 }) {
+  const activeColor = tone === "leaf" ? "var(--leaf)" : "var(--ink)";
   return (
-    <Chip
-      label={
-        <Box component="span" sx={{ display: "inline-flex", alignItems: "center", gap: 0.75 }}>
-          <Box component="span" sx={{ fontWeight: 600 }}>
-            {label}
-          </Box>
-          <Box
-            component="span"
-            sx={{
-              fontSize: "0.62rem",
-              fontWeight: 700,
-              opacity: 0.7,
-            }}
-          >
-            {count}
-          </Box>
-        </Box>
-      }
+    <Box
+      role="button"
+      tabIndex={0}
       onClick={onClick}
-      sx={{
-        height: 30,
-        borderRadius: 999,
-        px: 0.5,
-        fontSize: "0.76rem",
-        bgcolor: active
-          ? accent
-            ? "rgba(34,108,78,0.14)"
-            : "#0A1A2F"
-          : "common.white",
-        color: active ? (accent ? "#1F5C40" : "common.white") : "#3B4A55",
-        border: "1px solid",
-        borderColor: active
-          ? accent
-            ? "rgba(34,108,78,0.4)"
-            : "#0A1A2F"
-          : "rgba(14,42,61,0.12)",
-        cursor: "pointer",
-        transition: "all 160ms ease",
-        "&:hover": {
-          bgcolor: active
-            ? accent
-              ? "rgba(34,108,78,0.18)"
-              : "#0F2540"
-            : "rgba(14,42,61,0.04)",
-        },
-        "& .MuiChip-label": { px: 1.25 },
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick();
+        }
       }}
-    />
+      sx={{
+        display: "inline-flex",
+        alignItems: "baseline",
+        gap: 0.5,
+        py: 0.5,
+        cursor: "pointer",
+        userSelect: "none",
+        color: active ? activeColor : ink.fade,
+        borderBottom: active ? `1px solid ${activeColor}` : "1px solid transparent",
+        fontSize: "0.82rem",
+        fontWeight: active ? 700 : 500,
+        letterSpacing: active ? "-0.005em" : "0",
+        transition: "color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out)",
+        "&:hover": { color: activeColor },
+        "&:focus-visible": { outline: "2px solid var(--gold)", outlineOffset: 2 },
+      }}
+    >
+      <span>{label}</span>
+      <Box component="span" sx={{ fontSize: "0.66rem", opacity: 0.6, fontWeight: 600 }}>
+        {count}
+      </Box>
+    </Box>
   );
 }
 
-function KitCard({ topic }: { topic: TopicCard }) {
+function KitTile({ topic }: { topic: TopicCard }) {
   const visual = visualForTopic(topic.slug);
   const Icon = visual.icon;
   const progressPct =
@@ -337,7 +310,8 @@ function KitCard({ topic }: { topic: TopicCard }) {
       ? Math.round((topic.viewedCount / topic.resourceCount) * 100)
       : 0;
   const inProgress = topic.viewedCount > 0 && topic.viewedCount < topic.resourceCount;
-  const isCompleted = topic.completedCount === topic.resourceCount && topic.resourceCount > 0;
+  const completed = topic.completedCount === topic.resourceCount && topic.resourceCount > 0;
+  const category = CATEGORY_LABELS[categoryForSlug(topic.slug)];
 
   return (
     <Box
@@ -346,133 +320,94 @@ function KitCard({ topic }: { topic: TopicCard }) {
       sx={{
         display: "flex",
         flexDirection: "column",
-        height: "100%",
-        borderRadius: 2.5,
-        overflow: "hidden",
-        bgcolor: "common.white",
-        border: "1px solid",
-        borderColor: "divider",
         textDecoration: "none",
         color: "inherit",
-        transition: "all 220ms ease",
-        "&:hover": {
-          transform: "translateY(-3px)",
-          boxShadow: "0 24px 48px -24px rgba(14,42,61,0.28)",
-          borderColor: visual.accent,
-        },
+        transition: "transform var(--dur-base) var(--ease-out)",
+        "&:hover": { transform: "translateY(-2px)" },
+        "&:focus-visible": { outline: "2px solid var(--gold)", outlineOffset: 4, borderRadius: "4px" },
       }}
     >
       {/* Thumbnail */}
       <Box
         sx={{
           position: "relative",
-          aspectRatio: "16 / 9",
+          aspectRatio: "16 / 10",
           backgroundImage: visual.gradient,
           overflow: "hidden",
+          borderRadius: 1,
+          mb: 1.25,
         }}
       >
-        {/* Decorative giant icon */}
         <Icon
           sx={{
             position: "absolute",
-            right: -28,
-            bottom: -28,
-            fontSize: 220,
+            right: -18,
+            bottom: -18,
+            fontSize: 160,
             color: visual.iconColor,
-            opacity: 0.22,
-            transform: "rotate(-12deg)",
+            opacity: 0.2,
+            transform: "rotate(-10deg)",
           }}
         />
-        {/* Top-left badges */}
+        {topic.videoCount > 0 && (
+          <Box
+            sx={{
+              position: "absolute",
+              inset: 0,
+              display: "grid",
+              placeItems: "center",
+              pointerEvents: "none",
+            }}
+          >
+            <Box
+              sx={{
+                width: 44,
+                height: 44,
+                borderRadius: "50%",
+                bgcolor: "var(--paper)",
+                color: "var(--ink)",
+                display: "grid",
+                placeItems: "center",
+                boxShadow: "0 6px 18px -8px rgba(0,0,0,0.35)",
+              }}
+            >
+              <PlayArrowRoundedIcon sx={{ fontSize: 22 }} />
+            </Box>
+          </Box>
+        )}
+
+        {/* Top-left badges, with safe inset */}
         <Stack
           direction="row"
-          spacing={0.75}
-          sx={{
-            position: "absolute",
-            top: 12,
-            left: 12,
-            zIndex: 1,
-          }}
+          spacing={0.5}
+          sx={{ position: "absolute", top: 10, left: 10 }}
         >
-          {topic.isFree && (
-            <Box
-              sx={{
-                px: 1,
-                py: 0.4,
-                borderRadius: 999,
-                bgcolor: "rgba(255,255,255,0.95)",
-                color: "#1F5C40",
-                fontSize: "0.6rem",
-                fontWeight: 800,
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-              }}
-            >
-              Free
-            </Box>
-          )}
-          {inProgress && (
-            <Box
-              sx={{
-                px: 1,
-                py: 0.4,
-                borderRadius: 999,
-                bgcolor: "rgba(255,255,255,0.95)",
-                color: "#A07823",
-                fontSize: "0.6rem",
-                fontWeight: 800,
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-              }}
-            >
-              In progress
-            </Box>
-          )}
-          {isCompleted && (
-            <Box
-              sx={{
-                px: 1,
-                py: 0.4,
-                borderRadius: 999,
-                bgcolor: "rgba(34,108,78,0.95)",
-                color: "#FFFFFF",
-                fontSize: "0.6rem",
-                fontWeight: 800,
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-              }}
-            >
-              ✓ Completed
-            </Box>
-          )}
+          {topic.isFree && <InlineTag label="Free" tone="leaf" />}
+          {completed && <InlineTag label="Done" tone="ink" />}
+          {inProgress && !completed && <InlineTag label="In progress" tone="gold" />}
         </Stack>
 
-        {/* Bottom-left label */}
+        {/* Bottom-right meta */}
         <Box
           sx={{
             position: "absolute",
-            bottom: 12,
-            left: 12,
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 0.6,
-            px: 1.25,
-            py: 0.5,
-            borderRadius: 999,
-            bgcolor: "rgba(255,255,255,0.18)",
-            backdropFilter: "blur(8px)",
-            color: "#FFFFFF",
-            fontSize: "0.68rem",
+            bottom: 10,
+            right: 10,
+            px: 0.85,
+            py: 0.25,
+            borderRadius: 0.5,
+            bgcolor: "rgba(20,30,42,0.78)",
+            color: "var(--paper)",
+            fontSize: "0.62rem",
             fontWeight: 700,
-            letterSpacing: "0.06em",
-            border: "1px solid rgba(255,255,255,0.25)",
+            letterSpacing: "0.04em",
           }}
         >
-          <PlayArrowRoundedIcon sx={{ fontSize: 14 }} />
-          {topic.videoCount > 0 ? `${topic.videoCount} videos` : "Watch + read"}
+          {topic.videoCount > 0
+            ? `${topic.videoCount} ${topic.videoCount === 1 ? "video" : "videos"}`
+            : `${topic.resourceCount} items`}
         </Box>
 
-        {/* Progress bar at bottom */}
         {topic.viewedCount > 0 && (
           <Box
             sx={{
@@ -480,97 +415,76 @@ function KitCard({ topic }: { topic: TopicCard }) {
               bottom: 0,
               left: 0,
               right: 0,
-              height: 3,
+              height: 2,
               bgcolor: "rgba(255,255,255,0.18)",
             }}
           >
-            <Box
-              sx={{
-                height: "100%",
-                width: `${progressPct}%`,
-                bgcolor: visual.accent,
-                transition: "width 200ms ease",
-              }}
-            />
+            <Box sx={{ height: "100%", width: `${progressPct}%`, bgcolor: visual.accent }} />
           </Box>
         )}
       </Box>
 
       {/* Body */}
-      <Box sx={{ p: 2, display: "flex", flexDirection: "column", flex: 1 }}>
+      <Stack direction="row" spacing={0.75} sx={{ alignItems: "baseline", mb: 0.5 }}>
+        <Box
+          component="span"
+          className="hk-numeral"
+          sx={{ fontSize: "0.74rem", color: "var(--gold)", lineHeight: 1 }}
+        >
+          ¶
+        </Box>
+        <Typography sx={{ ...editorialText.eyebrow, color: ink.fade }}>{category}</Typography>
+      </Stack>
+      <Typography
+        sx={{
+          ...editorialText.heading,
+          fontSize: { xs: "1.05rem", md: "1.1rem" },
+          mb: 0.5,
+        }}
+      >
+        {topic.title}
+      </Typography>
+      {topic.summary && (
         <Typography
-          variant="overline"
           sx={{
-            fontSize: "0.56rem",
-            letterSpacing: "0.16em",
-            fontWeight: 800,
-            color: visual.accent,
-            display: "block",
-            mb: 0.5,
+            ...editorialText.body,
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+            mb: 1,
           }}
         >
-          RESOURCE KIT
+          {topic.summary}
         </Typography>
-        <Typography
-          sx={{
-            fontFamily: "var(--font-display)",
-            fontSize: "1.08rem",
-            fontWeight: 500,
-            color: "#0A1A2F",
-            lineHeight: 1.22,
-            mb: 0.75,
-            letterSpacing: "-0.005em",
-          }}
-        >
-          {topic.title}
+      )}
+      <Stack
+        direction="row"
+        sx={{
+          alignItems: "center",
+          justifyContent: "space-between",
+          mt: "auto",
+          pt: 1,
+          borderTop: "1px solid var(--paper-rule)",
+        }}
+      >
+        <Typography sx={editorialText.meta}>
+          {topic.resourceCount} {topic.resourceCount === 1 ? "item" : "items"}
+          {topic.viewedCount > 0 ? ` · ${topic.viewedCount} done` : ""}
         </Typography>
-        {topic.summary && (
-          <Typography
-            sx={{
-              fontSize: "0.78rem",
-              color: "#5C6770",
-              lineHeight: 1.55,
-              display: "-webkit-box",
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: "vertical",
-              overflow: "hidden",
-              mb: 1.5,
-              flex: 1,
-            }}
-          >
-            {topic.summary}
-          </Typography>
-        )}
-
-        <Stack
-          direction="row"
+        <Box
           sx={{
+            display: "inline-flex",
             alignItems: "center",
-            justifyContent: "space-between",
-            mt: "auto",
-            pt: 1.25,
-            borderTop: "1px solid",
-            borderColor: "rgba(14,42,61,0.06)",
+            gap: 0.4,
+            fontSize: "0.73rem",
+            fontWeight: 700,
+            color: "var(--gold-deep)",
           }}
         >
-          <Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>
-            {topic.resourceCount} {topic.resourceCount === 1 ? "resource" : "resources"}
-            {topic.viewedCount > 0 ? ` · ${topic.viewedCount} done` : ""}
-          </Typography>
-          <Box
-            sx={{
-              fontSize: "0.74rem",
-              color: visual.accent,
-              fontWeight: 700,
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 0.5,
-            }}
-          >
-            Open kit <ArrowForwardIcon sx={{ fontSize: 13 }} />
-          </Box>
-        </Stack>
-      </Box>
+          Open <ArrowForwardIcon sx={{ fontSize: 12 }} />
+        </Box>
+      </Stack>
     </Box>
   );
 }

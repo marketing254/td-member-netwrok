@@ -1,19 +1,17 @@
 "use client";
 
-import { use, useEffect, useMemo, useState } from "react";
+import { use, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Box,
   Button,
   CircularProgress,
-  Dialog,
-  IconButton,
+  Grid,
   Stack,
   Typography,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import PlayArrowRoundedIcon from "@mui/icons-material/PlayArrowRounded";
-import CloseIcon from "@mui/icons-material/Close";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import ChecklistOutlinedIcon from "@mui/icons-material/ChecklistOutlined";
 import EditNoteOutlinedIcon from "@mui/icons-material/EditNoteOutlined";
@@ -24,8 +22,14 @@ import StickyNote2OutlinedIcon from "@mui/icons-material/StickyNote2Outlined";
 import OndemandVideoOutlinedIcon from "@mui/icons-material/OndemandVideoOutlined";
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
 import InsertDriveFileOutlinedIcon from "@mui/icons-material/InsertDriveFileOutlined";
+import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import type { SvgIconComponent } from "@mui/icons-material";
 import { visualForTopic } from "@/components/member/topicVisuals";
+import {
+  InlineTag,
+  editorialText,
+  ink,
+} from "@/components/member/Editorial";
 
 type Progress = {
   last_viewed_at: string | null;
@@ -60,107 +64,21 @@ const KIND_META: Record<
     icon: SvgIconComponent;
     defaultMeta: string;
     actionLabel: string;
-    bg: string;
-    fg: string;
     badge: string;
   }
 > = {
-  video_intro: {
-    icon: OndemandVideoOutlinedIcon,
-    defaultMeta: "Short intro video",
-    actionLabel: "Watch",
-    bg: "rgba(220,60,60,0.10)",
-    fg: "#8C1D1D",
-    badge: "Video",
-  },
-  video_full: {
-    icon: PlayArrowRoundedIcon,
-    defaultMeta: "Full training session",
-    actionLabel: "Watch",
-    bg: "rgba(220,60,60,0.14)",
-    fg: "#8C1D1D",
-    badge: "Full Training",
-  },
-  video_explainer: {
-    icon: OndemandVideoOutlinedIcon,
-    defaultMeta: "Explainer video",
-    actionLabel: "Watch",
-    bg: "rgba(220,60,60,0.10)",
-    fg: "#8C1D1D",
-    badge: "Explainer",
-  },
-  video_trailer: {
-    icon: OndemandVideoOutlinedIcon,
-    defaultMeta: "Trailer",
-    actionLabel: "Watch",
-    bg: "rgba(220,60,60,0.08)",
-    fg: "#8C1D1D",
-    badge: "Trailer",
-  },
-  audio: {
-    icon: HeadphonesOutlinedIcon,
-    defaultMeta: "Audio episode",
-    actionLabel: "Listen",
-    bg: "rgba(14,42,61,0.06)",
-    fg: "#0E2A3D",
-    badge: "Audio",
-  },
-  action_guide: {
-    icon: ListAltOutlinedIcon,
-    defaultMeta: "PDF · the full reference",
-    actionLabel: "Download",
-    bg: "rgba(34,80,160,0.08)",
-    fg: "#2C4FA0",
-    badge: "PDF",
-  },
-  checklist: {
-    icon: ChecklistOutlinedIcon,
-    defaultMeta: "PDF · set up → track → review",
-    actionLabel: "Download",
-    bg: "rgba(34,108,78,0.10)",
-    fg: "#1F5C40",
-    badge: "PDF",
-  },
-  key_takeaways: {
-    icon: StickyNote2OutlinedIcon,
-    defaultMeta: "PDF · the gist in 2 minutes",
-    actionLabel: "Download",
-    bg: "rgba(217,168,75,0.14)",
-    fg: "#A07823",
-    badge: "PDF",
-  },
-  worksheet: {
-    icon: EditNoteOutlinedIcon,
-    defaultMeta: "PDF · fillable",
-    actionLabel: "Download",
-    bg: "rgba(217,168,75,0.10)",
-    fg: "#A07823",
-    badge: "PDF",
-  },
-  slide_deck: {
-    icon: SlideshowOutlinedIcon,
-    defaultMeta: "Slide deck · PowerPoint",
-    actionLabel: "Download",
-    bg: "rgba(160,120,35,0.10)",
-    fg: "#A07823",
-    badge: "Slides",
-  },
-  email_sequence: {
-    icon: EmailOutlinedIcon,
-    defaultMeta: "PDF · ready-to-send email scripts",
-    actionLabel: "Download",
-    bg: "rgba(14,42,61,0.06)",
-    fg: "#0E2A3D",
-    badge: "PDF",
-  },
-  other: {
-    icon: InsertDriveFileOutlinedIcon,
-    defaultMeta: "File",
-    actionLabel: "Open",
-    bg: "rgba(14,42,61,0.06)",
-    fg: "#0E2A3D",
-    badge: "File",
-  },
+  video_intro: { icon: OndemandVideoOutlinedIcon, defaultMeta: "Short intro video", actionLabel: "Watch", badge: "Video" },
+  video_full: { icon: PlayArrowRoundedIcon, defaultMeta: "Full training session", actionLabel: "Watch", badge: "Training" },
+  video_explainer: { icon: OndemandVideoOutlinedIcon, defaultMeta: "Explainer video", actionLabel: "Watch", badge: "Explainer" },
+  video_trailer: { icon: OndemandVideoOutlinedIcon, defaultMeta: "Trailer", actionLabel: "Watch", badge: "Trailer" },
+  audio: { icon: HeadphonesOutlinedIcon, defaultMeta: "Audio episode", actionLabel: "Listen", badge: "Audio" },
+  action_guide: { icon: ListAltOutlinedIcon, defaultMeta: "PDF · the full reference", actionLabel: "Download", badge: "PDF" },
+  checklist: { icon: ChecklistOutlinedIcon, defaultMeta: "PDF · set up → track → review", actionLabel: "Download", badge: "PDF" },
+  key_takeaways: { icon: StickyNote2OutlinedIcon, defaultMeta: "PDF · the gist in 2 minutes", actionLabel: "Download", badge: "PDF" },
+  worksheet: { icon: EditNoteOutlinedIcon, defaultMeta: "PDF · fillable", actionLabel: "Download", badge: "PDF" },
+  slide_deck: { icon: SlideshowOutlinedIcon, defaultMeta: "Slide deck · PowerPoint", actionLabel: "Download", badge: "Slides" },
+  email_sequence: { icon: EmailOutlinedIcon, defaultMeta: "PDF · ready-to-send scripts", actionLabel: "Download", badge: "PDF" },
+  other: { icon: InsertDriveFileOutlinedIcon, defaultMeta: "File", actionLabel: "Open", badge: "File" },
 };
 
 function isVideo(kind: string): boolean {
@@ -171,8 +89,7 @@ function formatSize(bytes: number | null): string {
   if (!bytes || bytes <= 0) return "";
   const kb = bytes / 1024;
   if (kb < 900) return `${Math.round(kb)} KB`;
-  const mb = kb / 1024;
-  return `${mb.toFixed(1)} MB`;
+  return `${(kb / 1024).toFixed(1)} MB`;
 }
 
 function buildMeta(r: ResourceItem): string {
@@ -193,15 +110,22 @@ async function markProgress(resourceId: string, action: "view" | "complete") {
       body: JSON.stringify({ action }),
     });
   } catch {
-    /* silent — progress is best-effort */
+    /* silent */
   }
+}
+
+function romanize(n: number): string {
+  // i ii iii iv v vi vii viii ix x — falls back to digit beyond 10
+  const lookup = ["i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x"];
+  return lookup[n - 1] ?? String(n);
 }
 
 export default function ResourceKitDetailPage({ params }: { params: RouteParams }) {
   const { slug } = use(params);
   const [resources, setResources] = useState<ResourceItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [playerUrl, setPlayerUrl] = useState<string | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -230,26 +154,53 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
   const visual = visualForTopic(slug);
   const TopicIcon = visual.icon;
 
-  const heroVideo = useMemo(() => {
-    return (
-      resources.find((r) => r.kind === "video_full") ??
-      resources.find((r) => r.kind === "video_intro") ??
-      resources.find((r) => isVideo(r.kind)) ??
-      null
-    );
+  const orderedResources = useMemo(() => {
+    const order = [
+      "video_intro",
+      "video_full",
+      "video_explainer",
+      "video_trailer",
+      "audio",
+      "action_guide",
+      "checklist",
+      "key_takeaways",
+      "worksheet",
+      "slide_deck",
+      "email_sequence",
+      "other",
+    ];
+    return [...resources].sort((a, b) => {
+      const ai = order.indexOf(a.kind);
+      const bi = order.indexOf(b.kind);
+      if (ai !== bi) return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi);
+      return a.position - b.position;
+    });
   }, [resources]);
 
-  const downloads = useMemo(() => resources.filter((r) => !isVideo(r.kind)), [resources]);
-  const videos = useMemo(() => resources.filter((r) => isVideo(r.kind)), [resources]);
+  const videos = useMemo(() => orderedResources.filter((r) => isVideo(r.kind)), [orderedResources]);
+  const downloads = useMemo(() => orderedResources.filter((r) => !isVideo(r.kind)), [orderedResources]);
+
+  useEffect(() => {
+    if (activeId) return;
+    const firstVideo = videos.find((v) => v.external_url) ?? videos[0];
+    if (firstVideo) setActiveId(firstVideo.id);
+  }, [videos, activeId]);
+
+  const activeResource = useMemo(
+    () => orderedResources.find((r) => r.id === activeId) ?? null,
+    [orderedResources, activeId],
+  );
 
   const topicTitle = resources[0]?.topic_title ?? "Resource Kit";
   const topicSummary = resources[0]?.topic_summary ?? null;
   const isFree = resources.length > 0 && resources.every((r) => r.is_free);
+  const viewedCount = resources.filter((r) => r.progress?.last_viewed_at).length;
+  const progressPct = resources.length > 0 ? Math.round((viewedCount / resources.length) * 100) : 0;
 
   if (loading) {
     return (
       <Stack sx={{ alignItems: "center", py: 8 }}>
-        <CircularProgress size={24} sx={{ color: "#A07823" }} />
+        <CircularProgress size={22} sx={{ color: "var(--gold)" }} />
       </Stack>
     );
   }
@@ -260,18 +211,14 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
         <BackLink />
         <Box
           sx={{
-            p: 4,
-            borderRadius: 2,
-            border: "1px dashed",
-            borderColor: "divider",
-            bgcolor: "common.white",
+            py: 6,
             textAlign: "center",
+            borderTop: "1px solid var(--paper-rule)",
+            borderBottom: "1px solid var(--paper-rule)",
           }}
         >
-          <Typography sx={{ fontSize: "0.95rem", fontWeight: 600, mb: 0.5 }}>
-            Kit not found
-          </Typography>
-          <Typography sx={{ fontSize: "0.82rem", color: "text.secondary" }}>
+          <Typography sx={{ ...editorialText.heading, mb: 0.5 }}>Kit not found</Typography>
+          <Typography sx={editorialText.meta}>
             This resource kit isn&apos;t published yet, or the URL is wrong.
           </Typography>
         </Box>
@@ -279,273 +226,243 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
     );
   }
 
-  const onPlayHero = () => {
-    if (!heroVideo) return;
-    const url = heroVideo.external_url ?? "";
-    if (!url) return;
-    setPlayerUrl(url);
-    void markProgress(heroVideo.id, "view");
+  const playLesson = (r: ResourceItem) => {
+    setActiveId(r.id);
+    void markProgress(r.id, "view");
+    requestAnimationFrame(() => {
+      if (videoRef.current) {
+        videoRef.current.load();
+        void videoRef.current.play().catch(() => {});
+      }
+    });
   };
 
   return (
-    <Stack spacing={3}>
+    <Box sx={{ color: ink.primary }}>
       <BackLink />
 
-      {/* HERO */}
-      <Box
-        sx={{
-          position: "relative",
-          borderRadius: 3,
-          overflow: "hidden",
-          backgroundImage: visual.gradient,
-          color: "#FFFFFF",
-          minHeight: { xs: 240, md: 320 },
-          display: "flex",
-          alignItems: "flex-end",
-          p: { xs: 2.5, md: 4 },
-        }}
-      >
-        {/* Background giant icon */}
-        <TopicIcon
-          sx={{
-            position: "absolute",
-            right: { xs: -40, md: -20 },
-            top: { xs: -30, md: -10 },
-            fontSize: { xs: 280, md: 360 },
-            color: visual.iconColor,
-            opacity: 0.18,
-            transform: "rotate(-10deg)",
-          }}
-        />
-
-        {/* Play overlay if there's a hero video */}
-        {heroVideo && (
-          <Box
-            role="button"
-            tabIndex={0}
-            onClick={onPlayHero}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                onPlayHero();
-              }
-            }}
-            sx={{
-              position: "absolute",
-              top: "50%",
-              right: { xs: "50%", md: 48 },
-              transform: { xs: "translate(50%, -50%)", md: "translate(0, -50%)" },
-              width: { xs: 72, md: 92 },
-              height: { xs: 72, md: 92 },
-              borderRadius: "50%",
-              bgcolor: "rgba(255,255,255,0.95)",
-              display: "grid",
-              placeItems: "center",
-              color: "#0A1A2F",
-              cursor: "pointer",
-              boxShadow: "0 24px 48px -16px rgba(0,0,0,0.5)",
-              transition: "transform 200ms ease",
-              "&:hover": { transform: { xs: "translate(50%, -50%) scale(1.05)", md: "scale(1.05)" } },
-              "&:focus-visible": { outline: "2px solid #FFFFFF", outlineOffset: 4 },
-              zIndex: 2,
-            }}
-          >
-            <PlayArrowRoundedIcon sx={{ fontSize: { xs: 36, md: 48 } }} />
-          </Box>
-        )}
-
-        {/* Content */}
-        <Stack spacing={1.5} sx={{ position: "relative", maxWidth: 580, zIndex: 1 }}>
-          <Stack direction="row" spacing={0.75} sx={{ flexWrap: "wrap", gap: 0.5 }}>
-            <Typography
-              sx={{
-                fontSize: "0.62rem",
-                letterSpacing: "0.2em",
-                fontWeight: 800,
-                color: visual.accent,
-                textTransform: "uppercase",
-              }}
-            >
-              Resource Kit
+      {/* Editorial header (numbered, no nav-card) */}
+      <Box sx={{ pb: 2.5, mb: 2.5, borderBottom: "1px solid var(--ink-rule)" }}>
+        <Stack
+          direction={{ xs: "column", md: "row" }}
+          spacing={2}
+          sx={{ justifyContent: "space-between", alignItems: { md: "flex-end" } }}
+        >
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Stack direction="row" spacing={1.25} sx={{ alignItems: "baseline", mb: 1 }}>
+              <Box
+                component="span"
+                className="hk-numeral"
+                sx={{ fontSize: "1.05rem", color: "var(--gold)" }}
+              >
+                Kit
+              </Box>
+              <Typography sx={editorialText.eyebrow}>{topicTitle ? "Resource pack" : "—"}</Typography>
+              {isFree && <InlineTag label="Free" tone="leaf" />}
+            </Stack>
+            <Typography component="h1" sx={editorialText.display}>
+              {topicTitle}
             </Typography>
-            {isFree && (
+            {topicSummary && (
+              <Typography sx={{ ...editorialText.body, mt: 1, maxWidth: 620 }}>
+                {topicSummary}
+              </Typography>
+            )}
+          </Box>
+          <Box sx={{ flexShrink: 0 }}>
+            <Typography sx={{ ...editorialText.eyebrow, mb: 0.75 }}>Your progress</Typography>
+            <Stack direction="row" spacing={1.25} sx={{ alignItems: "center" }}>
               <Box
                 sx={{
-                  px: 0.85,
-                  py: 0.2,
-                  borderRadius: 999,
-                  bgcolor: "rgba(255,255,255,0.92)",
-                  color: "#1F5C40",
-                  fontSize: "0.56rem",
-                  fontWeight: 800,
-                  letterSpacing: "0.12em",
-                  textTransform: "uppercase",
+                  width: 140,
+                  height: 3,
+                  bgcolor: "var(--paper-rule)",
+                  overflow: "hidden",
                 }}
               >
-                Free
+                <Box
+                  sx={{
+                    height: "100%",
+                    width: `${progressPct}%`,
+                    bgcolor: "var(--leaf)",
+                    transition: "width var(--dur-slow) var(--ease-out)",
+                  }}
+                />
               </Box>
-            )}
-          </Stack>
-          <Typography
-            component="h1"
-            sx={{
-              fontFamily: "var(--font-display)",
-              fontSize: { xs: "1.5rem", md: "2.1rem" },
-              fontWeight: 500,
-              color: "#FFFFFF",
-              letterSpacing: "-0.015em",
-              lineHeight: 1.12,
-            }}
-          >
-            {topicTitle}
-          </Typography>
-          {topicSummary && (
-            <Typography
-              sx={{
-                color: "rgba(255,255,255,0.85)",
-                fontSize: { xs: "0.85rem", md: "0.96rem" },
-                lineHeight: 1.6,
-                maxWidth: 540,
-              }}
-            >
-              {topicSummary}
-            </Typography>
-          )}
-
-          {/* Stat strip */}
-          <Stack
-            direction="row"
-            spacing={2.5}
-            sx={{ mt: 1, alignItems: "baseline", flexWrap: "wrap", rowGap: 1 }}
-          >
-            <Stat value={`${resources.length}`} label="resources" accent={visual.accent} />
-            <Stat value={`${videos.length}`} label={videos.length === 1 ? "video" : "videos"} accent={visual.accent} />
-            <Stat value={`${downloads.length}`} label="downloads" accent={visual.accent} />
-          </Stack>
+              <Typography sx={{ fontSize: "0.78rem", fontWeight: 700, color: ink.primary }}>
+                {viewedCount}/{resources.length}
+              </Typography>
+            </Stack>
+          </Box>
         </Stack>
       </Box>
 
-      {/* Speaker card */}
-      <Box
-        sx={{
-          p: 1.75,
-          borderRadius: 2,
-          bgcolor: "common.white",
-          border: "1px solid",
-          borderColor: "divider",
-          display: "flex",
-          alignItems: "center",
-          gap: 1.5,
-        }}
-      >
-        <Box
-          sx={{
-            width: 40,
-            height: 40,
-            borderRadius: "50%",
-            bgcolor: "rgba(217,168,75,0.18)",
-            color: "#A07823",
-            display: "grid",
-            placeItems: "center",
-            fontSize: "0.78rem",
-            fontWeight: 800,
-            flexShrink: 0,
-          }}
-        >
-          GT
-        </Box>
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography sx={{ fontSize: "0.82rem", fontWeight: 700, color: "#0A1A2F", lineHeight: 1.2 }}>
-            Gary Takacs
-          </Typography>
-          <Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>
-            Founder, Thriving Dentist · 2,200+ practices coached
-          </Typography>
-        </Box>
-      </Box>
+      <Grid container spacing={3}>
+        {/* PLAYER COLUMN */}
+        <Grid size={{ xs: 12, lg: 8 }}>
+          <Stack spacing={2.5}>
+            <Box>
+              <Box
+                sx={{
+                  position: "relative",
+                  aspectRatio: "16 / 9",
+                  bgcolor: "var(--ink)",
+                  backgroundImage: activeResource && isVideo(activeResource.kind) ? "none" : visual.gradient,
+                  display: "grid",
+                  placeItems: "center",
+                  overflow: "hidden",
+                  borderRadius: 1,
+                }}
+              >
+                {activeResource && isVideo(activeResource.kind) && activeResource.external_url ? (
+                  <video
+                    ref={videoRef}
+                    src={activeResource.external_url}
+                    controls
+                    playsInline
+                    onPlay={() => void markProgress(activeResource.id, "view")}
+                    onEnded={() => void markProgress(activeResource.id, "complete")}
+                    style={{ width: "100%", height: "100%", display: "block", background: "#000" }}
+                  />
+                ) : (
+                  <Stack spacing={1.5} sx={{ alignItems: "center", color: "var(--paper)", textAlign: "center", px: 3 }}>
+                    <TopicIcon sx={{ fontSize: 56, color: visual.iconColor, opacity: 0.95 }} />
+                    <Typography
+                      sx={{
+                        fontFamily: "var(--font-display)",
+                        fontSize: "1.05rem",
+                        color: "var(--paper)",
+                        lineHeight: 1.2,
+                      }}
+                    >
+                      {activeResource ? activeResource.title : "Pick a lesson to begin"}
+                    </Typography>
+                    {activeResource && !isVideo(activeResource.kind) && (
+                      <Button
+                        component="a"
+                        href={activeResource.external_url ?? "#"}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        download
+                        onClick={() => void markProgress(activeResource.id, "view")}
+                        variant="contained"
+                        size="small"
+                        disableElevation
+                        startIcon={<DownloadOutlinedIcon sx={{ fontSize: 14 }} />}
+                        sx={{
+                          bgcolor: "var(--paper)",
+                          color: "var(--ink)",
+                          textTransform: "none",
+                          fontSize: "0.8rem",
+                          fontWeight: 600,
+                          borderRadius: 0.5,
+                          px: 1.75,
+                          "&:hover": { bgcolor: "color-mix(in oklch, var(--paper) 90%, var(--gold))" },
+                        }}
+                      >
+                        Download {KIND_META[activeResource.kind]?.badge ?? "file"}
+                      </Button>
+                    )}
+                  </Stack>
+                )}
+              </Box>
 
-      {/* What's inside */}
-      <Box>
-        <Typography
-          sx={{
-            fontFamily: "var(--font-display)",
-            fontSize: "1.15rem",
-            fontWeight: 500,
-            color: "#0A1A2F",
-            mb: 0.25,
-          }}
-        >
-          What&apos;s inside this kit
-        </Typography>
-        <Typography sx={{ fontSize: "0.8rem", color: "text.secondary", mb: 2 }}>
-          Stream the training, then download the done-for-you tools below.
-        </Typography>
+              {/* Active lesson meta */}
+              {activeResource && (
+                <Box sx={{ pt: 1.5 }}>
+                  <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 0.5 }}>
+                    <InlineTag label={KIND_META[activeResource.kind]?.badge ?? "Item"} tone="ink" />
+                    {activeResource.duration_label && (
+                      <Typography sx={editorialText.meta}>{activeResource.duration_label}</Typography>
+                    )}
+                    {activeResource.progress?.completed_at && (
+                      <Stack direction="row" spacing={0.4} sx={{ alignItems: "center" }}>
+                        <CheckCircleRoundedIcon sx={{ fontSize: 14, color: "var(--leaf)" }} />
+                        <Typography sx={{ fontSize: "0.7rem", color: "var(--leaf)", fontWeight: 700 }}>
+                          Completed
+                        </Typography>
+                      </Stack>
+                    )}
+                  </Stack>
+                  <Typography sx={{ ...editorialText.heading, mb: 0.5 }}>
+                    {activeResource.title}
+                  </Typography>
+                  {activeResource.description && (
+                    <Typography sx={editorialText.body}>{activeResource.description}</Typography>
+                  )}
+                </Box>
+              )}
+            </Box>
 
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-            gap: 1.25,
-          }}
-        >
-          {(heroVideo ? [heroVideo, ...resources.filter((r) => r.id !== heroVideo.id)] : resources).map((r) => (
-            <ResourceRow
-              key={r.id}
-              resource={r}
-              onPlay={(url) => {
-                setPlayerUrl(url);
-                void markProgress(r.id, "view");
-              }}
-            />
-          ))}
-        </Box>
-      </Box>
+            {/* Downloads */}
+            {downloads.length > 0 && (
+              <Box>
+                <Stack direction="row" spacing={1.5} sx={{ alignItems: "baseline", mb: 1.5 }}>
+                  <Box
+                    component="span"
+                    className="hk-numeral"
+                    sx={{ fontSize: "0.92rem", color: "var(--gold)" }}
+                  >
+                    ii
+                  </Box>
+                  <Box aria-hidden sx={{ width: 18, height: "1px", bgcolor: "var(--ink-rule)" }} />
+                  <Typography sx={editorialText.eyebrow}>Kit downloads</Typography>
+                </Stack>
+                <Typography sx={{ ...editorialText.heading, mb: 1.5 }}>
+                  Done-for-you PDFs, worksheets, and templates
+                </Typography>
+                <Stack>
+                  {downloads.map((r, i) => (
+                    <DownloadRow key={r.id} resource={r} numeral={romanize(i + 1)} />
+                  ))}
+                </Stack>
+              </Box>
+            )}
+          </Stack>
+        </Grid>
 
-      {/* Video player dialog */}
-      <Dialog
-        open={!!playerUrl}
-        onClose={() => setPlayerUrl(null)}
-        maxWidth="md"
-        fullWidth
-        slotProps={{
-          paper: {
-            sx: {
-              bgcolor: "#000",
-              borderRadius: 2,
-              position: "relative",
-              overflow: "hidden",
-            },
-          },
-        }}
-      >
-        <IconButton
-          onClick={() => setPlayerUrl(null)}
-          sx={{
-            position: "absolute",
-            top: 8,
-            right: 8,
-            color: "#FFFFFF",
-            bgcolor: "rgba(0,0,0,0.5)",
-            zIndex: 2,
-            "&:hover": { bgcolor: "rgba(0,0,0,0.7)" },
-          }}
-          size="small"
-        >
-          <CloseIcon fontSize="small" />
-        </IconButton>
-        {playerUrl && (
-          <Box sx={{ width: "100%", aspectRatio: "16 / 9" }}>
-            <video
-              src={playerUrl}
-              controls
-              autoPlay
-              playsInline
-              style={{ width: "100%", height: "100%", display: "block" }}
-            />
+        {/* CURRICULUM COLUMN */}
+        <Grid size={{ xs: 12, lg: 4 }}>
+          <Box>
+            <Stack direction="row" spacing={1.5} sx={{ alignItems: "baseline", mb: 1.5 }}>
+              <Box
+                component="span"
+                className="hk-numeral"
+                sx={{ fontSize: "0.92rem", color: "var(--gold)" }}
+              >
+                i
+              </Box>
+              <Box aria-hidden sx={{ width: 18, height: "1px", bgcolor: "var(--ink-rule)" }} />
+              <Typography sx={editorialText.eyebrow}>Curriculum</Typography>
+            </Stack>
+            <Typography sx={{ ...editorialText.heading, mb: 0.25 }}>
+              {orderedResources.length} {orderedResources.length === 1 ? "item" : "items"} in this kit
+            </Typography>
+            <Typography sx={{ ...editorialText.meta, mb: 1.5 }}>
+              Stream the videos. Download the rest.
+            </Typography>
+
+            <Box sx={{ borderTop: "1px solid var(--ink-rule)" }}>
+              {orderedResources.map((r, idx) => (
+                <CurriculumRow
+                  key={r.id}
+                  index={idx + 1}
+                  resource={r}
+                  active={r.id === activeId}
+                  onSelect={() => {
+                    if (isVideo(r.kind) && r.external_url) {
+                      playLesson(r);
+                    } else if (r.external_url) {
+                      setActiveId(r.id);
+                    }
+                  }}
+                />
+              ))}
+            </Box>
           </Box>
-        )}
-      </Dialog>
-    </Stack>
+        </Grid>
+      </Grid>
+    </Box>
   );
 }
 
@@ -558,61 +475,123 @@ function BackLink() {
         display: "inline-flex",
         alignItems: "center",
         gap: 0.5,
+        mb: 2,
         fontSize: "0.74rem",
-        color: "#5C6770",
+        letterSpacing: "0.06em",
+        color: ink.fade,
         textDecoration: "none",
-        "&:hover": { color: "#0A1A2F" },
+        transition: "color var(--dur-fast) var(--ease-out)",
+        "&:hover": { color: ink.primary },
+        "&:focus-visible": { outline: "2px solid var(--gold)", outlineOffset: 2 },
       }}
     >
-      <ArrowBackIcon sx={{ fontSize: 14 }} /> All kits
+      <ArrowBackIcon sx={{ fontSize: 13 }} /> All kits
     </Box>
   );
 }
 
-function Stat({ value, label, accent }: { value: string; label: string; accent: string }) {
-  return (
-    <Box>
-      <Typography
-        sx={{
-          fontFamily: "var(--font-display)",
-          fontSize: "1.25rem",
-          fontWeight: 500,
-          color: "#FFFFFF",
-          lineHeight: 1.1,
-        }}
-      >
-        {value}
-      </Typography>
-      <Typography
-        sx={{
-          fontSize: "0.58rem",
-          letterSpacing: "0.16em",
-          fontWeight: 800,
-          color: accent,
-          textTransform: "uppercase",
-          mt: 0.25,
-        }}
-      >
-        {label}
-      </Typography>
-    </Box>
-  );
-}
-
-function ResourceRow({
+function CurriculumRow({
+  index,
   resource,
-  onPlay,
+  active,
+  onSelect,
 }: {
+  index: number;
   resource: ResourceItem;
-  onPlay: (url: string) => void;
+  active: boolean;
+  onSelect: () => void;
 }) {
+  const k = KIND_META[resource.kind] ?? KIND_META.other;
+  const Icon = k.icon;
+  const isVid = isVideo(resource.kind);
+  const completed = !!resource.progress?.completed_at;
+  const viewed = !!resource.progress?.last_viewed_at;
+  const hasUrl = !!resource.external_url;
+
+  return (
+    <Box
+      role="button"
+      tabIndex={hasUrl ? 0 : -1}
+      onClick={hasUrl ? onSelect : undefined}
+      onKeyDown={(e) => {
+        if (hasUrl && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
+      sx={{
+        display: "flex",
+        alignItems: "flex-start",
+        gap: 1.25,
+        py: 1.25,
+        px: active ? 1.25 : 0.5,
+        cursor: hasUrl ? "pointer" : "default",
+        bgcolor: active ? "color-mix(in oklch, var(--gold) 8%, transparent)" : "transparent",
+        borderBottom: "1px solid var(--paper-rule)",
+        transition: "background-color var(--dur-fast) var(--ease-out)",
+        "&:hover": hasUrl ? { bgcolor: active ? "color-mix(in oklch, var(--gold) 12%, transparent)" : "color-mix(in oklch, var(--ink) 4%, transparent)" } : {},
+        "&:focus-visible": { outline: "2px solid var(--gold)", outlineOffset: -2 },
+      }}
+    >
+      <Box
+        component="span"
+        className="hk-numeral"
+        sx={{
+          minWidth: 22,
+          fontSize: "0.85rem",
+          color: completed ? "var(--leaf)" : active ? "var(--gold-deep)" : ink.fade,
+          pt: 0.2,
+          textAlign: "right",
+        }}
+      >
+        {completed ? "✓" : romanize(index)}
+      </Box>
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", mb: 0.25 }}>
+          <Icon sx={{ fontSize: 11, color: ink.fade }} />
+          <Typography
+            sx={{
+              fontSize: "0.58rem",
+              fontWeight: 700,
+              color: ink.fade,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+            }}
+          >
+            {k.badge}
+          </Typography>
+          {resource.duration_label && (
+            <Typography sx={{ fontSize: "0.66rem", color: ink.fade }}>
+              · {resource.duration_label}
+            </Typography>
+          )}
+        </Stack>
+        <Typography
+          sx={{
+            fontSize: "0.84rem",
+            fontWeight: active ? 700 : 500,
+            color: ink.primary,
+            lineHeight: 1.3,
+          }}
+        >
+          {resource.title}
+        </Typography>
+      </Box>
+      {isVid ? (
+        <PlayArrowRoundedIcon sx={{ fontSize: 16, color: active ? "var(--gold-deep)" : ink.fade, mt: 0.25 }} />
+      ) : (
+        <DownloadOutlinedIcon sx={{ fontSize: 13, color: viewed ? "var(--leaf)" : ink.fade, mt: 0.4 }} />
+      )}
+    </Box>
+  );
+}
+
+function DownloadRow({ resource, numeral }: { resource: ResourceItem; numeral: string }) {
   const k = KIND_META[resource.kind] ?? KIND_META.other;
   const Icon = k.icon;
   const url = resource.external_url ?? "";
   const meta = buildMeta(resource);
-  const viewed = !!resource.progress?.last_viewed_at;
   const completed = !!resource.progress?.completed_at;
-  const action = isVideo(resource.kind) ? "Watch" : k.actionLabel;
 
   return (
     <Box
@@ -620,141 +599,63 @@ function ResourceRow({
         display: "flex",
         alignItems: "center",
         gap: 1.5,
-        p: 1.75,
-        borderRadius: 2,
-        border: "1px solid",
-        borderColor: completed ? "rgba(34,108,78,0.3)" : viewed ? "rgba(217,168,75,0.3)" : "divider",
-        bgcolor: "common.white",
-        transition: "all 160ms ease",
-        "&:hover": {
-          borderColor: "#A07823",
-          boxShadow: "0 8px 18px -10px rgba(14,42,61,0.18)",
-        },
+        py: 1.5,
+        borderTop: "1px solid var(--paper-rule)",
+        "&:last-of-type": { borderBottom: "1px solid var(--paper-rule)" },
       }}
     >
       <Box
+        component="span"
+        className="hk-numeral"
         sx={{
-          width: 44,
-          height: 44,
-          borderRadius: 1.5,
-          bgcolor: k.bg,
-          color: k.fg,
-          display: "grid",
-          placeItems: "center",
-          flexShrink: 0,
-          position: "relative",
+          minWidth: 22,
+          fontSize: "0.85rem",
+          color: completed ? "var(--leaf)" : ink.fade,
+          textAlign: "right",
         }}
       >
-        <Icon sx={{ fontSize: 22 }} />
-        {completed && (
-          <Box
-            sx={{
-              position: "absolute",
-              right: -4,
-              top: -4,
-              width: 16,
-              height: 16,
-              borderRadius: "50%",
-              bgcolor: "#1F5C40",
-              color: "#FFFFFF",
-              fontSize: "0.6rem",
-              display: "grid",
-              placeItems: "center",
-              fontWeight: 700,
-            }}
-          >
-            ✓
-          </Box>
-        )}
+        {completed ? "✓" : numeral}
       </Box>
+      <Icon sx={{ fontSize: 18, color: ink.soft, flexShrink: 0 }} />
       <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", mb: 0.25 }}>
-          <Box
-            component="span"
-            sx={{
-              px: 0.7,
-              py: 0.05,
-              borderRadius: 0.5,
-              bgcolor: k.bg,
-              color: k.fg,
-              fontSize: "0.56rem",
-              fontWeight: 800,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-            }}
-          >
-            {k.badge}
-          </Box>
+        <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", mb: 0.15 }}>
+          <InlineTag label={k.badge} tone="neutral" />
         </Stack>
         <Typography
-          sx={{
-            fontSize: "0.88rem",
-            fontWeight: 700,
-            color: "#0A1A2F",
-            lineHeight: 1.25,
-          }}
+          sx={{ fontSize: "0.86rem", fontWeight: 600, color: ink.primary, lineHeight: 1.3 }}
           noWrap
         >
           {resource.title}
         </Typography>
-        <Typography
-          sx={{
-            fontSize: "0.7rem",
-            color: "text.secondary",
-            lineHeight: 1.4,
-            mt: 0.25,
-          }}
-          noWrap
-        >
+        <Typography sx={{ ...editorialText.meta, mt: 0.15 }} noWrap>
           {meta}
         </Typography>
       </Box>
-      {isVideo(resource.kind) ? (
-        <Button
-          size="small"
-          variant="contained"
-          onClick={() => url && onPlay(url)}
-          disabled={!url}
-          startIcon={<PlayArrowRoundedIcon sx={{ fontSize: 14 }} />}
-          sx={{
-            bgcolor: "#0A1A2F",
-            textTransform: "none",
-            fontSize: "0.75rem",
-            fontWeight: 600,
-            px: 1.5,
-            py: 0.55,
-            flexShrink: 0,
-            "&:hover": { bgcolor: "#0F2540" },
-          }}
-        >
-          {action}
-        </Button>
-      ) : (
-        <Button
-          size="small"
-          variant="contained"
-          component="a"
-          href={url || "#"}
-          target="_blank"
-          rel="noopener noreferrer"
-          download
-          onClick={() => void markProgress(resource.id, "view")}
-          disabled={!url}
-          startIcon={<DownloadOutlinedIcon sx={{ fontSize: 14 }} />}
-          sx={{
-            bgcolor: "#0A1A2F",
-            textTransform: "none",
-            fontSize: "0.75rem",
-            fontWeight: 600,
-            px: 1.5,
-            py: 0.55,
-            flexShrink: 0,
-            "&:hover": { bgcolor: "#0F2540" },
-          }}
-        >
-          {action}
-        </Button>
-      )}
+      <Button
+        component="a"
+        href={url || "#"}
+        target="_blank"
+        rel="noopener noreferrer"
+        download
+        onClick={() => void markProgress(resource.id, "view")}
+        disabled={!url}
+        variant="text"
+        size="small"
+        endIcon={<DownloadOutlinedIcon sx={{ fontSize: 13 }} />}
+        sx={{
+          color: "var(--gold-deep)",
+          fontSize: "0.74rem",
+          fontWeight: 700,
+          textTransform: "uppercase",
+          letterSpacing: "0.08em",
+          flexShrink: 0,
+          transition: "color var(--dur-fast) var(--ease-out)",
+          "&:hover": { bgcolor: "transparent", color: "var(--ink)" },
+          "&:focus-visible": { outline: "2px solid var(--gold)", outlineOffset: 2 },
+        }}
+      >
+        Download
+      </Button>
     </Box>
   );
 }
