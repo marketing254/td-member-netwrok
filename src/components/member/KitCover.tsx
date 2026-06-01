@@ -29,6 +29,7 @@ export function KitCover({
   inProgress,
   progressPct = 0,
   size = "md",
+  coverUrl,
 }: {
   slug: string;
   title: string;
@@ -39,6 +40,13 @@ export function KitCover({
   inProgress?: boolean;
   progressPct?: number;
   size?: "sm" | "md";
+  /**
+   * Optional URL to a real cover image (from Supabase Storage / kit-thumbnails).
+   * When provided, it replaces the painted gradient backdrop. All overlays
+   * (badges, play button, title gradient, progress bar) sit on top of it.
+   * Falls back to the painted gradient when null/undefined.
+   */
+  coverUrl?: string | null;
 }) {
   const visual = visualForTopic(slug);
   const Icon = visual.icon;
@@ -55,7 +63,9 @@ export function KitCover({
       sx={{
         position: "relative",
         aspectRatio: "16 / 10",
-        backgroundImage: visual.gradient,
+        backgroundImage: coverUrl ? `url("${coverUrl}")` : visual.gradient,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
         overflow: "hidden",
         borderRadius: 1,
         display: "flex",

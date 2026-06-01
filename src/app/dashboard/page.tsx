@@ -29,6 +29,7 @@ type ResourceItem = {
   topic_slug: string;
   topic_title: string;
   topic_summary: string | null;
+  topic_thumbnail_url: string | null;
   title: string;
   kind: string;
   is_free: boolean;
@@ -39,6 +40,7 @@ type TopicCard = {
   slug: string;
   title: string;
   summary: string | null;
+  coverUrl: string | null;
   resourceCount: number;
   videoCount: number;
   viewedCount: number;
@@ -107,6 +109,7 @@ export default function DashboardHome() {
           slug: r.topic_slug,
           title: r.topic_title,
           summary: r.topic_summary,
+          coverUrl: r.topic_thumbnail_url,
           resourceCount: 1,
           videoCount: isVideo ? 1 : 0,
           viewedCount: viewed ? 1 : 0,
@@ -450,6 +453,7 @@ function DashboardKitTile({ topic }: { topic: TopicCard }) {
           completed={completed}
           inProgress={inProgress}
           progressPct={progressPct}
+          coverUrl={topic.coverUrl}
         />
       </Box>
       <Typography sx={{ ...editorialText.meta, mt: "auto" }}>

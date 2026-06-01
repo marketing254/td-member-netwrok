@@ -238,6 +238,7 @@ export type ResourcesRow = {
   topic_slug: string;
   topic_title: string;
   topic_summary: string | null;
+  topic_thumbnail_url: string | null;
   title: string;
   description: string | null;
   kind: ResourceKind;
