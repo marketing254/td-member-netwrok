@@ -223,6 +223,7 @@ export const footerLinks = {
 
 export const navLinks = [
   { label: "What You Get", href: "#features" },
+  { label: "Resources", href: "/resources" },
   { label: "Pricing", href: "#pricing" },
   { label: "Join Waitlist", href: "#waitlist" },
   { label: "FAQ", href: "#faq" },
