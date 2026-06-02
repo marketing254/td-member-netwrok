@@ -279,6 +279,17 @@ export type MemberResourceProgressRow = {
   updated_at: string;
 };
 
+export type MemberAssistantMessageRow = {
+  id: string;
+  member_id: string;
+  role: "user" | "assistant";
+  content: string;
+  tokens_input: number | null;
+  tokens_output: number | null;
+  blocked_reason: string | null;
+  created_at: string;
+};
+
 export type RedemptionsRow = {
   id: string;
   offer_id: string;
@@ -403,6 +414,7 @@ export type Database = {
       notifications: Table<NotificationsRow>;
       resources: Table<ResourcesRow>;
       member_resource_progress: Table<MemberResourceProgressRow>;
+      member_assistant_messages: Table<MemberAssistantMessageRow>;
     };
     Views: {
       waitlist_counts: View<{

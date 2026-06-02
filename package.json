@@ -17,6 +17,7 @@
     "@mui/material-nextjs": "^9.0.0",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
+    "@anthropic-ai/sdk": "^0.100.1",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.105.4",
     "framer-motion": "^12.38.0",

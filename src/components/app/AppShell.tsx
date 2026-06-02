@@ -30,6 +30,7 @@ import KeyboardArrowDownOutlinedIcon from "@mui/icons-material/KeyboardArrowDown
 import Logo from "@/components/brand/Logo";
 import { useSignOut } from "@/lib/auth/identity";
 import { useCurrentMember } from "@/lib/hooks/useCurrentMember";
+import { MemberAssistant } from "@/components/member/MemberAssistant";
 
 const SIDEBAR_W = 220;
 
@@ -387,6 +388,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           © 2026 Dental Member Network · Powered by Thriving Dentist
         </Box>
       </Box>
+
+      {/* Concierge bot — floats bottom-right on every member portal page */}
+      <MemberAssistant />
     </Box>
   );
 }

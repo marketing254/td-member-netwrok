@@ -62,16 +62,24 @@ export function BookCoachingCard({ topicTitle }: { topicTitle?: string }) {
             sx={{ alignItems: { sm: "center" }, flex: 1, minWidth: 0 }}
           >
             <Avatar
+              alt="Gary Takacs"
+              src="/team/gary-takacs.jpg"
               sx={{
-                width: 56,
-                height: 56,
+                width: { xs: 60, md: 68 },
+                height: { xs: 60, md: 68 },
                 bgcolor: "var(--ink, #0A1A2F)",
                 color: "var(--gold, #F0C16E)",
                 fontFamily: "var(--font-display)",
-                fontSize: "1.15rem",
+                fontSize: "1.2rem",
                 fontWeight: 600,
-                border: "1px solid rgba(217,168,75,0.4)",
+                border: "2px solid rgba(217,168,75,0.45)",
+                boxShadow: "0 6px 16px -8px rgba(14,42,61,0.3)",
                 flexShrink: 0,
+                "& img": {
+                  // Subtly favor the face — most headshots have the subject
+                  // slightly above center, so anchor the focal point upward.
+                  objectPosition: "center 22%",
+                },
               }}
             >
               GT
