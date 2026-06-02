@@ -32,20 +32,23 @@ function buildCsp(): string {
     // it just silences the CSP console errors on preview URLs. The same
     // CSP ships to production (where vercel.live is never loaded), so this
     // doesn't expand the attack surface for real users.
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://www.googletagmanager.com https://vercel.live",
+    // YCBM (YouCanBookMe) embed.ycb.me + youcanbook.me — the coaching-session
+    // booking widget on member kit detail pages.
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://www.googletagmanager.com https://vercel.live https://embed.ycb.me https://*.ycb.me https://*.youcanbook.me",
     "worker-src 'self' blob:",
     "child-src 'self' blob:",
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://vercel.live",
-    "font-src 'self' https://fonts.gstatic.com https://vercel.live https://assets.vercel.com data:",
-    `img-src 'self' data: blob: ${supabaseHttps} https://www.google-analytics.com https://www.googletagmanager.com https://vercel.live https://vercel.com`,
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://vercel.live https://*.ycb.me https://*.youcanbook.me",
+    "font-src 'self' https://fonts.gstatic.com https://vercel.live https://assets.vercel.com https://*.ycb.me https://*.youcanbook.me data:",
+    `img-src 'self' data: blob: ${supabaseHttps} https://www.google-analytics.com https://www.googletagmanager.com https://vercel.live https://vercel.com https://*.ycb.me https://*.youcanbook.me`,
     // media-src controls <video> and <audio> sources. Without this, videos
     // from Supabase Storage are blocked because default-src 'self' falls back.
     `media-src 'self' blob: ${supabaseHttps}`,
-    `connect-src 'self' ${supabaseHttps} ${supabaseWss} https://cdn.jsdelivr.net https://fonts.gstatic.com https://www.google-analytics.com https://www.googletagmanager.com https://analytics.google.com https://vercel.live https://*.pusher.com wss://*.pusher.com`,
+    `connect-src 'self' ${supabaseHttps} ${supabaseWss} https://cdn.jsdelivr.net https://fonts.gstatic.com https://www.google-analytics.com https://www.googletagmanager.com https://analytics.google.com https://vercel.live https://*.pusher.com wss://*.pusher.com https://*.ycb.me https://*.youcanbook.me`,
     // frame-src controls <iframe> sources. Supabase is needed so the resource
     // viewer can render PDFs inline; Microsoft Office Online viewer is needed
-    // for slide decks (.pptx).
-    `frame-src 'self' ${supabaseHttps} https://view.officeapps.live.com https://vercel.live`,
+    // for slide decks (.pptx). YCBM domains let the booking widget render
+    // the calendar iframe.
+    `frame-src 'self' ${supabaseHttps} https://view.officeapps.live.com https://vercel.live https://*.ycb.me https://*.youcanbook.me`,
     "frame-ancestors 'none'",
     "form-action 'self'",
     "base-uri 'self'",

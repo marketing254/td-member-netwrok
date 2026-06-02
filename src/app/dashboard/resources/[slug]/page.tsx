@@ -27,6 +27,7 @@ import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import type { SvgIconComponent } from "@mui/icons-material";
 import { visualForTopic } from "@/components/member/topicVisuals";
 import { InlineTag, editorialText, ink } from "@/components/member/Editorial";
+import { BookCoachingCard } from "@/components/member/BookCoachingCard";
 
 type Progress = {
   last_viewed_at: string | null;
@@ -564,6 +565,12 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
           </Box>
         </Grid>
       </Grid>
+
+      {/* 1-on-1 coaching booking — every kit page surfaces this so members
+          can take what they just learned into a focused call with Gary. */}
+      <Box sx={{ mt: { xs: 4, lg: 5 } }}>
+        <BookCoachingCard topicTitle={topicTitle} />
+      </Box>
     </Box>
   );
 }

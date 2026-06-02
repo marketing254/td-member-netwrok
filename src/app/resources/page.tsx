@@ -608,7 +608,8 @@ function PublicKitCard({ kit, onClick }: { kit: Kit; onClick: () => void }) {
           </Typography>
         </Box>
 
-        {/* Bottom-right meta */}
+        {/* Bottom-right meta — show TOTAL resources in the kit (video count
+            is signalled by the play icon when applicable). */}
         <Box
           sx={{
             position: "absolute",
@@ -628,12 +629,8 @@ function PublicKitCard({ kit, onClick }: { kit: Kit; onClick: () => void }) {
             zIndex: 2,
           }}
         >
-          {kit.videoCount > 0 && (
-            <PlayArrowRoundedIcon sx={{ fontSize: 11 }} />
-          )}
-          {kit.videoCount > 0
-            ? `${kit.videoCount} video${kit.videoCount === 1 ? "" : "s"}`
-            : `${kit.itemCount} items`}
+          {kit.videoCount > 0 && <PlayArrowRoundedIcon sx={{ fontSize: 11 }} />}
+          {`${kit.itemCount} ${kit.itemCount === 1 ? "resource" : "resources"}`}
         </Box>
       </Box>
 

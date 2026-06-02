@@ -235,9 +235,7 @@ export function KitCover({
                   textTransform: "uppercase",
                 }}
               >
-                {hasVideo
-                  ? `${videoCount} ${videoCount === 1 ? "video" : "videos"}`
-                  : `${resourceCount} ${resourceCount === 1 ? "item" : "items"}`}
+                {`${resourceCount} ${resourceCount === 1 ? "resource" : "resources"}`}
               </Typography>
             </Stack>
             {!hasVideo && resourceCount > 0 && (
