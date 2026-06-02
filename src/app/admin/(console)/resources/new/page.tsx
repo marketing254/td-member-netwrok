@@ -113,24 +113,121 @@ export default function NewKitPage() {
     return bytes;
   }, [files]);
 
+  // Upload progress, keyed by field. 0..1 per file, null = not started.
+  const [progress, setProgress] = useState<Record<string, number | null>>({});
+  const [progressLabel, setProgressLabel] = useState<string | null>(null);
+
+  /**
+   * Get a signed PUT URL from our server, then upload the file directly to
+   * Supabase Storage. This bypasses Vercel's 4.5MB serverless body limit,
+   * so the 17MB+ training video uploads cleanly.
+   */
+  const uploadOne = async (
+    bucket: "member-resources" | "kit-thumbnails",
+    field: string,
+    file: File,
+    storagePath: string,
+  ): Promise<{ storagePath: string; publicUrl: string; mime: string; sizeBytes: number }> => {
+    const urlRes = await fetch("/api/admin/resources/upload-url", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bucket, path: storagePath }),
+    });
+    const urlBody = await urlRes.json().catch(() => ({}));
+    if (!urlRes.ok) {
+      throw new Error(urlBody?.error ?? `Failed to get upload URL (${urlRes.status})`);
+    }
+
+    setProgress((p) => ({ ...p, [field]: 0 }));
+
+    // XHR so we can observe upload progress (fetch doesn't expose it).
+    await new Promise<void>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("PUT", urlBody.signedUrl);
+      xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+      xhr.setRequestHeader("x-upsert", "true");
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+          setProgress((p) => ({ ...p, [field]: e.loaded / e.total }));
+        }
+      };
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          setProgress((p) => ({ ...p, [field]: 1 }));
+          resolve();
+        } else {
+          reject(new Error(`Upload failed (${xhr.status}): ${xhr.responseText}`));
+        }
+      };
+      xhr.onerror = () => reject(new Error("Network error during upload"));
+      xhr.send(file);
+    });
+
+    return {
+      storagePath,
+      publicUrl: urlBody.publicUrl,
+      mime: file.type || "application/octet-stream",
+      sizeBytes: file.size,
+    };
+  };
+
   const onSubmit = async () => {
     setSubmitting(true);
     setError(null);
     setSuccess(null);
+    setProgress({});
+    setProgressLabel(null);
+
     try {
-      const fd = new FormData();
-      fd.set("slug", effectiveSlug);
-      fd.set("title", title.trim());
-      if (category) fd.set("category", category);
-      if (summary.trim()) fd.set("summary", summary.trim());
-      if (approveOnSubmit) fd.set("approveOnSubmit", "1");
-      for (const [field, file] of Object.entries(files)) {
-        if (file) fd.set(field, file);
+      // 1. Upload covers (if any) to kit-thumbnails
+      let portalCardUrl: string | null = null;
+      let resourceCardUrl: string | null = null;
+
+      for (const c of COVER_FIELDS) {
+        const file = files[c.field];
+        if (!file) continue;
+        setProgressLabel(`Uploading ${c.label}…`);
+        const ext = (file.name.split(".").pop() ?? "png").toLowerCase().replace(/[^a-z0-9]/g, "");
+        const storagePath = `${effectiveSlug}/${c.field === "portal_card" ? "portal-card" : "resource-card"}.${ext}`;
+        const up = await uploadOne("kit-thumbnails", c.field, file, storagePath);
+        if (c.field === "portal_card") portalCardUrl = up.publicUrl;
+        else resourceCardUrl = up.publicUrl;
       }
 
+      // 2. Upload content files to member-resources
+      const uploaded: Array<{
+        fieldKey: string;
+        storagePath: string;
+        publicUrl: string;
+        mime: string;
+        sizeBytes: number;
+      }> = [];
+
+      for (const c of CONTENT_FIELDS) {
+        const file = files[c.field];
+        if (!file) continue;
+        setProgressLabel(`Uploading ${c.label}…`);
+        const safeName = file.name.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9._-]/g, "");
+        const storagePath = `${effectiveSlug}/${safeName}`;
+        const up = await uploadOne("member-resources", c.field, file, storagePath);
+        uploaded.push({ fieldKey: c.field, ...up });
+      }
+
+      // 3. Tell our server to insert the DB rows now that storage is loaded
+      setProgressLabel("Finalising…");
       const res = await fetch("/api/admin/resources", {
         method: "POST",
-        body: fd,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: effectiveSlug,
+          title: title.trim(),
+          category: category || null,
+          summary: summary.trim() || null,
+          approveOnSubmit,
+          portalCardUrl,
+          resourceCardUrl,
+          files: uploaded,
+        }),
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -142,12 +239,12 @@ export default function NewKitPage() {
           ? `Kit "${title}" published. ${body.rowsInserted} rows inserted.`
           : `Kit "${title}" submitted for review. ${body.rowsInserted} rows inserted.`,
       );
-      // Bounce back to the list after a short pause so the admin sees the result
       setTimeout(() => router.push("/admin/resources"), 1400);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Submit failed.");
     } finally {
       setSubmitting(false);
+      setProgressLabel(null);
     }
   };
 
@@ -263,6 +360,7 @@ export default function NewKitPage() {
                     key={f.field}
                     field={f}
                     file={files[f.field] ?? null}
+                    progress={progress[f.field] ?? null}
                     onChange={(file) => setFile(f.field, file)}
                   />
                 ))}
@@ -281,6 +379,7 @@ export default function NewKitPage() {
                     key={f.field}
                     field={f}
                     file={files[f.field] ?? null}
+                    progress={progress[f.field] ?? null}
                     onChange={(file) => setFile(f.field, file)}
                   />
                 ))}
@@ -361,8 +460,24 @@ export default function NewKitPage() {
                       : "Submit for review"}
                 </Button>
 
+                {progressLabel && (
+                  <Box
+                    sx={{
+                      mt: 0.5,
+                      p: 1.25,
+                      borderRadius: 0.75,
+                      bgcolor: "rgba(217,168,75,0.08)",
+                      border: "1px solid rgba(217,168,75,0.25)",
+                    }}
+                  >
+                    <Typography sx={{ fontSize: "0.78rem", fontWeight: 600, color: "#7A5B17" }}>
+                      {progressLabel}
+                    </Typography>
+                  </Box>
+                )}
+
                 <Typography sx={{ fontSize: "0.7rem", color: "#5C6770", lineHeight: 1.5 }}>
-                  Files upload to Supabase Storage. Large videos can take a couple of minutes — don&apos;t close the tab while it&apos;s working.
+                  Files upload directly to Supabase Storage from your browser. Large videos can take a couple of minutes — don&apos;t close the tab while it&apos;s working.
                 </Typography>
               </Stack>
             </SectionCard>
@@ -407,30 +522,67 @@ function SectionCard({
 function FilePicker({
   field,
   file,
+  progress,
   onChange,
 }: {
   field: FileField;
   file: File | null;
+  progress: number | null;
   onChange: (file: File | null) => void;
 }) {
   const inputId = `file-${field.field}`;
+  const uploading = progress !== null && progress < 1;
+  const uploaded = progress === 1;
   return (
     <Box
       sx={{
+        position: "relative",
         display: "flex",
         alignItems: "center",
         gap: 1.5,
         p: 1.5,
         borderRadius: 1,
         border: "1px solid rgba(14,42,61,0.08)",
-        bgcolor: file ? "rgba(34,108,78,0.04)" : "rgba(14,42,61,0.02)",
-        borderColor: file ? "rgba(34,108,78,0.28)" : "rgba(14,42,61,0.08)",
+        bgcolor: uploaded
+          ? "rgba(34,108,78,0.06)"
+          : file
+            ? "rgba(34,108,78,0.04)"
+            : "rgba(14,42,61,0.02)",
+        borderColor: uploaded
+          ? "rgba(34,108,78,0.4)"
+          : file
+            ? "rgba(34,108,78,0.28)"
+            : "rgba(14,42,61,0.08)",
         transition: "border-color 160ms ease, background-color 160ms ease",
+        overflow: "hidden",
       }}
     >
-      <Box sx={{ flex: 1, minWidth: 0 }}>
+      {/* Progress bar background — fills left-to-right while uploading */}
+      {progress !== null && (
+        <Box
+          aria-hidden
+          sx={{
+            position: "absolute",
+            inset: 0,
+            background: `linear-gradient(90deg, rgba(34,108,78,0.10) 0%, rgba(34,108,78,0.10) ${progress * 100}%, transparent ${progress * 100}%)`,
+            pointerEvents: "none",
+            transition: "background 200ms ease",
+          }}
+        />
+      )}
+      <Box sx={{ flex: 1, minWidth: 0, position: "relative" }}>
         <Typography sx={{ fontSize: "0.82rem", fontWeight: 600, color: "#0A1A2F" }}>
           {field.label}
+          {uploaded && (
+            <Box component="span" sx={{ ml: 0.75, fontSize: "0.66rem", color: "#1F5C40", fontWeight: 700, letterSpacing: "0.08em" }}>
+              · UPLOADED
+            </Box>
+          )}
+          {uploading && (
+            <Box component="span" sx={{ ml: 0.75, fontSize: "0.66rem", color: "#A07823", fontWeight: 700, letterSpacing: "0.08em" }}>
+              · {Math.round((progress ?? 0) * 100)}%
+            </Box>
+          )}
         </Typography>
         <Typography sx={{ fontSize: "0.7rem", color: "#5C6770", lineHeight: 1.4 }}>
           {file ? `${file.name} — ${formatBytes(file.size)}` : field.description}

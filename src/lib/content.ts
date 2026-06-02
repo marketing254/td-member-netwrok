@@ -207,6 +207,7 @@ export const footer = {
 export const footerLinks = {
   Network: [
     { label: "What You Get", href: "#features" },
+    { label: "Resources", href: "/resources" },
     { label: "Pricing", href: "#pricing" },
     { label: "Waitlist", href: "#waitlist" },
     { label: "FAQ", href: "#faq" },

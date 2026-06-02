@@ -107,28 +107,21 @@ export async function GET() {
 /**
  * POST /api/admin/resources
  *
- * Submit a new kit via multipart/form-data.
+ * Finalize a kit submission. By the time this is called, the browser has
+ * already uploaded each file directly to Supabase Storage via signed URLs
+ * (see /api/admin/resources/upload-url), so this endpoint only deals with
+ * the JSON metadata and the database inserts. That avoids Vercel's 4.5MB
+ * body limit which previously broke uploads of the training video (~17MB).
  *
- * Required form fields:
- *   slug            — URL-safe slug (lowercase a-z 0-9 hyphens)
- *   title           — display title
- *   category        — one of Practice Management / Front Desk / Team & Culture / Patient Experience (or custom)
- *   summary         — kit summary
- *   approveOnSubmit — "1" to mark approved immediately (admin role check below);
- *                     otherwise the kit lands as pending_review
- *
- * File fields (any combination, all optional individually but at least one
- * content file required to create rows):
- *   portal_card     — square cover (image/*) for the member portal grid
- *   resource_card   — wide hero (image/*) for landing + kit detail
- *   training_video  — kind=video_full
- *   action_guide    — kind=action_guide
- *   checklist       — kind=checklist
- *   worksheet       — kind=worksheet
- *   key_takeaways   — kind=key_takeaways
- *   slide_deck_pdf  — kind=slide_deck (PDF)
- *   slide_deck_pptx — kind=slide_deck (PPTX, title="Slide Deck (PowerPoint)")
- *   wall_poster     — kind=other (PDF, title="Wall Poster")
+ * Body (JSON):
+ *   {
+ *     slug, title, category, summary, approveOnSubmit,
+ *     portalCardUrl, resourceCardUrl,
+ *     files: [
+ *       { fieldKey, storagePath, publicUrl, mime, sizeBytes },
+ *       ...
+ *     ]
+ *   }
  */
 const FILE_FIELD_MAP: Record<
   string,
@@ -146,23 +139,38 @@ const FILE_FIELD_MAP: Record<
 
 const SLUG_RE = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
 
+type FileSubmission = {
+  fieldKey: string;
+  storagePath: string;
+  publicUrl: string;
+  mime: string;
+  sizeBytes: number;
+};
+
+type SubmissionBody = {
+  slug?: string;
+  title?: string;
+  category?: string | null;
+  summary?: string | null;
+  approveOnSubmit?: boolean;
+  portalCardUrl?: string | null;
+  resourceCardUrl?: string | null;
+  files?: FileSubmission[];
+};
+
 export async function POST(req: Request) {
   const guard = await requireAdmin();
   if (!guard.ok) return guard.response;
 
-  let form: FormData;
-  try {
-    form = await req.formData();
-  } catch {
-    return NextResponse.json({ error: "Invalid multipart form-data body" }, { status: 400 });
-  }
+  const body = (await req.json().catch(() => ({}))) as SubmissionBody;
 
-  // ---- 1. Validate metadata fields
-  const slug = String(form.get("slug") ?? "").trim().toLowerCase();
-  const title = String(form.get("title") ?? "").trim();
-  const category = String(form.get("category") ?? "").trim() || null;
-  const summary = String(form.get("summary") ?? "").trim() || null;
-  const approveOnSubmit = String(form.get("approveOnSubmit") ?? "") === "1";
+  // ---- 1. Validate metadata
+  const slug = String(body.slug ?? "").trim().toLowerCase();
+  const title = String(body.title ?? "").trim();
+  const category = body.category?.toString().trim() || null;
+  const summary = body.summary?.toString().trim() || null;
+  const approveOnSubmit = !!body.approveOnSubmit;
+  const files = Array.isArray(body.files) ? body.files : [];
 
   if (!slug || !SLUG_RE.test(slug)) {
     return NextResponse.json(
@@ -173,11 +181,15 @@ export async function POST(req: Request) {
   if (!title) {
     return NextResponse.json({ error: "Title is required." }, { status: 400 });
   }
+  if (files.length === 0) {
+    return NextResponse.json(
+      { error: "At least one content file is required." },
+      { status: 400 },
+    );
+  }
 
   const sb = getSupabaseAdmin();
 
-  // Refuse if a kit with this slug already exists — admins use the existing
-  // edit/approve actions instead of re-submitting.
   const { data: existing } = await sb
     .from("resources")
     .select("id")
@@ -190,34 +202,7 @@ export async function POST(req: Request) {
     );
   }
 
-  // ---- 2. Upload the two covers (if provided)
-  let portalCardUrl: string | null = null;
-  let resourceCardUrl: string | null = null;
-
-  async function uploadCover(field: string, storageName: string): Promise<string | null> {
-    const file = form.get(field);
-    if (!(file instanceof File) || file.size === 0) return null;
-    const ext = (file.name.split(".").pop() ?? "png").toLowerCase();
-    const path = `${slug}/${storageName}.${ext.replace(/[^a-z0-9]/g, "")}`;
-    const buf = Buffer.from(await file.arrayBuffer());
-    const { error } = await sb.storage.from("kit-thumbnails").upload(path, buf, {
-      contentType: file.type || "image/png",
-      upsert: true,
-      cacheControl: "31536000",
-    });
-    if (error) throw new Error(`Cover "${field}" upload failed: ${error.message}`);
-    const { data: pub } = sb.storage.from("kit-thumbnails").getPublicUrl(path);
-    return pub.publicUrl;
-  }
-
-  try {
-    portalCardUrl = await uploadCover("portal_card", "portal-card");
-    resourceCardUrl = await uploadCover("resource_card", "resource-card");
-  } catch (err) {
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Cover upload failed" }, { status: 500 });
-  }
-
-  // ---- 3. Upload content files + collect rows to insert
+  // ---- 2. Validate each file reference + map to its kind metadata
   type RowInput = {
     title: string;
     kind: string;
@@ -229,46 +214,32 @@ export async function POST(req: Request) {
   };
 
   const rowsToInsert: RowInput[] = [];
-
-  for (const [field, meta] of Object.entries(FILE_FIELD_MAP)) {
-    const file = form.get(field);
-    if (!(file instanceof File) || file.size === 0) continue;
-
-    const safeName = file.name.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9._-]/g, "");
-    const storagePath = `${slug}/${safeName}`;
-    const buf = Buffer.from(await file.arrayBuffer());
-    const { error: upErr } = await sb.storage.from("member-resources").upload(storagePath, buf, {
-      contentType: file.type || "application/octet-stream",
-      upsert: true,
-    });
-    if (upErr) {
+  for (const f of files) {
+    const meta = FILE_FIELD_MAP[f.fieldKey];
+    if (!meta) {
       return NextResponse.json(
-        { error: `File "${field}" upload failed: ${upErr.message}` },
-        { status: 500 },
+        { error: `Unknown file field "${f.fieldKey}".` },
+        { status: 400 },
       );
     }
-    const { data: pub } = sb.storage.from("member-resources").getPublicUrl(storagePath);
+    if (!f.storagePath || !f.publicUrl) {
+      return NextResponse.json(
+        { error: `Missing storagePath/publicUrl on "${f.fieldKey}".` },
+        { status: 400 },
+      );
+    }
     rowsToInsert.push({
       title: meta.title,
       kind: meta.kind,
-      storagePath,
-      externalUrl: pub.publicUrl,
-      mime: file.type || "application/octet-stream",
-      sizeBytes: file.size,
+      storagePath: f.storagePath,
+      externalUrl: f.publicUrl,
+      mime: f.mime || "application/octet-stream",
+      sizeBytes: f.sizeBytes || 0,
       position: meta.position,
     });
   }
 
-  if (rowsToInsert.length === 0) {
-    return NextResponse.json(
-      { error: "At least one content file is required (training video, action guide, etc.)." },
-      { status: 400 },
-    );
-  }
-
-  // ---- 4. Insert resource rows.
-  //         Submitter is always the current admin; status is approved if the
-  //         admin ticked "approve on submit", otherwise pending_review.
+  // ---- 3. Insert resource rows
   const submission_status = approveOnSubmit ? "approved" : "pending_review";
   const now = new Date().toISOString();
 
@@ -277,8 +248,8 @@ export async function POST(req: Request) {
     topic_title: title,
     topic_summary: summary,
     category,
-    portal_card_url: portalCardUrl,
-    resource_card_url: resourceCardUrl,
+    portal_card_url: body.portalCardUrl ?? null,
+    resource_card_url: body.resourceCardUrl ?? null,
     title: r.title,
     description: null,
     kind: r.kind,

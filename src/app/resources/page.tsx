@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Box,
@@ -32,6 +32,8 @@ type Kit = {
   videoCount: number;
   itemCount: number;
   isFree: boolean;
+  previewVideoUrl: string | null;
+  featured: boolean;
 };
 
 type FilterKey = "all" | "free" | string;
@@ -339,9 +341,110 @@ function FilterLink({
   );
 }
 
+/**
+ * YouTube-style scroll/hover preview hook.
+ *
+ * When the card has been ~70% in view for 700ms (or the user hovers it on
+ * desktop) the muted video starts playing from the beginning. When the card
+ * scrolls out of view (or hover ends) it pauses and resets. The preview
+ * stops after 14s so we don't drain the user's data on a long-loaded page.
+ *
+ * Pass `enabled=false` and it short-circuits to no-ops — used so non-featured
+ * cards can call the same hook without doing any work.
+ */
+function useFeaturedPreview(enabled: boolean) {
+  const cardRef = useRef<HTMLDivElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [playing, setPlaying] = useState(false);
+
+  useEffect(() => {
+    if (!enabled) return;
+    const card = cardRef.current;
+    const video = videoRef.current;
+    if (!card || !video) return;
+
+    let inView = false;
+    let hovered = false;
+    let dwellTimer: number | undefined;
+    let stopTimer: number | undefined;
+
+    const tryPlay = () => {
+      window.clearTimeout(dwellTimer);
+      dwellTimer = window.setTimeout(() => {
+        if (!(inView || hovered)) return;
+        try {
+          video.currentTime = 0;
+          void video.play().then(
+            () => setPlaying(true),
+            () => {
+              /* autoplay may be blocked; that's fine */
+            },
+          );
+        } catch {
+          /* ignore */
+        }
+        // Auto-stop after 14s so the user gets a teaser, not the full video.
+        window.clearTimeout(stopTimer);
+        stopTimer = window.setTimeout(() => stop(), 14_000);
+      }, 700);
+    };
+
+    const stop = () => {
+      window.clearTimeout(dwellTimer);
+      window.clearTimeout(stopTimer);
+      try {
+        video.pause();
+        video.currentTime = 0;
+      } catch {
+        /* ignore */
+      }
+      setPlaying(false);
+    };
+
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        inView = entry.isIntersecting && entry.intersectionRatio >= 0.65;
+        if (inView) tryPlay();
+        else stop();
+      },
+      { threshold: [0, 0.65, 1] },
+    );
+    io.observe(card);
+
+    const onEnter = () => {
+      hovered = true;
+      tryPlay();
+    };
+    const onLeave = () => {
+      hovered = false;
+      stop();
+    };
+    card.addEventListener("mouseenter", onEnter);
+    card.addEventListener("mouseleave", onLeave);
+
+    return () => {
+      io.disconnect();
+      card.removeEventListener("mouseenter", onEnter);
+      card.removeEventListener("mouseleave", onLeave);
+      window.clearTimeout(dwellTimer);
+      window.clearTimeout(stopTimer);
+      stop();
+    };
+  }, [enabled]);
+
+  return { cardRef, videoRef, playing };
+}
+
 function PublicKitCard({ kit, onClick }: { kit: Kit; onClick: () => void }) {
+  // For the featured kit, hook up the YouTube-style scroll/hover preview.
+  // For every other kit, this hook returns inert values and renders nothing.
+  const { cardRef, videoRef, playing } = useFeaturedPreview(
+    kit.featured && !!kit.previewVideoUrl,
+  );
+
   return (
     <Box
+      ref={cardRef}
       role="button"
       tabIndex={0}
       onClick={onClick}
@@ -377,6 +480,56 @@ function PublicKitCard({ kit, onClick }: { kit: Kit; onClick: () => void }) {
           isolation: "isolate",
         }}
       >
+        {/* Muted preview video — only mounted for the featured kit, only
+            visible once it actually starts playing so the still image
+            stays clean otherwise. */}
+        {kit.featured && kit.previewVideoUrl && (
+          <Box
+            component="video"
+            ref={videoRef}
+            src={kit.previewVideoUrl}
+            muted
+            playsInline
+            preload="metadata"
+            sx={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              zIndex: 0,
+              opacity: playing ? 1 : 0,
+              transition: "opacity 280ms ease",
+              pointerEvents: "none",
+            }}
+          />
+        )}
+        {/* "PREVIEW" pill shown only while the featured preview is playing */}
+        {kit.featured && playing && (
+          <Box
+            sx={{
+              position: "absolute",
+              top: 12,
+              right: 12,
+              zIndex: 3,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 0.4,
+              height: 20,
+              px: 0.85,
+              borderRadius: 0.5,
+              bgcolor: "rgba(140,29,29,0.9)",
+              color: "#FFFFFF",
+              fontSize: "0.6rem",
+              fontWeight: 800,
+              letterSpacing: "0.14em",
+              textShadow: "0 1px 2px rgba(0,0,0,0.4)",
+            }}
+          >
+            <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: "#FFFFFF" }} />
+            PREVIEW
+          </Box>
+        )}
         {/* Lock overlay — soft, restrained */}
         <Box
           aria-hidden
