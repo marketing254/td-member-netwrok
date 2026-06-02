@@ -32,7 +32,7 @@ export function KitCover({
   inProgress,
   progressPct = 0,
   size = "md",
-  coverUrl,
+  portalCardUrl,
 }: {
   slug: string;
   title: string;
@@ -44,17 +44,18 @@ export function KitCover({
   progressPct?: number;
   size?: "sm" | "md";
   /**
-   * Optional URL to a real cover image (from Supabase Storage / kit-thumbnails).
+   * Square portal-card image (from Supabase Storage / kit-thumbnails).
    * When provided, the cover is treated as authoritative — we don't paint our
-   * own title or text on top of it.
+   * own title or text on top of it (the title is already baked into the
+   * artwork). Falls back to the painted gradient when null/undefined.
    */
-  coverUrl?: string | null;
+  portalCardUrl?: string | null;
 }) {
   const visual = visualForTopic(slug);
   const Icon = visual.icon;
   const hasVideo = videoCount > 0;
   const showProgress = progressPct > 0;
-  const hasCover = !!coverUrl;
+  const hasCover = !!portalCardUrl;
 
   // Typography for the painted-gradient fallback
   const titleFontSize = size === "sm"
@@ -65,11 +66,11 @@ export function KitCover({
     <Box
       sx={{
         position: "relative",
-        // Real cover images are 16:9 (1280x720). Match that exactly so the
-        // images render edge-to-edge with zero cropping. The painted fallback
-        // also works fine at 16:9.
-        aspectRatio: "16 / 9",
-        backgroundImage: hasCover ? `url("${coverUrl}")` : visual.gradient,
+        // Portal cards are square (Cover - Square (social).png at 2160x2160).
+        // Match the source aspect exactly so the artwork renders edge-to-edge
+        // with zero cropping; the painted gradient fallback also works square.
+        aspectRatio: "1 / 1",
+        backgroundImage: hasCover ? `url("${portalCardUrl}")` : visual.gradient,
         backgroundSize: "cover",
         backgroundPosition: "center",
         bgcolor: "var(--ink, #0A1A2F)",

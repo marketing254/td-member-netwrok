@@ -39,6 +39,9 @@ type ResourceItem = {
   topic_slug: string;
   topic_title: string;
   topic_summary: string | null;
+  category: string | null;
+  portal_card_url: string | null;
+  resource_card_url: string | null;
   title: string;
   description: string | null;
   kind: string;
@@ -83,7 +86,9 @@ function isVideo(kind: string): boolean {
 }
 
 /**
- * Kinds we can preview inline as a PDF iframe directly from Supabase.
+ * Kinds that always render as PDF in the inline iframe (regardless of
+ * mime_type), kept for resources that the upload pipeline classifies into
+ * one of these even when the file extension is missing or weird.
  */
 const PDF_KINDS = new Set([
   "action_guide",
@@ -93,35 +98,44 @@ const PDF_KINDS = new Set([
   "email_sequence",
 ]);
 
-function isPdf(kind: string): boolean {
-  return PDF_KINDS.has(kind);
+/**
+ * Any application/pdf file previews inline, regardless of its kind.
+ * (Wall Poster.pdf is kind='other' but is still a PDF; we want it to render.)
+ */
+function isPdf(r: { kind: string; mime_type: string | null }): boolean {
+  return PDF_KINDS.has(r.kind) || r.mime_type === "application/pdf";
 }
 
 /**
  * PowerPoint slide decks — browsers can't render .pptx natively, but
  * Microsoft Office Online has a free public embed viewer that does.
+ * Only the .pptx file itself gets the Office viewer; the matching .pdf
+ * version (also classified as slide_deck) is handled by the PDF path.
  */
-function isOffice(kind: string): boolean {
-  return kind === "slide_deck";
+function isOffice(r: { kind: string; mime_type: string | null }): boolean {
+  return (
+    r.kind === "slide_deck" &&
+    r.mime_type ===
+      "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+  );
 }
 
 /**
  * Anything we can show inline in the player canvas (with the right iframe).
  */
-function isPreviewable(kind: string): boolean {
-  return isPdf(kind) || isOffice(kind);
+function isPreviewable(r: { kind: string; mime_type: string | null }): boolean {
+  return isPdf(r) || isOffice(r);
 }
 
 /**
  * Build the iframe src for a previewable file:
  *   - PDFs: Supabase URL directly with native PDF reader hash params
- *   - Slide decks: Microsoft Office Online embed viewer wrapping the URL
+ *   - .pptx slide decks: Microsoft Office Online embed viewer wrapping the URL
  */
-function previewSrc(kind: string, url: string): string {
-  if (isOffice(kind)) {
+function previewSrc(r: { kind: string; mime_type: string | null }, url: string): string {
+  if (isOffice(r)) {
     return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`;
   }
-  // PDF
   return `${url}#view=FitH&toolbar=1`;
 }
 
@@ -318,14 +332,14 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
               sx={{
                 position: "relative",
                 ...(activeResource &&
-                isPreviewable(activeResource.kind) &&
+                isPreviewable(activeResource) &&
                 activeResource.external_url
                   ? { height: { xs: 520, md: 720 } }
                   : { aspectRatio: "16 / 9" }),
                 bgcolor: "var(--ink)",
                 backgroundImage:
                   activeResource &&
-                  (isVideo(activeResource.kind) || isPreviewable(activeResource.kind))
+                  (isVideo(activeResource.kind) || isPreviewable(activeResource))
                     ? "none"
                     : visual.gradient,
                 display: "grid",
@@ -345,14 +359,14 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
                   style={{ width: "100%", height: "100%", display: "block", background: "#000" }}
                 />
               ) : activeResource &&
-                isPreviewable(activeResource.kind) &&
+                isPreviewable(activeResource) &&
                 activeResource.external_url ? (
                 <Box
                   component="iframe"
                   // key forces a remount when switching between previewable lessons,
                   // so the iframe loads the new URL even if React would otherwise reuse it.
                   key={activeResource.id}
-                  src={previewSrc(activeResource.kind, activeResource.external_url)}
+                  src={previewSrc(activeResource, activeResource.external_url)}
                   title={activeResource.title}
                   onLoad={() => void markProgress(activeResource.id, "view")}
                   sx={{
@@ -380,7 +394,7 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
                   </Typography>
                   {activeResource &&
                     !isVideo(activeResource.kind) &&
-                    !isPreviewable(activeResource.kind) && (
+                    !isPreviewable(activeResource) && (
                       <Typography
                         sx={{
                           fontSize: "0.78rem",
@@ -436,7 +450,7 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
                       spacing={1}
                       sx={{ flexShrink: 0, flexWrap: "wrap", rowGap: 1 }}
                     >
-                      {isPreviewable(activeResource.kind) && (
+                      {isPreviewable(activeResource) && (
                         <Button
                           component="a"
                           href={activeResource.external_url}

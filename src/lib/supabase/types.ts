@@ -233,12 +233,20 @@ export type ResourceKind =
   | "email_sequence"
   | "other";
 
+export type ResourceSubmissionStatus =
+  | "draft"
+  | "pending_review"
+  | "approved"
+  | "rejected";
+
 export type ResourcesRow = {
   id: string;
   topic_slug: string;
   topic_title: string;
   topic_summary: string | null;
-  topic_thumbnail_url: string | null;
+  category: string | null;
+  portal_card_url: string | null;
+  resource_card_url: string | null;
   title: string;
   description: string | null;
   kind: ResourceKind;
@@ -251,6 +259,12 @@ export type ResourcesRow = {
   position: number;
   is_free: boolean;
   is_published: boolean;
+  submission_status: ResourceSubmissionStatus;
+  submitted_by: string | null;
+  submitted_at: string | null;
+  approved_by: string | null;
+  approved_at: string | null;
+  rejected_reason: string | null;
   created_at: string;
   updated_at: string;
 };

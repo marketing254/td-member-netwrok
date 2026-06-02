@@ -23,9 +23,10 @@ export async function GET(req: Request) {
   let query = sb
     .from("resources")
     .select(
-      "id, topic_slug, topic_title, topic_summary, title, description, kind, storage_path, external_url, thumbnail_url, topic_thumbnail_url, mime_type, file_size_bytes, duration_label, position, is_free, is_published, created_at",
+      "id, topic_slug, topic_title, topic_summary, category, portal_card_url, resource_card_url, title, description, kind, storage_path, external_url, thumbnail_url, mime_type, file_size_bytes, duration_label, position, is_free, is_published, created_at",
     )
     .eq("is_published", true)
+    .eq("submission_status", "approved")
     .order("topic_slug", { ascending: true })
     .order("position", { ascending: true });
 

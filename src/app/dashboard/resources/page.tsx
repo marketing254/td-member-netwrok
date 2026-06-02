@@ -13,11 +13,6 @@ import {
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import {
-  categoryForSlug,
-  CATEGORY_LABELS,
-  type TopicCategory,
-} from "@/components/member/topicVisuals";
 import { KitCover } from "@/components/member/KitCover";
 import {
   EditorialHeader,
@@ -30,7 +25,9 @@ type ResourceItem = {
   topic_slug: string;
   topic_title: string;
   topic_summary: string | null;
-  topic_thumbnail_url: string | null;
+  category: string | null;
+  portal_card_url: string | null;
+  resource_card_url: string | null;
   title: string;
   kind: string;
   is_free: boolean;
@@ -41,7 +38,8 @@ type TopicCard = {
   slug: string;
   title: string;
   summary: string | null;
-  coverUrl: string | null;
+  category: string | null;
+  portalCardUrl: string | null;
   resourceCount: number;
   videoCount: number;
   downloadCount: number;
@@ -50,7 +48,8 @@ type TopicCard = {
   isFree: boolean;
 };
 
-type FilterKey = "all" | "free" | TopicCategory;
+// Filter key — either a special slot or a literal category name from the DB.
+type FilterKey = "all" | "free" | string;
 
 const PAGE_SIZE = 9;
 
@@ -113,7 +112,8 @@ export default function ResourceLibraryPage() {
           slug: r.topic_slug,
           title: r.topic_title,
           summary: r.topic_summary,
-          coverUrl: r.topic_thumbnail_url,
+          category: r.category,
+          portalCardUrl: r.portal_card_url,
           resourceCount: 1,
           videoCount: isVideo ? 1 : 0,
           downloadCount: isVideo ? 0 : 1,
@@ -131,7 +131,7 @@ export default function ResourceLibraryPage() {
     if (filter === "free") {
       out = out.filter((t) => t.isFree);
     } else if (filter !== "all") {
-      out = out.filter((t) => categoryForSlug(t.slug) === filter);
+      out = out.filter((t) => t.category === filter);
     }
     if (q.trim()) {
       const lc = q.toLowerCase();
@@ -149,10 +149,13 @@ export default function ResourceLibraryPage() {
   const start = (currentPage - 1) * PAGE_SIZE;
   const pageItems = filtered.slice(start, start + PAGE_SIZE);
 
+  // Pull category labels straight from the DB rows — no hard-coded enum.
   const availableCategories = useMemo(() => {
-    const set = new Set<TopicCategory>();
-    for (const t of topics) set.add(categoryForSlug(t.slug));
-    return Array.from(set);
+    const set = new Set<string>();
+    for (const t of topics) {
+      if (t.category) set.add(t.category);
+    }
+    return Array.from(set).sort();
   }, [topics]);
 
   const freeCount = topics.filter((t) => t.isFree).length;
@@ -189,17 +192,15 @@ export default function ResourceLibraryPage() {
             onClick={() => setFilter("free")}
             tone="leaf"
           />
-          {availableCategories
-            .filter((c) => c !== "all")
-            .map((c) => (
-              <FilterLink
-                key={c}
-                label={CATEGORY_LABELS[c]}
-                count={topics.filter((t) => categoryForSlug(t.slug) === c).length}
-                active={filter === c}
-                onClick={() => setFilter(c)}
-              />
-            ))}
+          {availableCategories.map((c) => (
+            <FilterLink
+              key={c}
+              label={c}
+              count={topics.filter((t) => t.category === c).length}
+              active={filter === c}
+              onClick={() => setFilter(c)}
+            />
+          ))}
         </Box>
 
         <TextField
@@ -342,7 +343,6 @@ function KitTile({ topic }: { topic: TopicCard }) {
       : 0;
   const inProgress = topic.viewedCount > 0 && topic.viewedCount < topic.resourceCount;
   const completed = topic.completedCount === topic.resourceCount && topic.resourceCount > 0;
-  const category = CATEGORY_LABELS[categoryForSlug(topic.slug)];
 
   return (
     <Box
@@ -372,13 +372,15 @@ function KitTile({ topic }: { topic: TopicCard }) {
           completed={completed}
           inProgress={inProgress}
           progressPct={progressPct}
-          coverUrl={topic.coverUrl}
+          portalCardUrl={topic.portalCardUrl}
         />
       </Box>
 
-      <Typography sx={{ ...editorialText.eyebrow, color: ink.fade, mb: 0.5 }}>
-        {category}
-      </Typography>
+      {topic.category && (
+        <Typography sx={{ ...editorialText.eyebrow, color: ink.fade, mb: 0.5 }}>
+          {topic.category}
+        </Typography>
+      )}
       {topic.summary && (
         <Typography
           sx={{
