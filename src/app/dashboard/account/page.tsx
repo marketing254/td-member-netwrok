@@ -237,9 +237,35 @@ export default function MemberProfilePage() {
               </Stack>
               <Stack spacing={1}>
                 <MetaRow label="Tier" value={isFounding ? "Founding member" : "Member"} />
+                <MetaRow
+                  label="Subscription"
+                  value={subscriptionLabel(member.subscription_status, member.subscription_interval)}
+                  capitalize={false}
+                />
                 <MetaRow label="Status" value={member.status} capitalize />
                 <MetaRow label="Joined" value={memberSince} />
-                <MetaRow label="Rate" value={isFounding ? "$49/mo · locked" : "Standard"} />
+                <MetaRow
+                  label="Rate"
+                  value={
+                    isFounding
+                      ? member.subscription_interval === "year"
+                        ? "$490/yr · locked"
+                        : "$49/mo · locked"
+                      : "Standard"
+                  }
+                />
+                {member.card_brand && member.card_last4 && (
+                  <MetaRow
+                    label="Card"
+                    value={`${capitaliseFirst(member.card_brand)} ending ${member.card_last4}`}
+                  />
+                )}
+                {member.current_period_end && (
+                  <MetaRow
+                    label={member.cancel_at_period_end ? "Ends" : "Renews"}
+                    value={formatJoined(member.current_period_end)}
+                  />
+                )}
               </Stack>
               {isFounding && (
                 <Typography
@@ -255,6 +281,7 @@ export default function MemberProfilePage() {
                   Your founding rate is locked for as long as your membership stays active — it never increases.
                 </Typography>
               )}
+              <ManageSubscriptionButton hasCustomer={!!member.stripe_customer_id} />
             </Box>
 
             {/* Documents panel */}
@@ -431,6 +458,87 @@ export default function MemberProfilePage() {
       />
     </Box>
   );
+}
+
+function ManageSubscriptionButton({ hasCustomer }: { hasCustomer: boolean }) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const open = async () => {
+    setBusy(true);
+    setErr(null);
+    try {
+      const res = await fetch("/api/stripe/portal", { method: "POST" });
+      const body = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
+      if (!res.ok || !body.url) {
+        setErr(body.error ?? `Could not open portal (${res.status})`);
+        return;
+      }
+      window.location.href = body.url;
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Could not open portal.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (!hasCustomer) return null;
+
+  return (
+    <Stack spacing={0.75} sx={{ mt: 2 }}>
+      <Button
+        onClick={open}
+        disabled={busy}
+        variant="outlined"
+        size="small"
+        startIcon={
+          busy ? <CircularProgress size={12} sx={{ color: "inherit" }} /> : undefined
+        }
+        sx={{
+          alignSelf: "flex-start",
+          borderColor: "var(--ink-rule)",
+          color: "var(--ink)",
+          textTransform: "none",
+          fontSize: "0.8rem",
+          fontWeight: 600,
+          borderRadius: 0.75,
+          px: 1.5,
+          py: 0.5,
+          "&:hover": {
+            borderColor: "var(--gold)",
+            bgcolor: "color-mix(in oklch, var(--gold) 6%, transparent)",
+          },
+        }}
+      >
+        {busy ? "Opening Stripe…" : "Manage subscription"}
+      </Button>
+      {err && (
+        <Typography sx={{ fontSize: "0.72rem", color: "#8C1D1D" }}>{err}</Typography>
+      )}
+    </Stack>
+  );
+}
+
+function subscriptionLabel(status: string | null, interval: string | null): string {
+  if (!status) return "Not subscribed";
+  const intervalLabel = interval === "year" ? "annual" : interval === "month" ? "monthly" : null;
+  const niceStatus =
+    status === "active"
+      ? "Active"
+      : status === "trialing"
+        ? "Trialing"
+        : status === "past_due"
+          ? "Past due"
+          : status === "canceled"
+            ? "Canceled"
+            : status === "incomplete"
+              ? "Incomplete"
+              : status.charAt(0).toUpperCase() + status.slice(1);
+  return intervalLabel ? `${niceStatus} · ${intervalLabel}` : niceStatus;
+}
+
+function capitaliseFirst(s: string): string {
+  return s.length > 0 ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 }
 
 function MetaRow({

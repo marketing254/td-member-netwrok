@@ -16,6 +16,15 @@ export type CurrentMember = {
   status: string;
   joined_at: string | null;
   activated_at: string | null;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  subscription_status: string | null;
+  subscription_interval: string | null;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean | null;
+  card_brand: string | null;
+  card_last4: string | null;
+  founding_member_locked: boolean;
 };
 
 export type MemberMeResponse = {

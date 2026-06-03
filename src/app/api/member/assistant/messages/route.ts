@@ -5,7 +5,7 @@ import {
   ASSISTANT_MAX_TOKENS,
   ASSISTANT_MODEL,
   buildAssistantSystemPrompt,
-  getAnthropic,
+  getOpenAI,
 } from "@/lib/ai/assistant";
 
 export const runtime = "nodejs";
@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 // Streaming responses can run longer than the default 10s edge limit.
 export const maxDuration = 60;
 
-/** Maximum messages from history to send Claude on each turn. */
+/** Maximum messages from history to send the model on each turn. */
 const HISTORY_WINDOW = 20;
 /** User messages allowed per member per rolling 24h. */
 const DAILY_USER_LIMIT = 30;
@@ -90,7 +90,7 @@ export async function POST(req: Request) {
     );
   }
 
-  // ---- 2. Persist the user message before we call Claude, so a crash
+  // ---- 2. Persist the user message before we call the model, so a crash
   //         halfway through doesn't lose what the member typed.
   const { error: insErr } = await sb.from("member_assistant_messages").insert({
     member_id: guard.memberId,
@@ -110,17 +110,22 @@ export async function POST(req: Request) {
     .limit(HISTORY_WINDOW);
 
   const ordered = (history ?? []).slice().reverse();
-  const claudeMessages: Array<{ role: "user" | "assistant"; content: string }> = [];
+  type ChatMessage = { role: "user" | "assistant" | "system"; content: string };
+  const historyMessages: ChatMessage[] = [];
   for (const m of ordered) {
     if (m.role === "user" || m.role === "assistant") {
-      claudeMessages.push({ role: m.role, content: m.content });
+      historyMessages.push({ role: m.role, content: m.content });
     }
   }
 
-  // ---- 4. Stream the assistant response ----
-  let anthropic;
+  // ---- 4. Build the system prompt with the live resource catalog ----
+  let systemPrompt: string;
   try {
-    anthropic = getAnthropic();
+    systemPrompt = await buildAssistantSystemPrompt({
+      firstName: guard.firstName,
+      tier: null, // CurrentMember.tier isn't on the guard yet — defaults to "member" voice
+      status: guard.status,
+    });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Assistant unavailable." },
@@ -128,11 +133,16 @@ export async function POST(req: Request) {
     );
   }
 
-  const systemPrompt = buildAssistantSystemPrompt({
-    firstName: guard.firstName,
-    tier: null, // (CurrentMember.tier isn't on the guard yet — defaults to "member" voice)
-    status: guard.status,
-  });
+  // ---- 5. Stream the assistant response from OpenAI ----
+  let openai;
+  try {
+    openai = getOpenAI();
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Assistant unavailable." },
+      { status: 503 },
+    );
+  }
 
   const encoder = new TextEncoder();
   let fullText = "";
@@ -142,30 +152,33 @@ export async function POST(req: Request) {
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        const eventStream = anthropic.messages.stream({
+        const completion = await openai.chat.completions.create({
           model: ASSISTANT_MODEL,
           max_tokens: ASSISTANT_MAX_TOKENS,
-          system: systemPrompt,
-          messages: claudeMessages,
+          temperature: 0.4,
+          stream: true,
+          stream_options: { include_usage: true },
+          messages: [
+            { role: "system", content: systemPrompt },
+            ...historyMessages,
+          ],
         });
 
-        for await (const event of eventStream) {
-          if (
-            event.type === "content_block_delta" &&
-            event.delta.type === "text_delta"
-          ) {
-            const chunk = event.delta.text;
-            fullText += chunk;
-            controller.enqueue(encoder.encode(chunk));
-          } else if (event.type === "message_start") {
-            inputTokens = event.message.usage?.input_tokens ?? null;
-          } else if (event.type === "message_delta") {
-            outputTokens = event.usage?.output_tokens ?? outputTokens;
+        for await (const chunk of completion) {
+          const delta = chunk.choices?.[0]?.delta?.content;
+          if (delta) {
+            fullText += delta;
+            controller.enqueue(encoder.encode(delta));
+          }
+          // Usage stats arrive on the final chunk when stream_options is set
+          if (chunk.usage) {
+            inputTokens = chunk.usage.prompt_tokens ?? inputTokens;
+            outputTokens = chunk.usage.completion_tokens ?? outputTokens;
           }
         }
 
-        // Persist the assistant message (best effort — we still close the
-        // stream cleanly if this fails so the member sees the response).
+        // Persist the assistant message (best effort — the stream already
+        // delivered the content to the client).
         if (fullText.trim()) {
           try {
             await sb.from("member_assistant_messages").insert({
@@ -176,14 +189,12 @@ export async function POST(req: Request) {
               tokens_output: outputTokens,
             });
           } catch {
-            /* swallow — content already streamed to the client */
+            /* swallow — content already streamed */
           }
         }
         controller.close();
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Assistant error";
-        // Stream a small error suffix so the user sees something rather
-        // than the chat hanging silently.
         controller.enqueue(encoder.encode(`\n\n[assistant error: ${msg}]`));
         controller.close();
       }

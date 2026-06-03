@@ -14,7 +14,7 @@ export async function GET() {
   const { data: member, error } = await sb
     .from("members")
     .select(
-      "id, first_name, last_name, credential, email, phone, practice_name, practice_role, city, tier, status, joined_at, activated_at",
+      "id, first_name, last_name, credential, email, phone, practice_name, practice_role, city, tier, status, joined_at, activated_at, stripe_customer_id, stripe_subscription_id, subscription_status, subscription_interval, current_period_end, cancel_at_period_end, card_brand, card_last4, founding_member_locked",
     )
     .eq("id", guard.memberId)
     .maybeSingle();

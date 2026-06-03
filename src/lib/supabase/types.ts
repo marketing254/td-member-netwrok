@@ -215,8 +215,28 @@ export type MembersRow = {
   activated_at: string | null;
   activated_by: string | null;
   welcome_sent_at: string | null;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  stripe_price_id: string | null;
+  subscription_status: string | null;
+  subscription_interval: string | null;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean | null;
+  canceled_at: string | null;
+  card_brand: string | null;
+  card_last4: string | null;
+  founding_member_locked: boolean;
   created_at: string;
   updated_at: string;
+};
+
+export type StripeEventRow = {
+  id: string;
+  stripe_event_id: string;
+  event_type: string;
+  member_id: string | null;
+  payload: unknown;
+  processed_at: string;
 };
 
 export type ResourceKind =
@@ -415,6 +435,7 @@ export type Database = {
       resources: Table<ResourcesRow>;
       member_resource_progress: Table<MemberResourceProgressRow>;
       member_assistant_messages: Table<MemberAssistantMessageRow>;
+      stripe_events: Table<StripeEventRow>;
     };
     Views: {
       waitlist_counts: View<{

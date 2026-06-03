@@ -16,6 +16,7 @@ import PolicyOutlinedIcon from "@mui/icons-material/PolicyOutlined";
 import RuleFolderOutlinedIcon from "@mui/icons-material/RuleFolderOutlined";
 import { useCurrentMember } from "@/lib/hooks/useCurrentMember";
 import { KitCover } from "@/components/member/KitCover";
+import { SubscribeCard } from "@/components/member/SubscribeCard";
 import {
   EditorialHeader,
   EditorialSection,
@@ -143,9 +144,18 @@ export default function DashboardHome() {
 
   const firstName = member?.first_name ?? "there";
   const memberSince = formatJoined(member?.joined_at ?? member?.activated_at ?? null);
+  const subscribed =
+    member?.subscription_status === "active" || member?.subscription_status === "trialing";
 
   return (
     <Box sx={{ color: ink.primary }}>
+      {/* Subscription gate — show paywall card until a paid sub is active. */}
+      {!subscribed && member && (
+        <Box sx={{ mb: 3 }}>
+          <SubscribeCard firstName={firstName} />
+        </Box>
+      )}
+
       <EditorialHeader
         eyebrow={`Member portal · ${member?.tier === "founding" ? "Founding cohort" : "Member"}`}
         title={`Welcome back, ${firstName}.`}
