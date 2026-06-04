@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Box,
   Button,
@@ -144,17 +145,17 @@ export default function DashboardHome() {
 
   const firstName = member?.first_name ?? "there";
   const memberSince = formatJoined(member?.joined_at ?? member?.activated_at ?? null);
-  const subscribed =
+  const isSubscribed =
     member?.subscription_status === "active" || member?.subscription_status === "trialing";
 
   return (
     <Box sx={{ color: ink.primary }}>
-      {/* Subscription gate — show paywall card until a paid sub is active. */}
-      {!subscribed && member && (
-        <Box sx={{ mb: 3 }}>
-          <SubscribeCard firstName={firstName} />
-        </Box>
-      )}
+      <SubscriptionGate
+        member={member}
+        isSubscribed={isSubscribed}
+        firstName={firstName}
+      />
+
 
       <EditorialHeader
         eyebrow={`Member portal · ${member?.tier === "founding" ? "Founding cohort" : "Member"}`}
@@ -319,6 +320,188 @@ export default function DashboardHome() {
           </Box>
         </Stack>
       </EditorialSection>
+    </Box>
+  );
+}
+
+/**
+ * SubscriptionGate decides whether to show the SubscribeCard, the
+ * "payment received, account being set up" banner, or nothing.
+ *
+ * Without this, a member who just paid on Stripe gets bounced back to
+ * /dashboard with `?subscribed=1` and briefly sees the Subscribe card
+ * again (until the webhook lands and updates the DB). That looks
+ * broken. We optimistically hide the SubscribeCard the moment we see
+ * the query param and show a small success banner while we poll the
+ * member API for the canonical subscription state.
+ */
+function SubscriptionGate({
+  member,
+  isSubscribed,
+  firstName,
+}: {
+  member: ReturnType<typeof useCurrentMember>["member"];
+  isSubscribed: boolean;
+  firstName: string;
+}) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const justSubscribed = searchParams.get("subscribed") === "1";
+  const checkoutCanceled = searchParams.get("subscribed") === "0";
+
+  // Poll /api/member/me for up to ~20 seconds after the redirect, then
+  // give up gracefully. The webhook usually lands in 1-3 seconds.
+  useEffect(() => {
+    if (!justSubscribed) return;
+    if (isSubscribed) return;
+
+    let attempts = 0;
+    const tick = async () => {
+      attempts += 1;
+      try {
+        const res = await fetch("/api/member/me", { cache: "no-store" });
+        if (!res.ok) return;
+        const body = (await res.json()) as {
+          member?: { subscription_status?: string | null };
+        };
+        const status = body.member?.subscription_status;
+        if (status === "active" || status === "trialing") {
+          // Clear the query param and let the page re-render naturally
+          // with the real member state.
+          router.replace("/dashboard");
+          router.refresh();
+        }
+      } catch {
+        /* swallow */
+      }
+    };
+    const interval = setInterval(() => {
+      if (attempts >= 10) {
+        clearInterval(interval);
+        return;
+      }
+      void tick();
+    }, 2000);
+    // Also fire one immediately
+    void tick();
+    return () => clearInterval(interval);
+  }, [justSubscribed, isSubscribed, router]);
+
+  if (!member) return null;
+
+  // Real subscribed state — nothing to render here.
+  if (isSubscribed) {
+    // If we still have the ?subscribed=1 param hanging around, clean it.
+    if (justSubscribed) {
+      return (
+        <Box sx={{ mb: 3 }}>
+          <ProcessingBanner success />
+        </Box>
+      );
+    }
+    return null;
+  }
+
+  // Just came back from a successful Stripe Checkout — webhook hasn't
+  // landed yet. Show the success banner instead of the SubscribeCard.
+  if (justSubscribed) {
+    return (
+      <Box sx={{ mb: 3 }}>
+        <ProcessingBanner />
+      </Box>
+    );
+  }
+
+  // Came back from Stripe Checkout with cancel — show the SubscribeCard
+  // with a small dismissable note.
+  return (
+    <Box sx={{ mb: 3 }}>
+      {checkoutCanceled && <CheckoutCanceledNote />}
+      <SubscribeCard firstName={firstName} />
+    </Box>
+  );
+}
+
+function ProcessingBanner({ success }: { success?: boolean }) {
+  return (
+    <Box
+      sx={{
+        position: "relative",
+        overflow: "hidden",
+        borderRadius: 2,
+        bgcolor: success ? "rgba(34,108,78,0.06)" : "rgba(217,168,75,0.08)",
+        border: success
+          ? "1px solid rgba(34,108,78,0.25)"
+          : "1px solid rgba(217,168,75,0.32)",
+        px: { xs: 2, md: 2.5 },
+        py: { xs: 1.75, md: 2 },
+      }}
+    >
+      <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+        {success ? (
+          <Box
+            sx={{
+              width: 32,
+              height: 32,
+              borderRadius: "50%",
+              bgcolor: "rgba(34,108,78,0.18)",
+              color: "#1F5C40",
+              display: "grid",
+              placeItems: "center",
+              flexShrink: 0,
+            }}
+          >
+            ✓
+          </Box>
+        ) : (
+          <CircularProgress size={20} sx={{ color: "#A07823", flexShrink: 0 }} />
+        )}
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography
+            sx={{
+              fontSize: "0.94rem",
+              fontWeight: 600,
+              color: success ? "#1F5C40" : "#7A5B17",
+              lineHeight: 1.3,
+            }}
+          >
+            {success
+              ? "Payment received — your membership is active."
+              : "Payment received — setting up your account…"}
+          </Typography>
+          <Typography
+            sx={{
+              fontSize: "0.78rem",
+              color: success ? "#3B4A55" : "#5C6770",
+              mt: 0.25,
+              lineHeight: 1.5,
+            }}
+          >
+            {success
+              ? "Reload the page if anything still looks stale. Your invoice is available on the Profile page."
+              : "Stripe is confirming the payment. This usually takes a few seconds — feel free to keep browsing."}
+          </Typography>
+        </Box>
+      </Stack>
+    </Box>
+  );
+}
+
+function CheckoutCanceledNote() {
+  return (
+    <Box
+      sx={{
+        borderRadius: 1.25,
+        bgcolor: "rgba(14,42,61,0.04)",
+        border: "1px solid rgba(14,42,61,0.1)",
+        px: 1.75,
+        py: 1.25,
+        mb: 2,
+        fontSize: "0.84rem",
+        color: "#3B4A55",
+      }}
+    >
+      Checkout was cancelled. Pick a plan when you&apos;re ready.
     </Box>
   );
 }
