@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { createServerSupabase } from "@/lib/supabase/server-ssr";
 import { checkRateLimit } from "@/lib/waitlist/rateLimit";
+import { forwardVendorToKit } from "@/lib/kit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -343,6 +344,17 @@ export async function POST(req: Request) {
   } catch (err) {
     console.error("[vendor:signup] audit/email log failed:", err);
   }
+
+  forwardVendorToKit({
+    contactEmail: data.contactEmail,
+    contactName: data.contactName,
+    companyName: data.companyName,
+    category: data.category,
+    website: data.website,
+    contactPhone: data.contactPhone,
+    source: data.source,
+    pageUrl: req.headers.get("referer"),
+  });
 
   return NextResponse.json({
     success: true,
