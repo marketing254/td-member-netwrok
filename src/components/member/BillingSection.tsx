@@ -12,6 +12,7 @@ import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
 import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
 import CreditCardRoundedIcon from "@mui/icons-material/CreditCardRounded";
 import WorkspacePremiumRoundedIcon from "@mui/icons-material/WorkspacePremiumRounded";
+import SyncRoundedIcon from "@mui/icons-material/SyncRounded";
 import type { CurrentMember } from "@/lib/hooks/useCurrentMember";
 
 type Invoice = {
@@ -37,6 +38,8 @@ export function BillingSection({ member }: { member: CurrentMember }) {
   const [invoices, setInvoices] = useState<Invoice[] | null>(null);
   const [portalBusy, setPortalBusy] = useState(false);
   const [portalError, setPortalError] = useState<string | null>(null);
+  const [syncBusy, setSyncBusy] = useState(false);
+  const [syncMessage, setSyncMessage] = useState<{ tone: "ok" | "err"; text: string } | null>(null);
 
   // The effect only runs when the member actually has a Stripe customer.
   // For un-subscribed members the "invoices" view is derived as []
@@ -91,6 +94,43 @@ export function BillingSection({ member }: { member: CurrentMember }) {
   const statusTone = useMemo(() => deriveStatusTone(member), [member]);
 
   const hasSubscription = !!member.stripe_subscription_id;
+  // The "Re-sync from Stripe" escape hatch: Stripe has charges/invoices
+  // for this customer but our local row doesn't reflect a subscription.
+  // Usually means the webhook didn't fire / failed signature check.
+  const needsManualSync = !!member.stripe_customer_id && !hasSubscription;
+
+  const syncFromStripe = async () => {
+    setSyncBusy(true);
+    setSyncMessage(null);
+    try {
+      const res = await fetch("/api/member/billing/sync", { method: "POST" });
+      const body = (await res.json().catch(() => ({}))) as {
+        synced?: boolean;
+        reason?: string;
+        status?: string;
+      };
+      if (res.ok && body.synced) {
+        setSyncMessage({
+          tone: "ok",
+          text: `Synced — subscription is "${body.status ?? "active"}". Reload to see the updated plan.`,
+        });
+        // Auto-reload so the page picks up the new member state.
+        setTimeout(() => window.location.reload(), 1500);
+      } else {
+        setSyncMessage({
+          tone: "err",
+          text: body.reason ?? `Sync failed (${res.status})`,
+        });
+      }
+    } catch (err) {
+      setSyncMessage({
+        tone: "err",
+        text: err instanceof Error ? err.message : "Sync failed.",
+      });
+    } finally {
+      setSyncBusy(false);
+    }
+  };
 
   return (
     <Stack spacing={2}>
@@ -233,6 +273,77 @@ export function BillingSection({ member }: { member: CurrentMember }) {
             <Typography sx={{ fontSize: "0.74rem", color: "#8C1D1D", mt: 1 }}>
               {portalError}
             </Typography>
+          )}
+
+          {needsManualSync && (
+            <Box
+              sx={{
+                mt: 2,
+                p: 1.5,
+                borderRadius: 1.25,
+                bgcolor: "rgba(217,168,75,0.08)",
+                border: "1px solid rgba(217,168,75,0.3)",
+              }}
+            >
+              <Stack
+                direction={{ xs: "column", sm: "row" }}
+                spacing={1.5}
+                sx={{ alignItems: { sm: "center" } }}
+              >
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography sx={{ fontSize: "0.86rem", fontWeight: 600, color: "#7A5B17" }}>
+                    Plan looks out of date?
+                  </Typography>
+                  <Typography
+                    sx={{ fontSize: "0.76rem", color: "#5C6770", lineHeight: 1.55, mt: 0.25 }}
+                  >
+                    If Stripe charged your card but this card still says &ldquo;not
+                    subscribed&rdquo;, the webhook didn&apos;t reach us. Click below to pull
+                    your subscription state directly from Stripe.
+                  </Typography>
+                </Box>
+                <Button
+                  onClick={syncFromStripe}
+                  disabled={syncBusy}
+                  variant="contained"
+                  size="small"
+                  disableElevation
+                  startIcon={
+                    syncBusy ? (
+                      <CircularProgress size={12} sx={{ color: "inherit" }} />
+                    ) : (
+                      <SyncRoundedIcon sx={{ fontSize: 14 }} />
+                    )
+                  }
+                  sx={{
+                    bgcolor: "var(--gold-deep, #A07823)",
+                    color: "#FFFFFF",
+                    textTransform: "none",
+                    fontSize: "0.78rem",
+                    fontWeight: 600,
+                    borderRadius: 0.75,
+                    px: 1.5,
+                    py: 0.5,
+                    flexShrink: 0,
+                    "&:hover": { bgcolor: "#7A5B17" },
+                  }}
+                >
+                  {syncBusy ? "Syncing…" : "Re-sync from Stripe"}
+                </Button>
+              </Stack>
+              {syncMessage && (
+                <Typography
+                  sx={{
+                    mt: 1,
+                    fontSize: "0.74rem",
+                    color: syncMessage.tone === "ok" ? "#1F5C40" : "#8C1D1D",
+                    fontWeight: 500,
+                  }}
+                >
+                  {syncMessage.text}
+                </Typography>
+              )}
+            </Box>
           )}
         </Box>
       </Box>
