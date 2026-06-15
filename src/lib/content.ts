@@ -5,8 +5,8 @@
 export const brand = {
   name: "Dental Member Network",
   shortName: "DMN",
-  phoneDisplay: "(800) 555-1234",
-  phoneTel: "+18005551234",
+  phoneDisplay: "(855) 756-5323",
+  phoneTel: "+18557565323",
   email: "hello@joindmn.com",
   domain: "dentalmembernetwork.com",
   joinUrl: "#waitlist",
@@ -303,3 +303,93 @@ export const pricing = [
     role: "vendor",
   },
 ];
+
+// FOUNDING TEAM — for the "Founded by the team behind Thriving Dentist" section
+// Bios distilled from the DMN content guide (the experts on the helpline).
+export const foundingTeamSection = {
+  eyebrow: "FOUNDING TEAM",
+  title: "Founded by the team behind Thriving Dentist.",
+  subtitle:
+    "Every expert, vendor, and resource is vetted by Gary, Naren, and the Thriving Dentist team — not by an algorithm and not by a marketing department.",
+};
+
+export const foundingTeam = [
+  {
+    initials: "GT",
+    photo: "/team/gary-takacs.jpg",
+    name: "Gary Takacs",
+    role: "Founder, Thriving Dentist",
+    blurb: "2,200+ practices coached over 30+ years. Host of the Thriving Dentist Show.",
+    color: "#163357",
+  },
+  {
+    initials: "NA",
+    photo: "/team/naren-arulrajah.jpg",
+    name: "Naren Arulrajah",
+    role: "Founder & CEO, Ekwa Marketing",
+    blurb: "Co-host, Less Insurance Dependent. Author of the FFS conversion playbook.",
+    color: "#A07823",
+  },
+];
+
+// AS HEARD ON — podcast logos that Gary/Naren appear on. Files in /public.
+export const asHeardOn = [
+  { name: "Thriving Dentist Show", logo: "/td-logo.png", host: "Gary Takacs" },
+  { name: "Less Insurance Dependence", logo: "/lid-logo.png", host: "Naren Arulrajah" },
+  { name: "Insurance Untangled", logo: "/iu-logo.png", host: "Industry panel" },
+];
+
+// MEMBER LIBRARY PREVIEW — the colorful topic cards shown inside the member portal
+// Distilled from the doc Appendix B launch library (the 10 modules across 4 tracks).
+export const libraryPreviewSection = {
+  eyebrow: "A LOOK INSIDE THE MEMBER LIBRARY",
+  title: "What you actually see after you sign in.",
+  subtitle:
+    "Practice management, marketing, team training, and insurance independence — taught by the operators who built it. Plus the helpline, the vendor savings ledger, and the directory of 500+ practice owners.",
+};
+
+// Library topics — single-presenter, single-palette (on-brand navy) for a
+// professional, calm UI inside the member portal preview. `kind` maps each
+// card to a topic-specific icon used as the still-frame graphic inside its
+// video thumbnail.
+export type LibraryTopicKind =
+  | "kpi"
+  | "ppo"
+  | "seo"
+  | "patient"
+  | "book"
+  | "huddle"
+  | "reviews"
+  | "photos";
+
+export const libraryTopics: {
+  title: string;
+  track: string;
+  duration: string;
+  kind: LibraryTopicKind;
+}[] = [
+  { title: "9 KPIs that drive your practice", track: "Practice Management", duration: "47 min", kind: "kpi" },
+  { title: "Negotiating better PPO fees", track: "Insurance Independence", duration: "58 min", kind: "ppo" },
+  { title: "SEO & Google rankings", track: "Marketing & Growth", duration: "52 min", kind: "seo" },
+  { title: "The patient experience", track: "Team Training", duration: "33 min", kind: "patient" },
+  { title: "Book studies: Influence", track: "Mindset & Growth", duration: "Monthly", kind: "book" },
+  { title: "Morning huddle playbook", track: "Practice Management", duration: "28 min", kind: "huddle" },
+  { title: "Reviews & online reputation", track: "Marketing & Growth", duration: "44 min", kind: "reviews" },
+  { title: "Case acceptance with photos", track: "Practice Management", duration: "42 min", kind: "photos" },
+];
+
+// All resources are presented by Gary Takacs at launch.
+export const libraryPresenter = {
+  name: "Gary Takacs",
+  initials: "GT",
+};
+
+// Portal nav items shown in the preview mock
+export const portalNavItems = [
+  { label: "Helpline", badge: "2hr" },
+  { label: "Library", badge: "Live" },
+  { label: "Vendor Deals", badge: "$6.4K" },
+  { label: "Directory", badge: "500+" },
+  { label: "Live AMAs", badge: "Monthly" },
+];
+

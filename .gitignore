@@ -49,3 +49,5 @@ next-env.d.ts
 +supabase/.temp/
 +supabase/.env
 +supabase/migrations/0009_admin_rushdha_gmail.sql
+landing/public/dmn-explainer-video-script.html
+landing/public/dmn-explainer-video-script.pdf

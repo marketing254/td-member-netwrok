@@ -832,23 +832,6 @@ function LockModal({
           >
             Join the waitlist
           </Button>
-          <Button
-            component={Link}
-            href="/member/login"
-            variant="outlined"
-            fullWidth
-            sx={{
-              py: 1,
-              fontSize: "0.86rem",
-              fontWeight: 600,
-              textTransform: "none",
-              borderColor: "rgba(14,42,61,0.18)",
-              color: "#0A1A2F",
-              "&:hover": { borderColor: "#A07823", bgcolor: "rgba(217,168,75,0.06)" },
-            }}
-          >
-            Already a member? Sign in
-          </Button>
         </Stack>
       </Box>
     </Dialog>

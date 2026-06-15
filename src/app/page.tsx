@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import Header from "@/components/sections/Header";
 import WaitlistHero from "@/components/sections/WaitlistHero";
 import Features from "@/components/sections/Features";
+import FoundingTeam from "@/components/sections/FoundingTeam";
+import MemberLibraryPreview from "@/components/sections/MemberLibraryPreview";
 import Pricing from "@/components/sections/Pricing";
 import WaitlistSection from "@/components/sections/WaitlistSection";
 import FAQ from "@/components/sections/FAQ";
@@ -52,6 +54,8 @@ export default async function HomePage({ searchParams }: { searchParams: HomeSea
       <main>
         <WaitlistHero />
         <Features />
+        <FoundingTeam />
+        <MemberLibraryPreview />
         <Pricing />
         <WaitlistSection />
         <FAQ />
