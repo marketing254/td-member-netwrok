@@ -1,802 +1,726 @@
 "use client";
-import {
-  Box,
-  Chip,
-  Container,
-  Grid,
-  Stack,
-  Typography,
-} from "@mui/material";
-import type { SvgIconComponent } from "@mui/icons-material";
+import { useEffect, useState } from "react";
 import Image from "next/image";
-import HeadsetMicOutlinedIcon from "@mui/icons-material/HeadsetMicOutlined";
-import VideoLibraryOutlinedIcon from "@mui/icons-material/VideoLibraryOutlined";
-import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
-import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
-import LiveTvOutlinedIcon from "@mui/icons-material/LiveTvOutlined";
-import PlayArrowRoundedIcon from "@mui/icons-material/PlayArrowRounded";
-import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
-import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
-import NotificationsNoneRoundedIcon from "@mui/icons-material/NotificationsNoneRounded";
-import BookmarkBorderRoundedIcon from "@mui/icons-material/BookmarkBorderRounded";
-import BarChartRoundedIcon from "@mui/icons-material/BarChartRounded";
-import RequestQuoteRoundedIcon from "@mui/icons-material/RequestQuoteRounded";
-import TrendingUpRoundedIcon from "@mui/icons-material/TrendingUpRounded";
-import SentimentSatisfiedAltRoundedIcon from "@mui/icons-material/SentimentSatisfiedAltRounded";
-import MenuBookRoundedIcon from "@mui/icons-material/MenuBookRounded";
-import Groups2RoundedIcon from "@mui/icons-material/Groups2Rounded";
-import StarRoundedIcon from "@mui/icons-material/StarRounded";
-import PhotoCameraRoundedIcon from "@mui/icons-material/PhotoCameraRounded";
-import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
-import { motion, useReducedMotion } from "framer-motion";
-import SectionReveal from "@/components/effects/SectionReveal";
+import { Box, Container, Grid, Stack, Typography } from "@mui/material";
 import {
-  libraryPresenter,
-  libraryPreviewSection,
-  libraryTopics,
-  portalNavItems,
-} from "@/lib/content";
+  BarChart3,
+  Calendar,
+  type LucideIcon,
+  Megaphone,
+  MessageSquare,
+  Pause,
+  PhoneCall,
+  Play,
+  Search,
+  Star,
+  TrendingUp,
+  Users,
+  Volume2,
+} from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
+import { libraryPreviewSection, libraryPresenter } from "@/lib/content";
 
 const MotionBox = motion.create(Box);
 
-// Typed as SvgIconComponent so `sx` (including responsive shapes) carries the
-// right SvgIconProps signature through TypeScript's strict prod build.
-const NAV_ICONS: SvgIconComponent[] = [
-  HeadsetMicOutlinedIcon,
-  VideoLibraryOutlinedIcon,
-  StorefrontOutlinedIcon,
-  PeopleAltOutlinedIcon,
-  LiveTvOutlinedIcon,
-];
-
-// Active nav stays fixed on the Library item — no cycling.
-const ACTIVE_NAV_INDEX = 1;
-
-// Map each topic to a still-frame icon — gives every thumbnail a real visual
-// subject without resorting to multi-color treatment.
-const KIND_ICON: Record<string, SvgIconComponent> = {
-  kpi: BarChartRoundedIcon,
-  ppo: RequestQuoteRoundedIcon,
-  seo: TrendingUpRoundedIcon,
-  patient: SentimentSatisfiedAltRoundedIcon,
-  book: MenuBookRoundedIcon,
-  huddle: Groups2RoundedIcon,
-  reviews: StarRoundedIcon,
-  photos: PhotoCameraRoundedIcon,
+// Reduced from 8 to 6 cards for a less congested grid layout.
+// Each entry maps to a topic-specific icon as the thumbnail "still frame."
+type LibraryEntry = {
+  title: string;
+  track: string;
+  duration: string;
+  durationSec: number;
+  Icon: LucideIcon;
 };
 
-// Single brand color set for every thumbnail — calm, professional, on-brand.
-const THUMB_BG = "#13263D";
-const THUMB_BG_ALT = "#1A3550";
-const THUMB_BORDER = "rgba(217,168,75,0.22)";
-const THUMB_ACCENT = "#A07823";
-const THUMB_TITLE = "#FFFFFF";
-const THUMB_MUTED = "rgba(255,255,255,0.7)";
+const NOW_PLAYING: LibraryEntry = {
+  title: "9 KPIs that drive your practice",
+  track: "Practice Management",
+  duration: "47 min",
+  durationSec: 47 * 60,
+  Icon: BarChart3,
+};
+
+const LIBRARY: LibraryEntry[] = [
+  {
+    title: "Negotiating better PPO fees",
+    track: "Insurance Independence",
+    duration: "58 min",
+    durationSec: 58 * 60,
+    Icon: TrendingUp,
+  },
+  {
+    title: "SEO & Google rankings",
+    track: "Marketing & Growth",
+    duration: "52 min",
+    durationSec: 52 * 60,
+    Icon: Search,
+  },
+  {
+    title: "The patient experience",
+    track: "Team Training",
+    duration: "33 min",
+    durationSec: 33 * 60,
+    Icon: Users,
+  },
+  {
+    title: "Morning huddle playbook",
+    track: "Practice Management",
+    duration: "28 min",
+    durationSec: 28 * 60,
+    Icon: Calendar,
+  },
+  {
+    title: "Reviews & online reputation",
+    track: "Marketing & Growth",
+    duration: "44 min",
+    durationSec: 44 * 60,
+    Icon: Star,
+  },
+  {
+    title: "Case acceptance with photos",
+    track: "Practice Management",
+    duration: "42 min",
+    durationSec: 42 * 60,
+    Icon: Megaphone,
+  },
+];
+
+const NAV_ITEMS: { label: string; icon: LucideIcon; badge: string; active?: boolean }[] = [
+  { label: "Helpline", icon: PhoneCall, badge: "2hr" },
+  { label: "Library", icon: Play, badge: "Live", active: true },
+  { label: "Vendors", icon: TrendingUp, badge: "$6.4K" },
+  { label: "Directory", icon: Users, badge: "500+" },
+];
 
 export default function MemberLibraryPreview() {
   const reduced = useReducedMotion();
+  // The featured card "plays" — progress fills over 47 minutes, but to make
+  // the demo feel alive we accelerate so 0→100% in 18 seconds.
+  const [progress, setProgress] = useState(18);
+
+  useEffect(() => {
+    if (reduced) return;
+    const id = setInterval(() => {
+      setProgress((p) => (p >= 100 ? 8 : p + 0.5));
+    }, 90);
+    return () => clearInterval(id);
+  }, [reduced]);
+
+  // Current time display
+  const currentSec = Math.floor((NOW_PLAYING.durationSec * progress) / 100);
+  const totalSec = NOW_PLAYING.durationSec;
+  const formatTime = (s: number) => {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m}:${sec.toString().padStart(2, "0")}`;
+  };
 
   return (
     <Box
       component="section"
       sx={{
-        position: "relative",
-        py: { xs: 8, md: 11 },
-        bgcolor: "#FBF8F1",
-        borderTop: "1px solid",
-        borderColor: "rgba(14,42,61,0.06)",
+        py: { xs: 7, md: 10 },
+        bgcolor: "#F8F5EE",
+        borderTop: "1px solid #E7E2D6",
         overflow: "hidden",
       }}
     >
-      <Box
-        aria-hidden
-        sx={{
-          position: "absolute",
-          inset: 0,
-          backgroundImage:
-            "radial-gradient(50% 60% at 100% 0%, rgba(34,108,165,0.06) 0%, transparent 60%), radial-gradient(40% 50% at 0% 100%, rgba(217,168,75,0.08) 0%, transparent 60%)",
-          pointerEvents: "none",
-        }}
-      />
-
-      <Container maxWidth="lg" sx={{ position: "relative" }}>
-        <SectionReveal variant="fade-up" sx={{ mb: { xs: 4, md: 5 } }}>
-          <Stack spacing={2} sx={{ maxWidth: 760, textAlign: { md: "center" }, mx: { md: "auto" } }}>
-            <Typography variant="overline" sx={{ color: "#A07823", letterSpacing: "0.18em" }}>
-              {libraryPreviewSection.eyebrow}
-            </Typography>
-            <Typography
-              variant="h2"
-              sx={{ color: "#0A1A2F", fontSize: { xs: "2rem", md: "2.75rem" }, lineHeight: 1.1 }}
-            >
-              {libraryPreviewSection.title}
-            </Typography>
-            <Typography variant="subtitle1" sx={{ color: "#3B4A55", maxWidth: 640, mx: { md: "auto" } }}>
-              {libraryPreviewSection.subtitle}
-            </Typography>
-          </Stack>
-        </SectionReveal>
-
-        {/* ───── COMPACT MINIMAL TOPIC STRIP ABOVE THE PORTAL ───── */}
-        <SectionReveal variant="fade-up" delay={0.05} sx={{ mb: { xs: 4, md: 5 } }}>
-          <Box sx={{ position: "relative" }}>
-            <Typography
-              sx={{
-                color: "#7A5B17",
-                fontSize: "0.68rem",
-                letterSpacing: "0.2em",
-                fontWeight: 700,
-                textTransform: "uppercase",
-                textAlign: "center",
-                mb: 2,
-              }}
-            >
-              A look inside the member library
-            </Typography>
-            <Grid container spacing={1.25} sx={{ justifyContent: "center", maxWidth: 920, mx: "auto" }}>
-              {libraryTopics.slice(0, 5).map((topic, i) => (
-                <Grid key={topic.title} size={{ xs: 6, sm: 4, md: "auto" }}>
-                  <MotionBox
-                    initial={reduced ? false : { opacity: 0, y: 12 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, margin: "-40px" }}
-                    transition={{
-                      duration: 0.5,
-                      delay: Math.min(i * 0.06, 0.3),
-                      ease: [0.16, 1, 0.3, 1],
-                    }}
-                    whileHover={
-                      reduced
-                        ? undefined
-                        : { y: -2, borderColor: "rgba(217,168,75,0.6)" }
-                    }
-                    sx={{
-                      width: { md: 170 },
-                      px: 1.75,
-                      py: 1.5,
-                      borderRadius: 1.75,
-                      bgcolor: "#FFFFFF",
-                      border: "1px solid rgba(14,42,61,0.1)",
-                      cursor: "pointer",
-                      transition: "all 280ms cubic-bezier(0.16, 1, 0.3, 1)",
-                      boxShadow: "0 10px 20px -14px rgba(14,42,61,0.18)",
-                      "&:hover": {
-                        boxShadow: "0 16px 30px -14px rgba(217,168,75,0.3)",
-                      },
-                    }}
-                  >
-                    <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 0.75 }}>
-                      <Box
-                        sx={{
-                          width: 20,
-                          height: 20,
-                          borderRadius: 0.75,
-                          bgcolor: "rgba(217,168,75,0.14)",
-                          color: "#A07823",
-                          display: "grid",
-                          placeItems: "center",
-                        }}
-                      >
-                        <PlayArrowRoundedIcon sx={{ fontSize: 14 }} />
-                      </Box>
-                      <Typography
-                        sx={{
-                          color: "#5C6770",
-                          fontSize: "0.56rem",
-                          letterSpacing: "0.14em",
-                          fontWeight: 700,
-                          textTransform: "uppercase",
-                        }}
-                      >
-                        {topic.duration}
-                      </Typography>
-                    </Stack>
-                    <Typography
-                      sx={{
-                        color: "#0A1A2F",
-                        fontSize: "0.82rem",
-                        fontWeight: 700,
-                        lineHeight: 1.25,
-                        letterSpacing: "-0.005em",
-                      }}
-                    >
-                      {topic.title}
-                    </Typography>
-                  </MotionBox>
-                </Grid>
-              ))}
-            </Grid>
-          </Box>
-        </SectionReveal>
-
-        {/* ───── PORTAL MOCK ───── */}
-        <SectionReveal variant="scale-in" delay={0.15}>
-          <Box
+      <Container maxWidth="lg">
+        <Stack spacing={1.25} sx={{ textAlign: "center", maxWidth: 680, mx: "auto", mb: { xs: 5, md: 6 } }}>
+          <Typography
             sx={{
-              position: "relative",
-              borderRadius: 4,
-              bgcolor: "#0F2238",
-              border: "1px solid rgba(14,42,61,0.18)",
-              overflow: "hidden",
-              boxShadow:
-                "0 60px 120px -40px rgba(14,42,61,0.45), 0 0 0 1px rgba(255,255,255,0.06) inset",
+              color: "#9B7B3A",
+              fontSize: "0.7rem",
+              fontWeight: 700,
+              letterSpacing: "0.16em",
+              textTransform: "uppercase",
             }}
           >
-            {/* macOS-style window chrome */}
-            <Stack
-              direction="row"
-              spacing={1.25}
+            {libraryPreviewSection.eyebrow}
+          </Typography>
+          <Typography
+            variant="h2"
+            sx={{
+              color: "#1A1A1A",
+              fontFamily: "var(--font-display)",
+              fontSize: { xs: "1.7rem", md: "2.1rem" },
+              fontWeight: 500,
+              letterSpacing: "-0.025em",
+              lineHeight: 1.1,
+            }}
+          >
+            {libraryPreviewSection.title}
+          </Typography>
+          <Typography sx={{ color: "#52525B", fontSize: { xs: "0.95rem", md: "1.02rem" } }}>
+            {libraryPreviewSection.subtitle}
+          </Typography>
+        </Stack>
+
+        {/* PORTAL MOCK — bigger, less congested */}
+        <MotionBox
+          initial={reduced ? false : { opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-60px" }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          sx={{
+            bgcolor: "#FFFFFF",
+            borderRadius: 3,
+            border: "1px solid #E7E2D6",
+            overflow: "hidden",
+            boxShadow:
+              "0 1px 2px rgba(20,20,20,0.04), 0 30px 80px -40px rgba(20,20,20,0.2)",
+          }}
+        >
+          {/* Window chrome */}
+          <Stack
+            direction="row"
+            sx={{
+              alignItems: "center",
+              gap: 1.5,
+              px: 2,
+              py: 1.5,
+              bgcolor: "#FBF8F1",
+              borderBottom: "1px solid #E7E2D6",
+            }}
+          >
+            <Box sx={{ display: "flex", gap: 0.75 }}>
+              <Box sx={{ width: 11, height: 11, borderRadius: "50%", bgcolor: "#E07A5F" }} />
+              <Box sx={{ width: 11, height: 11, borderRadius: "50%", bgcolor: "#C9A876" }} />
+              <Box sx={{ width: 11, height: 11, borderRadius: "50%", bgcolor: "#81B29A" }} />
+            </Box>
+            <Box sx={{ flex: 1, textAlign: "center" }}>
+              <Typography sx={{ color: "#71717A", fontSize: "0.78rem", fontWeight: 500 }}>
+                app.dentalmembernetwork.com / library
+              </Typography>
+            </Box>
+            <Box sx={{ width: 80 }} />
+          </Stack>
+
+          {/* Body — sidebar + main content */}
+          <Grid container sx={{ minHeight: { xs: 540, md: 640 } }}>
+            {/* SIDEBAR — slim, clean */}
+            <Grid
+              size={{ xs: 12, md: 2.5 }}
               sx={{
-                alignItems: "center",
-                px: 2,
-                py: 1.5,
-                bgcolor: "rgba(255,255,255,0.05)",
-                borderBottom: "1px solid rgba(255,255,255,0.12)",
+                bgcolor: "#FBF8F1",
+                borderRight: { md: "1px solid #E7E2D6" },
+                p: 2,
               }}
             >
-              <Box sx={{ display: "flex", gap: 0.75 }}>
-                <Box sx={{ width: 11, height: 11, borderRadius: "50%", bgcolor: "#FF5F57" }} />
-                <Box sx={{ width: 11, height: 11, borderRadius: "50%", bgcolor: "#FEBC2E" }} />
-                <Box sx={{ width: 11, height: 11, borderRadius: "50%", bgcolor: "#28C840" }} />
-              </Box>
-              <Box sx={{ flex: 1, textAlign: "center" }}>
-                <Box
-                  sx={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 0.75,
-                    px: 1.5,
-                    py: 0.4,
-                    borderRadius: 1,
-                    bgcolor: "rgba(255,255,255,0.12)",
-                    color: "#FFFFFF",
-                    fontSize: "0.72rem",
-                    fontWeight: 500,
-                  }}
-                >
-                  <LockOutlinedIcon sx={{ fontSize: 11 }} />
-                  app.dentalmembernetwork.com / library
-                </Box>
-              </Box>
-              <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-                <NotificationsNoneRoundedIcon sx={{ fontSize: 17, color: "#FFFFFF" }} />
-                <Box
-                  sx={{
-                    width: 22,
-                    height: 22,
-                    borderRadius: "50%",
-                    background: "linear-gradient(135deg, #F0C16E 0%, #A07823 100%)",
-                    color: "#0A1A2F",
-                    display: "grid",
-                    placeItems: "center",
-                    fontSize: "0.62rem",
-                    fontWeight: 700,
-                    fontFamily: "var(--font-display)",
-                  }}
-                >
-                  Dr
-                </Box>
-              </Stack>
-            </Stack>
-
-            <Grid container sx={{ minHeight: { xs: 540, md: 600 } }}>
-              {/* LEFT — sidebar with PURE WHITE text */}
-              <Grid
-                size={{ xs: 12, md: 3 }}
-                sx={{
-                  bgcolor: "rgba(255,255,255,0.04)",
-                  borderRight: { md: "1px solid rgba(255,255,255,0.12)" },
-                  p: 2,
-                }}
-              >
-                <Stack spacing={2}>
-                  <Box sx={{ pb: 1.5, borderBottom: "1px solid rgba(255,255,255,0.12)" }}>
-                    <Typography
-                      sx={{
-                        color: "#FFFFFF",
-                        fontSize: "0.66rem",
-                        fontWeight: 800,
-                        letterSpacing: "0.2em",
-                        textTransform: "uppercase",
-                        mb: 1.5,
-                        opacity: 0.95,
-                      }}
-                    >
-                      Member Portal
-                    </Typography>
-                    <Stack direction="row" spacing={1.25} sx={{ alignItems: "center" }}>
-                      <Box
-                        sx={{
-                          width: 32,
-                          height: 32,
-                          borderRadius: "50%",
-                          background: "linear-gradient(135deg, #F0C16E 0%, #A07823 100%)",
-                          color: "#0A1A2F",
-                          display: "grid",
-                          placeItems: "center",
-                          fontFamily: "var(--font-display)",
-                          fontWeight: 600,
-                          fontSize: "0.82rem",
-                        }}
-                      >
-                        Dr
-                      </Box>
-                      <Box>
-                        <Typography sx={{ color: "#FFFFFF", fontWeight: 700, fontSize: "0.88rem", lineHeight: 1.2 }}>
-                          You
-                        </Typography>
-                        <Typography sx={{ color: "#FFFFFF", fontSize: "0.7rem", fontWeight: 500, mt: 0.25, opacity: 0.85 }}>
-                          Founding member · #007
-                        </Typography>
-                      </Box>
-                    </Stack>
-                  </Box>
-
-                  <Stack spacing={0.5}>
-                    {portalNavItems.map((item, i) => {
-                      const Icon = NAV_ICONS[i] ?? VideoLibraryOutlinedIcon;
-                      const isActive = i === ACTIVE_NAV_INDEX;
-                      return (
-                        <Box
-                          key={item.label}
-                          sx={{
-                            position: "relative",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1.25,
-                            px: 1.25,
-                            py: 1.1,
-                            borderRadius: 1.25,
-                            color: "#FFFFFF",
-                            bgcolor: isActive ? "rgba(217,168,75,0.22)" : "transparent",
-                            border: "1px solid",
-                            borderColor: isActive ? "rgba(217,168,75,0.4)" : "transparent",
-                          }}
-                        >
-                          {isActive && (
-                            <Box
-                              sx={{
-                                position: "absolute",
-                                left: -1,
-                                top: 6,
-                                bottom: 6,
-                                width: 3,
-                                borderRadius: "0 2px 2px 0",
-                                background: "linear-gradient(180deg, #F0C16E, #A07823)",
-                              }}
-                            />
-                          )}
-                          <Icon
-                            sx={{
-                              fontSize: 17,
-                              color: isActive ? "#F0C16E" : "#FFFFFF",
-                              opacity: isActive ? 1 : 0.95,
-                            }}
-                          />
-                          <Typography
-                            sx={{
-                              fontSize: "0.9rem",
-                              fontWeight: isActive ? 700 : 600,
-                              color: "#FFFFFF",
-                              opacity: isActive ? 1 : 0.95,
-                              flex: 1,
-                            }}
-                          >
-                            {item.label}
-                          </Typography>
-                          <Chip
-                            label={item.badge}
-                            size="small"
-                            sx={{
-                              height: 19,
-                              fontSize: "0.62rem",
-                              fontWeight: 700,
-                              bgcolor: isActive ? "rgba(217,168,75,0.32)" : "rgba(255,255,255,0.14)",
-                              color: isActive ? "#F0C16E" : "#FFFFFF",
-                              border: "1px solid",
-                              borderColor: isActive ? "rgba(217,168,75,0.55)" : "rgba(255,255,255,0.22)",
-                              "& .MuiChip-label": { px: 0.85 },
-                            }}
-                          />
-                        </Box>
-                      );
-                    })}
-                  </Stack>
-
-                  {/* Savings ledger card */}
+              <Stack spacing={2.5}>
+                <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
                   <Box
                     sx={{
-                      mt: 2,
-                      p: 1.5,
-                      borderRadius: 2,
-                      bgcolor: "rgba(217,168,75,0.16)",
-                      border: "1px solid rgba(217,168,75,0.35)",
+                      width: 30,
+                      height: 30,
+                      borderRadius: "50%",
+                      background: "linear-gradient(135deg, #C9A876 0%, #9B7B3A 100%)",
+                      color: "#FFFFFF",
+                      display: "grid",
+                      placeItems: "center",
+                      fontFamily: "var(--font-display)",
+                      fontWeight: 700,
+                      fontSize: "0.74rem",
                     }}
                   >
-                    <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 0.5 }}>
-                      <BookmarkBorderRoundedIcon sx={{ fontSize: 14, color: "#F0C16E" }} />
-                      <Typography
+                    Dr
+                  </Box>
+                  <Box>
+                    <Typography sx={{ color: "#1A1A1A", fontSize: "0.82rem", fontWeight: 600, lineHeight: 1.2 }}>
+                      You
+                    </Typography>
+                    <Typography sx={{ color: "#71717A", fontSize: "0.66rem" }}>
+                      Founding · #007
+                    </Typography>
+                  </Box>
+                </Stack>
+
+                <Stack spacing={0.4}>
+                  {NAV_ITEMS.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = item.active;
+                    return (
+                      <Box
+                        key={item.label}
                         sx={{
-                          color: "#FFFFFF",
-                          fontSize: "0.65rem",
-                          fontWeight: 800,
-                          letterSpacing: "0.16em",
-                          textTransform: "uppercase",
-                          opacity: 0.95,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1.25,
+                          px: 1,
+                          py: 0.85,
+                          borderRadius: 1.25,
+                          bgcolor: isActive ? "#FFFFFF" : "transparent",
+                          border: isActive ? "1px solid #E7E2D6" : "1px solid transparent",
+                          color: isActive ? "#1A1A1A" : "#52525B",
+                          fontWeight: isActive ? 600 : 500,
+                          boxShadow: isActive ? "0 1px 2px rgba(20,20,20,0.05)" : "none",
                         }}
                       >
-                        Savings ledger
-                      </Typography>
-                    </Stack>
-                    <Typography sx={{ color: "#FFFFFF", fontFamily: "var(--font-display)", fontSize: "1.45rem", lineHeight: 1, mt: 0.75, fontWeight: 600 }}>
-                      $4,820
-                    </Typography>
-                    <Typography sx={{ color: "#FFFFFF", fontSize: "0.74rem", mt: 0.5, opacity: 0.88 }}>
-                      via vendor network YTD
-                    </Typography>
-                  </Box>
+                        <Icon size={14} color={isActive ? "#9B7B3A" : "#71717A"} />
+                        <Typography sx={{ fontSize: "0.82rem", flex: 1, color: "inherit", fontWeight: "inherit" }}>
+                          {item.label}
+                        </Typography>
+                        <Box
+                          sx={{
+                            px: 0.65,
+                            py: 0.1,
+                            borderRadius: 0.85,
+                            bgcolor: isActive ? "#FBF8F1" : "transparent",
+                            color: isActive ? "#9B7B3A" : "#A8A29E",
+                            fontSize: "0.6rem",
+                            fontWeight: 700,
+                            border: isActive ? "1px solid #E7E2D6" : "none",
+                          }}
+                        >
+                          {item.badge}
+                        </Box>
+                      </Box>
+                    );
+                  })}
                 </Stack>
-              </Grid>
 
-              {/* RIGHT — FIXED GRID of real-looking navy thumbnails */}
-              <Grid size={{ xs: 12, md: 9 }} sx={{ p: { xs: 2.5, md: 3.5 } }}>
-                <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center", mb: 2.5, flexWrap: "wrap", gap: 1.5 }}>
-                  <Box>
-                    <Typography
-                      sx={{
-                        color: "#FFFFFF",
-                        fontSize: "0.65rem",
-                        fontWeight: 800,
-                        letterSpacing: "0.18em",
-                        textTransform: "uppercase",
-                        opacity: 0.85,
-                      }}
-                    >
-                      Resources library
-                    </Typography>
-                    <Typography sx={{ color: "#FFFFFF", fontSize: "1.2rem", fontWeight: 700, mt: 0.25 }}>
-                      Continue watching
-                    </Typography>
-                  </Box>
-                  <Stack
-                    direction="row"
-                    spacing={1}
+                <Box sx={{ pt: 1.5, borderTop: "1px solid #E7E2D6" }}>
+                  <Typography
                     sx={{
-                      alignItems: "center",
-                      px: 1.5,
-                      py: 0.9,
-                      borderRadius: 1.5,
-                      bgcolor: "rgba(255,255,255,0.1)",
-                      border: "1px solid rgba(255,255,255,0.18)",
-                      minWidth: 220,
+                      color: "#9B7B3A",
+                      fontSize: "0.6rem",
+                      fontWeight: 700,
+                      letterSpacing: "0.14em",
+                      textTransform: "uppercase",
+                      mb: 0.65,
                     }}
                   >
-                    <SearchOutlinedIcon sx={{ fontSize: 14, color: "#FFFFFF" }} />
-                    <Typography sx={{ color: "#FFFFFF", fontSize: "0.78rem", opacity: 0.85 }}>
-                      Search resources…
-                    </Typography>
-                  </Stack>
-                </Stack>
+                    Savings ledger
+                  </Typography>
+                  <Typography sx={{ color: "#1A1A1A", fontFamily: "var(--font-display)", fontSize: "1.35rem", fontWeight: 600, lineHeight: 1 }}>
+                    $4,820
+                  </Typography>
+                  <Typography sx={{ color: "#71717A", fontSize: "0.7rem", mt: 0.4 }}>
+                    via vendor network YTD
+                  </Typography>
+                </Box>
+              </Stack>
+            </Grid>
 
-                {/* Fixed 6-card grid — no scrolling, all navy, presenter = Gary */}
-                <Grid container spacing={1.75}>
-                  {libraryTopics.slice(0, 6).map((topic, i) => (
-                    <Grid key={topic.title} size={{ xs: 12, sm: 6, lg: 4 }}>
-                      <ResourceThumbnail
-                        topic={topic}
-                        index={i}
-                        bg={i % 2 === 0 ? THUMB_BG : THUMB_BG_ALT}
-                      />
-                    </Grid>
-                  ))}
-                </Grid>
+            {/* MAIN — featured player + library grid */}
+            <Grid size={{ xs: 12, md: 9.5 }} sx={{ p: { xs: 2.5, md: 3.5 } }}>
+              {/* NOW PLAYING — featured card with live progress */}
+              <FeaturedCard
+                entry={NOW_PLAYING}
+                progress={progress}
+                currentTime={formatTime(currentSec)}
+                totalTime={formatTime(totalSec)}
+              />
 
-                <Box
+              {/* Library section header */}
+              <Stack
+                direction="row"
+                sx={{
+                  justifyContent: "space-between",
+                  alignItems: "baseline",
+                  mt: 3.5,
+                  mb: 2,
+                }}
+              >
+                <Typography
                   sx={{
-                    mt: 3,
-                    pt: 2,
-                    borderTop: "1px solid rgba(255,255,255,0.14)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    flexWrap: "wrap",
-                    gap: 1,
+                    color: "#1A1A1A",
+                    fontFamily: "var(--font-display)",
+                    fontSize: "1.05rem",
+                    fontWeight: 600,
+                    letterSpacing: "-0.01em",
                   }}
                 >
-                  <Typography sx={{ color: "#FFFFFF", fontSize: "0.8rem", opacity: 0.85 }}>
-                    42 resources in your library · New drops every Tuesday
-                  </Typography>
-                  <Stack direction="row" spacing={0.75} sx={{ alignItems: "center" }}>
-                    <Box
-                      sx={{
-                        width: 6,
-                        height: 6,
-                        borderRadius: "50%",
-                        bgcolor: "#2E8A57",
-                        boxShadow: "0 0 8px rgba(46,138,87,0.7)",
-                      }}
-                    />
-                    <Typography sx={{ color: "#7AD49E", fontSize: "0.78rem", fontWeight: 700 }}>
-                      Live
-                    </Typography>
-                  </Stack>
-                </Box>
+                  Next in your library
+                </Typography>
+                <Typography sx={{ color: "#71717A", fontSize: "0.78rem" }}>
+                  6 of 42 resources
+                </Typography>
+              </Stack>
+
+              {/* Library grid — 3 columns, 2 rows = 6 cards. Breathable. */}
+              <Grid container spacing={2}>
+                {LIBRARY.map((entry, i) => (
+                  <Grid key={entry.title} size={{ xs: 12, sm: 6, md: 4 }}>
+                    <ThumbnailCard entry={entry} index={i} />
+                  </Grid>
+                ))}
               </Grid>
             </Grid>
-          </Box>
-        </SectionReveal>
+          </Grid>
+        </MotionBox>
 
-        <SectionReveal variant="fade-up" delay={0.3} sx={{ mt: 3.5 }}>
-          <Typography
-            variant="body2"
-            sx={{
-              color: "#5C6770",
-              fontSize: "0.86rem",
-              textAlign: "center",
-              maxWidth: 720,
-              mx: "auto",
-              fontStyle: "italic",
-            }}
-          >
-            This preview is a static mock. The real portal updates in real time — your helpline cases,
-            saved vendor deals, watch history, and savings ledger all stay in sync.
-          </Typography>
-        </SectionReveal>
+        <Typography
+          variant="body2"
+          sx={{
+            color: "#71717A",
+            fontSize: "0.82rem",
+            textAlign: "center",
+            mt: 3,
+            fontStyle: "italic",
+          }}
+        >
+          A preview of the member portal. Resources update in real time when admins publish.
+        </Typography>
       </Container>
     </Box>
   );
 }
 
 /**
- * Real-video-feel resource thumbnail. Each card has:
- *  - A topic-specific still-frame icon (large, low opacity) with slow Ken Burns drift
- *  - Gary's actual photo as a small "host bug" in the corner
- *  - Gold play button center
- *  - Track label + title overlaid on the frame
- *  - Duration badge bottom-right
- *  - "NOW PLAYING" gold bar that slides in on hover
- *
- * Single navy color palette across all cards for visual cohesion.
+ * Featured "now playing" card with animated progress, time display,
+ * and a subtle pulsing border to indicate it's live.
  */
-function ResourceThumbnail({
-  topic,
-  index,
-  bg,
+function FeaturedCard({
+  entry,
+  progress,
+  currentTime,
+  totalTime,
 }: {
-  topic: (typeof libraryTopics)[number];
-  index: number;
-  bg: string;
+  entry: LibraryEntry;
+  progress: number;
+  currentTime: string;
+  totalTime: string;
 }) {
+  const { Icon } = entry;
+  return (
+    <Box
+      sx={{
+        position: "relative",
+        borderRadius: 2.5,
+        bgcolor: "#1A1A1A",
+        overflow: "hidden",
+        // Soft pulsing ring around the whole card to indicate live playback
+        boxShadow:
+          "0 0 0 1px rgba(201,168,118,0.45), 0 20px 40px -16px rgba(201,168,118,0.35)",
+        animation: "featuredPulse 3s ease-in-out infinite",
+        "@keyframes featuredPulse": {
+          "0%, 100%": {
+            boxShadow:
+              "0 0 0 1px rgba(201,168,118,0.4), 0 20px 40px -16px rgba(201,168,118,0.25)",
+          },
+          "50%": {
+            boxShadow:
+              "0 0 0 1px rgba(201,168,118,0.7), 0 24px 48px -16px rgba(201,168,118,0.5)",
+          },
+        },
+        "@media (prefers-reduced-motion: reduce)": { animation: "none" },
+      }}
+    >
+      {/* Top: visual still + play state */}
+      <Box
+        sx={{
+          position: "relative",
+          aspectRatio: "16 / 6.5",
+          background:
+            "linear-gradient(135deg, #1F1F22 0%, #131316 100%)",
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", sm: "auto 1fr auto" },
+          alignItems: "center",
+          gap: { xs: 2, sm: 3 },
+          px: { xs: 2.5, md: 3.5 },
+          py: { xs: 2.5, md: 3 },
+        }}
+      >
+        {/* Soft gold glow blob */}
+        <Box
+          aria-hidden
+          sx={{
+            position: "absolute",
+            top: -60,
+            right: -60,
+            width: 280,
+            height: 280,
+            borderRadius: "50%",
+            background:
+              "radial-gradient(circle, rgba(201,168,118,0.28) 0%, transparent 70%)",
+            filter: "blur(60px)",
+            pointerEvents: "none",
+          }}
+        />
+
+        {/* Large icon as visual still */}
+        <Box
+          sx={{
+            width: { xs: 56, sm: 72 },
+            height: { xs: 56, sm: 72 },
+            borderRadius: 2,
+            display: "grid",
+            placeItems: "center",
+            bgcolor: "rgba(201,168,118,0.18)",
+            border: "1px solid rgba(201,168,118,0.35)",
+            color: "#C9A876",
+            flexShrink: 0,
+          }}
+        >
+          <Icon size={32} strokeWidth={1.8} />
+        </Box>
+
+        {/* Text + status */}
+        <Box sx={{ position: "relative", minWidth: 0 }}>
+          <Stack direction="row" spacing={0.85} sx={{ alignItems: "center", mb: 0.85 }}>
+            <Box
+              sx={{
+                width: 6,
+                height: 6,
+                borderRadius: "50%",
+                bgcolor: "#E07A5F",
+                boxShadow: "0 0 8px rgba(224,122,95,0.7)",
+                animation: "liveDot 1.4s ease-in-out infinite",
+                "@keyframes liveDot": {
+                  "0%, 100%": { opacity: 1 },
+                  "50%": { opacity: 0.3 },
+                },
+              }}
+            />
+            <Typography
+              sx={{
+                color: "#E07A5F",
+                fontSize: "0.62rem",
+                fontWeight: 700,
+                letterSpacing: "0.16em",
+                textTransform: "uppercase",
+              }}
+            >
+              Now playing
+            </Typography>
+            <Typography
+              sx={{
+                color: "#C9A876",
+                fontSize: "0.62rem",
+                fontWeight: 700,
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+                ml: 1,
+              }}
+            >
+              · {entry.track}
+            </Typography>
+          </Stack>
+          <Typography
+            sx={{
+              color: "#FFFFFF",
+              fontFamily: "var(--font-display)",
+              fontSize: { xs: "1.05rem", sm: "1.25rem" },
+              fontWeight: 600,
+              letterSpacing: "-0.02em",
+              lineHeight: 1.2,
+            }}
+          >
+            {entry.title}
+          </Typography>
+          <Stack direction="row" spacing={1} sx={{ alignItems: "center", mt: 1, color: "#A8A29E" }}>
+            {/* Gary host bug */}
+            <Box
+              sx={{
+                position: "relative",
+                width: 18,
+                height: 18,
+                borderRadius: "50%",
+                overflow: "hidden",
+                border: "1px solid rgba(201,168,118,0.45)",
+              }}
+            >
+              <Image
+                src="/team/gary-takacs.jpg"
+                alt={libraryPresenter.name}
+                fill
+                sizes="18px"
+                style={{ objectFit: "cover", objectPosition: "center top" }}
+              />
+            </Box>
+            <Typography sx={{ color: "#A8A29E", fontSize: "0.75rem", fontWeight: 500 }}>
+              {libraryPresenter.name}
+            </Typography>
+            <Box sx={{ width: 2, height: 2, borderRadius: "50%", bgcolor: "#52525B" }} />
+            <Typography sx={{ color: "#A8A29E", fontSize: "0.75rem" }}>
+              {entry.duration}
+            </Typography>
+          </Stack>
+        </Box>
+
+        {/* Play/Pause control */}
+        <Box
+          sx={{
+            display: { xs: "none", sm: "grid" },
+            placeItems: "center",
+            width: 50,
+            height: 50,
+            borderRadius: "50%",
+            bgcolor: "#C9A876",
+            color: "#1A1A1A",
+            cursor: "pointer",
+            transition: "transform 200ms ease, background 200ms ease",
+            "&:hover": {
+              transform: "scale(1.05)",
+              bgcolor: "#D4B07A",
+            },
+          }}
+        >
+          <Pause size={20} strokeWidth={2.5} fill="#1A1A1A" />
+        </Box>
+      </Box>
+
+      {/* Progress bar with time stamps */}
+      <Box sx={{ position: "relative", px: { xs: 2.5, md: 3.5 }, pb: 2 }}>
+        <Box
+          sx={{
+            position: "relative",
+            height: 4,
+            borderRadius: 999,
+            bgcolor: "rgba(255,255,255,0.1)",
+            overflow: "hidden",
+          }}
+        >
+          <Box
+            sx={{
+              position: "absolute",
+              inset: 0,
+              width: `${progress}%`,
+              background:
+                "linear-gradient(90deg, #C9A876 0%, #D4B07A 50%, #E8D5A8 100%)",
+              borderRadius: 999,
+              boxShadow: "0 0 6px rgba(201,168,118,0.6)",
+              transition: "width 0.1s linear",
+            }}
+          />
+          {/* Playhead dot */}
+          <Box
+            sx={{
+              position: "absolute",
+              left: `${progress}%`,
+              top: "50%",
+              transform: "translate(-50%, -50%)",
+              width: 11,
+              height: 11,
+              borderRadius: "50%",
+              bgcolor: "#FFFFFF",
+              border: "2px solid #C9A876",
+              boxShadow: "0 0 8px rgba(201,168,118,0.7)",
+              transition: "left 0.1s linear",
+            }}
+          />
+        </Box>
+        <Stack
+          direction="row"
+          sx={{
+            justifyContent: "space-between",
+            alignItems: "center",
+            mt: 1.25,
+            color: "rgba(255,255,255,0.65)",
+          }}
+        >
+          <Stack direction="row" spacing={1.25} sx={{ alignItems: "center" }}>
+            <Typography sx={{ color: "#C9A876", fontSize: "0.75rem", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
+              {currentTime}
+            </Typography>
+            <Typography sx={{ color: "rgba(255,255,255,0.45)", fontSize: "0.75rem" }}>
+              / {totalTime}
+            </Typography>
+          </Stack>
+          <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", color: "rgba(255,255,255,0.55)" }}>
+            <Volume2 size={14} />
+            <MessageSquare size={14} />
+          </Stack>
+        </Stack>
+      </Box>
+    </Box>
+  );
+}
+
+/**
+ * Standard library thumbnail card — clean rectangle with topic icon and meta.
+ * Hover lifts slightly with gold border.
+ */
+function ThumbnailCard({ entry, index }: { entry: LibraryEntry; index: number }) {
   const reduced = useReducedMotion();
-  const KindIcon = KIND_ICON[topic.kind] ?? PlayArrowRoundedIcon;
+  const { Icon } = entry;
 
   return (
     <MotionBox
       initial={reduced ? false : { opacity: 0, y: 14 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
-      transition={{ duration: 0.5, delay: Math.min(index * 0.05, 0.3), ease: [0.16, 1, 0.3, 1] }}
-      whileHover={reduced ? undefined : { y: -3 }}
+      transition={{
+        duration: 0.5,
+        delay: Math.min(index * 0.05, 0.3),
+        ease: [0.16, 1, 0.3, 1],
+      }}
       sx={{
-        bgcolor: "transparent",
+        position: "relative",
         cursor: "pointer",
-        transition: "transform 280ms ease",
+        borderRadius: 2,
+        overflow: "hidden",
+        border: "1px solid #E7E2D6",
+        bgcolor: "#FFFFFF",
+        transition: "transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease",
+        "&:hover": {
+          transform: "translateY(-2px)",
+          borderColor: "#C9A876",
+          boxShadow: "0 16px 32px -16px rgba(201,168,118,0.35)",
+        },
       }}
     >
-      {/* 16:9 thumbnail frame */}
+      {/* 16:9 thumbnail */}
       <Box
-        className="thumb-frame"
         sx={{
           position: "relative",
-          width: "100%",
           aspectRatio: "16 / 9",
-          borderRadius: 1.5,
+          background:
+            "linear-gradient(135deg, #1F1F22 0%, #131316 100%)",
+          display: "grid",
+          placeItems: "center",
           overflow: "hidden",
-          bgcolor: bg,
-          border: `1px solid ${THUMB_BORDER}`,
-          transition: "border-color 280ms ease, box-shadow 280ms ease",
-          "&:hover": {
-            borderColor: "rgba(217,168,75,0.55)",
-            boxShadow: "0 18px 32px -10px rgba(217,168,75,0.35)",
-          },
-          // Reveal NOW-PLAYING bar on hover
-          "&:hover .now-playing": {
-            transform: "translateY(0)",
-            opacity: 1,
-          },
-          "&:hover .ken-burns": {
-            transform: "scale(1.12) translate(-2%, 1%)",
-          },
         }}
       >
-        {/* Ken Burns layer — the topic-specific icon as a still-frame graphic.
-            Slow constant drift + scale, plus an extra push on hover. */}
+        {/* Soft gold glow */}
         <Box
-          className="ken-burns"
           aria-hidden
           sx={{
             position: "absolute",
-            inset: 0,
+            top: -40,
+            right: -40,
+            width: 180,
+            height: 180,
+            borderRadius: "50%",
+            background:
+              "radial-gradient(circle, rgba(201,168,118,0.18) 0%, transparent 70%)",
+            filter: "blur(40px)",
+          }}
+        />
+
+        {/* Big topic icon */}
+        <Box
+          sx={{
+            position: "relative",
+            width: 56,
+            height: 56,
+            borderRadius: 1.5,
             display: "grid",
             placeItems: "center",
-            color: "rgba(255,255,255,0.16)",
-            transition: "transform 600ms cubic-bezier(0.16, 1, 0.3, 1)",
-            animation: reduced
-              ? "none"
-              : `kenBurns${index} 14s ease-in-out infinite alternate`,
-            [`@keyframes kenBurns${index}`]: {
-              "0%": { transform: `scale(1) translate(0%, 0%)` },
-              "100%": {
-                transform: `scale(1.08) translate(${index % 2 === 0 ? "-3%" : "3%"}, ${index % 3 === 0 ? "2%" : "-2%"})`,
-              },
-            },
+            bgcolor: "rgba(201,168,118,0.18)",
+            border: "1px solid rgba(201,168,118,0.32)",
+            color: "#C9A876",
           }}
         >
-          <KindIcon sx={{ fontSize: { xs: 110, md: 150 } }} />
+          <Icon size={26} strokeWidth={1.8} />
         </Box>
 
-        {/* Subtle radial vignette so the icon recedes behind the title */}
-        <Box
-          aria-hidden
+        {/* Track label top-left */}
+        <Typography
           sx={{
             position: "absolute",
-            inset: 0,
-            backgroundImage:
-              "radial-gradient(ellipse at 30% 100%, rgba(0,0,0,0.45) 0%, transparent 65%), linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.45) 100%)",
-            pointerEvents: "none",
-          }}
-        />
-
-        {/* Subtle top sheen */}
-        <Box
-          aria-hidden
-          sx={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            height: "45%",
-            background:
-              "linear-gradient(180deg, rgba(255,255,255,0.06) 0%, transparent 100%)",
-            pointerEvents: "none",
-          }}
-        />
-
-        {/* Gold accent stripe on top edge — DMN brand thread */}
-        <Box
-          aria-hidden
-          sx={{
-            position: "absolute",
-            top: 0,
-            left: "8%",
-            right: "8%",
-            height: 1.5,
-            background:
-              "linear-gradient(90deg, transparent, rgba(217,168,75,0.6), transparent)",
-          }}
-        />
-
-        {/* NOW PLAYING bar — slides in from top on hover */}
-        <Box
-          className="now-playing"
-          aria-hidden
-          sx={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            display: "flex",
-            alignItems: "center",
-            gap: 0.75,
-            px: 1.5,
-            py: 0.6,
-            bgcolor: "rgba(217,168,75,0.92)",
-            color: "#0A1A2F",
-            fontSize: "0.6rem",
-            fontWeight: 800,
-            letterSpacing: "0.18em",
+            top: 10,
+            left: 12,
+            color: "#C9A876",
+            fontSize: "0.58rem",
+            letterSpacing: "0.16em",
+            fontWeight: 700,
             textTransform: "uppercase",
-            transform: "translateY(-100%)",
-            opacity: 0,
-            transition: "transform 360ms cubic-bezier(0.16, 1, 0.3, 1), opacity 280ms ease",
-            zIndex: 3,
           }}
         >
-          <FiberManualRecordIcon sx={{ fontSize: 8, color: "#8C1D1D" }} />
-          Now playing
-        </Box>
-
-        {/* Body content — track label top-left, title bottom-left */}
-        <Box
-          sx={{
-            position: "absolute",
-            inset: 12,
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-            zIndex: 2,
-          }}
-        >
-          <Typography
-            sx={{
-              color: "rgba(255,255,255,0.92)",
-              fontSize: "0.58rem",
-              letterSpacing: "0.16em",
-              fontWeight: 800,
-              textTransform: "uppercase",
-              textShadow: "0 1px 4px rgba(0,0,0,0.4)",
-            }}
-          >
-            {topic.track}
-          </Typography>
-
-          <Typography
-            sx={{
-              color: THUMB_TITLE,
-              fontSize: { xs: "0.92rem", md: "1rem" },
-              fontWeight: 700,
-              lineHeight: 1.25,
-              letterSpacing: "-0.005em",
-              maxWidth: "78%",
-              textShadow: "0 1px 8px rgba(0,0,0,0.55)",
-            }}
-          >
-            {topic.title}
-          </Typography>
-        </Box>
-
-        {/* Center play button — gold ring */}
-        <Box
-          className="play-btn"
-          sx={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: 44,
-            height: 44,
-            borderRadius: "50%",
-            bgcolor: "rgba(217,168,75,0.22)",
-            border: "1.5px solid rgba(217,168,75,0.65)",
-            display: "grid",
-            placeItems: "center",
-            backdropFilter: "blur(4px)",
-            transition: "transform 240ms ease, background 240ms ease, border-color 240ms ease",
-            zIndex: 2,
-            ".thumb-frame:hover &": {
-              transform: "translate(-50%, -50%) scale(1.08)",
-              bgcolor: "rgba(217,168,75,0.4)",
-              borderColor: "#F0C16E",
-            },
-          }}
-        >
-          <PlayArrowRoundedIcon sx={{ fontSize: 24, color: "#F0C16E", ml: 0.25 }} />
-        </Box>
-
-        {/* Host bug — Gary's actual photo in a small circular frame, bottom-right area */}
-        <Box
-          sx={{
-            position: "absolute",
-            bottom: 10,
-            right: 50,
-            width: 32,
-            height: 32,
-            borderRadius: "50%",
-            overflow: "hidden",
-            border: "1.5px solid rgba(217,168,75,0.6)",
-            boxShadow: "0 4px 10px -2px rgba(0,0,0,0.6)",
-            bgcolor: "#0A1A2F",
-            zIndex: 2,
-          }}
-        >
-          <Image
-            src="/team/gary-takacs.jpg"
-            alt="Gary Takacs"
-            fill
-            sizes="32px"
-            style={{ objectFit: "cover", objectPosition: "center top" }}
-          />
-        </Box>
+          {entry.track}
+        </Typography>
 
         {/* Duration badge bottom-right */}
         <Box
@@ -806,67 +730,84 @@ function ResourceThumbnail({
             right: 10,
             px: 0.85,
             py: 0.25,
-            borderRadius: 0.75,
-            bgcolor: "rgba(0,0,0,0.78)",
+            borderRadius: 0.85,
+            bgcolor: "rgba(0,0,0,0.7)",
             color: "#FFFFFF",
-            fontSize: "0.64rem",
+            fontSize: "0.62rem",
             fontWeight: 700,
-            letterSpacing: "0.02em",
-            zIndex: 2,
           }}
         >
-          {topic.duration}
+          {entry.duration}
+        </Box>
+
+        {/* Play indicator on hover */}
+        <Box
+          className="play-overlay"
+          sx={{
+            position: "absolute",
+            inset: 0,
+            display: "grid",
+            placeItems: "center",
+            bgcolor: "rgba(0,0,0,0.3)",
+            opacity: 0,
+            transition: "opacity 200ms ease",
+            ".MuiBox-root:hover > &": { opacity: 1 },
+          }}
+        >
+          <Box
+            sx={{
+              width: 38,
+              height: 38,
+              borderRadius: "50%",
+              bgcolor: "#C9A876",
+              color: "#1A1A1A",
+              display: "grid",
+              placeItems: "center",
+            }}
+          >
+            <Play size={16} strokeWidth={2.5} fill="#1A1A1A" />
+          </Box>
         </Box>
       </Box>
 
-      {/* Presenter strip below the thumbnail */}
-      <Stack direction="row" spacing={1} sx={{ alignItems: "center", px: 0.5, pt: 1.25 }}>
-        <Box
+      {/* Card body */}
+      <Box sx={{ p: 1.75 }}>
+        <Typography
           sx={{
-            position: "relative",
-            width: 24,
-            height: 24,
-            borderRadius: "50%",
-            overflow: "hidden",
-            border: "1px solid rgba(217,168,75,0.45)",
-            flexShrink: 0,
-            bgcolor: "#0A1A2F",
+            color: "#1A1A1A",
+            fontSize: "0.88rem",
+            fontWeight: 600,
+            lineHeight: 1.3,
+            letterSpacing: "-0.005em",
+            mb: 0.85,
           }}
         >
-          <Image
-            src="/team/gary-takacs.jpg"
-            alt="Gary Takacs"
-            fill
-            sizes="24px"
-            style={{ objectFit: "cover", objectPosition: "center top" }}
-          />
-        </Box>
-        <Box sx={{ minWidth: 0, flex: 1 }}>
-          <Typography
+          {entry.title}
+        </Typography>
+        <Stack direction="row" spacing={0.85} sx={{ alignItems: "center" }}>
+          <Box
             sx={{
-              color: "#FFFFFF",
-              fontSize: "0.78rem",
-              fontWeight: 600,
-              lineHeight: 1.2,
-              whiteSpace: "nowrap",
+              position: "relative",
+              width: 18,
+              height: 18,
+              borderRadius: "50%",
               overflow: "hidden",
-              textOverflow: "ellipsis",
+              flexShrink: 0,
             }}
           >
+            <Image
+              src="/team/gary-takacs.jpg"
+              alt={libraryPresenter.name}
+              fill
+              sizes="18px"
+              style={{ objectFit: "cover", objectPosition: "center top" }}
+            />
+          </Box>
+          <Typography sx={{ color: "#52525B", fontSize: "0.74rem", fontWeight: 500 }}>
             {libraryPresenter.name}
           </Typography>
-          <Typography
-            sx={{
-              color: "#FFFFFF",
-              fontSize: "0.66rem",
-              opacity: 0.75,
-              mt: 0.25,
-            }}
-          >
-            Host, Thriving Dentist
-          </Typography>
-        </Box>
-      </Stack>
+        </Stack>
+      </Box>
     </MotionBox>
   );
 }

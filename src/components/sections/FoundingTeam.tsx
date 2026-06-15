@@ -1,114 +1,192 @@
 "use client";
 import Image from "next/image";
 import { Box, Container, Grid, Stack, Typography } from "@mui/material";
-import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
-import MicNoneOutlinedIcon from "@mui/icons-material/MicNoneOutlined";
+import { BadgeCheck, Mic, Sparkles } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
-import SectionReveal from "@/components/effects/SectionReveal";
-import { asHeardOn, foundingTeam, foundingTeamSection } from "@/lib/content";
 
 const MotionBox = motion.create(Box);
 
+type Founder = {
+  name: string;
+  role: string;
+  photo: string;
+  bio: string;
+  badges: string[];
+};
+
+const FOUNDERS: Founder[] = [
+  {
+    name: "Gary Takacs",
+    role: "Founder · Thriving Dentist",
+    photo: "/team/gary-takacs.jpg",
+    bio:
+      "30+ years coaching dental practice owners. Host of the Thriving Dentist Show, downloaded in 192 countries. Curates every helpline expert before they answer a single member question.",
+    badges: ["2,200+ practices coached", "30+ years", "Podcast host"],
+  },
+  {
+    name: "Naren Arulrajah",
+    role: "Founder · Ekwa Marketing",
+    photo: "/team/naren-arulrajah.jpg",
+    bio:
+      "Founder & CEO of Ekwa Marketing. Co-host of Less Insurance Dependence. Built the dental SEO playbook used by hundreds of fee-for-service practices and personally vets every marketing partner in DMN.",
+    badges: ["Ekwa Marketing", "Less Insurance Dependence", "SEO specialist"],
+  },
+];
+
 export default function FoundingTeam() {
   const reduced = useReducedMotion();
-  const looped = [...asHeardOn, ...asHeardOn, ...asHeardOn];
 
   return (
     <Box
       component="section"
       sx={{
         position: "relative",
-        py: { xs: 6, md: 8.5 },
+        py: { xs: 7, md: 10 },
         bgcolor: "#FFFFFF",
-        borderTop: "1px solid",
-        borderColor: "rgba(14,42,61,0.06)",
+        borderTop: "1px solid #E7E2D6",
+        overflow: "hidden",
       }}
     >
+      {/* Soft warm halo top-right */}
       <Box
         aria-hidden
         sx={{
           position: "absolute",
-          inset: 0,
-          backgroundImage:
-            "radial-gradient(40% 50% at 50% 0%, rgba(217,168,75,0.06) 0%, transparent 60%)",
+          top: -100,
+          right: -100,
+          width: 380,
+          height: 380,
+          borderRadius: "50%",
+          background:
+            "radial-gradient(circle, rgba(201,168,118,0.12) 0%, transparent 70%)",
+          filter: "blur(60px)",
           pointerEvents: "none",
         }}
       />
 
       <Container maxWidth="lg" sx={{ position: "relative" }}>
-        {/* Section title */}
-        <SectionReveal variant="fade-up" sx={{ mb: { xs: 3.5, md: 4.5 } }}>
-          <Stack spacing={1.25} sx={{ textAlign: "center", maxWidth: 760, mx: "auto" }}>
-            <Typography variant="overline" sx={{ color: "#A07823", letterSpacing: "0.18em" }}>
-              {foundingTeamSection.eyebrow}
-            </Typography>
+        {/* Section heading */}
+        <MotionBox
+          initial={reduced ? false : { opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-60px" }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          sx={{ textAlign: "center", maxWidth: 720, mx: "auto", mb: { xs: 5, md: 6 } }}
+        >
+          {/* Eyebrow pill */}
+          <Box
+            sx={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 0.85,
+              px: 1.4,
+              py: 0.55,
+              borderRadius: 999,
+              bgcolor: "#FBF8F1",
+              border: "1px solid rgba(155,123,58,0.25)",
+              mb: 2,
+            }}
+          >
+            <Sparkles size={12} color="#9B7B3A" strokeWidth={2.4} />
             <Typography
-              variant="h2"
               sx={{
-                color: "#0A1A2F",
-                fontSize: { xs: "1.8rem", md: "2.35rem" },
-                lineHeight: 1.15,
+                color: "#7A5F2A",
+                fontSize: "0.7rem",
+                fontWeight: 700,
+                letterSpacing: "0.16em",
+                textTransform: "uppercase",
               }}
             >
-              {foundingTeamSection.title}
+              Founding team
             </Typography>
-          </Stack>
-        </SectionReveal>
+          </Box>
+
+          <Typography
+            variant="h2"
+            sx={{
+              color: "#1A1A1A",
+              fontFamily: "var(--font-display)",
+              fontSize: { xs: "1.7rem", md: "2.1rem" },
+              fontWeight: 500,
+              letterSpacing: "-0.025em",
+              lineHeight: 1.1,
+              mb: 1.5,
+            }}
+          >
+            Curated by the team behind{" "}
+            <Box
+              component="span"
+              sx={{
+                fontStyle: "italic",
+                backgroundImage:
+                  "linear-gradient(120deg, #9B7B3A 0%, #D4B07A 50%, #9B7B3A 100%)",
+                backgroundClip: "text",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+              }}
+            >
+              Thriving Dentist
+            </Box>
+            .
+          </Typography>
+          <Typography
+            sx={{
+              color: "#52525B",
+              fontSize: { xs: "0.95rem", md: "1.02rem" },
+              maxWidth: 580,
+              mx: "auto",
+              lineHeight: 1.55,
+            }}
+          >
+            Every expert on the helpline, every vendor in the deals, every resource in the library — personally vetted by Gary and Naren. No algorithm. No marketing department.
+          </Typography>
+        </MotionBox>
 
         {/* Founder cards */}
-        <Grid container spacing={2.5} sx={{ mb: { xs: 3, md: 4 }, justifyContent: "center" }}>
-          {foundingTeam.map((person, i) => (
-            <Grid key={person.name} size={{ xs: 12, sm: 6, md: 5 }}>
+        <Grid container spacing={2.5} sx={{ justifyContent: "center" }}>
+          {FOUNDERS.map((f, i) => (
+            <Grid key={f.name} size={{ xs: 12, md: 6 }}>
               <MotionBox
-                initial={reduced ? false : { opacity: 0, y: 20 }}
+                initial={reduced ? false : { opacity: 0, y: 24 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-60px" }}
                 transition={{
-                  duration: 0.55,
-                  delay: Math.min(i * 0.08, 0.3),
+                  duration: 0.7,
+                  delay: i * 0.08,
                   ease: [0.16, 1, 0.3, 1],
                 }}
-                whileHover={reduced ? undefined : { y: -3 }}
                 sx={{
                   position: "relative",
                   height: "100%",
-                  p: 2.75,
+                  p: { xs: 2.5, md: 3 },
                   borderRadius: 3,
                   bgcolor: "#FBF8F1",
-                  border: "1px solid",
-                  borderColor: "rgba(14,42,61,0.08)",
-                  transition: "border-color 280ms ease, box-shadow 280ms ease",
-                  overflow: "hidden",
+                  border: "1px solid #E7E2D6",
+                  transition:
+                    "transform 280ms ease, border-color 280ms ease, box-shadow 280ms ease",
                   "&:hover": {
-                    borderColor: "rgba(160,120,35,0.4)",
-                    boxShadow: "0 24px 50px -28px rgba(14,42,61,0.18)",
+                    transform: "translateY(-3px)",
+                    borderColor: "#C9A876",
+                    boxShadow:
+                      "0 1px 2px rgba(20,20,20,0.04), 0 24px 50px -30px rgba(155,123,58,0.32)",
                   },
                 }}
               >
-                <Box
-                  aria-hidden
-                  sx={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    bottom: 0,
-                    width: 3,
-                    background: `linear-gradient(180deg, ${person.color} 0%, ${person.color}80 100%)`,
-                  }}
-                />
-
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={2.5} sx={{ alignItems: { sm: "center" }, position: "relative" }}>
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={2.5} sx={{ alignItems: { sm: "flex-start" }, height: "100%" }}>
+                  {/* Photo with gold ring */}
                   <Box
                     sx={{
                       position: "relative",
-                      width: { xs: 84, sm: 88 },
-                      height: { xs: 84, sm: 88 },
+                      width: { xs: 100, sm: 120 },
+                      height: { xs: 100, sm: 120 },
                       borderRadius: "50%",
                       flexShrink: 0,
                       overflow: "hidden",
-                      background: `linear-gradient(135deg, ${person.color} 0%, ${person.color}c0 100%)`,
+                      background:
+                        "linear-gradient(135deg, #C9A876 0%, #9B7B3A 100%)",
                       padding: "3px",
-                      boxShadow: `0 12px 28px -10px ${person.color}80, 0 0 0 1px ${person.color}30`,
+                      boxShadow:
+                        "0 1px 2px rgba(20,20,20,0.06), 0 12px 28px -10px rgba(155,123,58,0.35)",
                     }}
                   >
                     <Box
@@ -122,10 +200,10 @@ export default function FoundingTeam() {
                       }}
                     >
                       <Image
-                        src={person.photo}
-                        alt={person.name}
+                        src={f.photo}
+                        alt={f.name}
                         fill
-                        sizes="88px"
+                        sizes="(max-width: 600px) 100px, 120px"
                         style={{
                           objectFit: "cover",
                           objectPosition: "center top",
@@ -134,22 +212,65 @@ export default function FoundingTeam() {
                     </Box>
                   </Box>
 
-                  <Box sx={{ minWidth: 0, flex: 1 }}>
-                    <Typography sx={{ color: "#0A1A2F", fontWeight: 700, fontSize: "1.05rem", lineHeight: 1.2 }}>
-                      {person.name}
+                  {/* Text */}
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography
+                      sx={{
+                        color: "#1A1A1A",
+                        fontFamily: "var(--font-display)",
+                        fontSize: "1.4rem",
+                        fontWeight: 500,
+                        letterSpacing: "-0.02em",
+                        lineHeight: 1.1,
+                        mb: 0.4,
+                      }}
+                    >
+                      {f.name}
                     </Typography>
                     <Typography
-                      variant="body2"
-                      sx={{ color: "#A07823", fontSize: "0.8rem", fontWeight: 600, mt: 0.3 }}
+                      sx={{
+                        color: "#9B7B3A",
+                        fontSize: "0.82rem",
+                        fontWeight: 600,
+                        mb: 1.25,
+                        letterSpacing: "-0.005em",
+                      }}
                     >
-                      {person.role}
+                      {f.role}
                     </Typography>
                     <Typography
-                      variant="body2"
-                      sx={{ color: "#3B4A55", fontSize: "0.84rem", lineHeight: 1.55, mt: 0.75 }}
+                      sx={{
+                        color: "#52525B",
+                        fontSize: "0.92rem",
+                        lineHeight: 1.6,
+                        mb: 1.5,
+                      }}
                     >
-                      {person.blurb}
+                      {f.bio}
                     </Typography>
+
+                    <Stack direction="row" sx={{ flexWrap: "wrap", gap: 0.85 }}>
+                      {f.badges.map((badge) => (
+                        <Box
+                          key={badge}
+                          sx={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 0.5,
+                            px: 1,
+                            py: 0.35,
+                            borderRadius: 999,
+                            bgcolor: "#FFFFFF",
+                            border: "1px solid #E7E2D6",
+                            color: "#52525B",
+                            fontSize: "0.7rem",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {badge}
+                        </Box>
+                      ))}
+                    </Stack>
                   </Box>
                 </Stack>
               </MotionBox>
@@ -157,138 +278,42 @@ export default function FoundingTeam() {
           ))}
         </Grid>
 
-        {/* Vetted-by line — clean alignment using flex on a single row, icon centered with text */}
-        <SectionReveal variant="fade-up" delay={0.2} sx={{ mb: { xs: 4, md: 5 } }}>
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 1.25,
-              maxWidth: 760,
-              mx: "auto",
-              px: { xs: 2, md: 3 },
-              py: 1.5,
-              borderRadius: 2.5,
-              bgcolor: "rgba(217,168,75,0.06)",
-              border: "1px solid rgba(217,168,75,0.18)",
-            }}
-          >
-            <VerifiedRoundedIcon
-              sx={{
-                fontSize: 18,
-                color: "#A07823",
-                flexShrink: 0,
-                mt: 0,
-              }}
-            />
-            <Typography
-              variant="body2"
-              sx={{
-                color: "#3B4A55",
-                fontSize: { xs: "0.82rem", md: "0.88rem" },
-                lineHeight: 1.5,
-                textAlign: "left",
-              }}
-            >
-              {foundingTeamSection.subtitle}
-            </Typography>
-          </Box>
-        </SectionReveal>
-
-        {/* As-heard-on row — compact marquee in the same section, professional vibe */}
-        <SectionReveal variant="fade-up" delay={0.3}>
-          <Stack
-            direction="row"
-            spacing={1.25}
-            sx={{ alignItems: "center", justifyContent: "center", mb: 1.5 }}
-          >
-            <MicNoneOutlinedIcon sx={{ fontSize: 13, color: "#A07823" }} />
-            <Typography
-              sx={{
-                color: "#7A5B17",
-                letterSpacing: "0.22em",
-                fontSize: "0.68rem",
-                fontWeight: 700,
-                textTransform: "uppercase",
-              }}
-            >
-              As heard on
+        {/* Bottom trust strip */}
+        <MotionBox
+          initial={reduced ? false : { opacity: 0, y: 12 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-40px" }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          sx={{
+            mt: { xs: 4, md: 5 },
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexWrap: "wrap",
+            gap: 2.5,
+            px: 3,
+            py: 2,
+            borderRadius: 2,
+            bgcolor: "#FBF8F1",
+            border: "1px solid #E7E2D6",
+            maxWidth: 720,
+            mx: "auto",
+          }}
+        >
+          <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+            <BadgeCheck size={16} color="#9B7B3A" strokeWidth={2.2} />
+            <Typography sx={{ color: "#52525B", fontSize: "0.84rem", fontWeight: 500 }}>
+              Every expert vetted personally
             </Typography>
           </Stack>
-
-          <Box
-            sx={{
-              position: "relative",
-              overflow: "hidden",
-              borderTop: "1px solid rgba(14,42,61,0.06)",
-              borderBottom: "1px solid rgba(14,42,61,0.06)",
-              maskImage:
-                "linear-gradient(90deg, transparent 0%, black 10%, black 90%, transparent 100%)",
-              WebkitMaskImage:
-                "linear-gradient(90deg, transparent 0%, black 10%, black 90%, transparent 100%)",
-            }}
-          >
-            <motion.div
-              animate={reduced ? undefined : { x: ["0%", "-33.333%"] }}
-              transition={{
-                duration: 30,
-                repeat: Infinity,
-                ease: "linear",
-              }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                width: "fit-content",
-              }}
-            >
-              {looped.map((item, idx) => (
-                <Stack
-                  key={`${item.name}-${idx}`}
-                  direction="row"
-                  spacing={2.5}
-                  sx={{
-                    alignItems: "center",
-                    flexShrink: 0,
-                    px: { xs: 3, md: 4.5 },
-                    py: 1.5,
-                  }}
-                >
-                  <Box
-                    sx={{
-                      position: "relative",
-                      width: { xs: 100, md: 140 },
-                      height: { xs: 36, md: 46 },
-                      transition: "filter 280ms ease",
-                      filter: "saturate(0.8) opacity(0.85)",
-                      "&:hover": { filter: "saturate(1) opacity(1)" },
-                    }}
-                  >
-                    <Image
-                      src={item.logo}
-                      alt={item.name}
-                      fill
-                      sizes="140px"
-                      style={{
-                        objectFit: "contain",
-                        objectPosition: "center",
-                      }}
-                    />
-                  </Box>
-                  <Box
-                    aria-hidden
-                    sx={{
-                      width: 3,
-                      height: 3,
-                      borderRadius: "50%",
-                      bgcolor: "rgba(160,120,35,0.35)",
-                    }}
-                  />
-                </Stack>
-              ))}
-            </motion.div>
-          </Box>
-        </SectionReveal>
+          <Box sx={{ width: 1, height: 14, bgcolor: "#E7E2D6", display: { xs: "none", sm: "block" } }} />
+          <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+            <Mic size={15} color="#9B7B3A" strokeWidth={2.2} />
+            <Typography sx={{ color: "#52525B", fontSize: "0.84rem", fontWeight: 500 }}>
+              Hosts of 3 of the largest dental podcasts
+            </Typography>
+          </Stack>
+        </MotionBox>
       </Container>
     </Box>
   );

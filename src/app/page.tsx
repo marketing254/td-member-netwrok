@@ -1,10 +1,15 @@
 import { redirect } from "next/navigation";
 import Header from "@/components/sections/Header";
 import WaitlistHero from "@/components/sections/WaitlistHero";
-import Features from "@/components/sections/Features";
+import HelplineDemo from "@/components/sections/HelplineDemo";
+import SocialProof from "@/components/sections/SocialProof";
 import FoundingTeam from "@/components/sections/FoundingTeam";
+import Features from "@/components/sections/Features";
 import MemberLibraryPreview from "@/components/sections/MemberLibraryPreview";
+import ROICalculator from "@/components/sections/ROICalculator";
 import Pricing from "@/components/sections/Pricing";
+import WhoItsFor from "@/components/sections/WhoItsFor";
+import FreeKitMagnet from "@/components/sections/FreeKitMagnet";
 import WaitlistSection from "@/components/sections/WaitlistSection";
 import FAQ from "@/components/sections/FAQ";
 import Footer from "@/components/sections/Footer";
@@ -52,12 +57,29 @@ export default async function HomePage({ searchParams }: { searchParams: HomeSea
       <ScrollProgressBar />
       <Header />
       <main>
+        {/* Hero — left copy + right launch-card with countdown + CTA */}
         <WaitlistHero />
-        <Features />
+        {/* The differentiator — Helpline demo */}
+        <HelplineDemo />
+        {/* Trust — testimonials + podcast credits */}
+        <SocialProof />
+        {/* Founding team — Gary + Naren */}
         <FoundingTeam />
+        {/* What you get */}
+        <Features />
+        {/* Inside the member portal */}
         <MemberLibraryPreview />
+        {/* Do the math */}
+        <ROICalculator />
+        {/* Pricing + value stack */}
         <Pricing />
+        {/* Honest fit check */}
+        <WhoItsFor />
+        {/* Free kit lead magnet */}
+        <FreeKitMagnet />
+        {/* The full waitlist form */}
         <WaitlistSection />
+        {/* Objections */}
         <FAQ />
       </main>
       <Footer />

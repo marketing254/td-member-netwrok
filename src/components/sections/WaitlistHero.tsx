@@ -1,387 +1,335 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import dynamic from "next/dynamic";
 import {
   Box,
   Button,
-  Chip,
   Container,
   Grid,
-  LinearProgress,
   Stack,
   Typography,
 } from "@mui/material";
-import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import BoltOutlinedIcon from "@mui/icons-material/BoltOutlined";
-import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
-import Countdown from "@/components/sections/Countdown";
-import AnimatedCounter from "@/components/effects/AnimatedCounter";
-import KineticText from "@/components/effects/KineticText";
-import { founding, hero } from "@/lib/content";
+import { ArrowRight, Check, Lock, Sparkles } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
+import Countdown, { CountdownProgress } from "@/components/sections/Countdown";
+import { founding } from "@/lib/content";
 
-const NetworkScene = dynamic(() => import("@/components/effects/NetworkScene"), {
+const MotionBox = motion.create(Box);
+
+// 3D scene lazy-loaded so it never blocks first paint and never SSRs
+const Hero3DScene = dynamic(() => import("@/components/effects/Hero3DScene"), {
   ssr: false,
   loading: () => null,
 });
 
-const MotionBox = motion.create(Box);
-
-type Counts = { total: number; members: number; vendors: number; last_24h: number };
-
 export default function WaitlistHero() {
   const reduced = useReducedMotion();
-  const heroRef = useRef<HTMLDivElement | null>(null);
-
-  const { scrollYProgress } = useScroll({
-    target: heroRef,
-    offset: ["start start", "end start"],
-  });
-  const sceneY = useTransform(scrollYProgress, [0, 1], ["0%", "-30%"]);
-  const sceneOpacity = useTransform(scrollYProgress, [0, 0.8, 1], [1, 0.7, 0]);
-  const sceneScale = useTransform(scrollYProgress, [0, 1], [1, 1.08]);
-  const heroTextY = useTransform(scrollYProgress, [0, 1], ["0%", "12%"]);
-  const heroTextOpacity = useTransform(scrollYProgress, [0, 0.6, 1], [1, 0.85, 0.3]);
-
-  const [counts, setCounts] = useState<Counts>({
-    total: 0,
-    members: 0,
-    vendors: 0,
-    last_24h: 0,
-  });
-
-  useEffect(() => {
-    let alive = true;
-    const fetchCounts = () => {
-      fetch("/api/waitlist", { cache: "no-store" })
-        .then((r) => (r.ok ? r.json() : null))
-        .then((d) => {
-          if (alive && d && typeof d.total === "number") setCounts(d as Counts);
-        })
-        .catch(() => {});
-    };
-    fetchCounts();
-    const id = setInterval(fetchCounts, 5000);
-    return () => {
-      alive = false;
-      clearInterval(id);
-    };
-  }, []);
-
-  const claimedPct = (counts.total / founding.totalSpots) * 100;
-  const waitlistProof = hero.proofPoints[0] ?? {
-    value: "247+",
-    label: "Practice owners in the waitlist",
-  };
 
   return (
     <Box
-      ref={heroRef}
       id="top"
       component="section"
       sx={{
         position: "relative",
         overflow: "hidden",
-        pt: { xs: 6, sm: 7, md: 10 },
-        pb: { xs: 5, md: 8 },
-        backgroundImage:
-          "linear-gradient(180deg, #FBF8F1 0%, #F5F0E4 60%, #EFE9DA 100%)",
-        color: "#0A1A2F",
+        pt: { xs: 6, md: 8 },
+        pb: { xs: 6, md: 8 },
+        bgcolor: "#FBF8F1",
+        color: "#1A1A1A",
       }}
     >
-      {/* NetworkScene pinned to the RIGHT half only */}
-      <Box
-        component={motion.div}
-        aria-hidden
-        style={reduced ? undefined : { y: sceneY, opacity: sceneOpacity, scale: sceneScale }}
-        sx={{
-          position: "absolute",
-          top: 0,
-          right: 0,
-          bottom: 0,
-          width: { xs: "100%", md: "55%" },
-          pointerEvents: "none",
-          zIndex: 0,
-          maskImage:
-            "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.4) 20%, rgba(0,0,0,1) 50%, rgba(0,0,0,0.8) 90%, transparent 100%)",
-          WebkitMaskImage:
-            "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.4) 20%, rgba(0,0,0,1) 50%, rgba(0,0,0,0.8) 90%, transparent 100%)",
-          transformOrigin: "center center",
-          display: { xs: "none", md: "block" },
-        }}
-      >
-        <NetworkScene />
-      </Box>
-
-      {/* Soft warm wash at top */}
-      <Box
-        aria-hidden
-        sx={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 220,
-          background:
-            "radial-gradient(60% 100% at 30% 0%, rgba(217,168,75,0.12) 0%, transparent 70%)",
-          pointerEvents: "none",
-        }}
-      />
-
-      {/* Faint grid texture */}
+      {/* Subtle warm gradient mesh */}
       <Box
         aria-hidden
         sx={{
           position: "absolute",
           inset: 0,
           backgroundImage:
-            "linear-gradient(rgba(14,42,61,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(14,42,61,0.04) 1px, transparent 1px)",
-          backgroundSize: "56px 56px",
-          maskImage:
-            "radial-gradient(ellipse 90% 70% at 20% 30%, black 10%, transparent 70%)",
+            "radial-gradient(60% 70% at 80% 0%, rgba(184,153,104,0.16) 0%, transparent 60%), radial-gradient(50% 60% at 0% 100%, rgba(155,123,58,0.1) 0%, transparent 60%)",
           pointerEvents: "none",
           zIndex: 0,
         }}
       />
 
+      {/* 3D constellation spans the full hero — primitives orbit across both
+          sides of the layout. Soft elliptical mask keeps the center clear so
+          the headline + launch card stay readable. */}
+      <Box
+        aria-hidden
+        sx={{
+          position: "absolute",
+          inset: 0,
+          opacity: 0.6,
+          pointerEvents: "none",
+          zIndex: 0,
+          maskImage:
+            "radial-gradient(ellipse 75% 50% at 50% 50%, transparent 0%, transparent 25%, rgba(0,0,0,0.55) 55%, black 80%)",
+          WebkitMaskImage:
+            "radial-gradient(ellipse 75% 50% at 50% 50%, transparent 0%, transparent 25%, rgba(0,0,0,0.55) 55%, black 80%)",
+        }}
+      >
+        <Hero3DScene />
+      </Box>
+
       <Container maxWidth="lg" sx={{ position: "relative", zIndex: 2 }}>
-        <Grid container spacing={{ xs: 5, md: 4 }} sx={{ alignItems: "center" }}>
-          <Grid size={{ xs: 12, md: 7 }}>
-            <MotionBox style={reduced ? undefined : { y: heroTextY, opacity: heroTextOpacity }}>
-            <Stack spacing={3.5} sx={{ maxWidth: 660 }}>
+        <Grid container spacing={{ xs: 4, md: 5 }} sx={{ alignItems: "center" }}>
+          {/* LEFT */}
+          <Grid size={{ xs: 12, md: 6.5 }}>
+            <Stack spacing={2.5} sx={{ maxWidth: 560 }}>
               <MotionBox
-                initial={{ opacity: 0, y: -8 }}
+                initial={reduced ? false : { opacity: 0, y: -8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
+                transition={{ duration: 0.5 }}
+                sx={{
+                  display: "inline-flex",
+                  alignSelf: "flex-start",
+                  alignItems: "center",
+                  gap: 0.85,
+                  px: 1.4,
+                  py: 0.55,
+                  borderRadius: 999,
+                  bgcolor: "rgba(255,255,255,0.7)",
+                  border: "1px solid rgba(155,123,58,0.25)",
+                  backdropFilter: "blur(8px)",
+                }}
               >
-                <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", flexWrap: "wrap", rowGap: 1 }}>
-                  <Chip
-                    icon={<BoltOutlinedIcon sx={{ fontSize: 13, color: "#A07823 !important" }} />}
-                    label={hero.topChip}
-                    size="small"
-                    sx={{
-                      bgcolor: "rgba(217,168,75,0.14)",
-                      color: "#7A5B17",
-                      border: "1px solid rgba(217,168,75,0.4)",
-                      fontSize: "0.66rem",
-                      px: 1,
-                      fontWeight: 700,
-                      letterSpacing: "0.14em",
-                    }}
-                  />
-                  {counts.total > 0 && (
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                        px: 1.25,
-                        py: 0.5,
-                        borderRadius: 999,
-                        bgcolor: "rgba(14,42,61,0.04)",
-                        border: "1px solid rgba(14,42,61,0.1)",
-                        fontSize: "0.74rem",
-                        color: "#3B4A55",
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          width: 6,
-                          height: 6,
-                          borderRadius: "50%",
-                          bgcolor: "#2E8A57",
-                          boxShadow: "0 0 12px rgba(46,138,87,0.6)",
-                        }}
-                      />
-                      <Box component="span" sx={{ fontWeight: 700, color: "#0A1A2F" }}>
-                        <AnimatedCounter value={counts.total} />
-                      </Box>{" "}
-                      on the list
-                    </Box>
-                  )}
-                </Stack>
+                <Sparkles size={12} color="#9B7B3A" strokeWidth={2.4} />
+                <Typography
+                  sx={{
+                    color: "#7A5F2A",
+                    fontSize: "0.72rem",
+                    fontWeight: 600,
+                    letterSpacing: "0.02em",
+                  }}
+                >
+                  Curated by the Thriving Dentist team — not an algorithm
+                </Typography>
               </MotionBox>
 
-              <Box>
+              <MotionBox
+                initial={reduced ? false : { opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
+              >
                 <Typography
                   variant="h1"
                   component="h1"
                   sx={{
-                    color: "#0A1A2F",
-                    maxWidth: 640,
+                    color: "#1A1A1A",
+                    fontFamily: "var(--font-display)",
+                    fontSize: { xs: "2rem", sm: "2.4rem", md: "2.9rem" },
+                    lineHeight: 1.05,
+                    letterSpacing: "-0.03em",
                     fontWeight: 500,
-                    letterSpacing: "-0.025em",
-                    lineHeight: 1.02,
                   }}
                 >
-                  <KineticText text="The only network with a" delay={0.05} />{" "}
+                  The only network with a{" "}
                   <Box
                     component="span"
                     sx={{
-                      color: "#A07823",
-                      position: "relative",
-                      display: "inline-block",
+                      fontStyle: "italic",
+                      backgroundImage:
+                        "linear-gradient(120deg, #9B7B3A 0%, #C9A876 50%, #9B7B3A 100%)",
+                      backgroundClip: "text",
+                      WebkitBackgroundClip: "text",
+                      WebkitTextFillColor: "transparent",
                     }}
                   >
-                    <KineticText text="human expert" delay={0.32} />
+                    human expert on the line
                   </Box>{" "}
-                  <KineticText text="on the line for every practice problem." delay={0.5} />
+                  for every practice problem.
                 </Typography>
-              </Box>
+              </MotionBox>
 
               <MotionBox
-                initial={{ opacity: 0, y: 18 }}
+                initial={reduced ? false : { opacity: 0, y: 14 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.9, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ duration: 0.7, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
               >
                 <Typography
-                  variant="subtitle1"
                   sx={{
-                    maxWidth: 580,
-                    color: "#3B4A55",
-                    fontSize: { xs: "1.05rem", md: "1.15rem" },
-                    lineHeight: 1.65,
+                    color: "#52525B",
+                    fontSize: { xs: "1rem", md: "1.08rem" },
+                    lineHeight: 1.55,
+                    maxWidth: 540,
                   }}
                 >
-                  {hero.subtitle}
+                  Submit any practice problem — a real expert routes you to the exact
+                  people and proven playbooks within 3 business days. Plus $6,000+/yr
+                  in vendor savings and 500+ peer owners. One membership.
                 </Typography>
               </MotionBox>
 
               <MotionBox
-                initial={{ opacity: 0, y: 18 }}
+                initial={reduced ? false : { opacity: 0, y: 14 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 1.0 }}
+                transition={{ duration: 0.7, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                sx={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 1.25,
+                  alignItems: "center",
+                  pt: 0.5,
+                }}
               >
-                <Countdown variant="light" />
-              </MotionBox>
-
-              {/* Countdown CTA */}
-              <MotionBox
-                initial={{ opacity: 0, y: 18 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 1.15 }}
-              >
-                <Stack
-                  direction={{ xs: "column", sm: "row" }}
-                  spacing={1.25}
+                <Button
+                  component={Link}
+                  href="#waitlist"
+                  endIcon={<ArrowRight size={16} />}
                   sx={{
-                    maxWidth: 560,
-                    alignItems: { xs: "stretch", sm: "center" },
+                    py: 1.35,
+                    px: 2.5,
+                    fontSize: "0.92rem",
+                    fontWeight: 600,
+                    textTransform: "none",
+                    borderRadius: 2,
+                    bgcolor: "#1A1A1A",
+                    color: "#FFFFFF !important",
+                    "&:hover": { bgcolor: "#2A2A2A", transform: "translateY(-1px)" },
+                    transition: "transform 150ms ease, background 150ms ease",
                   }}
                 >
-                  <Button
-                    href="#waitlist"
-                    onClick={(e) => {
-                      const el = document.getElementById("waitlist");
-                      if (el) {
-                        e.preventDefault();
-                        el.scrollIntoView({ behavior: "smooth", block: "start" });
-                      }
-                    }}
-                    variant="contained"
-                    color="secondary"
-                    size="large"
-                    endIcon={<ArrowForwardIcon sx={{ fontSize: 17 }} />}
-                    sx={{
-                      minHeight: 56,
-                      px: 3,
-                      fontSize: "0.95rem",
-                      fontWeight: 700,
-                      boxShadow:
-                        "0 18px 38px -14px rgba(217,168,75,0.55), 0 0 0 1px rgba(217,168,75,0.3) inset",
-                    }}
-                  >
-                    Join the waitlist
-                  </Button>
-
-                  <Box
-                    sx={{
-                      minHeight: 56,
-                      px: { xs: 2, sm: 2.25 },
-                      py: 1.1,
-                      borderRadius: 999,
-                      bgcolor: "rgba(255,255,255,0.7)",
-                      border: "1px solid rgba(14,42,61,0.08)",
-                      backdropFilter: "blur(10px)",
-                      boxShadow: "0 14px 32px -24px rgba(14,42,61,0.32)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: { xs: "center", sm: "flex-start" },
-                      gap: 1,
-                      textAlign: "left",
-                    }}
-                  >
-                    <Typography
-                      sx={{
-                        color: "#A07823",
-                        fontFamily: "var(--font-display)",
-                        fontSize: { xs: "1.35rem", sm: "1.45rem" },
-                        fontWeight: 650,
-                        lineHeight: 1,
-                        letterSpacing: 0,
-                        fontVariantNumeric: "tabular-nums",
-                        flexShrink: 0,
-                      }}
-                    >
-                      {waitlistProof.value}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: "#5C6770",
-                        fontSize: { xs: "0.78rem", sm: "0.82rem" },
-                        lineHeight: 1.25,
-                        fontWeight: 700,
-                        maxWidth: 170,
-                      }}
-                    >
-                      {waitlistProof.label}
-                    </Typography>
-                  </Box>
-                </Stack>
-              </MotionBox>
-
-              {/* Progress bar */}
-              <MotionBox
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.8, delay: 1.3 }}
-                sx={{ maxWidth: 560 }}
-              >
-                <Stack
-                  direction="row"
-                  sx={{ mb: 1, justifyContent: "space-between", alignItems: "baseline", gap: 2 }}
-                >
-                  <Typography variant="body2" sx={{ color: "#0A1A2F", fontWeight: 600 }}>
-                    {counts.total.toLocaleString("en-US")} of{" "}
-                    {founding.totalSpots.toLocaleString("en-US")} {hero.progressLabel}
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: "#5C6770", fontWeight: 600 }}>
-                    {Math.round(claimedPct)}%
-                  </Typography>
-                </Stack>
-                <LinearProgress
-                  variant="determinate"
-                  value={claimedPct}
+                  Claim your founding spot
+                </Button>
+                <Button
+                  component={Link}
+                  href="#helpline"
                   sx={{
-                    height: 5,
-                    borderRadius: 999,
-                    bgcolor: "rgba(14,42,61,0.08)",
-                    "& .MuiLinearProgress-bar": {
-                      borderRadius: 999,
-                      backgroundImage: "linear-gradient(90deg, #D9A84B 0%, #F0C16E 100%)",
-                    },
+                    py: 1.35,
+                    px: 2.25,
+                    fontSize: "0.9rem",
+                    fontWeight: 600,
+                    textTransform: "none",
+                    borderRadius: 2,
+                    color: "#1A1A1A",
+                    border: "1.5px solid #E7E2D6",
+                    bgcolor: "rgba(255,255,255,0.6)",
+                    backdropFilter: "blur(8px)",
+                    "&:hover": { borderColor: "#9B7B3A", bgcolor: "rgba(255,255,255,0.85)" },
                   }}
-                />
-                <Typography variant="body2" sx={{ mt: 1.5, color: "#5C6770", fontSize: "0.82rem", maxWidth: 520 }}>
-                  {hero.bottomNote}
-                </Typography>
+                >
+                  See how the helpline works
+                </Button>
               </MotionBox>
+
+              <Stack
+                direction="row"
+                spacing={2}
+                sx={{
+                  pt: 1,
+                  flexWrap: "wrap",
+                  rowGap: 1,
+                  color: "#71717A",
+                  fontSize: "0.82rem",
+                }}
+              >
+                {["No payment today", "Cancel anytime", "No spam"].map(
+                  (line) => (
+                    <Stack key={line} direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
+                      <Check size={13} color="#9B7B3A" strokeWidth={2.6} />
+                      <Typography sx={{ color: "#71717A", fontSize: "0.82rem" }}>
+                        {line}
+                      </Typography>
+                    </Stack>
+                  ),
+                )}
+              </Stack>
             </Stack>
-            </MotionBox>
           </Grid>
 
-          {/* Right column, NetworkScene is the background, this is empty spacer on mobile */}
-          <Grid size={{ xs: 0, md: 5 }} sx={{ display: { xs: "none", md: "block" } }} />
+          {/* RIGHT — launch card */}
+          <Grid size={{ xs: 12, md: 5.5 }}>
+            <MotionBox
+              initial={reduced ? false : { opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.9, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              sx={{
+                bgcolor: "#FFFFFF",
+                color: "#1A1A1A",
+                borderRadius: 3,
+                p: { xs: 2.5, md: 3 },
+                boxShadow:
+                  "0 1px 2px rgba(20,20,20,0.04), 0 24px 60px -30px rgba(20,20,20,0.2)",
+                border: "1px solid rgba(231,226,214,0.7)",
+                maxWidth: 420,
+                ml: { md: "auto" },
+                mx: { xs: "auto", md: 0 },
+              }}
+            >
+              <Stack spacing={2}>
+                <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "baseline" }}>
+                  <Typography sx={{ fontWeight: 700, fontSize: "0.92rem", color: "#1A1A1A" }}>
+                    Founding cohort
+                  </Typography>
+                  <Typography sx={{ color: "#71717A", fontSize: "0.78rem" }}>
+                    100 spots only
+                  </Typography>
+                </Stack>
+
+                <CountdownProgress />
+
+                <Countdown compact />
+
+                <Box
+                  sx={{
+                    textAlign: "center",
+                    py: 1.25,
+                    px: 1.5,
+                    borderRadius: 2,
+                    bgcolor: "#FBF8F1",
+                    border: "1px solid #E7E2D6",
+                  }}
+                >
+                  <Typography sx={{ fontSize: "0.84rem", color: "#52525B" }}>
+                    Founding rate{" "}
+                    <Box
+                      component="strong"
+                      sx={{ color: "#9B7B3A", fontSize: "1.05rem" }}
+                    >
+                      ${founding.priceMonthly}/mo
+                    </Box>{" "}
+                    <Box
+                      component="span"
+                      sx={{
+                        textDecoration: "line-through",
+                        color: "#A8A29E",
+                        fontSize: "0.85rem",
+                      }}
+                    >
+                      ${founding.priceRegular}/mo
+                    </Box>{" "}
+                    — locked forever
+                  </Typography>
+                </Box>
+
+                <Button
+                  component={Link}
+                  href="#waitlist"
+                  endIcon={<ArrowRight size={16} />}
+                  fullWidth
+                  sx={{
+                    py: 1.35,
+                    fontSize: "0.92rem",
+                    fontWeight: 600,
+                    textTransform: "none",
+                    borderRadius: 2,
+                    bgcolor: "#1A1A1A",
+                    color: "#FFFFFF !important",
+                    "&:hover": { bgcolor: "#2A2A2A" },
+                  }}
+                >
+                  Reserve my spot free
+                </Button>
+
+                <Stack direction="row" spacing={0.65} sx={{ alignItems: "center", justifyContent: "center", color: "#71717A" }}>
+                  <Lock size={11} />
+                  <Typography sx={{ color: "#71717A", fontSize: "0.72rem" }}>
+                    No payment today · billed only on launch day
+                  </Typography>
+                </Stack>
+              </Stack>
+            </MotionBox>
+          </Grid>
         </Grid>
       </Container>
     </Box>
