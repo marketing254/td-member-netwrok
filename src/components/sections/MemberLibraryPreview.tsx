@@ -7,6 +7,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
+import type { SvgIconComponent } from "@mui/icons-material";
 import Image from "next/image";
 import HeadsetMicOutlinedIcon from "@mui/icons-material/HeadsetMicOutlined";
 import VideoLibraryOutlinedIcon from "@mui/icons-material/VideoLibraryOutlined";
@@ -38,7 +39,9 @@ import {
 
 const MotionBox = motion.create(Box);
 
-const NAV_ICONS = [
+// Typed as SvgIconComponent so `sx` (including responsive shapes) carries the
+// right SvgIconProps signature through TypeScript's strict prod build.
+const NAV_ICONS: SvgIconComponent[] = [
   HeadsetMicOutlinedIcon,
   VideoLibraryOutlinedIcon,
   StorefrontOutlinedIcon,
@@ -51,7 +54,7 @@ const ACTIVE_NAV_INDEX = 1;
 
 // Map each topic to a still-frame icon — gives every thumbnail a real visual
 // subject without resorting to multi-color treatment.
-const KIND_ICON: Record<string, React.ElementType> = {
+const KIND_ICON: Record<string, SvgIconComponent> = {
   kpi: BarChartRoundedIcon,
   ppo: RequestQuoteRoundedIcon,
   seo: TrendingUpRoundedIcon,
