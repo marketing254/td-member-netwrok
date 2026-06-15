@@ -112,7 +112,7 @@ export const waitlistByRole = {
       "$49/month founding rate, never increases while your membership stays active",
       "24/7 expert helpline with a written follow-up plan within 3 business days",
       "Vendor savings averaging $6,000+/year, no per-deal commissions",
-      "30-day money-back guarantee, cancel anytime",
+      "Cancel anytime, in two clicks, from your account page",
     ],
   },
 };
@@ -129,9 +129,8 @@ export const ctaForm = {
   rightTitle: "Send us a note",
   rightSubtitle: "Clear form, real human on the other side.",
   reassurances: [
-    "30-day money-back guarantee with no retention call.",
     "We do not store any patient data. Ever.",
-    "$49/mo founding rate, never increases while your membership stays active.",
+    "$49/mo founding rate stays as long as your membership is active.",
     "Cancel anytime, in two clicks, from your account page.",
   ],
 };
@@ -180,8 +179,8 @@ export const faqs = [
     a: "Yes. We have a vendor membership tier for companies that want to be featured in our vendor directory and gain access to our member network. Vendor partners get preferred placement, warm introductions, and co-branded content opportunities. Contact us to apply.",
   },
   {
-    q: "Is there a money-back guarantee?",
-    a: "Yes. 30-day money-back guarantee, no retention call, no hassle. If the membership doesn't deliver value in the first month, we refund in full.",
+    q: "Can I cancel anytime?",
+    a: "Yes. Cancel in two clicks from your account page. No retention call, no hassle, no minimum term. Your founding rate stays locked for as long as your membership is active.",
   },
   {
     q: "Do you store patient data?",
@@ -206,7 +205,7 @@ export const footer = {
 // FOOTER LINKS (Section 1 in doc), trimmed to what exists at waitlist stage
 export const footerLinks = {
   Network: [
-    { label: "What You Get", href: "#features" },
+    { label: "What is DMN?", href: "#features" },
     { label: "Resources", href: "/resources" },
     { label: "Pricing", href: "#pricing" },
     { label: "Waitlist", href: "#waitlist" },
@@ -217,13 +216,13 @@ export const footerLinks = {
     { label: "Vendor Partnership Agreement", href: "/agreement/vendor" },
   ],
   Legal: [
-    { label: "Refund & Cancellation", href: "/legal/refund" },
+    { label: "Cancellation Policy", href: "/legal/cancellation" },
     { label: "Privacy Policy", href: "/legal/privacy" },
   ],
 };
 
 export const navLinks = [
-  { label: "What You Get", href: "#features" },
+  { label: "What is DMN", href: "#features" },
   { label: "Resources", href: "/resources" },
   { label: "Pricing", href: "#pricing" },
   { label: "Join Waitlist", href: "#waitlist" },
@@ -258,7 +257,7 @@ export const pricingSection = {
   subtitle:
     "No tiers to decode, no upsell ladder. The first 100 founding members pay $49/month, locked at that rate for as long as their membership stays active. After that, it's $199.",
   bottomNote:
-    "30-day money-back guarantee. Cancel anytime. Founding-member rate never increases while your membership stays active.",
+    "Cancel anytime, in two clicks. Founding-member rate stays as long as your membership is active.",
 };
 
 export const pricing = [
@@ -332,11 +331,14 @@ export const foundingTeam = [
   },
 ];
 
-// AS HEARD ON — podcast logos that Gary/Naren appear on. Files in /public.
+// AS HEARD ON — podcast and partner logos that Gary/Naren appear on or
+// partner with. Files in /public. Used in a marquee row on SocialProof.
 export const asHeardOn = [
   { name: "Thriving Dentist Show", logo: "/td-logo.png", host: "Gary Takacs" },
   { name: "Less Insurance Dependence", logo: "/lid-logo.png", host: "Naren Arulrajah" },
   { name: "Insurance Untangled", logo: "/iu-logo.png", host: "Industry panel" },
+  { name: "Dental Marketing Society", logo: "/dms-logo.png", host: "Community partner" },
+  { name: "Veterinary Business Institute", logo: "/vet.png", host: "Sister network" },
 ];
 
 // MEMBER LIBRARY PREVIEW — the colorful topic cards shown inside the member portal

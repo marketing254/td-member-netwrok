@@ -1,212 +1,154 @@
 "use client";
-import { Box, Container, Stack, Typography } from "@mui/material";
+import { Box, Container, Grid, Stack, Typography } from "@mui/material";
+import {
+  PhoneCall,
+  Users,
+  Handshake,
+  Video,
+  Ticket,
+  Wrench,
+} from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
-import { features, featuresSection } from "@/lib/content";
-import SectionReveal from "@/components/effects/SectionReveal";
-import StarRoundedIcon from "@mui/icons-material/StarRounded";
-import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
-import GpsFixedRoundedIcon from "@mui/icons-material/GpsFixedRounded";
-import AllInclusiveRoundedIcon from "@mui/icons-material/AllInclusiveRounded";
 
 const MotionBox = motion.create(Box);
 
-const ICON_MAP = {
-  star: StarRoundedIcon,
-  check: VerifiedRoundedIcon,
-  target: GpsFixedRoundedIcon,
-  infinity: AllInclusiveRoundedIcon,
-} as const;
-
-type IconKey = keyof typeof ICON_MAP;
-
-function splitTitle(title: string, emphasis?: string) {
-  if (!emphasis) return { head: title, tail: "" };
-  const idx = title.indexOf(emphasis);
-  if (idx === -1) return { head: title, tail: "" };
-  return { head: title.slice(0, idx).trim(), tail: emphasis };
-}
+const FEATURES = [
+  {
+    Icon: PhoneCall,
+    title: "24/7 expert helpline",
+    body: "Submit any problem; written answer + the right people within 3 business days.",
+  },
+  {
+    Icon: Handshake,
+    title: "Vendor savings",
+    body: "Member-only rates on labs, software & supplies — averaging $6,000+/yr.",
+  },
+  {
+    Icon: Video,
+    title: "Curated content library",
+    body: "Expert panels, training & book studies — every kit has a video, worksheet & SOP.",
+  },
+  {
+    Icon: Users,
+    title: "500+ owner directory",
+    body: "Searchable peers who've solved what you're facing. No tire-kickers.",
+  },
+  {
+    Icon: Ticket,
+    title: "Monthly live AMAs",
+    body: "Real-time access to specialists across clinical, financial & marketing.",
+  },
+  {
+    Icon: Wrench,
+    title: "Systems & templates",
+    body: "Proven checklists, SOPs and scripts you can deploy in your practice today.",
+  },
+];
 
 export default function Features() {
   const reduced = useReducedMotion();
-  const { head, tail } = splitTitle(
-    featuresSection.title,
-    "titleEmphasis" in featuresSection ? featuresSection.titleEmphasis : undefined,
-  );
 
   return (
     <Box
       id="features"
       component="section"
       sx={{
-        position: "relative",
-        py: { xs: 6, md: 9 },
-        bgcolor: "#FBF8F1",
-        borderTop: "1px solid",
-        borderColor: "rgba(14,42,61,0.06)",
-        overflow: "hidden",
+        py: { xs: 7, md: 9 },
+        bgcolor: "#FFFFFF",
+        borderTop: "1px solid #E4E4E7",
       }}
     >
-      <Box
-        aria-hidden
-        sx={{
-          position: "absolute",
-          inset: 0,
-          backgroundImage:
-            "radial-gradient(45% 55% at 10% 0%, rgba(217,168,75,0.07) 0%, transparent 60%), radial-gradient(40% 50% at 90% 100%, rgba(14,42,61,0.04) 0%, transparent 60%)",
-          pointerEvents: "none",
-        }}
-      />
-      <Container maxWidth="lg" sx={{ position: "relative" }}>
-        <SectionReveal variant="fade-up" sx={{ mb: { xs: 5, md: 6 } }}>
-          <Stack
-            spacing={1.5}
-            sx={{ maxWidth: 760, mx: { md: "auto" }, textAlign: { md: "center" } }}
+      <Container maxWidth="lg">
+        <Stack spacing={1.25} sx={{ textAlign: "center", maxWidth: 680, mx: "auto", mb: { xs: 4, md: 5 } }}>
+          <Typography
+            sx={{
+              color: "#7A5F2A",
+              fontSize: "0.72rem",
+              fontWeight: 700,
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+            }}
           >
-            <Typography
-              variant="overline"
-              sx={{ color: "#A07823", letterSpacing: "0.18em", fontSize: "0.74rem" }}
-            >
-              {featuresSection.eyebrow}
-            </Typography>
-            <Typography
-              component="h2"
-              sx={{
-                color: "#0A1A2F",
-                fontFamily: "var(--font-display)",
-                fontSize: { xs: "1.75rem", sm: "2.05rem", md: "2.4rem" },
-                lineHeight: 1.15,
-                fontWeight: 500,
-                letterSpacing: "-0.02em",
-              }}
-            >
-              {head}{" "}
-              {tail && (
-                <Box
-                  component="em"
-                  sx={{
-                    color: "#A07823",
-                    fontStyle: "italic",
-                    fontWeight: 500,
-                  }}
-                >
-                  {tail}
-                </Box>
-              )}
-            </Typography>
-            <Typography
-              sx={{
-                color: "#3B4A55",
-                maxWidth: 620,
-                mx: { md: "auto" },
-                fontSize: { xs: "0.98rem", md: "1.05rem" },
-                lineHeight: 1.65,
-              }}
-            >
-              {featuresSection.subtitle}
-            </Typography>
-          </Stack>
-        </SectionReveal>
+            What is DMN?
+          </Typography>
+          <Typography
+            variant="h2"
+            sx={{
+              color: "#1A1A1A",
+              fontFamily: "var(--font-display)",
+              fontSize: { xs: "1.65rem", md: "2.1rem" },
+              fontWeight: 600,
+              letterSpacing: "-0.02em",
+              lineHeight: 1.15,
+            }}
+          >
+            The membership is the product.
+          </Typography>
+          <Typography sx={{ color: "#52525B", fontSize: { xs: "0.95rem", md: "1.02rem" } }}>
+            No four-figure upsells. No surprise coaching pitches.
+          </Typography>
+        </Stack>
 
-        <Box
-          sx={{
-            display: "grid",
-            gap: { xs: 2, md: 2.5 },
-            gridTemplateColumns: {
-              xs: "1fr",
-              sm: "1fr 1fr",
-              md: "repeat(4, 1fr)",
-            },
-            maxWidth: 1080,
-            mx: "auto",
-          }}
-        >
-          {features.map((f, i) => {
-            const Icon = ICON_MAP[(f.icon as IconKey) ?? "star"] ?? StarRoundedIcon;
+        <Grid container spacing={2}>
+          {FEATURES.map((f, i) => {
+            const Icon = f.Icon;
             return (
-              <MotionBox
-                key={f.title}
-                initial={reduced ? false : { opacity: 0, y: 18 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-40px" }}
-                transition={{
-                  duration: 0.55,
-                  delay: Math.min(i * 0.08, 0.32),
-                  ease: [0.16, 1, 0.3, 1],
-                }}
-                whileHover={reduced ? undefined : { y: -4 }}
-                sx={{
-                  position: "relative",
-                  p: { xs: 2.5, md: 3 },
-                  borderRadius: 3,
-                  bgcolor: "#FFFFFF",
-                  border: "1px solid rgba(14,42,61,0.08)",
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  transition:
-                    "transform 320ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 320ms ease, border-color 320ms ease",
-                  "&:hover": {
-                    borderColor: "rgba(160,120,35,0.4)",
-                    boxShadow: "0 24px 48px -28px rgba(14,42,61,0.2)",
-                  },
-                  "&::before": {
-                    content: '""',
-                    position: "absolute",
-                    top: 0,
-                    left: "12%",
-                    right: "12%",
-                    height: 2,
+              <Grid key={f.title} size={{ xs: 12, sm: 6, md: 4 }}>
+                <MotionBox
+                  initial={reduced ? false : { opacity: 0, y: 16 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-60px" }}
+                  transition={{
+                    duration: 0.5,
+                    delay: Math.min(i * 0.05, 0.3),
+                    ease: [0.16, 1, 0.3, 1],
+                  }}
+                  sx={{
+                    border: "1px solid #E4E4E7",
                     borderRadius: 2,
-                    background:
-                      "linear-gradient(90deg, transparent, rgba(217,168,75,0.55), transparent)",
-                    opacity: 0,
-                    transition: "opacity 320ms ease",
-                  },
-                  "&:hover::before": { opacity: 1 },
-                }}
-              >
-                <Box
-                  sx={{
-                    width: 52,
-                    height: 52,
-                    borderRadius: 2,
-                    display: "grid",
-                    placeItems: "center",
-                    bgcolor: "rgba(217,168,75,0.12)",
-                    color: "#A07823",
-                    border: "1px solid rgba(217,168,75,0.25)",
-                    mb: 2,
+                    p: 2.5,
+                    height: "100%",
+                    transition: "border-color 200ms ease, box-shadow 200ms ease",
+                    "&:hover": {
+                      borderColor: "#9B7B3A",
+                      boxShadow: "0 8px 30px rgba(14,42,61,0.08)",
+                    },
                   }}
                 >
-                  <Icon sx={{ fontSize: 26 }} />
-                </Box>
-                <Typography
-                  component="h3"
-                  sx={{
-                    color: "#0A1A2F",
-                    fontFamily: "var(--font-display)",
-                    fontSize: "1.15rem",
-                    fontWeight: 500,
-                    lineHeight: 1.25,
-                    letterSpacing: "-0.01em",
-                    mb: 1,
-                  }}
-                >
-                  {f.title}
-                </Typography>
-                <Typography
-                  sx={{
-                    color: "#3B4A55",
-                    fontSize: "0.92rem",
-                    lineHeight: 1.6,
-                  }}
-                >
-                  {f.summary}
-                </Typography>
-              </MotionBox>
+                  <Box
+                    sx={{
+                      width: 42,
+                      height: 42,
+                      borderRadius: 1.5,
+                      bgcolor: "#FBF8F1",
+                      color: "#7A5F2A",
+                      display: "grid",
+                      placeItems: "center",
+                      mb: 1.5,
+                    }}
+                  >
+                    <Icon size={20} strokeWidth={2.2} />
+                  </Box>
+                  <Typography
+                    sx={{
+                      color: "#1A1A1A",
+                      fontFamily: "var(--font-display)",
+                      fontSize: "1.05rem",
+                      fontWeight: 600,
+                      letterSpacing: "-0.01em",
+                      mb: 0.5,
+                    }}
+                  >
+                    {f.title}
+                  </Typography>
+                  <Typography sx={{ color: "#52525B", fontSize: "0.9rem", lineHeight: 1.55 }}>
+                    {f.body}
+                  </Typography>
+                </MotionBox>
+              </Grid>
             );
           })}
-        </Box>
+        </Grid>
       </Container>
     </Box>
   );
