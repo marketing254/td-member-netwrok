@@ -122,8 +122,6 @@ export default function Header() {
                     el.scrollIntoView({ behavior: "smooth", block: "start" });
                   }
                 }}
-                variant="contained"
-                color="secondary"
                 disableElevation
                 endIcon={<ArrowForwardIcon sx={{ fontSize: 16 }} />}
                 sx={{
@@ -132,7 +130,12 @@ export default function Header() {
                   px: 2.5,
                   fontSize: "0.86rem",
                   fontWeight: 600,
-                  boxShadow: "0 8px 22px -10px rgba(217,168,75,0.55)",
+                  textTransform: "none",
+                  borderRadius: 2,
+                  bgcolor: "#1A1A1A",
+                  color: "#FFFFFF !important",
+                  boxShadow: "0 1px 2px rgba(0,0,0,0.06), 0 8px 22px -12px rgba(20,20,20,0.4)",
+                  "&:hover": { bgcolor: "#2A2A2A" },
                 }}
               >
                 Join the waitlist

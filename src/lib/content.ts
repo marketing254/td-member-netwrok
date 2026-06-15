@@ -331,14 +331,13 @@ export const foundingTeam = [
   },
 ];
 
-// AS HEARD ON — podcast and partner logos that Gary/Naren appear on or
-// partner with. Files in /public. Used in a marquee row on SocialProof.
+// AS HEARD ON — podcast and partner logos. Files in /public. Used in a
+// marquee row on SocialProof.
 export const asHeardOn = [
   { name: "Thriving Dentist Show", logo: "/td-logo.png", host: "Gary Takacs" },
   { name: "Less Insurance Dependence", logo: "/lid-logo.png", host: "Naren Arulrajah" },
   { name: "Insurance Untangled", logo: "/iu-logo.png", host: "Industry panel" },
   { name: "Dental Marketing Society", logo: "/dms-logo.png", host: "Community partner" },
-  { name: "Veterinary Business Institute", logo: "/vet.png", host: "Sister network" },
 ];
 
 // MEMBER LIBRARY PREVIEW — the colorful topic cards shown inside the member portal
