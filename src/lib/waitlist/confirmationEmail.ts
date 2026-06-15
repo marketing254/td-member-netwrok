@@ -647,6 +647,92 @@ Questions? Reply to this email.`;
   return { subject, html, text, replyTo: PARTNERSHIPS_EMAIL };
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// MEMBER WELCOME EMAIL
+// Sent by /api/admin/members/activate when a waitlist signup is promoted
+// to an active member. Same brand language as the vendor approval email.
+// ─────────────────────────────────────────────────────────────────────────
+
+type MemberWelcomeInput = {
+  email: string;
+  firstName: string;
+  portalUrl: string;
+};
+
+function buildMemberWelcomeEmail({ firstName, portalUrl }: MemberWelcomeInput): {
+  subject: string;
+  html: string;
+  text: string;
+  replyTo: string;
+} {
+  const subject = "Your DMN portal is ready";
+  const safePortal = escapeHtml(portalUrl);
+  const safeName = escapeHtml(firstName);
+
+  const html = `<!doctype html>
+<html><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>${escapeHtml(subject)}</title></head>
+<body style="margin:0;padding:0;background:${BRAND.creamSoft};font-family:${FONT_BODY};color:${BRAND.ink};">
+<div style="max-width:580px;margin:0 auto;padding:44px 24px;">
+  <div style="font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:${BRAND.goldDeep};font-weight:700;margin-bottom:18px;">FOUNDING MEMBER · PORTAL ACTIVE</div>
+  <h1 style="font-family:${FONT_DISPLAY};font-size:30px;line-height:1.18;font-weight:500;color:${BRAND.ink};margin:0 0 18px;letter-spacing:-.02em;">Welcome, ${safeName}.</h1>
+  <p style="font-size:16px;line-height:1.7;color:${BRAND.inkSoft};margin:0 0 14px;">
+    Your founding-member portal is live. You'll find the full Resource Kit library waiting for you — practical, no-fluff training built for practice owners. Pick a topic and dig in.
+  </p>
+  <p style="font-size:16px;line-height:1.7;color:${BRAND.inkSoft};margin:0 0 28px;">
+    To get in, click the button below. We'll email you a one-time sign-in link.
+  </p>
+  <a href="${safePortal}" style="display:inline-block;background:${BRAND.ink};color:#FFFFFF;text-decoration:none;padding:14px 28px;border-radius:999px;font-weight:600;font-size:15px;">Open your portal →</a>
+  <hr style="border:0;border-top:1px solid ${BRAND.line};margin:36px 0 24px;" />
+  <h2 style="font-family:${FONT_BODY};font-size:14px;font-weight:700;color:${BRAND.ink};letter-spacing:.005em;margin:0 0 10px;">What you have access to today</h2>
+  <ul style="font-size:14.5px;line-height:1.75;color:${BRAND.inkSoft};margin:0;padding-left:20px;">
+    <li>The full Resource Kit library — videos, action guides, worksheets, checklists</li>
+    <li>Topic packs on KPIs, scheduling, PPO renegotiation, marketing, SEO and more</li>
+    <li>Your member profile (practice details, contact info)</li>
+    <li>Future drops auto-unlock — you don't need to do anything</li>
+  </ul>
+  <p style="font-size:13px;line-height:1.65;color:${BRAND.inkMute};margin:32px 0 0;">
+    Questions? Reply to this email — our team reads every reply.
+  </p>
+</div>
+</body></html>`;
+
+  const text = `Welcome, ${firstName}.
+
+Your founding-member portal is live. You'll find the full Resource Kit library waiting for you — practical, no-fluff training built for practice owners. Pick a topic and dig in.
+
+To get in, click the link below. We'll email you a one-time sign-in link.
+
+Open your portal: ${portalUrl}
+
+What you have access to today:
+- The full Resource Kit library — videos, action guides, worksheets, checklists
+- Topic packs on KPIs, scheduling, PPO renegotiation, marketing, SEO and more
+- Your member profile (practice details, contact info)
+- Future drops auto-unlock — you don't need to do anything
+
+Questions? Reply to this email — our team reads every reply.`;
+
+  return { subject, html, text, replyTo: SUPPORT_EMAIL };
+}
+
+export async function sendMemberWelcomeEmail(input: MemberWelcomeInput): Promise<SendResult> {
+  if (process.env.WAITLIST_EMAIL_DISABLED === "true") {
+    return { sent: false, reason: "disabled" };
+  }
+  const mail = buildMemberWelcomeEmail(input);
+  const result = await dispatchMail({
+    to: input.email,
+    from: FROM_EMAIL,
+    mail,
+    tag: "member:welcome",
+  });
+  if (result.transport === "log") {
+    return { sent: false, reason: "missing_api_key" };
+  }
+  return { sent: true, id: result.id };
+}
+
 export async function sendVendorApprovalEmail(input: VendorApprovalInput): Promise<SendResult> {
   if (process.env.WAITLIST_EMAIL_DISABLED === "true") {
     return { sent: false, reason: "disabled" };

@@ -1,22 +1,34 @@
 "use client";
 import Link from "next/link";
-import { Box, Button, Container, Stack, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  Container,
+  Grid,
+  Stack,
+  Typography,
+} from "@mui/material";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import MailOutlineRoundedIcon from "@mui/icons-material/MailOutlineRounded";
+import PhoneOutlinedIcon from "@mui/icons-material/PhoneOutlined";
 import Logo from "@/components/brand/Logo";
 import { brand, footer as footerCopy, footerLinks } from "@/lib/content";
 
-const FOOTER_NAV = [
-  { label: "What you get", href: "/#features" },
-  { label: "Pricing", href: "/#pricing" },
-  { label: "Waitlist", href: "/#waitlist" },
-  { label: "FAQ", href: "/#faq" },
-];
-
-const FOOTER_LEGAL = [
-  ...footerLinks.Agreements,
-  ...footerLinks.Legal,
-];
-
+/**
+ * Standard four-column SaaS footer.
+ *
+ *   ┌───────────────────────────────────────────────────────────────┐
+ *   │  [Logo]              Network        Agreements       Legal   │
+ *   │  Brand description   - What You Get - Member Ag.    - Refund │
+ *   │  📞 phone            - Resources    - Vendor Ag.    - Privacy│
+ *   │  ✉  email            - Pricing                              │
+ *   │                      - Waitlist                             │
+ *   │                      - FAQ                                  │
+ *   │                                                              │
+ *   │  ───────────────────────────────────────────────────────────│
+ *   │  © 2026 DMN. All rights reserved.       Data note + CTA      │
+ *   └───────────────────────────────────────────────────────────────┘
+ */
 export default function Footer() {
   return (
     <Box
@@ -25,147 +37,217 @@ export default function Footer() {
         position: "relative",
         bgcolor: "#0A1A2F",
         color: "#F6F1E7",
-        pt: { xs: 3, md: 3.5 },
-        pb: 2,
+        pt: { xs: 6, md: 8 },
+        pb: { xs: 3, md: 4 },
         overflow: "hidden",
+        mt: { xs: 4, md: 6 },
       }}
     >
+      {/* Subtle gold radial glow in the corner */}
       <Box
         aria-hidden
         sx={{
           position: "absolute",
           inset: 0,
           backgroundImage:
-            "radial-gradient(40% 60% at 0% 0%, rgba(217,168,75,0.10) 0%, transparent 60%)",
+            "radial-gradient(45% 60% at 0% 0%, rgba(217,168,75,0.10) 0%, transparent 60%), radial-gradient(35% 50% at 100% 100%, rgba(217,168,75,0.06) 0%, transparent 60%)",
           pointerEvents: "none",
         }}
       />
 
       <Container maxWidth="lg" sx={{ position: "relative" }}>
-        {/* Top row: brand + CTA + nav links, all inline on desktop */}
-        <Stack
-          direction={{ xs: "column", md: "row" }}
-          spacing={{ xs: 2.5, md: 3 }}
-          sx={{ alignItems: { md: "center" }, justifyContent: "space-between", flexWrap: "wrap", rowGap: 2 }}
-        >
-          <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
-            <Logo dark height={38} />
-            <Box sx={{ display: { xs: "none", lg: "block" }, maxWidth: 280 }}>
-              <Typography sx={{ color: "rgba(246,241,231,0.65)", fontSize: "0.78rem", lineHeight: 1.5 }}>
+        {/* TOP — 4-column grid */}
+        <Grid container spacing={{ xs: 4, md: 5 }}>
+          {/* Column 1 — Brand */}
+          <Grid size={{ xs: 12, md: 4 }}>
+            <Stack spacing={2.5} sx={{ maxWidth: 320 }}>
+              <Logo dark height={44} />
+              <Typography
+                sx={{
+                  color: "rgba(246,241,231,0.65)",
+                  fontSize: "0.86rem",
+                  lineHeight: 1.6,
+                }}
+              >
                 {footerCopy.brandDescription}
               </Typography>
-            </Box>
-          </Stack>
 
-          <Stack
-            direction="row"
-            spacing={{ xs: 1.5, md: 2.5 }}
-            sx={{ alignItems: "center", flexWrap: "wrap", rowGap: 1 }}
-          >
-            {FOOTER_NAV.map((l) => (
-              <Box
-                key={l.href}
+              <Stack spacing={1.25} sx={{ mt: 0.5 }}>
+                <FooterContact
+                  icon={<PhoneOutlinedIcon sx={{ fontSize: 14 }} />}
+                  href={`tel:${brand.phoneTel}`}
+                  label={brand.phoneDisplay}
+                />
+                <FooterContact
+                  icon={<MailOutlineRoundedIcon sx={{ fontSize: 14 }} />}
+                  href={`mailto:${brand.email}`}
+                  label={brand.email}
+                />
+              </Stack>
+
+              <Button
                 component={Link}
-                href={l.href}
+                href="/#waitlist"
+                variant="contained"
+                color="secondary"
+                endIcon={<ArrowForwardIcon sx={{ fontSize: 16 }} />}
+                disableElevation
                 sx={{
-                  color: "rgba(246,241,231,0.78)",
-                  textDecoration: "none",
-                  fontSize: "0.82rem",
-                  fontWeight: 500,
-                  transition: "color 200ms ease",
-                  "&:hover": { color: "secondary.light" },
+                  alignSelf: "flex-start",
+                  mt: 1,
+                  py: 1,
+                  px: 2.25,
+                  fontSize: "0.84rem",
+                  fontWeight: 700,
+                  textTransform: "none",
+                  boxShadow: "0 8px 22px -10px rgba(217,168,75,0.55)",
                 }}
               >
-                {l.label}
-              </Box>
-            ))}
-          </Stack>
+                {footerCopy.primaryCta}
+              </Button>
+            </Stack>
+          </Grid>
 
-          <Button
-            component={Link}
-            href="/#waitlist"
-            variant="contained"
-            color="secondary"
-            endIcon={<ArrowForwardIcon sx={{ fontSize: 16 }} />}
-            sx={{ py: 0.75, px: 2.25, fontSize: "0.82rem", flexShrink: 0 }}
-          >
-            {footerCopy.primaryCta}
-          </Button>
-        </Stack>
+          {/* Column 2 — Network */}
+          <Grid size={{ xs: 6, sm: 4, md: 2.5 }}>
+            <FooterColumn title="Network" links={footerLinks.Network} />
+          </Grid>
 
-        {/* Bottom row: contact + copyright + legal, single thin row */}
+          {/* Column 3 — Agreements */}
+          <Grid size={{ xs: 6, sm: 4, md: 2.5 }}>
+            <FooterColumn title="Agreements" links={footerLinks.Agreements} />
+          </Grid>
+
+          {/* Column 4 — Legal */}
+          <Grid size={{ xs: 12, sm: 4, md: 3 }}>
+            <FooterColumn title="Legal" links={footerLinks.Legal} />
+          </Grid>
+        </Grid>
+
+        {/* BOTTOM STRIP — copyright + data note */}
         <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={{ xs: 1, sm: 3 }}
+          direction={{ xs: "column", md: "row" }}
+          spacing={{ xs: 1.25, md: 3 }}
           sx={{
-            mt: 2.5,
-            pt: 2,
+            mt: { xs: 5, md: 7 },
+            pt: { xs: 2.5, md: 3 },
             borderTop: "1px solid rgba(246,241,231,0.08)",
-            alignItems: { sm: "center" },
+            alignItems: { xs: "flex-start", md: "center" },
             justifyContent: "space-between",
             color: "rgba(246,241,231,0.45)",
-            fontSize: "0.74rem",
-            flexWrap: "wrap",
-            rowGap: 1,
           }}
         >
-          <Stack direction="row" spacing={2} sx={{ alignItems: "center", flexWrap: "wrap", rowGap: 0.5 }}>
-            <Box
-              component="a"
-              href={`tel:${brand.phoneTel}`}
-              sx={{
-                color: "rgba(246,241,231,0.7)",
-                textDecoration: "none",
-                fontWeight: 600,
-                "&:hover": { color: "secondary.light" },
-              }}
-            >
-              {brand.phoneDisplay}
-            </Box>
-            <Box component="span">·</Box>
-            <Box
-              component="a"
-              href={`mailto:${brand.email}`}
-              sx={{
-                color: "rgba(246,241,231,0.7)",
-                textDecoration: "none",
-                fontWeight: 600,
-                "&:hover": { color: "secondary.light" },
-              }}
-            >
-              {brand.email}
-            </Box>
-            <Box component="span" sx={{ display: { xs: "none", md: "inline" } }}>·</Box>
-            <Typography variant="body2" sx={{ color: "rgba(246,241,231,0.5)", fontSize: "0.74rem", display: { xs: "none", md: "inline" } }}>
-              {footerCopy.responseValue}
-            </Typography>
-          </Stack>
-
-          <Stack direction="row" spacing={2} sx={{ alignItems: "center", flexWrap: "wrap", rowGap: 0.5 }}>
-            {FOOTER_LEGAL.map((l) => (
-              <Box
-                key={l.href}
-                component={Link}
-                href={l.href}
-                sx={{
-                  color: "rgba(246,241,231,0.55)",
-                  textDecoration: "none",
-                  fontSize: "0.74rem",
-                  fontWeight: 500,
-                  transition: "color 200ms ease",
-                  "&:hover": { color: "secondary.light" },
-                }}
-              >
-                {l.label}
-              </Box>
-            ))}
-          </Stack>
-
-          <Typography variant="body2" sx={{ color: "rgba(246,241,231,0.5)", fontSize: "0.72rem" }}>
+          <Typography
+            sx={{
+              fontSize: "0.74rem",
+              lineHeight: 1.6,
+              color: "rgba(246,241,231,0.5)",
+            }}
+          >
             {footerCopy.copyright}
+          </Typography>
+          <Typography
+            sx={{
+              fontSize: "0.72rem",
+              lineHeight: 1.6,
+              color: "rgba(246,241,231,0.4)",
+              fontStyle: "italic",
+              maxWidth: 380,
+            }}
+          >
+            {footerCopy.dataNote}
           </Typography>
         </Stack>
       </Container>
+    </Box>
+  );
+}
+
+function FooterColumn({
+  title,
+  links,
+}: {
+  title: string;
+  links: { label: string; href: string }[];
+}) {
+  return (
+    <Stack spacing={1.5}>
+      <Typography
+        sx={{
+          fontSize: "0.66rem",
+          fontWeight: 700,
+          letterSpacing: "0.18em",
+          textTransform: "uppercase",
+          color: "rgba(246,241,231,0.55)",
+        }}
+      >
+        {title}
+      </Typography>
+      <Stack spacing={1}>
+        {links.map((l) => (
+          <Box
+            key={`${title}-${l.href}`}
+            component={Link}
+            href={l.href.startsWith("#") ? `/${l.href}` : l.href}
+            sx={{
+              color: "rgba(246,241,231,0.82)",
+              textDecoration: "none",
+              fontSize: "0.86rem",
+              fontWeight: 500,
+              transition: "color 180ms ease",
+              "&:hover": { color: "#F0C16E" },
+            }}
+          >
+            {l.label}
+          </Box>
+        ))}
+      </Stack>
+    </Stack>
+  );
+}
+
+function FooterContact({
+  icon,
+  href,
+  label,
+}: {
+  icon: React.ReactNode;
+  href: string;
+  label: string;
+}) {
+  return (
+    <Box
+      component="a"
+      href={href}
+      sx={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 1,
+        color: "rgba(246,241,231,0.78)",
+        textDecoration: "none",
+        fontSize: "0.84rem",
+        fontWeight: 500,
+        transition: "color 180ms ease",
+        "&:hover": { color: "#F0C16E" },
+      }}
+    >
+      <Box
+        sx={{
+          width: 28,
+          height: 28,
+          borderRadius: 0.75,
+          bgcolor: "rgba(246,241,231,0.06)",
+          border: "1px solid rgba(246,241,231,0.1)",
+          display: "grid",
+          placeItems: "center",
+          color: "rgba(246,241,231,0.7)",
+        }}
+      >
+        {icon}
+      </Box>
+      <Box component="span" sx={{ wordBreak: "break-word" }}>
+        {label}
+      </Box>
     </Box>
   );
 }

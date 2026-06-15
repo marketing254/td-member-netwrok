@@ -27,13 +27,28 @@ function buildCsp(): string {
 
   return [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://www.googletagmanager.com",
+    // vercel.live is the Vercel Live feedback widget that gets auto-injected
+    // into preview deployments. It's harmless and Vercel-owned; allowlisting
+    // it just silences the CSP console errors on preview URLs. The same
+    // CSP ships to production (where vercel.live is never loaded), so this
+    // doesn't expand the attack surface for real users.
+    // YCBM (YouCanBookMe) embed.ycb.me + youcanbook.me — the coaching-session
+    // booking widget on member kit detail pages.
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://www.googletagmanager.com https://vercel.live https://embed.ycb.me https://*.ycb.me https://*.youcanbook.me",
     "worker-src 'self' blob:",
     "child-src 'self' blob:",
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    "font-src 'self' https://fonts.gstatic.com data:",
-    `img-src 'self' data: blob: ${supabaseHttps} https://www.google-analytics.com https://www.googletagmanager.com`,
-    `connect-src 'self' ${supabaseHttps} ${supabaseWss} https://cdn.jsdelivr.net https://fonts.gstatic.com https://www.google-analytics.com https://www.googletagmanager.com https://analytics.google.com`,
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://vercel.live https://*.ycb.me https://*.youcanbook.me",
+    "font-src 'self' https://fonts.gstatic.com https://vercel.live https://assets.vercel.com https://*.ycb.me https://*.youcanbook.me data:",
+    `img-src 'self' data: blob: ${supabaseHttps} https://www.google-analytics.com https://www.googletagmanager.com https://vercel.live https://vercel.com https://*.ycb.me https://*.youcanbook.me`,
+    // media-src controls <video> and <audio> sources. Without this, videos
+    // from Supabase Storage are blocked because default-src 'self' falls back.
+    `media-src 'self' blob: ${supabaseHttps}`,
+    `connect-src 'self' ${supabaseHttps} ${supabaseWss} https://cdn.jsdelivr.net https://fonts.gstatic.com https://www.google-analytics.com https://www.googletagmanager.com https://analytics.google.com https://vercel.live https://*.pusher.com wss://*.pusher.com https://*.ycb.me https://*.youcanbook.me`,
+    // frame-src controls <iframe> sources. Supabase is needed so the resource
+    // viewer can render PDFs inline; Microsoft Office Online viewer is needed
+    // for slide decks (.pptx). YCBM domains let the booking widget render
+    // the calendar iframe.
+    `frame-src 'self' ${supabaseHttps} https://view.officeapps.live.com https://vercel.live https://*.ycb.me https://*.youcanbook.me`,
     "frame-ancestors 'none'",
     "form-action 'self'",
     "base-uri 'self'",
@@ -74,6 +89,12 @@ function isPublicAdminPath(pathname: string) {
   return pathname === "/admin/login" || pathname.startsWith("/admin/login/");
 }
 
+function isPublicMemberPath(_pathname: string) {
+  // All /dashboard/* paths are gated. Members enter via /member/login → magic
+  // link → /auth/callback → /dashboard.
+  return false;
+}
+
 export async function middleware(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
   const res = NextResponse.next({ request: req });
@@ -83,8 +104,9 @@ export async function middleware(req: NextRequest) {
 
   const isVendor = pathname.startsWith("/vendor") && !isPublicVendorPath(pathname);
   const isAdmin = pathname.startsWith("/admin") && !isPublicAdminPath(pathname);
+  const isMember = pathname.startsWith("/dashboard") && !isPublicMemberPath(pathname);
 
-  if (!isVendor && !isAdmin) {
+  if (!isVendor && !isAdmin && !isMember) {
     // Outside the gated surfaces — still run Supabase to keep the session
     // cookie fresh so /vendor/login etc. read the latest state.
     try {
@@ -151,6 +173,43 @@ export async function middleware(req: NextRequest) {
       console.error("[middleware:admin] auth check failed:", err);
       const target = req.nextUrl.clone();
       target.pathname = "/admin/login";
+      return applySecurityHeaders(NextResponse.redirect(target));
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  // MEMBER PORTAL  (/dashboard/*)
+  // ─────────────────────────────────────────────────────────────────
+  if (isMember) {
+    try {
+      const supabase = createMiddlewareSupabase(req, res);
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) {
+        const target = req.nextUrl.clone();
+        target.pathname = "/member/login";
+        target.search = `?redirect=${encodeURIComponent(pathname + search)}`;
+        return applySecurityHeaders(NextResponse.redirect(target));
+      }
+
+      // Confirm the user has an active members row.
+      const { data: memberRow } = await supabase
+        .from("members")
+        .select("id, status")
+        .eq("auth_user_id", userData.user.id)
+        .maybeSingle();
+
+      if (!memberRow || memberRow.status !== "active") {
+        const target = req.nextUrl.clone();
+        target.pathname = "/member/login";
+        target.search = `?error=${encodeURIComponent("Your member portal isn't active yet. We'll email you when it is.")}`;
+        return applySecurityHeaders(NextResponse.redirect(target));
+      }
+
+      return applySecurityHeaders(res);
+    } catch (err) {
+      console.error("[middleware:member] auth check failed:", err);
+      const target = req.nextUrl.clone();
+      target.pathname = "/member/login";
       return applySecurityHeaders(NextResponse.redirect(target));
     }
   }

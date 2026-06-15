@@ -50,6 +50,7 @@ type QueueCounts = {
   vendorsPending: number;
   offersPending: number;
   catalogPending: number;
+  resourcesPending: number;
 };
 
 function useCurrentAdmin(): CurrentAdmin | null {
@@ -116,6 +117,7 @@ const navSections: { label: string; items: NavItem[] }[] = [
       { href: "/admin/offers", label: "Vendor offers", icon: LocalOfferOutlinedIcon, badgeKey: "offersPending" },
       { href: "/admin/hotline", label: "Hotline triage", icon: SupportAgentOutlinedIcon },
       { href: "/admin/content", label: "Catalog", icon: LibraryBooksOutlinedIcon, badgeKey: "catalogPending" },
+      { href: "/admin/resources", label: "Resources", icon: LibraryBooksOutlinedIcon, badgeKey: "resourcesPending" },
     ],
   },
   {
@@ -326,21 +328,33 @@ export default function AdminAppShell({ children }: { children: React.ReactNode 
     vendorsPending: 0,
     offersPending: 0,
     catalogPending: 0,
+    resourcesPending: 0,
   });
 
   const loadCounts = useCallback(async () => {
     try {
-      const res = await fetch("/api/admin/overview", { cache: "no-store" });
-      if (!res.ok) return;
-      const body = (await res.json()) as {
-        vendors?: { pending?: number };
-        offers?: { pending?: number };
-        catalog?: { pending?: number };
-      };
+      const [overviewRes, resourcesRes] = await Promise.all([
+        fetch("/api/admin/overview", { cache: "no-store" }),
+        fetch("/api/admin/resources", { cache: "no-store" }),
+      ]);
+      const overview = overviewRes.ok
+        ? ((await overviewRes.json()) as {
+            vendors?: { pending?: number };
+            offers?: { pending?: number };
+            catalog?: { pending?: number };
+          })
+        : {};
+      const resources = resourcesRes.ok
+        ? ((await resourcesRes.json()) as {
+            kits?: { submissionStatus: string }[];
+          })
+        : {};
       setCounts({
-        vendorsPending: body.vendors?.pending ?? 0,
-        offersPending: body.offers?.pending ?? 0,
-        catalogPending: body.catalog?.pending ?? 0,
+        vendorsPending: overview.vendors?.pending ?? 0,
+        offersPending: overview.offers?.pending ?? 0,
+        catalogPending: overview.catalog?.pending ?? 0,
+        resourcesPending:
+          (resources.kits ?? []).filter((k) => k.submissionStatus === "pending_review").length,
       });
     } catch {
       // ignore — counts are decorative

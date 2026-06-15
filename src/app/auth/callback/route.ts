@@ -33,7 +33,7 @@ export const dynamic = "force-dynamic";
 // vendor login page even when an admin was trying to sign in.
 function loginPathForRole(role: string | null): string {
   if (role === "admin") return "/admin/login";
-  if (role === "member") return "/welcome"; // members don't have a separate login surface yet
+  if (role === "member") return "/member/login";
   return "/vendor/login";
 }
 
@@ -112,6 +112,25 @@ export async function GET(request: Request) {
       }
     }
 
+    if (role === "member" || !role) {
+      // Link the active member row to this auth user on first sign-in.
+      // Only members whose admin has flipped status to 'active' can sign in
+      // (signInWithOtp uses shouldCreateUser:false; new auth users are only
+      //  created by /api/admin/members/activate).
+      const { data: memberRow } = await admin
+        .from("members")
+        .select("id, auth_user_id, status")
+        .eq("email", (user.email ?? "").toLowerCase())
+        .maybeSingle();
+
+      if (memberRow && memberRow.status === "active" && !memberRow.auth_user_id) {
+        await admin
+          .from("members")
+          .update({ auth_user_id: user.id })
+          .eq("id", memberRow.id);
+      }
+    }
+
     // Audit log
     await admin.from("auth_audit").insert({
       event: "login_success",
@@ -125,7 +144,50 @@ export async function GET(request: Request) {
     // Don't block sign-in. Continue to the redirect.
   }
 
-  // Sanitize `next` — only allow relative paths to prevent open redirects.
-  const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/";
-  return NextResponse.redirect(new URL(safeNext, url.origin));
+  // Pick the destination.
+  //   1. If `next` was explicitly set and is a safe relative path, honor it.
+  //   2. Otherwise, look up which table the user belongs to and infer the
+  //      destination. This handles the case where Supabase fell back to the
+  //      Site URL and lost the `?next=...&role=...` query params.
+  let safeNext: string | null = null;
+  if (next && next !== "/" && next.startsWith("/") && !next.startsWith("//")) {
+    safeNext = next;
+  } else {
+    try {
+      const admin = getSupabaseAdmin();
+      const email = (user.email ?? "").toLowerCase();
+
+      // Priority: admin → vendor → member.
+      const { data: adminRow } = await admin
+        .from("admin_users")
+        .select("id, active")
+        .eq("email", email)
+        .maybeSingle();
+      if (adminRow?.active) {
+        safeNext = "/admin";
+      } else {
+        const { data: vendorRow } = await admin
+          .from("vendors")
+          .select("id, status")
+          .eq("contact_email", email)
+          .maybeSingle();
+        if (vendorRow && vendorRow.status !== "rejected" && vendorRow.status !== "churned") {
+          safeNext = "/vendor";
+        } else {
+          const { data: memberRow } = await admin
+            .from("members")
+            .select("id, status")
+            .eq("email", email)
+            .maybeSingle();
+          if (memberRow?.status === "active") {
+            safeNext = "/dashboard";
+          }
+        }
+      }
+    } catch (err) {
+      console.error("[auth:callback] role-routing lookup failed:", err);
+    }
+  }
+
+  return NextResponse.redirect(new URL(safeNext ?? "/", url.origin));
 }

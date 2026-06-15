@@ -1,3 +1,62 @@
+/* ============================================================
+ * Hallmark-aligned design tokens — Almanac/Linen genre
+ * (anti-AI-slop discipline: locked tokens, named easings,
+ *  zero-chroma neutrals, 4pt spacing scale, reduced-motion gates)
+ * ============================================================ */
+:root {
+  /* Paper bands (light L≈95+) */
+  --paper: oklch(96% 0.012 78);          /* linen/cream surface */
+  --paper-rule: oklch(89% 0.015 75);     /* hairline rule */
+  --paper-deep: oklch(92% 0.015 78);     /* recessed band */
+
+  /* Ink (zero-chroma neutrals) */
+  --ink: oklch(20% 0.015 250);           /* primary ink — near-navy */
+  --ink-soft: oklch(40% 0.015 250);      /* secondary ink */
+  --ink-fade: oklch(58% 0.012 250);      /* muted meta */
+  --ink-rule: oklch(82% 0.008 250);      /* form rule */
+
+  /* Accents — chromatic, capped ≤ 15% saturation */
+  --gold: oklch(68% 0.12 78);            /* primary accent */
+  --gold-soft: oklch(80% 0.06 78);       /* tints */
+  --gold-deep: oklch(48% 0.12 75);       /* hover/active */
+  --leaf: oklch(48% 0.09 158);           /* success/free */
+  --leaf-soft: oklch(72% 0.06 158);
+  --signal: oklch(54% 0.13 28);          /* error */
+
+  /* 4pt spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Named easings only — no browser default `ease`, no overshoot */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast: 140ms;
+  --dur-base: 200ms;
+  --dur-slow: 320ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0ms;
+    --dur-base: 0ms;
+    --dur-slow: 0ms;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 html,
 body {
   margin: 0;
@@ -5,6 +64,30 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+}
+
+/* Hallmark utility: editorial column rule */
+.hk-rule {
+  border: 0;
+  border-top: 1px solid var(--paper-rule);
+  margin: 0;
+}
+.hk-rule--ink {
+  border-top-color: var(--ink-rule);
+}
+
+/* Hallmark display numeral — used in numbered section eyebrows */
+.hk-numeral {
+  font-family: var(--font-display), Georgia, serif;
+  font-feature-settings: "lnum" 1, "tnum" 1;
+  font-style: italic;
+}
+
+/* Focus-visible ring (8-state component compliance) */
+.hk-focus:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 html {

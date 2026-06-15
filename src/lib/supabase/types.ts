@@ -212,8 +212,102 @@ export type MembersRow = {
   status: MemberStatus;
   tier: string | null;
   joined_at: string | null;
+  activated_at: string | null;
+  activated_by: string | null;
+  welcome_sent_at: string | null;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  stripe_price_id: string | null;
+  subscription_status: string | null;
+  subscription_interval: string | null;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean | null;
+  canceled_at: string | null;
+  card_brand: string | null;
+  card_last4: string | null;
+  founding_member_locked: boolean;
   created_at: string;
   updated_at: string;
+};
+
+export type StripeEventRow = {
+  id: string;
+  stripe_event_id: string;
+  event_type: string;
+  member_id: string | null;
+  payload: unknown;
+  processed_at: string;
+};
+
+export type ResourceKind =
+  | "video_intro"
+  | "video_full"
+  | "video_explainer"
+  | "video_trailer"
+  | "audio"
+  | "action_guide"
+  | "checklist"
+  | "key_takeaways"
+  | "worksheet"
+  | "slide_deck"
+  | "email_sequence"
+  | "other";
+
+export type ResourceSubmissionStatus =
+  | "draft"
+  | "pending_review"
+  | "approved"
+  | "rejected";
+
+export type ResourcesRow = {
+  id: string;
+  topic_slug: string;
+  topic_title: string;
+  topic_summary: string | null;
+  category: string | null;
+  portal_card_url: string | null;
+  resource_card_url: string | null;
+  title: string;
+  description: string | null;
+  kind: ResourceKind;
+  storage_path: string | null;
+  external_url: string | null;
+  thumbnail_url: string | null;
+  mime_type: string | null;
+  file_size_bytes: number | null;
+  duration_label: string | null;
+  position: number;
+  is_free: boolean;
+  is_published: boolean;
+  submission_status: ResourceSubmissionStatus;
+  submitted_by: string | null;
+  submitted_at: string | null;
+  approved_by: string | null;
+  approved_at: string | null;
+  rejected_reason: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type MemberResourceProgressRow = {
+  member_id: string;
+  resource_id: string;
+  last_viewed_at: string | null;
+  completed_at: string | null;
+  watch_seconds: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type MemberAssistantMessageRow = {
+  id: string;
+  member_id: string;
+  role: "user" | "assistant";
+  content: string;
+  tokens_input: number | null;
+  tokens_output: number | null;
+  blocked_reason: string | null;
+  created_at: string;
 };
 
 export type RedemptionsRow = {
@@ -338,6 +432,10 @@ export type Database = {
       auth_audit: Table<AuthAuditRow>;
       email_events: Table<EmailEventsRow>;
       notifications: Table<NotificationsRow>;
+      resources: Table<ResourcesRow>;
+      member_resource_progress: Table<MemberResourceProgressRow>;
+      member_assistant_messages: Table<MemberAssistantMessageRow>;
+      stripe_events: Table<StripeEventRow>;
     };
     Views: {
       waitlist_counts: View<{

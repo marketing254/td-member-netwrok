@@ -32,6 +32,15 @@ export type VendorContext = {
   verified: boolean;
 };
 
+export type MemberContext = {
+  ok: true;
+  userId: string;
+  email: string;
+  memberId: string;
+  firstName: string;
+  status: "waitlist" | "invited" | "active" | "paused" | "churned";
+};
+
 type Failure = { ok: false; response: NextResponse };
 
 const ADMIN_ROLES = ["owner", "admin", "reviewer", "support"] as const;
@@ -207,4 +216,62 @@ export async function requireVerifiedVendor(): Promise<VendorContext | Failure> 
     };
   }
   return guard;
+}
+
+/**
+ * requireMember
+ *
+ * Returns the active member row for the signed-in user, or 401/403.
+ * Used by /api/member/* endpoints.
+ */
+export async function requireMember(): Promise<MemberContext | Failure> {
+  const cookieClient = await createServerSupabase();
+  const { data: userData, error: userErr } = await cookieClient.auth.getUser();
+  if (userErr || !userData?.user) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: "Not signed in." }, { status: 401 }),
+    };
+  }
+
+  const email = userData.user.email?.toLowerCase();
+  if (!email) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: "Account is missing an email." }, { status: 403 }),
+    };
+  }
+
+  const admin = getSupabaseAdmin();
+  const { data: row } = await admin
+    .from("members")
+    .select("id, status, first_name, auth_user_id")
+    .eq("email", email)
+    .maybeSingle();
+
+  if (!row) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: "No member profile linked to this account." }, { status: 403 }),
+    };
+  }
+
+  if (row.status !== "active") {
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { error: "Your member portal isn't active yet." },
+        { status: 403 },
+      ),
+    };
+  }
+
+  return {
+    ok: true,
+    userId: userData.user.id,
+    email,
+    memberId: row.id,
+    firstName: row.first_name,
+    status: row.status as MemberContext["status"],
+  };
 }
