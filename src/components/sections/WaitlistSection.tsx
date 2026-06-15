@@ -91,63 +91,75 @@ export default function WaitlistSection() {
       return typed || OTHER;
     };
 
-    const memberPayload = {
-      role,
-      fullName,
-      email: fd.get("email"),
-      practiceName: fd.get("practiceName"),
-      phone: fd.get("phone"),
-      source: "landing-hero",
-      utm: {
-        role_label: resolveOther(fd.get("roleLabel"), fd.get("roleLabelOther")),
-        locations: fd.get("locations"),
-        biggest_challenge: resolveOther(fd.get("challenge"), fd.get("challengeOther")),
-        agreement_type: "member",
-        agreement_version: "1.0",
-        agreement_accepted_at: new Date().toISOString(),
-      },
-    };
-
-    const vendorPayload = {
-      role,
-      fullName,
-      email: fd.get("email"),
-      practiceName: fd.get("companyName"),
-      phone: fd.get("contactPhone"),
-      source: "landing-hero",
-      message: String(fd.get("description") ?? ""),
-      utm: {
-        company_name: fd.get("companyName"),
-        website: fd.get("website"),
-        category: resolveOther(fd.get("category"), fd.get("categoryOther")),
-        primary_email: fd.get("email"),
-        secondary_email: fd.get("secondaryEmail"),
-        primary_phone: fd.get("contactPhone"),
-        secondary_phone: fd.get("secondaryPhone"),
-        signature_name: fd.get("signatureName"),
-        signature_title: fd.get("signatureTitle"),
-        agreement_version: "1.0",
-        agreement_type: "vendor_partnership",
-        agreement_accepted_at: new Date().toISOString(),
-        confirmed_authority: true,
-      },
-    };
-
-    const payload = isVendor ? vendorPayload : memberPayload;
-
     try {
+      if (isVendor) {
+        // Vendors go through the dedicated /api/vendor/signup endpoint, which
+        // writes to vendor_applications, sends the magic-link email, and
+        // returns the application reference id. They land on /vendor/applied,
+        // NOT the member thank-you page.
+        const vendorPayload = {
+          companyName: fd.get("companyName"),
+          category: resolveOther(fd.get("category"), fd.get("categoryOther")),
+          website: fd.get("website"),
+          description: fd.get("description") ?? "",
+          contactName: fullName,
+          contactEmail: fd.get("email"),
+          contactPhone: fd.get("contactPhone"),
+          secondaryEmail: fd.get("secondaryEmail") ?? "",
+          secondaryPhone: fd.get("secondaryPhone") ?? "",
+          signatureName: fd.get("signatureName"),
+          signatureTitle: fd.get("signatureTitle"),
+          agreedToTerms: agreed,
+          confirmedAuthority: authorized,
+          planId: "founding",
+          source: "landing-vendor-cta",
+        };
+
+        const res = await fetch("/api/vendor/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(vendorPayload),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          setError(data?.error ?? "Could not submit your application. Please try again.");
+          setSubmitting(false);
+          return;
+        }
+        router.push("/vendor/applied");
+        return;
+      }
+
+      // Member waitlist branch
+      const memberPayload = {
+        role: "member" as const,
+        fullName,
+        email: fd.get("email"),
+        practiceName: fd.get("practiceName"),
+        phone: fd.get("phone"),
+        source: "landing-waitlist",
+        utm: {
+          role_label: resolveOther(fd.get("roleLabel"), fd.get("roleLabelOther")),
+          locations: fd.get("locations"),
+          biggest_challenge: resolveOther(fd.get("challenge"), fd.get("challengeOther")),
+          agreement_type: "member",
+          agreement_version: "1.0",
+          agreement_accepted_at: new Date().toISOString(),
+        },
+      };
+
       const res = await fetch("/api/waitlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(memberPayload),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setError(data?.error ?? "Something went wrong. Please try again.");
         setSubmitting(false);
         return;
       }
-      router.push(`/waitlist/thanks?role=${role}${data.duplicate ? "&again=1" : ""}`);
+      router.push(`/waitlist/thanks?role=member${data.duplicate ? "&again=1" : ""}`);
     } catch {
       setError("Network error. Check your connection and try again.");
       setSubmitting(false);
