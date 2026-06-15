@@ -34,6 +34,8 @@ const MotionBox = motion.create(Box);
 
 type HeroRole = "member" | "vendor";
 
+const OTHER = "Other";
+
 /**
  * Standalone waitlist form section. Field structure and payload shape are
  * IDENTICAL to the previous hero-embedded version so the Supabase schema and
@@ -46,8 +48,18 @@ export default function WaitlistSection() {
   const [role, setRole] = useState<HeroRole>("member");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Vendor partnership agreement (left checkbox in vendor mode).
   const [agreed, setAgreed] = useState(false);
+  // Vendor authorization (right checkbox in vendor mode).
   const [authorized, setAuthorized] = useState(false);
+  // Member agreement acceptance (only checkbox in member mode).
+  const [memberAgreed, setMemberAgreed] = useState(false);
+
+  // Tracked dropdown values so we can reveal an "Other" text input when
+  // the user picks "Other".
+  const [vendorCategory, setVendorCategory] = useState("");
+  const [memberRoleValue, setMemberRoleValue] = useState("");
+  const [memberChallenge, setMemberChallenge] = useState("");
 
   const isVendor = role === "vendor";
 
@@ -59,6 +71,10 @@ export default function WaitlistSection() {
       setError("Please confirm both boxes before applying as a vendor partner.");
       return;
     }
+    if (!isVendor && !memberAgreed) {
+      setError("Please agree to the Member Agreement to join the waitlist.");
+      return;
+    }
 
     setSubmitting(true);
     const fd = new FormData(e.currentTarget);
@@ -66,18 +82,29 @@ export default function WaitlistSection() {
     const lastName = String(fd.get("lastName") ?? "").trim();
     const fullName = [firstName, lastName].filter(Boolean).join(" ");
 
+    // If the user picked "Other" in a dropdown, the typed text replaces
+    // the literal "Other" so the saved value is the real answer.
+    const resolveOther = (selected: FormDataEntryValue | null, otherText: FormDataEntryValue | null) => {
+      const value = String(selected ?? "");
+      if (value !== OTHER) return value;
+      const typed = String(otherText ?? "").trim();
+      return typed || OTHER;
+    };
+
     const memberPayload = {
       role,
       fullName,
       email: fd.get("email"),
       practiceName: fd.get("practiceName"),
       phone: fd.get("phone"),
-      cityState: fd.get("cityState"),
       source: "landing-hero",
       utm: {
-        role_label: fd.get("roleLabel"),
+        role_label: resolveOther(fd.get("roleLabel"), fd.get("roleLabelOther")),
         locations: fd.get("locations"),
-        biggest_challenge: fd.get("challenge"),
+        biggest_challenge: resolveOther(fd.get("challenge"), fd.get("challengeOther")),
+        agreement_type: "member",
+        agreement_version: "1.0",
+        agreement_accepted_at: new Date().toISOString(),
       },
     };
 
@@ -92,11 +119,11 @@ export default function WaitlistSection() {
       utm: {
         company_name: fd.get("companyName"),
         website: fd.get("website"),
-        category: fd.get("category"),
-        contact_phone: fd.get("contactPhone"),
-        offer_summary: fd.get("offerSummary"),
-        calendar_link: fd.get("calendarLink"),
-        hotline_email: fd.get("hotlineEmail"),
+        category: resolveOther(fd.get("category"), fd.get("categoryOther")),
+        primary_email: fd.get("email"),
+        secondary_email: fd.get("secondaryEmail"),
+        primary_phone: fd.get("contactPhone"),
+        secondary_phone: fd.get("secondaryPhone"),
         signature_name: fd.get("signatureName"),
         signature_title: fd.get("signatureTitle"),
         agreement_version: "1.0",
@@ -209,6 +236,10 @@ export default function WaitlistSection() {
                         setRole(r);
                         setAgreed(false);
                         setAuthorized(false);
+                        setMemberAgreed(false);
+                        setVendorCategory("");
+                        setMemberRoleValue("");
+                        setMemberChallenge("");
                         setError(null);
                       }}
                       sx={{
@@ -257,13 +288,30 @@ export default function WaitlistSection() {
                           <CompactField name="website" label="Website" placeholder="https://acmedental.com" autoComplete="url" required />
                         </Grid>
                         <Grid size={{ xs: 12, sm: 6 }}>
-                          <CompactField name="category" label="Category" select defaultValue="" required>
+                          <CompactField
+                            name="category"
+                            label="Category"
+                            select
+                            value={vendorCategory}
+                            onChange={(e) => setVendorCategory(e.target.value)}
+                            required
+                          >
                             <MenuItem value="" disabled>Choose</MenuItem>
                             {vendorCategories.map((c) => (
                               <MenuItem key={c} value={c}>{c}</MenuItem>
                             ))}
                           </CompactField>
                         </Grid>
+                        {vendorCategory === OTHER && (
+                          <Grid size={{ xs: 12 }}>
+                            <CompactField
+                              name="categoryOther"
+                              label="Tell us your category"
+                              placeholder="e.g. Practice management consultant"
+                              required
+                            />
+                          </Grid>
+                        )}
                         <Grid size={{ xs: 12 }}>
                           <CompactField
                             name="description"
@@ -276,7 +324,7 @@ export default function WaitlistSection() {
                         </Grid>
                       </Grid>
 
-                      {/* 02 CONTACT */}
+                      {/* 02 CONTACT — primary + secondary email and phone */}
                       <SectionLabel num="02" title="Contact" />
                       <Grid container spacing={1.25}>
                         <Grid size={{ xs: 6 }}>
@@ -285,37 +333,22 @@ export default function WaitlistSection() {
                         <Grid size={{ xs: 6 }}>
                           <CompactField name="lastName" label="Last name" placeholder="Morgan" autoComplete="family-name" required />
                         </Grid>
-                        <Grid size={{ xs: 12, sm: 7 }}>
-                          <CompactField name="email" type="email" label="Work email" placeholder="taylor@acme.com" autoComplete="email" required />
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <CompactField name="email" type="email" label="Primary work email" placeholder="taylor@acme.com" autoComplete="email" required />
                         </Grid>
-                        <Grid size={{ xs: 12, sm: 5 }}>
-                          <CompactField name="contactPhone" label="Phone" placeholder="+1 555…" autoComplete="tel" />
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <CompactField name="secondaryEmail" type="email" label="Secondary email (optional)" placeholder="partnerships@acme.com" autoComplete="email" />
+                        </Grid>
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <CompactField name="contactPhone" type="tel" label="Primary phone" placeholder="+1 (555) 010-1234" autoComplete="tel" required />
+                        </Grid>
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <CompactField name="secondaryPhone" type="tel" label="Secondary phone (optional)" placeholder="+1 (555) 010-5678" autoComplete="tel" />
                         </Grid>
                       </Grid>
 
-                      {/* 03 MEMBER OFFER */}
-                      <SectionLabel num="03" title="Member offer" />
-                      <Grid container spacing={1.25}>
-                        <Grid size={{ xs: 12 }}>
-                          <CompactField
-                            name="offerSummary"
-                            label="Discount or value you'll offer DMN members"
-                            placeholder="18% off catalog · First month free · Flat 15% off ongoing services"
-                            multiline
-                            minRows={2}
-                            required
-                          />
-                        </Grid>
-                        <Grid size={{ xs: 12, sm: 6 }}>
-                          <CompactField name="calendarLink" label="Calendar link for warm intros" placeholder="https://calendly.com/your-team" autoComplete="url" />
-                        </Grid>
-                        <Grid size={{ xs: 12, sm: 6 }}>
-                          <CompactField name="hotlineEmail" label="Email for member helpline notifications" placeholder="partners@acme.com" autoComplete="email" />
-                        </Grid>
-                      </Grid>
-
-                      {/* 04 SIGN */}
-                      <SectionLabel num="04" title="Sign on behalf of the company" />
+                      {/* 03 SIGN */}
+                      <SectionLabel num="03" title="Sign on behalf of the company" />
                       <Grid container spacing={1.25}>
                         <Grid size={{ xs: 12, sm: 7 }}>
                           <CompactField name="signatureName" label="Signer full name" placeholder="Taylor Morgan" autoComplete="name" required />
@@ -412,13 +445,29 @@ export default function WaitlistSection() {
                         <CompactField name="email" type="email" label="Work email" placeholder="taylor@practice.com" autoComplete="email" required />
                       </Grid>
                       <Grid size={{ xs: 12 }}>
-                        <CompactField name="roleLabel" label="What best describes your role?" select defaultValue="">
+                        <CompactField
+                          name="roleLabel"
+                          label="What best describes your role?"
+                          select
+                          value={memberRoleValue}
+                          onChange={(e) => setMemberRoleValue(e.target.value)}
+                        >
                           <MenuItem value="" disabled>Choose one</MenuItem>
                           {memberRoles.map((r) => (
                             <MenuItem key={r} value={r}>{r}</MenuItem>
                           ))}
                         </CompactField>
                       </Grid>
+                      {memberRoleValue === OTHER && (
+                        <Grid size={{ xs: 12 }}>
+                          <CompactField
+                            name="roleLabelOther"
+                            label="Tell us your role"
+                            placeholder="e.g. Director of Operations"
+                            required
+                          />
+                        </Grid>
+                      )}
                       <Grid size={{ xs: 12 }}>
                         <CompactField name="practiceName" label="Practice name (optional)" placeholder="Morgan Dental Group" autoComplete="organization" />
                       </Grid>
@@ -434,17 +483,75 @@ export default function WaitlistSection() {
                         <CompactField name="phone" label="Phone (optional)" placeholder="(555) 000-0000" autoComplete="tel" />
                       </Grid>
                       <Grid size={{ xs: 12 }}>
-                        <CompactField name="cityState" label="City, State (optional)" placeholder="Austin, TX" autoComplete="address-level2" />
-                      </Grid>
-                      <Grid size={{ xs: 12 }}>
-                        <CompactField name="challenge" label="Biggest challenge right now?" select defaultValue="">
+                        <CompactField
+                          name="challenge"
+                          label="Biggest challenge right now?"
+                          select
+                          value={memberChallenge}
+                          onChange={(e) => setMemberChallenge(e.target.value)}
+                        >
                           <MenuItem value="" disabled>Choose</MenuItem>
                           {challengeOptions.map((c) => (
                             <MenuItem key={c} value={c}>{c}</MenuItem>
                           ))}
                         </CompactField>
                       </Grid>
+                      {memberChallenge === OTHER && (
+                        <Grid size={{ xs: 12 }}>
+                          <CompactField
+                            name="challengeOther"
+                            label="Describe your biggest challenge"
+                            placeholder="e.g. Hiring & retaining hygienists"
+                            multiline
+                            minRows={2}
+                            required
+                          />
+                        </Grid>
+                      )}
                     </Grid>
+
+                    {/* Member Agreement checkbox — required */}
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={memberAgreed}
+                          onChange={(e) => setMemberAgreed(e.target.checked)}
+                          size="small"
+                          sx={{
+                            color: "#A8A29E",
+                            "&.Mui-checked": { color: "#9B7B3A" },
+                            p: 0.5,
+                            mr: 0.5,
+                          }}
+                        />
+                      }
+                      label={
+                        <Typography sx={{ fontSize: "0.8rem", color: "#52525B", lineHeight: 1.5 }}>
+                          I agree to the{" "}
+                          <Box
+                            component={Link}
+                            href="/agreement/member"
+                            target="_blank"
+                            rel="noopener"
+                            sx={{
+                              color: "#9B7B3A",
+                              fontWeight: 700,
+                              textDecoration: "underline",
+                              textDecorationColor: "rgba(155,123,58,0.4)",
+                              textUnderlineOffset: 3,
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 0.4,
+                            }}
+                          >
+                            Member Agreement
+                            <ExternalLink size={11} />
+                          </Box>
+                          {" "}and to receive launch updates from DMN.
+                        </Typography>
+                      }
+                      sx={{ alignItems: "flex-start", m: 0, mt: 1.5 }}
+                    />
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -469,7 +576,10 @@ export default function WaitlistSection() {
 
               <Button
                 type="submit"
-                disabled={submitting || (isVendor && (!agreed || !authorized))}
+                disabled={
+                  submitting ||
+                  (isVendor ? !agreed || !authorized : !memberAgreed)
+                }
                 fullWidth
                 endIcon={
                   submitting ? (
