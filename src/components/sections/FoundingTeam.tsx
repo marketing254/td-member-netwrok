@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import { Box, Container, Grid, Stack, Typography } from "@mui/material";
-import { BadgeCheck, Mic, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 
 const MotionBox = motion.create(Box);
@@ -17,7 +17,7 @@ type Founder = {
 const FOUNDERS: Founder[] = [
   {
     name: "Gary Takacs",
-    role: "Founder · Thriving Dentist",
+    role: "Business Coach",
     photo: "/team/gary-takacs.jpg",
     bio:
       "30+ years coaching dental practice owners. Host of the Thriving Dentist Show, downloaded in 192 countries. Curates every helpline expert before they answer a single member question.",
@@ -25,7 +25,7 @@ const FOUNDERS: Founder[] = [
   },
   {
     name: "Naren Arulrajah",
-    role: "Founder · Ekwa Marketing",
+    role: "Entrepreneur, Business Coach",
     photo: "/team/naren-arulrajah.jpg",
     bio:
       "Founder & CEO of Ekwa Marketing. Co-host of Less Insurance Dependence. Built the dental SEO playbook used by hundreds of fee-for-service practices and personally vets every marketing partner in DMN.",
@@ -278,42 +278,6 @@ export default function FoundingTeam() {
           ))}
         </Grid>
 
-        {/* Bottom trust strip */}
-        <MotionBox
-          initial={reduced ? false : { opacity: 0, y: 12 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-40px" }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          sx={{
-            mt: { xs: 4, md: 5 },
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexWrap: "wrap",
-            gap: 2.5,
-            px: 3,
-            py: 2,
-            borderRadius: 2,
-            bgcolor: "#FBF8F1",
-            border: "1px solid #E7E2D6",
-            maxWidth: 720,
-            mx: "auto",
-          }}
-        >
-          <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-            <BadgeCheck size={16} color="#9B7B3A" strokeWidth={2.2} />
-            <Typography sx={{ color: "#52525B", fontSize: "0.84rem", fontWeight: 500 }}>
-              Every expert vetted personally
-            </Typography>
-          </Stack>
-          <Box sx={{ width: 1, height: 14, bgcolor: "#E7E2D6", display: { xs: "none", sm: "block" } }} />
-          <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-            <Mic size={15} color="#9B7B3A" strokeWidth={2.2} />
-            <Typography sx={{ color: "#52525B", fontSize: "0.84rem", fontWeight: 500 }}>
-              Hosts of 3 of the largest dental podcasts
-            </Typography>
-          </Stack>
-        </MotionBox>
       </Container>
     </Box>
   );

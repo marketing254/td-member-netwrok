@@ -3,8 +3,10 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Box, Container, Grid, Stack, Typography } from "@mui/material";
 import {
+  ArrowRight,
   BarChart3,
   Calendar,
+  Lock,
   type LucideIcon,
   Megaphone,
   MessageSquare,
@@ -17,6 +19,8 @@ import {
   Users,
   Volume2,
 } from "lucide-react";
+import Link from "next/link";
+import { Button } from "@mui/material";
 import { motion, useReducedMotion } from "framer-motion";
 import { libraryPreviewSection, libraryPresenter } from "@/lib/content";
 
@@ -94,20 +98,38 @@ const NAV_ITEMS: { label: string; icon: LucideIcon; badge: string; active?: bool
 
 export default function MemberLibraryPreview() {
   const reduced = useReducedMotion();
-  // The featured card "plays" — progress fills over 47 minutes, but to make
-  // the demo feel alive we accelerate so 0→100% in 18 seconds.
-  const [progress, setProgress] = useState(18);
+  // 12-second trailer: progress fills 0 → 100, then we flip to LOCKED state
+  // so visitors hit the membership wall. No login during playback.
+  const TRAILER_DURATION_SEC = 12;
+  const TRAILER_DURATION_MS = TRAILER_DURATION_SEC * 1000;
+  const TRAILER_STEP_MS = 100;
+  const STEP_PCT = 100 / (TRAILER_DURATION_MS / TRAILER_STEP_MS);
+
+  const [progress, setProgress] = useState(0);
+  const [locked, setLocked] = useState(false);
 
   useEffect(() => {
-    if (reduced) return;
+    if (reduced) {
+      // Reduced motion: show the locked state immediately.
+      setProgress(100);
+      setLocked(true);
+      return;
+    }
     const id = setInterval(() => {
-      setProgress((p) => (p >= 100 ? 8 : p + 0.5));
-    }, 90);
+      setProgress((p) => {
+        const next = p + STEP_PCT;
+        if (next >= 100) {
+          setLocked(true);
+          return 100;
+        }
+        return next;
+      });
+    }, TRAILER_STEP_MS);
     return () => clearInterval(id);
-  }, [reduced]);
+  }, [reduced, STEP_PCT, TRAILER_DURATION_MS]);
 
-  // Current time display
-  const currentSec = Math.floor((NOW_PLAYING.durationSec * progress) / 100);
+  // Trailer time display (0:00 → 0:12). Total stays as the real lesson length.
+  const trailerCurrentSec = Math.floor((TRAILER_DURATION_SEC * progress) / 100);
   const totalSec = NOW_PLAYING.durationSec;
   const formatTime = (s: number) => {
     const m = Math.floor(s / 60);
@@ -304,12 +326,14 @@ export default function MemberLibraryPreview() {
 
             {/* MAIN — featured player + library grid */}
             <Grid size={{ xs: 12, md: 9.5 }} sx={{ p: { xs: 2.5, md: 3.5 } }}>
-              {/* NOW PLAYING — featured card with live progress */}
+              {/* TRAILER — plays 12s then locks. No login during playback. */}
               <FeaturedCard
                 entry={NOW_PLAYING}
                 progress={progress}
-                currentTime={formatTime(currentSec)}
+                locked={locked}
+                currentTime={formatTime(trailerCurrentSec)}
                 totalTime={formatTime(totalSec)}
+                trailerLength={TRAILER_DURATION_SEC}
               />
 
               {/* Library section header */}
@@ -368,19 +392,23 @@ export default function MemberLibraryPreview() {
 }
 
 /**
- * Featured "now playing" card with animated progress, time display,
- * and a subtle pulsing border to indicate it's live.
+ * Featured trailer card. Plays a 12-second trailer (no login wall),
+ * then flips to a locked state with a membership CTA.
  */
 function FeaturedCard({
   entry,
   progress,
+  locked,
   currentTime,
   totalTime,
+  trailerLength,
 }: {
   entry: LibraryEntry;
   progress: number;
+  locked: boolean;
   currentTime: string;
   totalTime: string;
+  trailerLength: number;
 }) {
   const { Icon } = entry;
   return (
@@ -482,7 +510,7 @@ function FeaturedCard({
                 textTransform: "uppercase",
               }}
             >
-              Now playing
+              {locked ? "Trailer complete" : `Free trailer · ${trailerLength}s`}
             </Typography>
             <Typography
               sx={{
@@ -539,7 +567,7 @@ function FeaturedCard({
           </Stack>
         </Box>
 
-        {/* Play/Pause control */}
+        {/* Play/Pause/Lock control */}
         <Box
           sx={{
             display: { xs: "none", sm: "grid" },
@@ -547,19 +575,121 @@ function FeaturedCard({
             width: 50,
             height: 50,
             borderRadius: "50%",
-            bgcolor: "#C9A876",
-            color: "#1A1A1A",
-            cursor: "pointer",
+            bgcolor: locked ? "rgba(201,168,118,0.2)" : "#C9A876",
+            color: locked ? "#C9A876" : "#1A1A1A",
+            border: locked ? "1px solid rgba(201,168,118,0.5)" : "none",
+            cursor: locked ? "default" : "pointer",
             transition: "transform 200ms ease, background 200ms ease",
-            "&:hover": {
-              transform: "scale(1.05)",
-              bgcolor: "#D4B07A",
+            "&:hover": locked
+              ? undefined
+              : { transform: "scale(1.05)", bgcolor: "#D4B07A" },
+          }}
+        >
+          {locked ? (
+            <Lock size={18} strokeWidth={2.4} />
+          ) : (
+            <Pause size={20} strokeWidth={2.5} fill="#1A1A1A" />
+          )}
+        </Box>
+      </Box>
+
+      {/* LOCKED OVERLAY — appears after the trailer completes */}
+      {locked && (
+        <Box
+          sx={{
+            position: "absolute",
+            inset: 0,
+            background:
+              "linear-gradient(180deg, rgba(19,19,22,0.55) 0%, rgba(19,19,22,0.88) 60%, rgba(19,19,22,0.95) 100%)",
+            backdropFilter: "blur(2px)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 1.25,
+            px: { xs: 2.5, md: 4 },
+            py: { xs: 3, md: 4 },
+            zIndex: 5,
+            animation: "lockFade 0.45s cubic-bezier(0.16, 1, 0.3, 1)",
+            "@keyframes lockFade": {
+              from: { opacity: 0 },
+              to: { opacity: 1 },
             },
           }}
         >
-          <Pause size={20} strokeWidth={2.5} fill="#1A1A1A" />
+          <Box
+            sx={{
+              width: 44,
+              height: 44,
+              borderRadius: "50%",
+              display: "grid",
+              placeItems: "center",
+              bgcolor: "rgba(201,168,118,0.18)",
+              border: "1px solid rgba(201,168,118,0.5)",
+              color: "#C9A876",
+              boxShadow: "0 0 30px rgba(201,168,118,0.35)",
+              mb: 0.5,
+            }}
+          >
+            <Lock size={18} strokeWidth={2.4} />
+          </Box>
+          <Typography
+            sx={{
+              color: "#C9A876",
+              fontSize: "0.62rem",
+              fontWeight: 700,
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+            }}
+          >
+            Members only beyond this point
+          </Typography>
+          <Typography
+            sx={{
+              color: "#FFFFFF",
+              fontFamily: "var(--font-display)",
+              fontSize: { xs: "1.05rem", sm: "1.25rem" },
+              fontWeight: 600,
+              letterSpacing: "-0.015em",
+              lineHeight: 1.2,
+              textAlign: "center",
+              maxWidth: 460,
+            }}
+          >
+            Unlock the full 47-minute lesson + the entire library
+          </Typography>
+          <Typography
+            sx={{
+              color: "rgba(255,255,255,0.7)",
+              fontSize: "0.86rem",
+              lineHeight: 1.5,
+              textAlign: "center",
+              maxWidth: 480,
+              mb: 1,
+            }}
+          >
+            42 resources, the 24/7 expert helpline, vendor savings, and 500+ practice owners — all in one founding membership at $49/mo.
+          </Typography>
+          <Button
+            component={Link}
+            href="/#waitlist"
+            endIcon={<ArrowRight size={15} />}
+            sx={{
+              py: 1.1,
+              px: 2.5,
+              fontSize: "0.88rem",
+              fontWeight: 600,
+              textTransform: "none",
+              borderRadius: 2,
+              bgcolor: "#C9A876",
+              color: "#1A1A1A !important",
+              "&:hover": { bgcolor: "#D4B07A" },
+            }}
+          >
+            Claim founding spot
+          </Button>
         </Box>
-      </Box>
+      )}
 
       {/* Progress bar with time stamps */}
       <Box sx={{ position: "relative", px: { xs: 2.5, md: 3.5 }, pb: 2 }}>

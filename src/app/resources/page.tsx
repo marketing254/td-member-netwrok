@@ -342,17 +342,22 @@ function FilterLink({
 }
 
 /**
- * YouTube-style scroll/hover preview hook.
+ * Scroll/hover preview hook with two modes:
  *
- * When the card has been ~70% in view for 700ms (or the user hovers it on
- * desktop) the muted video starts playing from the beginning. When the card
- * scrolls out of view (or hover ends) it pauses and resets. The preview
- * stops after 14s so we don't drain the user's data on a long-loaded page.
+ *  - `mode: "teaser"`  — YouTube-style. After ~700ms dwell or hover, the
+ *    muted video plays from the start, then auto-stops at 14s so the user
+ *    sees a teaser, not the full lesson.
  *
- * Pass `enabled=false` and it short-circuits to no-ops — used so non-featured
- * cards can call the same hook without doing any work.
+ *  - `mode: "full"`    — used by the featured kit so the visitor can watch
+ *    the **entire** video right on the card. We still start playback on
+ *    intersection (the card pulls them in), but there's no dwell delay and
+ *    no auto-stop. Once playing, the user controls the rest via the native
+ *    HTMLMediaElement controls (play/pause/seek/unmute/fullscreen).
+ *
+ * Pass `enabled=false` and the hook short-circuits to no-ops — used so
+ * non-featured cards can call the same hook without doing any work.
  */
-function useFeaturedPreview(enabled: boolean) {
+function useFeaturedPreview(enabled: boolean, mode: "teaser" | "full" = "teaser") {
   const cardRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [playing, setPlaying] = useState(false);
@@ -367,13 +372,32 @@ function useFeaturedPreview(enabled: boolean) {
     let hovered = false;
     let dwellTimer: number | undefined;
     let stopTimer: number | undefined;
+    let userControlled = false;
+
+    const onPlay = () => setPlaying(true);
+    const onPause = () => setPlaying(false);
+    // Once the user touches the controls, we hand the reins over and stop
+    // pausing/resetting on scroll-out.
+    const markUserControlled = () => {
+      userControlled = true;
+    };
+    video.addEventListener("play", onPlay);
+    video.addEventListener("pause", onPause);
+    video.addEventListener("seeking", markUserControlled);
+    video.addEventListener("volumechange", markUserControlled);
+    // Reset the playing flag once playback finishes naturally so the lock
+    // overlay (if any) re-appears.
+    const onEnded = () => setPlaying(false);
+    video.addEventListener("ended", onEnded);
 
     const tryPlay = () => {
       window.clearTimeout(dwellTimer);
+      const dwellMs = mode === "full" ? 100 : 700;
       dwellTimer = window.setTimeout(() => {
         if (!(inView || hovered)) return;
+        if (userControlled) return;
         try {
-          video.currentTime = 0;
+          if (mode === "teaser") video.currentTime = 0;
           void video.play().then(
             () => setPlaying(true),
             () => {
@@ -383,18 +407,21 @@ function useFeaturedPreview(enabled: boolean) {
         } catch {
           /* ignore */
         }
-        // Auto-stop after 14s so the user gets a teaser, not the full video.
-        window.clearTimeout(stopTimer);
-        stopTimer = window.setTimeout(() => stop(), 14_000);
-      }, 700);
+        if (mode === "teaser") {
+          // Auto-stop after 14s so the user gets a teaser, not the full video.
+          window.clearTimeout(stopTimer);
+          stopTimer = window.setTimeout(() => stop(), 14_000);
+        }
+      }, dwellMs);
     };
 
     const stop = () => {
       window.clearTimeout(dwellTimer);
       window.clearTimeout(stopTimer);
+      if (userControlled) return;
       try {
         video.pause();
-        video.currentTime = 0;
+        if (mode === "teaser") video.currentTime = 0;
       } catch {
         /* ignore */
       }
@@ -426,40 +453,60 @@ function useFeaturedPreview(enabled: boolean) {
       io.disconnect();
       card.removeEventListener("mouseenter", onEnter);
       card.removeEventListener("mouseleave", onLeave);
+      video.removeEventListener("play", onPlay);
+      video.removeEventListener("pause", onPause);
+      video.removeEventListener("seeking", markUserControlled);
+      video.removeEventListener("volumechange", markUserControlled);
+      video.removeEventListener("ended", onEnded);
       window.clearTimeout(dwellTimer);
       window.clearTimeout(stopTimer);
       stop();
     };
-  }, [enabled]);
+  }, [enabled, mode]);
 
   return { cardRef, videoRef, playing };
 }
 
 function PublicKitCard({ kit, onClick }: { kit: Kit; onClick: () => void }) {
-  // For the featured kit, hook up the YouTube-style scroll/hover preview.
-  // For every other kit, this hook returns inert values and renders nothing.
+  // The featured kit gets full-playback mode (the entire trailer plays,
+  // no 14s auto-stop). Every other kit gets no preview at all and stays
+  // behind the lock overlay.
+  const isFreeFeature = kit.featured && !!kit.previewVideoUrl;
   const { cardRef, videoRef, playing } = useFeaturedPreview(
-    kit.featured && !!kit.previewVideoUrl,
+    isFreeFeature,
+    "full",
   );
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Featured kit: clicks on the video controls (play/pause/seek/etc.)
+    // must NOT open the lock modal. Only clicks on the body text route to the
+    // kit detail page.
+    if (isFreeFeature) {
+      const target = e.target as HTMLElement;
+      if (target.closest("video")) return; // user is interacting with video
+    }
+    onClick();
+  };
 
   return (
     <Box
       ref={cardRef}
-      role="button"
-      tabIndex={0}
-      onClick={onClick}
+      role={isFreeFeature ? undefined : "button"}
+      tabIndex={isFreeFeature ? undefined : 0}
+      onClick={handleCardClick}
       onKeyDown={(e) => {
+        if (isFreeFeature) return;
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
           onClick();
         }
       }}
       sx={{
-        cursor: "pointer",
+        cursor: isFreeFeature ? "default" : "pointer",
         display: "flex",
         flexDirection: "column",
         transition: "transform 200ms ease",
-        "&:hover": { transform: "translateY(-2px)" },
+        "&:hover": isFreeFeature ? undefined : { transform: "translateY(-2px)" },
         "&:focus-visible": { outline: "2px solid #A07823", outlineOffset: 4, borderRadius: "4px" },
       }}
     >
@@ -480,158 +527,176 @@ function PublicKitCard({ kit, onClick }: { kit: Kit; onClick: () => void }) {
           isolation: "isolate",
         }}
       >
-        {/* Muted preview video — only mounted for the featured kit, only
-            visible once it actually starts playing so the still image
-            stays clean otherwise. */}
-        {kit.featured && kit.previewVideoUrl && (
+        {/* Featured kit: full video element with native controls. The visitor
+            can play, pause, seek, unmute, and fullscreen the entire trailer
+            right here — no lock overlay, no membership wall. */}
+        {isFreeFeature && (
           <Box
             component="video"
             ref={videoRef}
-            src={kit.previewVideoUrl}
+            src={kit.previewVideoUrl ?? undefined}
             muted
             playsInline
+            controls
+            controlsList="nodownload noremoteplayback"
             preload="metadata"
+            poster={kit.resourceCardUrl ?? undefined}
             sx={{
               position: "absolute",
               inset: 0,
               width: "100%",
               height: "100%",
               objectFit: "cover",
-              zIndex: 0,
-              opacity: playing ? 1 : 0,
-              transition: "opacity 280ms ease",
-              pointerEvents: "none",
+              zIndex: 1,
             }}
           />
         )}
-        {/* "PREVIEW" pill shown only while the featured preview is playing */}
-        {kit.featured && playing && (
+
+        {/* Featured kit: "FREE · FULL VIDEO" badge top-right */}
+        {isFreeFeature && (
           <Box
             sx={{
               position: "absolute",
               top: 12,
               right: 12,
-              zIndex: 3,
+              zIndex: 4,
               display: "inline-flex",
               alignItems: "center",
-              gap: 0.4,
-              height: 20,
-              px: 0.85,
-              borderRadius: 0.5,
-              bgcolor: "rgba(140,29,29,0.9)",
+              gap: 0.5,
+              height: 22,
+              px: 1,
+              borderRadius: 0.65,
+              bgcolor: "rgba(31,92,64,0.95)",
               color: "#FFFFFF",
-              fontSize: "0.6rem",
+              fontSize: "0.62rem",
               fontWeight: 800,
               letterSpacing: "0.14em",
-              textShadow: "0 1px 2px rgba(0,0,0,0.4)",
+              boxShadow: "0 4px 12px -4px rgba(0,0,0,0.4)",
             }}
           >
-            <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: "#FFFFFF" }} />
-            PREVIEW
+            <Box
+              sx={{
+                width: 6,
+                height: 6,
+                borderRadius: "50%",
+                bgcolor: "#FFFFFF",
+                animation: playing ? "freeLive 1.4s ease-in-out infinite" : "none",
+                "@keyframes freeLive": {
+                  "0%, 100%": { opacity: 1 },
+                  "50%": { opacity: 0.35 },
+                },
+              }}
+            />
+            FREE · FULL VIDEO
           </Box>
         )}
-        {/* Lock overlay — soft, restrained */}
-        <Box
-          aria-hidden
-          sx={{
-            position: "absolute",
-            inset: 0,
-            bgcolor: "rgba(10,26,47,0.35)",
-            transition: "background-color 200ms ease",
-            ".kit-card:hover &": { bgcolor: "rgba(10,26,47,0.5)" },
-          }}
-        />
 
-        {/* Top-left FREE badge */}
-        {kit.isFree && (
+        {/* Locked kits: dim overlay + lock + "Sign up to unlock" */}
+        {!isFreeFeature && (
+          <>
+            <Box
+              aria-hidden
+              sx={{
+                position: "absolute",
+                inset: 0,
+                bgcolor: "rgba(10,26,47,0.35)",
+                transition: "background-color 200ms ease",
+                ".kit-card:hover &": { bgcolor: "rgba(10,26,47,0.5)" },
+              }}
+            />
+
+            {kit.isFree && (
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: 12,
+                  left: 12,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  height: 20,
+                  px: 0.85,
+                  borderRadius: 0.5,
+                  bgcolor: "rgba(255,255,255,0.96)",
+                  color: "#1F5C40",
+                  fontSize: "0.6rem",
+                  fontWeight: 800,
+                  letterSpacing: "0.12em",
+                  zIndex: 2,
+                }}
+              >
+                FREE
+              </Box>
+            )}
+
+            <Box
+              sx={{
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 1,
+                color: "#FFFFFF",
+                zIndex: 2,
+                textShadow: "0 1px 2px rgba(0,0,0,0.4)",
+              }}
+            >
+              <Box
+                sx={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: "50%",
+                  bgcolor: "rgba(255,255,255,0.18)",
+                  border: "1px solid rgba(255,255,255,0.4)",
+                  display: "grid",
+                  placeItems: "center",
+                  backdropFilter: "blur(8px)",
+                }}
+              >
+                <LockRoundedIcon sx={{ fontSize: 22, color: "#FFFFFF" }} />
+              </Box>
+              <Typography
+                sx={{
+                  fontSize: "0.66rem",
+                  fontWeight: 800,
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  opacity: 0.95,
+                }}
+              >
+                Sign up to unlock
+              </Typography>
+            </Box>
+          </>
+        )}
+
+        {/* Bottom-right meta — kit item count. Hidden on the featured kit so
+            it doesn't overlap the native video controls. */}
+        {!isFreeFeature && (
           <Box
             sx={{
               position: "absolute",
-              top: 12,
-              left: 12,
+              bottom: 12,
+              right: 12,
               display: "inline-flex",
               alignItems: "center",
-              height: 20,
-              px: 0.85,
+              gap: 0.4,
+              px: 0.75,
+              py: 0.3,
               borderRadius: 0.5,
-              bgcolor: "rgba(255,255,255,0.96)",
-              color: "#1F5C40",
-              fontSize: "0.6rem",
-              fontWeight: 800,
-              letterSpacing: "0.12em",
+              bgcolor: "rgba(10,26,47,0.78)",
+              color: "#FFFFFF",
+              fontSize: "0.62rem",
+              fontWeight: 700,
+              letterSpacing: "0.04em",
               zIndex: 2,
             }}
           >
-            FREE
+            {kit.videoCount > 0 && <PlayArrowRoundedIcon sx={{ fontSize: 11 }} />}
+            {`${kit.itemCount} ${kit.itemCount === 1 ? "resource" : "resources"}`}
           </Box>
         )}
-
-        {/* Centered lock + "Sign up to unlock" pill */}
-        <Box
-          sx={{
-            position: "absolute",
-            inset: 0,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 1,
-            color: "#FFFFFF",
-            zIndex: 2,
-            textShadow: "0 1px 2px rgba(0,0,0,0.4)",
-          }}
-        >
-          <Box
-            sx={{
-              width: 44,
-              height: 44,
-              borderRadius: "50%",
-              bgcolor: "rgba(255,255,255,0.18)",
-              border: "1px solid rgba(255,255,255,0.4)",
-              display: "grid",
-              placeItems: "center",
-              backdropFilter: "blur(8px)",
-            }}
-          >
-            <LockRoundedIcon sx={{ fontSize: 22, color: "#FFFFFF" }} />
-          </Box>
-          <Typography
-            sx={{
-              fontSize: "0.66rem",
-              fontWeight: 800,
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-              opacity: 0.95,
-            }}
-          >
-            Sign up to unlock
-          </Typography>
-        </Box>
-
-        {/* Bottom-right meta — show TOTAL resources in the kit (video count
-            is signalled by the play icon when applicable). */}
-        <Box
-          sx={{
-            position: "absolute",
-            bottom: 12,
-            right: 12,
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 0.4,
-            px: 0.75,
-            py: 0.3,
-            borderRadius: 0.5,
-            bgcolor: "rgba(10,26,47,0.78)",
-            color: "#FFFFFF",
-            fontSize: "0.62rem",
-            fontWeight: 700,
-            letterSpacing: "0.04em",
-            zIndex: 2,
-          }}
-        >
-          {kit.videoCount > 0 && <PlayArrowRoundedIcon sx={{ fontSize: 11 }} />}
-          {`${kit.itemCount} ${kit.itemCount === 1 ? "resource" : "resources"}`}
-        </Box>
       </Box>
 
       {/* Body */}
