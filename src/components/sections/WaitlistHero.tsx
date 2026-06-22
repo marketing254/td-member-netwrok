@@ -123,7 +123,7 @@ export default function WaitlistHero() {
                     fontWeight: 500,
                   }}
                 >
-                  The only network with a{" "}
+                  The only network where every practice problem gets a{" "}
                   <Box
                     component="span"
                     sx={{
@@ -135,9 +135,8 @@ export default function WaitlistHero() {
                       WebkitTextFillColor: "transparent",
                     }}
                   >
-                    human expert on the line
-                  </Box>{" "}
-                  for every practice problem.
+                    written action plan in 2–3 business days.
+                  </Box>
                 </Typography>
               </MotionBox>
 

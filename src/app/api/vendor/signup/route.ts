@@ -39,6 +39,9 @@ type ApplicationPayload = {
   signatureTitle?: string;
   agreedToTerms: boolean;
   confirmedAuthority: boolean;
+  smsConsent?: boolean;
+  smsConsentText?: string | null;
+  smsConsentAt?: string | null;
   planId?: string;
   source?: string;
   hotlineEmail?: string;
@@ -106,6 +109,10 @@ function validate(body: unknown): { ok: true; data: ApplicationPayload } | { ok:
     };
   }
 
+  const smsConsent = b.smsConsent === true;
+  const smsConsentText = smsConsent ? (asString(b.smsConsentText, 500) ?? null) : null;
+  const smsConsentAt = smsConsent ? (asString(b.smsConsentAt, 64) ?? new Date().toISOString()) : null;
+
   return {
     ok: true,
     data: {
@@ -122,6 +129,9 @@ function validate(body: unknown): { ok: true; data: ApplicationPayload } | { ok:
       signatureTitle: asString(b.signatureTitle, 200),
       agreedToTerms,
       confirmedAuthority,
+      smsConsent,
+      smsConsentText,
+      smsConsentAt,
       planId: asString(b.planId, 60) ?? "founding",
       source: asString(b.source, 60) ?? "vendor-signup-form",
       hotlineEmail: asString(b.hotlineEmail, 254)?.toLowerCase(),
@@ -226,6 +236,8 @@ export async function POST(req: Request) {
         agreement_version: "v1.0",
         agreed_to_terms: data.agreedToTerms,
         confirmed_authority: data.confirmedAuthority,
+        sms_consent_at: data.smsConsentAt ?? null,
+        sms_consent_text: data.smsConsentText ?? null,
         plan_id: data.planId,
         source: data.source,
         hotline_email: data.hotlineEmail ?? data.contactEmail,

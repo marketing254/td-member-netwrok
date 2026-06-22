@@ -149,7 +149,7 @@ export default function Header() {
                 }}
               >
                 <Box component="span" sx={{ color: "#5C6770" }}>
-                  Already a vendor?
+                  Already a partner?
                 </Box>
                 <Box
                   component={Link}
@@ -289,7 +289,7 @@ export default function Header() {
               "&:hover": { borderColor: "#A07823", bgcolor: "rgba(217,168,75,0.06)" },
             }}
           >
-            Already a vendor? Sign in
+            Already a partner? Sign in
           </Button>
         </Box>
       </Drawer>

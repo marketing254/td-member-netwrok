@@ -57,6 +57,11 @@ export async function applySubscriptionToMember(
   const cancelAtPeriodEnd = !!sub.cancel_at_period_end;
   const interval = price?.recurring?.interval ?? null;
   const isFoundingMeta = sub.metadata?.founding_member === "true";
+  const isEarlyMeta = sub.metadata?.early_member === "true";
+  // Fall back to subscription.metadata.tier if the boolean flags are missing
+  // (older sessions or manual Stripe edits). `tier` is also written by the
+  // checkout route for every new sub.
+  const tierMeta = (sub.metadata?.tier as "founding" | "early" | "standard" | undefined) ?? null;
 
   // Card metadata — only available if default_payment_method is expanded
   // to a Card payment method.
@@ -72,7 +77,7 @@ export async function applySubscriptionToMember(
 
   const { data: current } = await sb
     .from("members")
-    .select("founding_member_locked, tier")
+    .select("founding_member_locked, early_member_locked, tier")
     .eq("id", memberId)
     .single();
 
@@ -87,6 +92,7 @@ export async function applySubscriptionToMember(
     card_brand?: string | null;
     card_last4?: string | null;
     founding_member_locked?: boolean;
+    early_member_locked?: boolean;
     tier?: string;
     status?: "waitlist" | "invited" | "active" | "paused" | "churned";
   };
@@ -103,9 +109,17 @@ export async function applySubscriptionToMember(
     card_last4: cardLast4,
   };
 
-  if (isFoundingMeta && !current?.founding_member_locked) {
+  // Lock the tier on first successful sub. Once locked, never reset — that's
+  // the cancellation-doesn't-free-a-seat invariant. tierMeta is the
+  // ground truth from checkout (it's set on every new session).
+  if ((isFoundingMeta || tierMeta === "founding") && !current?.founding_member_locked) {
     patch.founding_member_locked = true;
     if (current?.tier !== "founding") patch.tier = "founding";
+  } else if ((isEarlyMeta || tierMeta === "early") && !current?.early_member_locked) {
+    patch.early_member_locked = true;
+    if (current?.tier !== "early" && current?.tier !== "founding") patch.tier = "early";
+  } else if (tierMeta === "standard" && !current?.tier) {
+    patch.tier = "standard";
   }
 
   if (status === "active" || status === "trialing") {

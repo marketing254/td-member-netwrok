@@ -8,6 +8,10 @@ import { createMiddlewareSupabase } from "@/lib/supabase/middleware-ssr";
  *                Public exceptions: /vendor/login, /vendor/signup, /vendor/applied.
  *   /admin/*   → requires a Supabase session AND an active admin_users row.
  *                Public exceptions: /admin/login.
+ *   /dashboard/* → requires a member session AND subscription_status = 'active'.
+ *                  Unpaid members are redirected to /upgrade.
+ *   /upgrade   → requires a member session. Already-paid members are
+ *                redirected back to /dashboard.
  *
  * The middleware also refreshes the Supabase session cookie on every
  * request (createMiddlewareSupabase + getUser handles this automatically).
@@ -91,8 +95,12 @@ function isPublicAdminPath(pathname: string) {
 
 function isPublicMemberPath(_pathname: string) {
   // All /dashboard/* paths are gated. Members enter via /member/login → magic
-  // link → /auth/callback → /dashboard.
+  // link → /auth/callback → /upgrade (if unpaid) → /dashboard (once paid).
   return false;
+}
+
+function isUpgradePath(pathname: string) {
+  return pathname === "/upgrade" || pathname.startsWith("/upgrade/");
 }
 
 export async function middleware(req: NextRequest) {
@@ -105,8 +113,9 @@ export async function middleware(req: NextRequest) {
   const isVendor = pathname.startsWith("/vendor") && !isPublicVendorPath(pathname);
   const isAdmin = pathname.startsWith("/admin") && !isPublicAdminPath(pathname);
   const isMember = pathname.startsWith("/dashboard") && !isPublicMemberPath(pathname);
+  const isUpgrade = isUpgradePath(pathname);
 
-  if (!isVendor && !isAdmin && !isMember) {
+  if (!isVendor && !isAdmin && !isMember && !isUpgrade) {
     // Outside the gated surfaces — still run Supabase to keep the session
     // cookie fresh so /vendor/login etc. read the latest state.
     try {
@@ -178,9 +187,10 @@ export async function middleware(req: NextRequest) {
   }
 
   // ─────────────────────────────────────────────────────────────────
-  // MEMBER PORTAL  (/dashboard/*)
+  // MEMBER PORTAL  (/dashboard/*)  — requires paid subscription
+  // /upgrade — requires member session but blocks if already paid
   // ─────────────────────────────────────────────────────────────────
-  if (isMember) {
+  if (isMember || isUpgrade) {
     try {
       const supabase = createMiddlewareSupabase(req, res);
       const { data: userData } = await supabase.auth.getUser();
@@ -191,10 +201,10 @@ export async function middleware(req: NextRequest) {
         return applySecurityHeaders(NextResponse.redirect(target));
       }
 
-      // Confirm the user has an active members row.
+      // Confirm the user has an active members row + read their billing status.
       const { data: memberRow } = await supabase
         .from("members")
-        .select("id, status")
+        .select("id, status, subscription_status")
         .eq("auth_user_id", userData.user.id)
         .maybeSingle();
 
@@ -203,6 +213,30 @@ export async function middleware(req: NextRequest) {
         target.pathname = "/member/login";
         target.search = `?error=${encodeURIComponent("Your member portal isn't active yet. We'll email you when it is.")}`;
         return applySecurityHeaders(NextResponse.redirect(target));
+      }
+
+      const isPaid = memberRow.subscription_status === "active";
+
+      // /dashboard/* → must be paid. Bounce unpaid members to /upgrade.
+      if (isMember && !isPaid) {
+        const target = req.nextUrl.clone();
+        target.pathname = "/upgrade";
+        target.search = "";
+        return applySecurityHeaders(NextResponse.redirect(target));
+      }
+
+      // /upgrade → already paid members go straight to /dashboard.
+      // Exception: keep them on /upgrade if they're returning from Stripe
+      // (subscribed=1 or subscribed=0) so they see the processing banner /
+      // cancel note instead of getting punted away mid-flow.
+      if (isUpgrade && isPaid) {
+        const sub = req.nextUrl.searchParams.get("subscribed");
+        if (sub !== "1" && sub !== "0") {
+          const target = req.nextUrl.clone();
+          target.pathname = "/dashboard";
+          target.search = "";
+          return applySecurityHeaders(NextResponse.redirect(target));
+        }
       }
 
       return applySecurityHeaders(res);

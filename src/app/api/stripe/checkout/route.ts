@@ -2,11 +2,16 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { requireMember } from "@/lib/auth/guards";
 import {
+  ALL_PLAN_KEYS,
   appOrigin,
   billingIntervalFor,
+  EARLY_MEMBER_CAP,
+  FOUNDING_MEMBER_CAP,
   getStripe,
+  isEarlyPlan,
   isFoundingPlan,
   priceIdFor,
+  tierForPlan,
   type SubscriptionPlanKey,
 } from "@/lib/stripe";
 
@@ -16,7 +21,7 @@ export const dynamic = "force-dynamic";
 /**
  * POST /api/stripe/checkout
  *
- * Body: { plan: "founding_monthly" | "founding_annual" | "standard_monthly" }
+ * Body: { plan: "founding_monthly" | "founding_annual" | "standard_monthly" | "standard_annual" }
  *
  * Creates a Stripe Checkout Session for a subscription and returns the
  * redirect URL. The actual subscription state lives in Stripe — we just
@@ -26,14 +31,8 @@ export const dynamic = "force-dynamic";
  * the subscription so the webhook can lock the member into the founding
  * grandfathered rate.
  */
-const VALID_PLANS: SubscriptionPlanKey[] = [
-  "founding_monthly",
-  "founding_annual",
-  "standard_monthly",
-];
-
 function isValidPlan(p: unknown): p is SubscriptionPlanKey {
-  return typeof p === "string" && (VALID_PLANS as string[]).includes(p);
+  return typeof p === "string" && (ALL_PLAN_KEYS as string[]).includes(p);
 }
 
 export async function POST(req: Request) {
@@ -43,13 +42,43 @@ export async function POST(req: Request) {
   const body = (await req.json().catch(() => ({}))) as { plan?: unknown };
   if (!isValidPlan(body.plan)) {
     return NextResponse.json(
-      { error: `Invalid plan. Use one of: ${VALID_PLANS.join(", ")}` },
+      { error: `Invalid plan. Use one of: ${ALL_PLAN_KEYS.join(", ")}` },
       { status: 400 },
     );
   }
   const plan = body.plan;
 
   const sb = getSupabaseAdmin();
+
+  // Tier caps — Founding (100) and Early (400) are LIFETIME. Cancellations
+  // do NOT free a seat. We count the {tier}_member_locked boolean which is
+  // set on first successful checkout and never reset.
+  if (isFoundingPlan(plan) || isEarlyPlan(plan)) {
+    const tier = tierForPlan(plan); // "founding" | "early"
+    const column = tier === "founding" ? "founding_member_locked" : "early_member_locked";
+    const cap = tier === "founding" ? FOUNDING_MEMBER_CAP : EARLY_MEMBER_CAP;
+
+    const { count, error: countErr } = await sb
+      .from("members")
+      .select("id", { count: "exact", head: true })
+      .eq(column, true);
+    if (countErr) {
+      return NextResponse.json(
+        { error: `Could not verify ${tier} availability. Please try again.` },
+        { status: 500 },
+      );
+    }
+    if ((count ?? 0) >= cap) {
+      const msg =
+        tier === "founding"
+          ? "Founding seats are sold out — all 100 spots are taken. Early Member or Standard membership is still available."
+          : "Early Member seats are sold out — all 400 spots are taken. Standard membership is still available.";
+      return NextResponse.json(
+        { error: msg, tierSoldOut: tier },
+        { status: 409 },
+      );
+    }
+  }
 
   // Pull the latest member row to see if they already have a Stripe customer/sub.
   const { data: member, error: memErr } = await sb
@@ -105,7 +134,7 @@ export async function POST(req: Request) {
   }
 
   const origin = appOrigin();
-  const founding = isFoundingPlan(plan);
+  const tier = tierForPlan(plan);
 
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
@@ -119,15 +148,18 @@ export async function POST(req: Request) {
         member_id: member.id,
         plan,
         billing_interval: billingIntervalFor(plan),
-        founding_member: founding ? "true" : "false",
+        tier,
+        founding_member: isFoundingPlan(plan) ? "true" : "false",
+        early_member: isEarlyPlan(plan) ? "true" : "false",
       },
     },
     metadata: {
       member_id: member.id,
       plan,
+      tier,
     },
-    success_url: `${origin}/dashboard?subscribed=1&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${origin}/dashboard?subscribed=0`,
+    success_url: `${origin}/upgrade?subscribed=1&session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${origin}/upgrade?subscribed=0`,
   });
 
   if (!session.url) {

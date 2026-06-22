@@ -121,6 +121,8 @@ export async function POST(req: Request) {
     utm: result.data.utm ?? null,
     ip_hash: hashIp(ip),
     user_agent: req.headers.get("user-agent")?.slice(0, 500) ?? null,
+    sms_consent_at: result.data.smsConsentAt ?? null,
+    sms_consent_text: result.data.smsConsentText ?? null,
   };
 
   const { data, error } = await supabase

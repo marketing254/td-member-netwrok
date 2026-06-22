@@ -3,8 +3,8 @@ import Header from "@/components/sections/Header";
 import WaitlistHero from "@/components/sections/WaitlistHero";
 import HelplineDemo from "@/components/sections/HelplineDemo";
 import SocialProof from "@/components/sections/SocialProof";
-import FoundingTeam from "@/components/sections/FoundingTeam";
 import Features from "@/components/sections/Features";
+import OneNetworkThreeWays from "@/components/sections/OneNetworkThreeWays";
 import MemberLibraryPreview from "@/components/sections/MemberLibraryPreview";
 import ROICalculator from "@/components/sections/ROICalculator";
 import Pricing from "@/components/sections/Pricing";
@@ -63,8 +63,6 @@ export default async function HomePage({ searchParams }: { searchParams: HomeSea
         <HelplineDemo />
         {/* Trust — testimonials + podcast credits */}
         <SocialProof />
-        {/* Founding team — Gary + Naren */}
-        <FoundingTeam />
         {/* What you get */}
         <Features />
         {/* Inside the member portal */}
@@ -77,6 +75,8 @@ export default async function HomePage({ searchParams }: { searchParams: HomeSea
         <WhoItsFor />
         {/* Free kit lead magnet */}
         <FreeKitMagnet />
+        {/* One network. Three ways in. — Members / Experts / Partners */}
+        <OneNetworkThreeWays />
         {/* The full waitlist form */}
         <WaitlistSection />
         {/* Objections */}

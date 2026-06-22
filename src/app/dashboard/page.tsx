@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
 import {
   Box,
   Button,
@@ -17,7 +16,6 @@ import PolicyOutlinedIcon from "@mui/icons-material/PolicyOutlined";
 import RuleFolderOutlinedIcon from "@mui/icons-material/RuleFolderOutlined";
 import { useCurrentMember } from "@/lib/hooks/useCurrentMember";
 import { KitCover } from "@/components/member/KitCover";
-import { SubscribeCard } from "@/components/member/SubscribeCard";
 import {
   EditorialHeader,
   EditorialSection,
@@ -145,18 +143,9 @@ export default function DashboardHome() {
 
   const firstName = member?.first_name ?? "there";
   const memberSince = formatJoined(member?.joined_at ?? member?.activated_at ?? null);
-  const isSubscribed =
-    member?.subscription_status === "active" || member?.subscription_status === "trialing";
 
   return (
     <Box sx={{ color: ink.primary }}>
-      <SubscriptionGate
-        member={member}
-        isSubscribed={isSubscribed}
-        firstName={firstName}
-      />
-
-
       <EditorialHeader
         eyebrow={`Member portal · ${member?.tier === "founding" ? "Founding cohort" : "Member"}`}
         title={`Welcome back, ${firstName}.`}
@@ -324,282 +313,11 @@ export default function DashboardHome() {
   );
 }
 
-/**
- * SubscriptionGate decides whether to show the SubscribeCard, the
- * "payment received, account being set up" banner, or nothing.
- *
- * Without this, a member who just paid on Stripe gets bounced back to
- * /dashboard with `?subscribed=1` and briefly sees the Subscribe card
- * again (until the webhook lands and updates the DB). That looks
- * broken. We optimistically hide the SubscribeCard the moment we see
- * the query param and show a small success banner while we poll the
- * member API for the canonical subscription state.
+/* --- removed: SubscriptionGate, ProcessingBanner, CheckoutCanceledNote ---
+ * The /upgrade page now owns the paywall + post-Stripe processing flow.
+ * Middleware guarantees only paid members reach /dashboard.
  */
-function SubscriptionGate({
-  member,
-  isSubscribed,
-  firstName,
-}: {
-  member: ReturnType<typeof useCurrentMember>["member"];
-  isSubscribed: boolean;
-  firstName: string;
-}) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const justSubscribed = searchParams.get("subscribed") === "1";
-  const checkoutCanceled = searchParams.get("subscribed") === "0";
-  const [pollExhausted, setPollExhausted] = useState(false);
 
-  // Poll /api/member/me for up to ~30 seconds after the redirect, then
-  // surface a clear "still confirming" state with a manual refresh button.
-  useEffect(() => {
-    if (!justSubscribed || isSubscribed) return;
-    let attempts = 0;
-    const interval = setInterval(async () => {
-      attempts += 1;
-      try {
-        const res = await fetch("/api/member/me", { cache: "no-store" });
-        if (res.ok) {
-          const body = (await res.json()) as {
-            member?: { subscription_status?: string | null };
-          };
-          const status = body.member?.subscription_status;
-          if (status === "active" || status === "trialing") {
-            clearInterval(interval);
-            router.replace("/dashboard");
-            router.refresh();
-            return;
-          }
-        }
-      } catch {
-        /* swallow — try again next tick */
-      }
-      if (attempts >= 15) {
-        clearInterval(interval);
-        setPollExhausted(true);
-      }
-    }, 2000);
-    return () => clearInterval(interval);
-  }, [justSubscribed, isSubscribed, router]);
-
-  if (!member) return null;
-
-  // Real subscribed state — clean dashboard.
-  if (isSubscribed) {
-    if (justSubscribed) {
-      return (
-        <Box sx={{ mb: 3 }}>
-          <ProcessingBanner variant="success" />
-        </Box>
-      );
-    }
-    return null;
-  }
-
-  // Just came back from Stripe — webhook hasn't landed yet.
-  if (justSubscribed) {
-    return (
-      <Box sx={{ mb: 3 }}>
-        <ProcessingBanner variant={pollExhausted ? "stuck" : "pending"} />
-      </Box>
-    );
-  }
-
-  // Came back from a cancelled Checkout — show SubscribeCard with note.
-  return (
-    <Box sx={{ mb: 3 }}>
-      {checkoutCanceled && <CheckoutCanceledNote />}
-      <SubscribeCard firstName={firstName} />
-    </Box>
-  );
-}
-
-function ProcessingBanner({ variant }: { variant: "pending" | "stuck" | "success" }) {
-  const palette =
-    variant === "success"
-      ? {
-          bg: "rgba(34,108,78,0.06)",
-          border: "1px solid rgba(34,108,78,0.25)",
-          icon: "#1F5C40",
-          iconBg: "rgba(34,108,78,0.18)",
-          title: "#1F5C40",
-          body: "#3B4A55",
-        }
-      : variant === "stuck"
-        ? {
-            bg: "rgba(140,29,29,0.04)",
-            border: "1px solid rgba(140,29,29,0.22)",
-            icon: "#8C1D1D",
-            iconBg: "rgba(140,29,29,0.1)",
-            title: "#8C1D1D",
-            body: "#3B4A55",
-          }
-        : {
-            bg: "rgba(217,168,75,0.08)",
-            border: "1px solid rgba(217,168,75,0.32)",
-            icon: "#A07823",
-            iconBg: "rgba(217,168,75,0.16)",
-            title: "#7A5B17",
-            body: "#5C6770",
-          };
-
-  const title =
-    variant === "success"
-      ? "Payment received — your membership is active."
-      : variant === "stuck"
-        ? "Payment received — still confirming with Stripe."
-        : "Payment received — setting up your account…";
-
-  const body =
-    variant === "success"
-      ? "Reload the page if anything still looks stale. Your invoice is on the Profile page."
-      : variant === "stuck"
-        ? "This usually clears in seconds. Refresh below, or check the Profile page for your subscription status. If it's still not updated after a minute, email members@joindmn.com — we can confirm manually."
-        : "Stripe is confirming the payment. This usually takes a few seconds — feel free to keep browsing.";
-
-  return (
-    <Box
-      sx={{
-        position: "relative",
-        overflow: "hidden",
-        borderRadius: 2,
-        bgcolor: palette.bg,
-        border: palette.border,
-        px: { xs: 2, md: 2.5 },
-        py: { xs: 1.75, md: 2 },
-      }}
-    >
-      <Stack
-        direction={{ xs: "column", sm: "row" }}
-        spacing={1.5}
-        sx={{ alignItems: { sm: "center" } }}
-      >
-        {variant === "success" ? (
-          <Box
-            sx={{
-              width: 32,
-              height: 32,
-              borderRadius: "50%",
-              bgcolor: palette.iconBg,
-              color: palette.icon,
-              display: "grid",
-              placeItems: "center",
-              flexShrink: 0,
-            }}
-          >
-            ✓
-          </Box>
-        ) : variant === "stuck" ? (
-          <Box
-            sx={{
-              width: 32,
-              height: 32,
-              borderRadius: "50%",
-              bgcolor: palette.iconBg,
-              color: palette.icon,
-              display: "grid",
-              placeItems: "center",
-              flexShrink: 0,
-              fontWeight: 700,
-              fontSize: "1rem",
-            }}
-          >
-            !
-          </Box>
-        ) : (
-          <CircularProgress size={20} sx={{ color: palette.icon, flexShrink: 0 }} />
-        )}
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography
-            sx={{
-              fontSize: "0.94rem",
-              fontWeight: 600,
-              color: palette.title,
-              lineHeight: 1.3,
-            }}
-          >
-            {title}
-          </Typography>
-          <Typography
-            sx={{ fontSize: "0.78rem", color: palette.body, mt: 0.25, lineHeight: 1.5 }}
-          >
-            {body}
-          </Typography>
-        </Box>
-        {variant !== "pending" && (
-          <Stack
-            direction="row"
-            spacing={0.75}
-            sx={{ flexShrink: 0, alignSelf: { xs: "flex-start", sm: "center" } }}
-          >
-            <Button
-              onClick={() => {
-                // Bypass the cached fetch by hitting the network again.
-                window.location.assign("/dashboard");
-              }}
-              size="small"
-              variant="contained"
-              disableElevation
-              sx={{
-                bgcolor: palette.icon,
-                color: "#FFFFFF",
-                textTransform: "none",
-                fontSize: "0.78rem",
-                fontWeight: 600,
-                borderRadius: 0.75,
-                px: 1.5,
-                py: 0.5,
-                "&:hover": {
-                  bgcolor: "color-mix(in oklch, var(--ink) 12%, " + palette.icon + ")",
-                },
-              }}
-            >
-              Refresh
-            </Button>
-            <Button
-              component={Link}
-              href="/dashboard/account"
-              size="small"
-              variant="outlined"
-              sx={{
-                borderColor: palette.icon,
-                color: palette.icon,
-                textTransform: "none",
-                fontSize: "0.78rem",
-                fontWeight: 600,
-                borderRadius: 0.75,
-                px: 1.5,
-                py: 0.5,
-                "&:hover": { bgcolor: palette.iconBg },
-              }}
-            >
-              View Profile
-            </Button>
-          </Stack>
-        )}
-      </Stack>
-    </Box>
-  );
-}
-
-function CheckoutCanceledNote() {
-  return (
-    <Box
-      sx={{
-        borderRadius: 1.25,
-        bgcolor: "rgba(14,42,61,0.04)",
-        border: "1px solid rgba(14,42,61,0.1)",
-        px: 1.75,
-        py: 1.25,
-        mb: 2,
-        fontSize: "0.84rem",
-        color: "#3B4A55",
-      }}
-    >
-      Checkout was cancelled. Pick a plan when you&apos;re ready.
-    </Box>
-  );
-}
 
 function SeeAllLink({ href, label }: { href: string; label: string }) {
   return (

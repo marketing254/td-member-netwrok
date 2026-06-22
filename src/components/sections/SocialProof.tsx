@@ -1,9 +1,7 @@
 "use client";
-import Image from "next/image";
 import { Box, Container, Grid, Stack, Typography } from "@mui/material";
-import { Mic, Star } from "lucide-react";
+import { Star } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
-import { asHeardOn } from "@/lib/content";
 
 const MotionBox = motion.create(Box);
 
@@ -75,7 +73,7 @@ export default function SocialProof() {
           </Typography>
         </Stack>
 
-        <Grid container spacing={2.5} sx={{ mb: { xs: 4, md: 5 } }}>
+        <Grid container spacing={2.5}>
           {TESTIMONIALS.map((t, i) => (
             <Grid key={t.name} size={{ xs: 12, md: 4 }}>
               <MotionBox
@@ -147,104 +145,6 @@ export default function SocialProof() {
           ))}
         </Grid>
 
-        {/* AS HEARD ON — infinite marquee with podcast and partner logos */}
-        <MotionBox
-          initial={reduced ? false : { opacity: 0, y: 12 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-40px" }}
-          transition={{ duration: 0.6, delay: 0.15 }}
-        >
-          {/* Eyebrow */}
-          <Stack direction="row" spacing={1} sx={{ alignItems: "center", justifyContent: "center", mb: 2.5 }}>
-            <Mic size={13} color="#52525B" strokeWidth={2.2} />
-            <Typography
-              sx={{
-                color: "#52525B",
-                fontSize: "0.7rem",
-                fontWeight: 700,
-                letterSpacing: "0.16em",
-                textTransform: "uppercase",
-              }}
-            >
-              As heard on
-            </Typography>
-          </Stack>
-
-          {/* Marquee — duplicates the logo set 3× so the loop is seamless */}
-          <Box
-            sx={{
-              position: "relative",
-              overflow: "hidden",
-              borderTop: "1px solid #E7E2D6",
-              borderBottom: "1px solid #E7E2D6",
-              py: 1,
-              // Soft fade masks on the edges
-              maskImage:
-                "linear-gradient(90deg, transparent 0%, black 8%, black 92%, transparent 100%)",
-              WebkitMaskImage:
-                "linear-gradient(90deg, transparent 0%, black 8%, black 92%, transparent 100%)",
-            }}
-          >
-            <motion.div
-              animate={reduced ? undefined : { x: ["0%", "-33.333%"] }}
-              transition={{
-                duration: 32,
-                repeat: Infinity,
-                ease: "linear",
-              }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 0,
-                width: "fit-content",
-              }}
-            >
-              {[...asHeardOn, ...asHeardOn, ...asHeardOn].map((podcast, idx) => (
-                <Stack
-                  key={`${podcast.name}-${idx}`}
-                  direction="row"
-                  spacing={2.5}
-                  sx={{
-                    alignItems: "center",
-                    flexShrink: 0,
-                    px: { xs: 3, sm: 4, md: 5 },
-                    py: 1.5,
-                  }}
-                >
-                  <Box
-                    sx={{
-                      position: "relative",
-                      width: { xs: 110, md: 145 },
-                      height: { xs: 38, md: 48 },
-                      filter: "grayscale(0.45) opacity(0.8)",
-                      transition: "filter 220ms ease",
-                      "&:hover": { filter: "grayscale(0) opacity(1)" },
-                    }}
-                  >
-                    <Image
-                      src={podcast.logo}
-                      alt={podcast.name}
-                      fill
-                      sizes="145px"
-                      style={{ objectFit: "contain", objectPosition: "center" }}
-                    />
-                  </Box>
-                  {/* Small gold separator dot between logos */}
-                  <Box
-                    aria-hidden
-                    sx={{
-                      width: 4,
-                      height: 4,
-                      borderRadius: "50%",
-                      bgcolor: "rgba(155,123,58,0.35)",
-                      display: { xs: "none", sm: "block" },
-                    }}
-                  />
-                </Stack>
-              ))}
-            </motion.div>
-          </Box>
-        </MotionBox>
       </Container>
     </Box>
   );

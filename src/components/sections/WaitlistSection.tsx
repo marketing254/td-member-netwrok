@@ -1,6 +1,6 @@
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   Box,
@@ -18,6 +18,7 @@ import {
 import {
   ArrowRight,
   ExternalLink,
+  GraduationCap,
   Lock,
   Store,
   User,
@@ -32,9 +33,18 @@ import { vendorCategories } from "@/lib/vendorData";
 
 const MotionBox = motion.create(Box);
 
-type HeroRole = "member" | "vendor";
+// Internal value is still "vendor" so the /api/vendor/signup endpoint and
+// vendor_applications schema don't have to migrate. The UI label is
+// "Partner" everywhere. Same for routes — /vendor/* stay as-is.
+type HeroRole = "member" | "vendor" | "expert";
 
 const OTHER = "Other";
+
+// The EXACT copy users accept when they check the SMS box. Persisted
+// verbatim on the server so we have an audit trail for TCPA / CASL.
+// Update this string in lockstep with the JSX label below — they must match.
+const SMS_CONSENT_TEXT =
+  "I agree to receive SMS messages from the Dental Member Network, including hotline replies. Reply STOP to opt out.";
 
 /**
  * Standalone waitlist form section. Field structure and payload shape are
@@ -43,17 +53,25 @@ const OTHER = "Other";
  */
 export default function WaitlistSection() {
   const router = useRouter();
+  const params = useSearchParams();
   const reduced = useReducedMotion();
 
   const [role, setRole] = useState<HeroRole>("member");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Vendor partnership agreement (left checkbox in vendor mode).
+  // Partner partnership agreement (left checkbox in partner mode).
   const [agreed, setAgreed] = useState(false);
-  // Vendor authorization (right checkbox in vendor mode).
+  // Partner authorization (right checkbox in partner mode).
   const [authorized, setAuthorized] = useState(false);
   // Member agreement acceptance (only checkbox in member mode).
   const [memberAgreed, setMemberAgreed] = useState(false);
+  // Expert agreement acceptance (only checkbox in expert mode).
+  const [expertAgreed, setExpertAgreed] = useState(false);
+  // SMS consent — required for the Hotline reply flow + announcements.
+  // The exact text below is persisted server-side as evidence (TCPA/CASL).
+  const [memberSmsConsent, setMemberSmsConsent] = useState(false);
+  const [vendorSmsConsent, setVendorSmsConsent] = useState(false);
+  const [expertSmsConsent, setExpertSmsConsent] = useState(false);
 
   // Tracked dropdown values so we can reveal an "Other" text input when
   // the user picks "Other".
@@ -62,16 +80,33 @@ export default function WaitlistSection() {
   const [memberChallenge, setMemberChallenge] = useState("");
 
   const isVendor = role === "vendor";
+  const isExpert = role === "expert";
+
+  // Pre-select tab from ?role=member|expert|partner (set by the
+  // OneNetworkThreeWays CTAs and the public /experts and /partners pages).
+  useEffect(() => {
+    const r = params?.get("role");
+    if (r === "member" || r === "vendor" || r === "expert") {
+      setRole(r);
+    } else if (r === "partner") {
+      // Public-facing alias for the internal "vendor" value.
+      setRole("vendor");
+    }
+  }, [params]);
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
 
     if (isVendor && (!agreed || !authorized)) {
-      setError("Please confirm both boxes before applying as a vendor partner.");
+      setError("Please confirm both boxes before applying as a partner.");
       return;
     }
-    if (!isVendor && !memberAgreed) {
+    if (isExpert && !expertAgreed) {
+      setError("Please confirm you'd like to be considered as a Founding Expert.");
+      return;
+    }
+    if (!isVendor && !isExpert && !memberAgreed) {
       setError("Please agree to the Member Agreement to join the waitlist.");
       return;
     }
@@ -111,6 +146,9 @@ export default function WaitlistSection() {
           signatureTitle: fd.get("signatureTitle"),
           agreedToTerms: agreed,
           confirmedAuthority: authorized,
+          smsConsent: vendorSmsConsent,
+          smsConsentText: vendorSmsConsent ? SMS_CONSENT_TEXT : null,
+          smsConsentAt: vendorSmsConsent ? new Date().toISOString() : null,
           planId: "founding",
           source: "landing-vendor-cta",
         };
@@ -130,6 +168,47 @@ export default function WaitlistSection() {
         return;
       }
 
+      // Expert application branch — for now, routes through the same waitlist
+      // endpoint with role marker in utm so admin can see expert applications
+      // alongside member signups. Replace with a dedicated /api/expert/signup
+      // endpoint when the expert intake flow is finalised.
+      if (isExpert) {
+        const expertPayload = {
+          role: "member" as const,
+          fullName,
+          email: fd.get("email"),
+          practiceName: fd.get("companyName") ?? null,
+          phone: fd.get("phone") ?? null,
+          message: String(fd.get("expertTopics") ?? "").trim() || null,
+          smsConsent: expertSmsConsent,
+          smsConsentText: expertSmsConsent ? SMS_CONSENT_TEXT : null,
+          smsConsentAt: expertSmsConsent ? new Date().toISOString() : null,
+          source: "landing-expert-cta",
+          utm: {
+            role_label: "expert",
+            expert_specialty: String(fd.get("expertSpecialty") ?? "").trim(),
+            expert_booking_link: String(fd.get("expertBookingLink") ?? "").trim(),
+            expert_website: String(fd.get("expertWebsite") ?? "").trim(),
+            agreement_type: "expert",
+            agreement_version: "1.0",
+            agreement_accepted_at: new Date().toISOString(),
+          },
+        };
+        const res = await fetch("/api/waitlist", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(expertPayload),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          setError(data?.error ?? "Could not submit your application. Please try again.");
+          setSubmitting(false);
+          return;
+        }
+        router.push("/waitlist/thanks?role=expert");
+        return;
+      }
+
       // Member waitlist branch
       const memberPayload = {
         role: "member" as const,
@@ -137,6 +216,9 @@ export default function WaitlistSection() {
         email: fd.get("email"),
         practiceName: fd.get("practiceName"),
         phone: fd.get("phone"),
+        smsConsent: memberSmsConsent,
+        smsConsentText: memberSmsConsent ? SMS_CONSENT_TEXT : null,
+        smsConsentAt: memberSmsConsent ? new Date().toISOString() : null,
         source: "landing-waitlist",
         utm: {
           role_label: resolveOther(fd.get("roleLabel"), fd.get("roleLabelOther")),
@@ -187,7 +269,11 @@ export default function WaitlistSection() {
               textTransform: "uppercase",
             }}
           >
-            Reserve your spot
+            {isExpert
+              ? "Apply as an expert"
+              : isVendor
+                ? "Apply as a partner"
+                : "Reserve your spot"}
           </Typography>
           <Typography
             variant="h2"
@@ -200,10 +286,18 @@ export default function WaitlistSection() {
               lineHeight: 1.1,
             }}
           >
-            Lock the $49 founding rate.
+            {isExpert
+              ? "Join the founding expert bench."
+              : isVendor
+                ? "Become a Founding Partner."
+                : "Lock the $49 founding rate."}
           </Typography>
           <Typography sx={{ color: "#52525B", fontSize: { xs: "0.95rem", md: "1.02rem" } }}>
-            Takes 60 seconds. No payment now — you&apos;re only billed when doors open.
+            {isExpert
+              ? "Tell us about your expertise. We review every applicant — the team will be in touch within a few business days."
+              : isVendor
+                ? "Tell us about your company and the member discount you'll offer. We review every applicant."
+                : "Takes 60 seconds. No payment now — you're only billed when doors open."}
           </Typography>
         </Stack>
 
@@ -235,10 +329,11 @@ export default function WaitlistSection() {
                   border: "1px solid #E7E2D6",
                 }}
               >
-                {(["member", "vendor"] as HeroRole[]).map((r) => {
+                {(["member", "expert", "vendor"] as HeroRole[]).map((r) => {
                   const isActive = role === r;
-                  const Icon = r === "member" ? User : Store;
-                  const label = r === "member" ? "I'm a dentist" : "I'm a vendor";
+                  const Icon = r === "member" ? User : r === "expert" ? GraduationCap : Store;
+                  const label =
+                    r === "member" ? "I'm a dentist" : r === "expert" ? "I'm an expert" : "I'm a partner";
                   return (
                     <Box
                       key={r}
@@ -249,6 +344,7 @@ export default function WaitlistSection() {
                         setAgreed(false);
                         setAuthorized(false);
                         setMemberAgreed(false);
+                        setExpertAgreed(false);
                         setVendorCategory("");
                         setMemberRoleValue("");
                         setMemberChallenge("");
@@ -405,7 +501,7 @@ export default function WaitlistSection() {
                                   gap: 0.4,
                                 }}
                               >
-                                Vendor Partnership Agreement
+                                Partner Agreement
                                 <ExternalLink size={11} />
                               </Box>
                               .
@@ -435,8 +531,130 @@ export default function WaitlistSection() {
                           }
                           sx={{ alignItems: "flex-start", m: 0 }}
                         />
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={vendorSmsConsent}
+                              onChange={(e) => setVendorSmsConsent(e.target.checked)}
+                              size="small"
+                              sx={{
+                                color: "#A8A29E",
+                                "&.Mui-checked": { color: "#9B7B3A" },
+                                p: 0.5,
+                                mr: 0.5,
+                              }}
+                            />
+                          }
+                          label={
+                            <Typography sx={{ fontSize: "0.8rem", color: "#52525B", lineHeight: 1.5 }}>
+                              {SMS_CONSENT_TEXT}
+                            </Typography>
+                          }
+                          sx={{ alignItems: "flex-start", m: 0 }}
+                        />
                       </Stack>
                     </Stack>
+                  </motion.div>
+                ) : isExpert ? (
+                  <motion.div
+                    key="expert"
+                    initial={reduced ? false : { opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={reduced ? { opacity: 0 } : { opacity: 0, y: -8 }}
+                    transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                  >
+                    <Stack spacing={1.5}>
+                      <SectionLabel num="01" title="You" />
+                      <Grid container spacing={1.25}>
+                        <Grid size={{ xs: 6 }}>
+                          <CompactField name="firstName" label="First name" placeholder="Dr. Taylor" autoComplete="given-name" required />
+                        </Grid>
+                        <Grid size={{ xs: 6 }}>
+                          <CompactField name="lastName" label="Last name" placeholder="Morgan" autoComplete="family-name" required />
+                        </Grid>
+                        <Grid size={{ xs: 12 }}>
+                          <CompactField name="email" type="email" label="Work email" placeholder="taylor@coachingco.com" autoComplete="email" required />
+                        </Grid>
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <CompactField name="phone" type="tel" label="Phone (optional)" placeholder="(555) 000-0000" autoComplete="tel" />
+                        </Grid>
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <CompactField name="companyName" label="Company / brand (optional)" placeholder="Takacs Learning Center" autoComplete="organization" />
+                        </Grid>
+                      </Grid>
+
+                      <SectionLabel num="02" title="Your expertise" />
+                      <Grid container spacing={1.25}>
+                        <Grid size={{ xs: 12 }}>
+                          <CompactField
+                            name="expertSpecialty"
+                            label="What do you teach or coach on?"
+                            placeholder="Practice growth, leadership & culture for owners and team leads"
+                            required
+                          />
+                        </Grid>
+                        <Grid size={{ xs: 12 }}>
+                          <CompactField
+                            name="expertTopics"
+                            label="Topics you'd record (one per line)"
+                            placeholder={"How to run an effective morning huddle\nReducing cancellations without scripts\nHiring & onboarding a great office manager"}
+                            multiline
+                            minRows={3}
+                          />
+                        </Grid>
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <CompactField name="expertWebsite" label="Website (optional)" placeholder="https://yourcoaching.com" autoComplete="url" />
+                        </Grid>
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <CompactField name="expertBookingLink" label="Booking link (optional)" placeholder="https://cal.com/you/intro" autoComplete="url" />
+                        </Grid>
+                      </Grid>
+                    </Stack>
+
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={expertAgreed}
+                          onChange={(e) => setExpertAgreed(e.target.checked)}
+                          size="small"
+                          sx={{
+                            color: "#A8A29E",
+                            "&.Mui-checked": { color: "#9B7B3A" },
+                            p: 0.5,
+                            mr: 0.5,
+                          }}
+                        />
+                      }
+                      label={
+                        <Typography sx={{ fontSize: "0.8rem", color: "#52525B", lineHeight: 1.5 }}>
+                          I'd like to be considered as a Founding Expert and consent
+                          to the team reviewing my materials.
+                        </Typography>
+                      }
+                      sx={{ alignItems: "flex-start", m: 0, mt: 1.5 }}
+                    />
+
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={expertSmsConsent}
+                          onChange={(e) => setExpertSmsConsent(e.target.checked)}
+                          size="small"
+                          sx={{
+                            color: "#A8A29E",
+                            "&.Mui-checked": { color: "#9B7B3A" },
+                            p: 0.5,
+                            mr: 0.5,
+                          }}
+                        />
+                      }
+                      label={
+                        <Typography sx={{ fontSize: "0.8rem", color: "#52525B", lineHeight: 1.5 }}>
+                          {SMS_CONSENT_TEXT}
+                        </Typography>
+                      }
+                      sx={{ alignItems: "flex-start", m: 0, mt: 1 }}
+                    />
                   </motion.div>
                 ) : (
                   <motion.div
@@ -564,6 +782,29 @@ export default function WaitlistSection() {
                       }
                       sx={{ alignItems: "flex-start", m: 0, mt: 1.5 }}
                     />
+
+                    {/* SMS consent — optional but stored verbatim if checked */}
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={memberSmsConsent}
+                          onChange={(e) => setMemberSmsConsent(e.target.checked)}
+                          size="small"
+                          sx={{
+                            color: "#A8A29E",
+                            "&.Mui-checked": { color: "#9B7B3A" },
+                            p: 0.5,
+                            mr: 0.5,
+                          }}
+                        />
+                      }
+                      label={
+                        <Typography sx={{ fontSize: "0.8rem", color: "#52525B", lineHeight: 1.5 }}>
+                          {SMS_CONSENT_TEXT}
+                        </Typography>
+                      }
+                      sx={{ alignItems: "flex-start", m: 0, mt: 1 }}
+                    />
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -590,7 +831,11 @@ export default function WaitlistSection() {
                 type="submit"
                 disabled={
                   submitting ||
-                  (isVendor ? !agreed || !authorized : !memberAgreed)
+                  (isVendor
+                    ? !agreed || !authorized
+                    : isExpert
+                      ? !expertAgreed
+                      : !memberAgreed)
                 }
                 fullWidth
                 endIcon={
@@ -618,10 +863,12 @@ export default function WaitlistSection() {
                 }}
               >
                 {submitting
-                  ? "Reserving…"
+                  ? "Sending…"
                   : isVendor
-                  ? "Apply as vendor partner"
-                  : "Reserve my founding spot"}
+                    ? "Apply as a partner"
+                    : isExpert
+                      ? "Apply as an expert"
+                      : "Reserve my founding spot"}
               </Button>
 
               <Stack direction="row" spacing={0.65} sx={{ alignItems: "center", justifyContent: "center", color: "#71717A" }}>

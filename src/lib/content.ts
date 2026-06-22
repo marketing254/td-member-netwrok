@@ -25,7 +25,7 @@ export const founding = {
 // HERO (Section 2 in doc), verbatim
 export const hero = {
   topChip: "FOUNDING MEMBERSHIP, FIRST 100 ONLY",
-  headline: "The only network with a human expert on the line for every practice problem.",
+  headline: "The only network where every practice problem gets a written action plan in 2–3 business days.",
   subtitle:
     "Built for US dental practice owners who want fast answers, measurable vendor savings, and a peer room full of operators who have already solved the problem in front of you.",
   bottomNote:
@@ -38,7 +38,7 @@ export const hero = {
 
 // MARQUEE (Section 3 in doc), 6 badges verbatim
 export const marqueeBadges = [
-  "24/7 Expert Helpline",
+  "Expert Hotline · 2–3 day reply",
   "Exclusive Partner Discounts",
   "Exclusive Content Library",
   "Proven Systems & SOPs",
@@ -52,7 +52,7 @@ export const featuresSection = {
   title: "The difference is curation, not catalog.",
   titleEmphasis: "curation, not catalog.",
   subtitle:
-    "Most dental directories are crowded with anyone who paid for a listing. The Dental Member Network is curated, every expert and vendor is vetted by the team that hosts Thriving Dentist.",
+    "Most dental directories are crowded with anyone who paid for a listing. The Dental Member Network is curated, every expert and partner is vetted by the team that hosts Thriving Dentist.",
 };
 
 export const features = [
@@ -63,9 +63,9 @@ export const features = [
     icon: "star",
   },
   {
-    title: "Trusted Vendors",
+    title: "Trusted Partners",
     summary:
-      "Vendors commit to giving members the best deal they offer anywhere. Discounts are real and clearly stated.",
+      "Partners commit to giving members the best deal they offer anywhere. Discounts are real and clearly stated.",
     icon: "check",
   },
   {
@@ -110,7 +110,7 @@ export const waitlistByRole = {
       "The waitlist is how we onboard the founding cohort before launch. Get a guaranteed spot, the founding rate, and first access to every feature we ship.",
     benefits: [
       "$49/month founding rate, never increases while your membership stays active",
-      "24/7 expert helpline with a written follow-up plan within 3 business days",
+      "Expert Hotline — written action plan, by text and email, within 2–3 business days",
       "Vendor savings averaging $6,000+/year, no per-deal commissions",
       "Cancel anytime, in two clicks, from your account page",
     ],
@@ -147,7 +147,7 @@ export const faqs = [
     q: "What exactly do I get with my membership?",
     a: "Four core things:",
     items: [
-      "A 24/7 expert helpline staffed by business coaches and practice advisors.",
+      "An Expert Hotline — leave a voicemail with your question, get a written action plan plus the right experts to contact, by text and email, within 2–3 business days.",
       "Exclusive partner discounts averaging $6,000+ per year on supplies, labs, equipment, and services.",
       "An exclusive content library with recorded expert panels, training, and knowledge resources.",
       "A searchable directory of 500+ practice owners.",
@@ -191,7 +191,7 @@ export const faqs = [
 // FOOTER (Section 15 in doc)
 export const footer = {
   brandDescription:
-    "The only network with a human expert on the line for every practice problem. Expert helpline, vendor savings, exclusive content, and 500+ practice owners, all in one membership.",
+    "The Expert Hotline answers every practice problem with a written action plan in 2–3 business days. Plus exclusive partner discounts, a curated resource library, and a community of 500+ practice owners.",
   primaryCta: "Claim founding spot",
   secondaryCta: "Email founding team",
   supportLabel: "Support",
@@ -207,13 +207,16 @@ export const footerLinks = {
   Network: [
     { label: "What is DMN?", href: "#features" },
     { label: "Resources", href: "/resources" },
-    { label: "Pricing", href: "#pricing" },
+    { label: "Experts", href: "/experts" },
+    { label: "Partners", href: "/partners" },
+    { label: "Reviews", href: "/reviews" },
+    { label: "Pricing", href: "/pricing" },
     { label: "Waitlist", href: "#waitlist" },
     { label: "FAQ", href: "#faq" },
   ],
   Agreements: [
     { label: "Member Agreement", href: "/agreement/member" },
-    { label: "Vendor Partnership Agreement", href: "/agreement/vendor" },
+    { label: "Partner Agreement", href: "/agreement/vendor" },
   ],
   Legal: [
     { label: "Cancellation Policy", href: "/legal/cancellation" },
@@ -224,7 +227,10 @@ export const footerLinks = {
 export const navLinks = [
   { label: "What is DMN", href: "#features" },
   { label: "Resources", href: "/resources" },
-  { label: "Pricing", href: "#pricing" },
+  { label: "Experts", href: "/experts" },
+  { label: "Partners", href: "/partners" },
+  { label: "Reviews", href: "/reviews" },
+  { label: "Pricing", href: "/pricing" },
   { label: "Join Waitlist", href: "#waitlist" },
   { label: "FAQ", href: "#faq" },
 ];
@@ -270,7 +276,7 @@ export const pricing = [
     blurb:
       "Full access to every feature in the Dental Member Network. The same membership everyone gets, at a rate that never goes up.",
     features: [
-      "24/7 expert helpline, business coaches and practice advisors on call",
+      "Expert Hotline — written action plan from business coaches and practice advisors within 2–3 business days",
       "Exclusive partner discounts, negotiated vendor savings averaging $6,000+/year",
       "Exclusive content library, recorded expert panels, training, and knowledge resources",
       "Member directory,500+ practice owners searchable by city, specialty, revenue",
@@ -331,13 +337,15 @@ export const foundingTeam = [
   },
 ];
 
-// AS HEARD ON — podcast and partner logos. Files in /public. Used in a
-// marquee row on SocialProof.
-export const asHeardOn = [
+// POWERED BY — the connected communities behind DMN. Files in /public.
+// Used on the /experts page as a medium-size carousel under the founders.
+// Renamed from `asHeardOn` to reflect the new positioning.
+export const poweredBy = [
   { name: "Thriving Dentist Show", logo: "/td-logo.png", host: "Gary Takacs" },
   { name: "Less Insurance Dependence", logo: "/lid-logo.png", host: "Naren Arulrajah" },
   { name: "Insurance Untangled", logo: "/iu-logo.png", host: "Industry panel" },
   { name: "Dental Marketing Society", logo: "/dms-logo.png", host: "Community partner" },
+  { name: "Dental Growth Network", logo: "/DGN-logo.png", host: "Growth network" },
 ];
 
 // MEMBER LIBRARY PREVIEW — the colorful topic cards shown inside the member portal

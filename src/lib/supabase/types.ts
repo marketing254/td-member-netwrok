@@ -62,6 +62,8 @@ export type WaitlistSignupsRow = {
   status: WaitlistStatus;
   ip_hash: string | null;
   user_agent: string | null;
+  sms_consent_at: string | null;
+  sms_consent_text: string | null;
   created_at: string;
   contacted_at: string | null;
   notes: string | null;
@@ -94,6 +96,8 @@ export type VendorApplicationsRow = {
   vendor_id: string | null;
   ip_hash: string | null;
   user_agent: string | null;
+  sms_consent_at: string | null;
+  sms_consent_text: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -119,6 +123,8 @@ export type VendorsRow = {
   verified: boolean;
   agreement_signed_at: string | null;
   agreement_version: string | null;
+  sms_consent_at: string | null;
+  sms_consent_text: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -226,6 +232,9 @@ export type MembersRow = {
   card_brand: string | null;
   card_last4: string | null;
   founding_member_locked: boolean;
+  early_member_locked: boolean;
+  sms_consent_at: string | null;
+  sms_consent_text: string | null;
   created_at: string;
   updated_at: string;
 };
