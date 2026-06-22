@@ -44,6 +44,13 @@ export type WaitlistRole = "member" | "vendor";
 
 export type WaitlistStatus = "new" | "contacted" | "converted" | "declined";
 
+export type ExpertApplicationStatus =
+  | "new"
+  | "reviewing"
+  | "invited"
+  | "declined"
+  | "onboarded";
+
 // =====================================================================
 // ROW SHAPES
 // =====================================================================
@@ -382,6 +389,31 @@ export type NotificationsRow = {
   created_at: string;
 };
 
+export type ExpertApplicationsRow = {
+  id: string;
+  email: string;
+  full_name: string;
+  phone: string | null;
+  company_name: string | null;
+  specialty: string;
+  topics: string | null;
+  website: string | null;
+  booking_link: string | null;
+  source: string | null;
+  utm: Record<string, unknown> | null;
+  status: ExpertApplicationStatus;
+  ip_hash: string | null;
+  user_agent: string | null;
+  agreement_accepted: boolean;
+  agreement_accepted_at: string | null;
+  sms_consent: boolean;
+  sms_consent_text: string | null;
+  sms_consent_at: string | null;
+  created_at: string;
+  contacted_at: string | null;
+  notes: string | null;
+};
+
 export type EmailEventsRow = {
   id: string;
   template: string;
@@ -445,6 +477,7 @@ export type Database = {
       member_resource_progress: Table<MemberResourceProgressRow>;
       member_assistant_messages: Table<MemberAssistantMessageRow>;
       stripe_events: Table<StripeEventRow>;
+      expert_applications: Table<ExpertApplicationsRow>;
     };
     Views: {
       waitlist_counts: View<{
@@ -469,6 +502,32 @@ export type Database = {
           | "created_at"
         >
       >;
+      expert_applications_recent: View<
+        Pick<
+          ExpertApplicationsRow,
+          | "id"
+          | "email"
+          | "full_name"
+          | "phone"
+          | "company_name"
+          | "specialty"
+          | "topics"
+          | "website"
+          | "booking_link"
+          | "source"
+          | "status"
+          | "created_at"
+          | "contacted_at"
+        >
+      >;
+      expert_application_counts: View<{
+        total: number;
+        new_count: number;
+        reviewing_count: number;
+        invited_count: number;
+        onboarded_count: number;
+        last_24h: number;
+      }>;
     };
     Functions: Record<string, never>;
     Enums: {
@@ -480,6 +539,7 @@ export type Database = {
       member_status: MemberStatus;
       waitlist_role: WaitlistRole;
       waitlist_status: WaitlistStatus;
+      expert_application_status: ExpertApplicationStatus;
     };
   };
 };
