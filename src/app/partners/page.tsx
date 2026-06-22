@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -514,8 +515,12 @@ export default function PartnersPage() {
 
       {/* Partner application form — same form, fields and submission flow
           as the home page, locked to the partner role. Writes to the
-          vendor_applications table via /api/vendor/signup. */}
-      <WaitlistSection lockedRole="vendor" sectionId="apply" />
+          vendor_applications table via /api/vendor/signup.
+          Suspense boundary required because WaitlistSection reads
+          useSearchParams() (Next.js needs it to know prerender can defer). */}
+      <Suspense fallback={null}>
+        <WaitlistSection lockedRole="vendor" sectionId="apply" />
+      </Suspense>
 
       {/* Already vetted → full onboarding link */}
       <Box sx={{ py: { xs: 3, md: 4 }, textAlign: "center" }}>

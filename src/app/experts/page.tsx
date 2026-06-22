@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
@@ -296,8 +297,12 @@ export default function ExpertsPage() {
       {/* Expert application form — same form, fields and submission flow
           as the home page, locked to the expert role. Writes to the
           expert_applications table and triggers the expert confirmation
-          email via /api/expert/signup. */}
-      <WaitlistSection lockedRole="expert" sectionId="apply" />
+          email via /api/expert/signup.
+          Suspense boundary required because WaitlistSection reads
+          useSearchParams() (Next.js needs it to know prerender can defer). */}
+      <Suspense fallback={null}>
+        <WaitlistSection lockedRole="expert" sectionId="apply" />
+      </Suspense>
 
       {/* Our Experts */}
       <Box sx={{ py: { xs: 6, md: 9 } }}>
