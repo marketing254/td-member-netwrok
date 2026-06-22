@@ -166,13 +166,14 @@ export default function ReviewsPage() {
                 color: "#FFFFFF",
               }}
             >
-              About the team behind DMN
+              5-star reviews earned across the Thriving Dentist network
             </Typography>
             <Typography sx={{ color: "rgba(255,255,255,0.78)", fontSize: "1.02rem", lineHeight: 1.6 }}>
-              These are real 5-star reviews of Gary Takacs (Thriving Dentist) and
-              Naren Arulrajah (Ekwa Marketing) — the team behind the Dental
-              Member Network. We're collecting member testimonials right now;
-              you'll see them here after launch.
+              Real reviews of Gary Takacs (Thriving Dentist), Naren Arulrajah
+              (Ekwa Marketing), and the wider Thriving Dentist network — from
+              Google, the podcast, Facebook, and live workshops. DMN is
+              pre-launch; member reviews are being collected and will be added
+              here as the network grows.
             </Typography>
             <Stack direction="row" spacing={1.5} sx={{ mt: 1, flexWrap: "wrap", gap: 1 }}>
               <RatingChip />

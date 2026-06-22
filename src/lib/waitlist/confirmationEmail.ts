@@ -1,7 +1,14 @@
 import type { WaitlistPayload, WaitlistRole } from "@/lib/waitlist/validate";
+import type { ExpertApplicationPayload } from "@/lib/expert/validate";
 
 type ConfirmationInput = {
   signup: WaitlistPayload;
+  referenceId: string;
+  submittedAt: string;
+};
+
+type ExpertConfirmationInput = {
+  application: ExpertApplicationPayload;
   referenceId: string;
   submittedAt: string;
 };
@@ -762,6 +769,110 @@ export async function sendVendorMagicLinkEmail(input: VendorMagicInput): Promise
     from: FROM_EMAIL,
     mail,
     tag: "vendor:magic-link",
+  });
+  if (result.transport === "log") {
+    return { sent: false, reason: "missing_api_key" };
+  }
+  return { sent: true, id: result.id };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// EXPERT APPLICATION CONFIRMATION
+// Sent by /api/expert/signup when a coach / consultant / educator
+// submits the application form. Tells them the team reviews every
+// applicant and will be in touch — uses the same brand framework as
+// the member welcome email but a green accent (expert tier color).
+// ─────────────────────────────────────────────────────────────────────────
+
+const EXPERT_ACCENT = "#2C7A52";
+const EXPERT_ACCENT_LIGHT = "#5DA585";
+
+// Copy below is verbatim from `Confirmation emails.md` (the source-of-truth
+// content doc) — section "Experts". Wording stays in lockstep with that
+// file. If you edit copy here, update the doc first.
+function expertDraft(input: ExpertConfirmationInput): EmailDraft {
+  const submitted = formatDate(input.submittedAt);
+  const name = firstName(input.application.fullName);
+  return {
+    role: "member", // schema reused; expert isn't in WaitlistRole enum
+    subject: "Your Dental Member Network expert application — what happens next",
+    preview:
+      "We've received your application and it's now in review. Our team will respond within 5 business days.",
+    eyebrow: "Expert Application",
+    headline: "Application in review.",
+    accent: EXPERT_ACCENT,
+    accentLight: EXPERT_ACCENT_LIGHT,
+    replyTo: PARTNERSHIPS_EMAIL,
+    intro: [
+      `Hi ${name},`,
+      "Thank you for applying to join the Dental Member Network as a founding expert. We've received your application and it's now in review.",
+    ],
+    sections: [
+      {
+        title: "Here's what to expect",
+        body:
+          "Within the next 5 business days, our team will review your application against our founding expert criteria — primarily your track record serving dental practice owners, the distinctiveness of your coaching or consulting approach, and the fit with our member base. We review carefully because protecting member trust is the whole point of curation.",
+      },
+      {
+        title: "If your application is approved",
+        items: [
+          "You'll receive an approval email with a link to schedule a 30-minute onboarding conversation with our team.",
+          "During onboarding, we'll set up your expert profile, walk you through how to publish your first paid course, and connect you with the Thriving Dentist editorial team for newsletter, podcast, and webinar feature opportunities.",
+          "Your founding offer locks in: free for the first 6 months, then $99/month. No commission on any courses you sell to members during your founding window.",
+        ],
+      },
+      {
+        title: "If we have follow-up questions",
+        body: `We may reach out by email to clarify aspects of your application or request additional information about your coaching approach. Watch for a message from ${PARTNERSHIPS_EMAIL}.`,
+      },
+      {
+        title: "A few things worth knowing while you wait",
+        items: [
+          "Founding expert spots are limited. We're curating launch experts deliberately to cover the full range of practice growth specialties without overlapping too heavily in any one area.",
+          "You set your own course prices. The network handles the platform, payment processing, and member promotion; the pricing and content of your offerings stay entirely yours.",
+          "Members get a discount on every paid course. This is standard across all expert offerings and helps your courses reach more members faster.",
+        ],
+      },
+    ],
+    closing:
+      "If you have questions in the meantime, reply to this email and we'll get back to you within one business day.",
+    signoff: [
+      "Thanks for your interest in helping us build the network.",
+      " The Dental Member Network Team",
+      "Powered by Thriving Dentist",
+    ],
+    footerNote: "Do not reply to this email.",
+    footerLines: [
+      "This is an automated confirmation email for your Dental Member Network expert application.",
+      `Application reference: ${input.referenceId} · Submitted: ${submitted}`,
+      `Dental Member Network · ${PARTNERSHIPS_EMAIL} · dentalmembernetwork.com`,
+    ],
+  };
+}
+
+function buildExpertConfirmationEmail(input: ExpertConfirmationInput): BuiltEmail {
+  const draft = expertDraft(input);
+  return {
+    subject: draft.subject,
+    html: renderHtml(draft),
+    text: renderText(draft),
+    replyTo: draft.replyTo,
+  };
+}
+
+export async function sendExpertConfirmationEmail(
+  input: ExpertConfirmationInput,
+): Promise<SendResult> {
+  if (process.env.WAITLIST_EMAIL_DISABLED === "true") {
+    return { sent: false, reason: "disabled" };
+  }
+
+  const mail = buildExpertConfirmationEmail(input);
+  const result = await dispatchMail({
+    to: input.application.email,
+    from: FROM_EMAIL,
+    mail,
+    tag: "expert:application",
   });
   if (result.transport === "log") {
     return { sent: false, reason: "missing_api_key" };

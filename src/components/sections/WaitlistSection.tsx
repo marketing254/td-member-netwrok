@@ -46,17 +46,33 @@ const OTHER = "Other";
 const SMS_CONSENT_TEXT =
   "I agree to receive SMS messages from the Dental Member Network, including hotline replies. Reply STOP to opt out.";
 
+type WaitlistSectionProps = {
+  /**
+   * Lock the form to a single role and hide the segmented toggle. Used on
+   * /experts and /partners so the same form appears there as on the home
+   * page but only shows the relevant fields. Omit to render the full
+   * three-tab UX (the home-page behavior).
+   */
+  lockedRole?: HeroRole;
+  /** DOM id used for in-page anchor links (defaults to "waitlist"). */
+  sectionId?: string;
+};
+
 /**
  * Standalone waitlist form section. Field structure and payload shape are
  * IDENTICAL to the previous hero-embedded version so the Supabase schema and
  * admin reporting continue to work unchanged.
+ *
+ * When `lockedRole` is set, the segmented toggle is hidden and the form is
+ * locked to that role — used to embed the exact same UX on /experts
+ * (expert) and /partners (vendor) pages without duplicating the form.
  */
-export default function WaitlistSection() {
+export default function WaitlistSection({ lockedRole, sectionId }: WaitlistSectionProps = {}) {
   const router = useRouter();
   const params = useSearchParams();
   const reduced = useReducedMotion();
 
-  const [role, setRole] = useState<HeroRole>("member");
+  const [role, setRole] = useState<HeroRole>(lockedRole ?? "member");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Partner partnership agreement (left checkbox in partner mode).
@@ -84,7 +100,10 @@ export default function WaitlistSection() {
 
   // Pre-select tab from ?role=member|expert|partner (set by the
   // OneNetworkThreeWays CTAs and the public /experts and /partners pages).
+  // Skip when `lockedRole` is set — the form is already pinned to a role
+  // and we don't want URL params to override the page-locked choice.
   useEffect(() => {
+    if (lockedRole) return;
     const r = params?.get("role");
     if (r === "member" || r === "vendor" || r === "expert") {
       setRole(r);
@@ -92,7 +111,7 @@ export default function WaitlistSection() {
       // Public-facing alias for the internal "vendor" value.
       setRole("vendor");
     }
-  }, [params]);
+  }, [params, lockedRole]);
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -168,33 +187,33 @@ export default function WaitlistSection() {
         return;
       }
 
-      // Expert application branch — for now, routes through the same waitlist
-      // endpoint with role marker in utm so admin can see expert applications
-      // alongside member signups. Replace with a dedicated /api/expert/signup
-      // endpoint when the expert intake flow is finalised.
+      // Expert application branch — dedicated endpoint + table now
+      // (was previously coerced into waitlist_signups with role marker
+      // in utm; switched to /api/expert/signup → expert_applications so
+      // the team can triage applications separately and the applicant
+      // gets the expert-specific confirmation email).
       if (isExpert) {
+        const nowIso = new Date().toISOString();
         const expertPayload = {
-          role: "member" as const,
           fullName,
           email: fd.get("email"),
-          practiceName: fd.get("companyName") ?? null,
-          phone: fd.get("phone") ?? null,
-          message: String(fd.get("expertTopics") ?? "").trim() || null,
-          smsConsent: expertSmsConsent,
-          smsConsentText: expertSmsConsent ? SMS_CONSENT_TEXT : null,
-          smsConsentAt: expertSmsConsent ? new Date().toISOString() : null,
-          source: "landing-expert-cta",
+          phone: fd.get("phone") ?? undefined,
+          companyName: fd.get("companyName") ?? undefined,
+          specialty: String(fd.get("expertSpecialty") ?? "").trim(),
+          topics: String(fd.get("expertTopics") ?? "").trim() || undefined,
+          website: String(fd.get("expertWebsite") ?? "").trim() || undefined,
+          bookingLink: String(fd.get("expertBookingLink") ?? "").trim() || undefined,
+          source: lockedRole === "expert" ? "experts-page" : "landing-expert-cta",
           utm: {
             role_label: "expert",
-            expert_specialty: String(fd.get("expertSpecialty") ?? "").trim(),
-            expert_booking_link: String(fd.get("expertBookingLink") ?? "").trim(),
-            expert_website: String(fd.get("expertWebsite") ?? "").trim(),
-            agreement_type: "expert",
-            agreement_version: "1.0",
-            agreement_accepted_at: new Date().toISOString(),
           },
+          agreementAccepted: expertAgreed,
+          agreementAcceptedAt: nowIso,
+          smsConsent: expertSmsConsent,
+          smsConsentText: expertSmsConsent ? SMS_CONSENT_TEXT : null,
+          smsConsentAt: expertSmsConsent ? nowIso : null,
         };
-        const res = await fetch("/api/waitlist", {
+        const res = await fetch("/api/expert/signup", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(expertPayload),
@@ -205,7 +224,7 @@ export default function WaitlistSection() {
           setSubmitting(false);
           return;
         }
-        router.push("/waitlist/thanks?role=expert");
+        router.push(`/waitlist/thanks?role=expert${data.duplicate ? "&again=1" : ""}`);
         return;
       }
 
@@ -250,7 +269,7 @@ export default function WaitlistSection() {
 
   return (
     <Box
-      id="waitlist"
+      id={sectionId ?? "waitlist"}
       component="section"
       sx={{
         py: { xs: 7, md: 9 },
@@ -318,7 +337,9 @@ export default function WaitlistSection() {
         >
           <Box component="form" onSubmit={onSubmit}>
             <Stack spacing={2}>
-              {/* Segmented toggle */}
+              {/* Segmented toggle — hidden when the form is locked to a
+                  single role (used on /experts and /partners). */}
+              {!lockedRole && (
               <Box
                 sx={{
                   display: "flex",
@@ -375,6 +396,7 @@ export default function WaitlistSection() {
                   );
                 })}
               </Box>
+              )}
 
               <AnimatePresence mode="wait" initial={false}>
                 {isVendor ? (

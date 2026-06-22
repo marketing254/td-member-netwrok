@@ -15,6 +15,7 @@ import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import Header from "@/components/sections/Header";
+import WaitlistSection from "@/components/sections/WaitlistSection";
 import { poweredBy } from "@/lib/content";
 import { COLORS } from "@/theme";
 
@@ -97,6 +98,22 @@ const FIT_NO = [
   "You want a passive ad you never follow up on",
 ];
 
+// The two companies anchoring the partner roster at launch.
+// No logo files yet — rendered as wordmarks; swap to <Image> once we have
+// brand-approved assets.
+const FOUNDING_PARTNERS = [
+  {
+    name: "Thriving Dentist Coaching",
+    tag: "Coaching · Practice growth",
+    body: "Gary Takacs's coaching program — 30+ years guiding practice owners through KPIs, case acceptance, and team operations.",
+  },
+  {
+    name: "Ekwa Marketing",
+    tag: "Marketing · Patient acquisition",
+    body: "Full-service dental marketing — SEO, website, ads, and Google ranking systems trusted by hundreds of US practices.",
+  },
+];
+
 export default function PartnersPage() {
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: COLORS.surface }}>
@@ -138,7 +155,7 @@ export default function PartnersPage() {
               <Button
                 variant="contained"
                 component={Link}
-                href="/?role=partner#waitlist"
+                href="#apply"
                 endIcon={<ArrowForwardRoundedIcon />}
                 sx={{
                   borderRadius: 999,
@@ -154,7 +171,7 @@ export default function PartnersPage() {
                   },
                 }}
               >
-                Claim your founding partner spot
+                Sign up as a partner
               </Button>
               <Button
                 variant="outlined"
@@ -176,7 +193,7 @@ export default function PartnersPage() {
               </Button>
             </Stack>
             <Typography sx={{ mt: 1.5, fontSize: "0.86rem", color: "rgba(255,255,255,0.7)" }}>
-              A trusted recommendation, not a cold ad · Founding spots limited per category.
+              Any company that sells to dental practices can apply · Founding spots are limited per category.
             </Typography>
           </Stack>
         </Container>
@@ -282,6 +299,43 @@ export default function PartnersPage() {
             <StatTile big="10K+" label="practice owners reached monthly" />
             <StatTile big="5" label="connected communities" />
             <StatTile big="100%" label="intent-driven member traffic" />
+          </Box>
+        </Container>
+      </Box>
+
+      {/* Our Founding Partners */}
+      <Box sx={{ py: { xs: 6, md: 9 }, bgcolor: COLORS.surfaceAlt }}>
+        <Container maxWidth="lg">
+          <Stack spacing={1.25} sx={{ alignItems: "center", textAlign: "center", mb: 4 }}>
+            <Typography
+              sx={{
+                fontSize: "0.72rem",
+                letterSpacing: "0.22em",
+                textTransform: "uppercase",
+                fontWeight: 700,
+                color: COLORS.accentDeep,
+              }}
+            >
+              Founding Partners
+            </Typography>
+            <SectionHeading title="Our Founding Partners" />
+            <Typography sx={{ color: COLORS.muted, maxWidth: 620, mt: 1, fontSize: "1rem" }}>
+              The first two companies anchoring the DMN partner roster. More
+              founding partners join by application.
+            </Typography>
+          </Stack>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+              gap: 3,
+              maxWidth: 900,
+              mx: "auto",
+            }}
+          >
+            {FOUNDING_PARTNERS.map((p) => (
+              <FoundingPartnerCard key={p.name} p={p} />
+            ))}
           </Box>
         </Container>
       </Box>
@@ -458,31 +512,45 @@ export default function PartnersPage() {
         </Container>
       </Box>
 
-      {/* Founders / hosts pill */}
+      {/* Partner application form — same form, fields and submission flow
+          as the home page, locked to the partner role. Writes to the
+          vendor_applications table via /api/vendor/signup. */}
+      <WaitlistSection lockedRole="vendor" sectionId="apply" />
+
+      {/* Already vetted → full onboarding link */}
+      <Box sx={{ py: { xs: 3, md: 4 }, textAlign: "center" }}>
+        <Container maxWidth="md">
+          <Typography sx={{ fontSize: "0.95rem", color: COLORS.muted }}>
+            Already spoken to us?{" "}
+            <Box
+              component={Link}
+              href="/vendor/signup"
+              sx={{
+                color: COLORS.accentDeep,
+                fontWeight: 700,
+                textDecoration: "underline",
+                textUnderlineOffset: 3,
+              }}
+            >
+              Complete partner onboarding
+            </Box>{" "}
+            (plan, agreement, member offer).
+          </Typography>
+        </Container>
+      </Box>
+
+      {/* Meet the experts link */}
       <Box sx={{ py: { xs: 5, md: 7 } }}>
         <Container maxWidth="md">
           <Stack spacing={1.5} sx={{ alignItems: "center", textAlign: "center" }}>
-            <Chip
-              label="Curated by the Thriving Dentist team, not an algorithm"
-              sx={{
-                bgcolor: COLORS.surfaceAlt,
-                color: COLORS.accentDeep,
-                fontWeight: 700,
-                fontSize: "0.78rem",
-                px: 1.5,
-                height: 30,
-                border: `1px solid ${COLORS.line}`,
-              }}
-            />
             <Typography
               sx={{
                 fontSize: "0.96rem",
                 color: COLORS.muted,
                 maxWidth: 580,
-                mt: 0.5,
               }}
             >
-              Want to meet the team behind DMN?{" "}
+              Curious who's on the expert bench?{" "}
               <Box
                 component={Link}
                 href="/experts"
@@ -493,7 +561,7 @@ export default function PartnersPage() {
                   textUnderlineOffset: 3,
                 }}
               >
-                See our founders
+                See our experts
               </Box>
               .
             </Typography>
@@ -525,7 +593,7 @@ export default function PartnersPage() {
             variant="contained"
             color="secondary"
             component={Link}
-            href="/?role=partner#waitlist"
+            href="#apply"
             endIcon={<ArrowForwardRoundedIcon />}
             sx={{ borderRadius: 999, px: 3 }}
           >
@@ -742,6 +810,69 @@ function FitColumn({
           </Stack>
         ))}
       </Stack>
+    </Box>
+  );
+}
+
+function FoundingPartnerCard({
+  p,
+}: {
+  p: { name: string; tag: string; body: string };
+}) {
+  return (
+    <Box
+      sx={{
+        borderRadius: 3,
+        border: `1px solid ${COLORS.line}`,
+        bgcolor: "#FFFFFF",
+        p: { xs: 3, md: 4 },
+        boxShadow: "0 16px 40px -28px rgba(14,42,61,0.25)",
+        position: "relative",
+      }}
+    >
+      <Chip
+        label="Founding Partner"
+        sx={{
+          position: "absolute",
+          top: 16,
+          right: 16,
+          bgcolor: COLORS.accent,
+          color: COLORS.primaryDeep,
+          fontWeight: 700,
+          fontSize: "0.7rem",
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          height: 26,
+          px: 0.5,
+        }}
+      />
+      <Typography
+        sx={{
+          fontSize: "0.7rem",
+          letterSpacing: "0.16em",
+          textTransform: "uppercase",
+          fontWeight: 700,
+          color: COLORS.accentDeep,
+          mb: 0.5,
+        }}
+      >
+        {p.tag}
+      </Typography>
+      <Typography
+        sx={{
+          fontFamily: "var(--font-display)",
+          fontSize: { xs: "1.5rem", md: "1.7rem" },
+          fontWeight: 500,
+          color: COLORS.ink,
+          letterSpacing: "-0.01em",
+          mb: 1,
+        }}
+      >
+        {p.name}
+      </Typography>
+      <Typography sx={{ fontSize: "0.95rem", color: COLORS.inkSoft, lineHeight: 1.6 }}>
+        {p.body}
+      </Typography>
     </Box>
   );
 }

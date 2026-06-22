@@ -6,7 +6,6 @@ import { motion, useReducedMotion } from "framer-motion";
 import {
   Box,
   Button,
-  Chip,
   Container,
   Stack,
   Typography,
@@ -17,6 +16,7 @@ import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import MicRoundedIcon from "@mui/icons-material/MicRounded";
 import Header from "@/components/sections/Header";
+import WaitlistSection from "@/components/sections/WaitlistSection";
 import { poweredBy } from "@/lib/content";
 import { COLORS } from "@/theme";
 
@@ -80,16 +80,19 @@ const FIT_NO = [
   "You can't be reachable when we send you a member who fits",
 ];
 
-const FOUNDERS = [
+// Listed alongside any other expert — no "founder of DMN" framing.
+// Their roles describe external credentials so members understand the
+// expertise, not internal DMN titles.
+const EXPERTS = [
   {
     name: "Gary Takacs",
-    role: "Host, Thriving Dentist Show",
+    role: "Practice growth · Host of the Thriving Dentist Show",
     body: "30+ years coaching dental practice owners. Host of the Thriving Dentist Show, downloaded in 192 countries.",
     photo: "/team/gary-takacs.jpg",
   },
   {
     name: "Naren Arulrajah",
-    role: "Founder & CEO, Ekwa Marketing",
+    role: "Marketing strategy · Founder & CEO, Ekwa Marketing",
     body: "Founder & CEO of Ekwa Marketing. Co-host of Less Insurance Dependence.",
     photo: "/team/naren-arulrajah.jpg",
   },
@@ -136,7 +139,7 @@ export default function ExpertsPage() {
               <Button
                 variant="contained"
                 component={Link}
-                href="/?role=expert#waitlist"
+                href="#apply"
                 endIcon={<ArrowForwardRoundedIcon />}
                 sx={{
                   borderRadius: 999,
@@ -249,7 +252,7 @@ export default function ExpertsPage() {
               <Button
                 variant="contained"
                 component={Link}
-                href="/?role=expert#waitlist"
+                href="#apply"
                 endIcon={<ArrowForwardRoundedIcon />}
                 sx={{
                   borderRadius: 999,
@@ -290,23 +293,20 @@ export default function ExpertsPage() {
         </Container>
       </Box>
 
-      {/* Founders / hosts */}
+      {/* Expert application form — same form, fields and submission flow
+          as the home page, locked to the expert role. Writes to the
+          expert_applications table and triggers the expert confirmation
+          email via /api/expert/signup. */}
+      <WaitlistSection lockedRole="expert" sectionId="apply" />
+
+      {/* Our Experts */}
       <Box sx={{ py: { xs: 6, md: 9 } }}>
         <Container maxWidth="lg">
           <Stack spacing={1.25} sx={{ alignItems: "center", textAlign: "center", mb: 4 }}>
-            <Chip
-              label="Curated by the Thriving Dentist team, not an algorithm"
-              sx={{
-                bgcolor: COLORS.surfaceAlt,
-                color: COLORS.accentDeep,
-                fontWeight: 700,
-                fontSize: "0.78rem",
-                px: 1.5,
-                height: 30,
-                border: `1px solid ${COLORS.line}`,
-              }}
-            />
-            <SectionHeading title="The team behind DMN" />
+            <SectionHeading title="Our Experts" />
+            <Typography sx={{ color: COLORS.muted, fontSize: "1rem", maxWidth: 620, mt: 1 }}>
+              The first names on the bench. New experts join by application.
+            </Typography>
           </Stack>
           <Box
             sx={{
@@ -317,8 +317,8 @@ export default function ExpertsPage() {
               mx: "auto",
             }}
           >
-            {FOUNDERS.map((f) => (
-              <FounderCard key={f.name} f={f} />
+            {EXPERTS.map((f) => (
+              <ExpertCard key={f.name} f={f} />
             ))}
           </Box>
         </Container>
@@ -350,7 +350,7 @@ export default function ExpertsPage() {
           <Button
             variant="contained"
             component={Link}
-            href="/?role=expert#waitlist"
+            href="#apply"
             endIcon={<ArrowForwardRoundedIcon />}
             sx={{
               borderRadius: 999,
@@ -516,7 +516,7 @@ function FitColumn({
   );
 }
 
-function FounderCard({
+function ExpertCard({
   f,
 }: {
   f: { name: string; role: string; body: string; photo: string };

@@ -1,31 +1,32 @@
 "use client";
-import { Box, Container, Grid, Stack, Typography } from "@mui/material";
+import Link from "next/link";
+import { Box, Button, Container, Grid, Stack, Typography } from "@mui/material";
 import { Star } from "lucide-react";
+import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import { motion, useReducedMotion } from "framer-motion";
 
 const MotionBox = motion.create(Box);
 
-const TESTIMONIALS = [
+// Real reviews — sampled across the network so readers see the team's
+// credibility, not invented member quotes. Full set lives on /reviews.
+const REVIEWS = [
   {
-    initials: "DR",
-    name: "Dr. Dana R.",
-    practice: "Riverside Dental · Austin, TX",
     quote:
-      "I sent one helpline question about PPO fees and the answer paid for a year of membership in a single afternoon's worth of negotiation.",
+      "Omer and the Ekwa team have helped drive my office greatly. We've hit all-time highs in new patients thanks to Ekwa.",
+    name: "Loc Tong",
+    source: "Google review · Ekwa Marketing",
   },
   {
-    initials: "MP",
-    name: "Dr. Marcus P.",
-    practice: "Lakeshore Family Dental · OH",
     quote:
-      "The vendor deals alone saved us about $7,400 this year. The fact there's a real person to ask is what made me stay.",
+      "Gary and Naren are providing an amazing service — clinical experts and management expertise, shared freely. It has changed the trajectory of my career, quite literally.",
+    name: "Verified listener",
+    source: "Thriving Dentist Show · Podcast review",
   },
   {
-    initials: "SK",
-    name: "Dr. Sarah K.",
-    practice: "Bright Smile Studio · CO",
     quote:
-      "As a solo doc I felt isolated. Now I have 500 owners and an expert a message away. No upsells, no nonsense.",
+      "Gary blows me away every time I hear him speak. This workshop gave me ample tools to take back to the office and begin working on immediately.",
+    name: "Workshop attendee",
+    source: "Thriving Dentist live workshop",
   },
 ];
 
@@ -43,7 +44,7 @@ export default function SocialProof() {
       }}
     >
       <Container maxWidth="lg">
-        <Stack spacing={1.25} sx={{ textAlign: "center", maxWidth: 680, mx: "auto", mb: { xs: 4, md: 5 } }}>
+        <Stack spacing={1.25} sx={{ textAlign: "center", maxWidth: 760, mx: "auto", mb: { xs: 4, md: 5 } }}>
           <Typography
             sx={{
               color: "#7A5F2A",
@@ -53,7 +54,7 @@ export default function SocialProof() {
               textTransform: "uppercase",
             }}
           >
-            Members
+            Trust & credibility
           </Typography>
           <Typography
             variant="h2"
@@ -66,16 +67,21 @@ export default function SocialProof() {
               lineHeight: 1.15,
             }}
           >
-            Practice owners who got their time back
+            What dentists say about the team behind the Thriving Dentist network
           </Typography>
           <Typography sx={{ color: "#52525B", fontSize: { xs: "0.95rem", md: "1.02rem" } }}>
-            Early founding members from the Thriving Dentist & Less Insurance Dependence communities.
+            Real 5-star reviews of Gary Takacs, Naren Arulrajah, and the wider
+            network — pulled from Google, the Thriving Dentist podcast, and live
+            workshops.
+          </Typography>
+          <Typography sx={{ color: "#7A6E58", fontSize: "0.9rem", fontStyle: "italic" }}>
+            DMN is pre-launch. Member reviews are being collected and will be added here as the network grows.
           </Typography>
         </Stack>
 
         <Grid container spacing={2.5}>
-          {TESTIMONIALS.map((t, i) => (
-            <Grid key={t.name} size={{ xs: 12, md: 4 }}>
+          {REVIEWS.map((t, i) => (
+            <Grid key={t.name + i} size={{ xs: 12, md: 4 }}>
               <MotionBox
                 initial={reduced ? false : { opacity: 0, y: 18 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -112,39 +118,30 @@ export default function SocialProof() {
                 >
                   &ldquo;{t.quote}&rdquo;
                 </Typography>
-                <Stack direction="row" spacing={1.25} sx={{ alignItems: "center" }}>
-                  <Box
-                    sx={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: "50%",
-                      background:
-                        "linear-gradient(135deg, #9B7B3A 0%, #1A1A1A 100%)",
-                      color: "#FFFFFF",
-                      display: "grid",
-                      placeItems: "center",
-                      fontFamily: "var(--font-display)",
-                      fontWeight: 700,
-                      fontSize: "0.85rem",
-                      flexShrink: 0,
-                    }}
-                  >
-                    {t.initials}
-                  </Box>
-                  <Box>
-                    <Typography sx={{ color: "#1A1A1A", fontWeight: 700, fontSize: "0.88rem", lineHeight: 1.2 }}>
-                      {t.name}
-                    </Typography>
-                    <Typography sx={{ color: "#52525B", fontSize: "0.78rem", mt: 0.2 }}>
-                      {t.practice}
-                    </Typography>
-                  </Box>
-                </Stack>
+                <Box sx={{ borderTop: "1px solid #E4E4E7", pt: 1.5 }}>
+                  <Typography sx={{ color: "#1A1A1A", fontWeight: 700, fontSize: "0.88rem", lineHeight: 1.2 }}>
+                    {t.name}
+                  </Typography>
+                  <Typography sx={{ color: "#52525B", fontSize: "0.78rem", mt: 0.4 }}>
+                    {t.source}
+                  </Typography>
+                </Box>
               </MotionBox>
             </Grid>
           ))}
         </Grid>
 
+        <Stack direction="row" sx={{ justifyContent: "center", mt: { xs: 4, md: 5 } }}>
+          <Button
+            variant="outlined"
+            color="primary"
+            component={Link}
+            href="/reviews"
+            endIcon={<ArrowForwardRoundedIcon />}
+          >
+            See all reviews
+          </Button>
+        </Stack>
       </Container>
     </Box>
   );

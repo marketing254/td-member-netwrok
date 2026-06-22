@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Header from "@/components/sections/Header";
 import WaitlistHero from "@/components/sections/WaitlistHero";
+import PoweredByStrip from "@/components/sections/PoweredByStrip";
 import HelplineDemo from "@/components/sections/HelplineDemo";
 import SocialProof from "@/components/sections/SocialProof";
 import Features from "@/components/sections/Features";
@@ -59,6 +60,8 @@ export default async function HomePage({ searchParams }: { searchParams: HomeSea
       <main>
         {/* Hero — left copy + right launch-card with countdown + CTA */}
         <WaitlistHero />
+        {/* Connected communities behind DMN */}
+        <PoweredByStrip />
         {/* The differentiator — Helpline demo */}
         <HelplineDemo />
         {/* Trust — testimonials + podcast credits */}
