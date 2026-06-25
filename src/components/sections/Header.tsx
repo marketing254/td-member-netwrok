@@ -1,13 +1,18 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   AppBar,
   Box,
   Button,
   Container,
+  Divider,
   Drawer,
   IconButton,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
   Stack,
   Toolbar,
   Typography,
@@ -16,8 +21,33 @@ import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import LoginOutlinedIcon from "@mui/icons-material/LoginOutlined";
+import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
+import PersonOutlineRoundedIcon from "@mui/icons-material/PersonOutlineRounded";
+import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
+import StoreOutlinedIcon from "@mui/icons-material/StoreOutlined";
 import Logo from "@/components/brand/Logo";
 import { brand, navLinks } from "@/lib/content";
+
+const LOGIN_LINKS = [
+  {
+    label: "Members",
+    href: "/member/login",
+    icon: PersonOutlineRoundedIcon,
+    sub: "Active practice owners & dentists",
+  },
+  {
+    label: "Experts",
+    href: "/expert/login",
+    icon: SchoolOutlinedIcon,
+    sub: "Coaches, consultants & educators",
+  },
+  {
+    label: "Partners",
+    href: "/vendor/login",
+    icon: StoreOutlinedIcon,
+    sub: "Vendors & service providers",
+  },
+] as const;
 
 /**
  * Premium pill-cluster nav inspired by modern SaaS landings.
@@ -29,9 +59,16 @@ import { brand, navLinks } from "@/lib/content";
  */
 export default function Header() {
   const [drawer, setDrawer] = useState(false);
+  const [signInOpen, setSignInOpen] = useState(false);
+  const signInAnchor = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setDrawer(false);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setDrawer(false);
+        setSignInOpen(false);
+      }
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
@@ -110,66 +147,127 @@ export default function Header() {
               ))}
             </Box>
 
-            {/* Right side: primary CTA + vendor sign-in */}
-            <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+            {/* Right side: single Sign-in button with a Members/Experts/
+                Partners dropdown — cleaner than 3 buttons, scales better
+                on mid-density widths. */}
+            <Box sx={{ display: { xs: "none", md: "block" } }}>
               <Button
-                component={Link}
-                href="/#waitlist"
-                onClick={(e: React.MouseEvent) => {
-                  const el = document.getElementById("waitlist");
-                  if (el) {
-                    e.preventDefault();
-                    el.scrollIntoView({ behavior: "smooth", block: "start" });
-                  }
-                }}
+                ref={signInAnchor}
+                onClick={() => setSignInOpen((v) => !v)}
                 disableElevation
-                endIcon={<ArrowForwardIcon sx={{ fontSize: 16 }} />}
+                disableRipple
+                // No leading icon — text + chevron only. Matches Stripe /
+                // Linear / Vercel header buttons. The chevron is the
+                // affordance that signals "menu opens here".
+                endIcon={
+                  <KeyboardArrowDownRoundedIcon
+                    sx={{
+                      fontSize: 18,
+                      transition: "transform 180ms ease",
+                      transform: signInOpen ? "rotate(180deg)" : "rotate(0deg)",
+                    }}
+                  />
+                }
                 sx={{
-                  display: { xs: "none", sm: "inline-flex" },
                   py: 1.1,
                   px: 2.5,
-                  fontSize: "0.86rem",
+                  fontSize: "0.88rem",
                   fontWeight: 600,
                   textTransform: "none",
-                  borderRadius: 2,
+                  borderRadius: 999,
+                  letterSpacing: "-0.005em",
                   bgcolor: "#1A1A1A",
                   color: "#FFFFFF !important",
-                  boxShadow: "0 1px 2px rgba(0,0,0,0.06), 0 8px 22px -12px rgba(20,20,20,0.4)",
+                  boxShadow:
+                    "0 1px 2px rgba(0,0,0,0.06), 0 8px 22px -12px rgba(20,20,20,0.4)",
                   "&:hover": { bgcolor: "#2A2A2A" },
                 }}
               >
-                Join the waitlist
+                Sign in
               </Button>
-              <Box
-                sx={{
-                  display: { xs: "none", md: "flex" },
-                  alignItems: "center",
-                  gap: 0.5,
-                  fontSize: "0.84rem",
+
+              <Menu
+                open={signInOpen}
+                anchorEl={signInAnchor.current}
+                onClose={() => setSignInOpen(false)}
+                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                transformOrigin={{ vertical: "top", horizontal: "right" }}
+                slotProps={{
+                  paper: {
+                    sx: {
+                      mt: 1.25,
+                      minWidth: 280,
+                      borderRadius: 3,
+                      border: "1px solid rgba(14,42,61,0.08)",
+                      boxShadow:
+                        "0 24px 60px -28px rgba(14,42,61,0.25), 0 1px 2px rgba(14,42,61,0.04)",
+                      overflow: "hidden",
+                    },
+                  },
+                  list: { sx: { py: 0.5 } },
                 }}
               >
-                <Box component="span" sx={{ color: "#5C6770" }}>
-                  Already a partner?
-                </Box>
-                <Box
-                  component={Link}
-                  href="/vendor/login"
-                  sx={{
-                    color: "#0A1A2F",
-                    fontWeight: 600,
-                    textDecoration: "none",
-                    borderBottom: "1px solid transparent",
-                    transition: "color 200ms ease, border-color 200ms ease",
-                    "&:hover": {
+                <Box sx={{ px: 2, pt: 1.25, pb: 1 }}>
+                  <Typography
+                    sx={{
+                      fontSize: "0.62rem",
+                      fontWeight: 700,
+                      letterSpacing: "0.18em",
                       color: "#A07823",
-                      borderBottomColor: "#A07823",
-                    },
-                  }}
-                >
-                  Sign in
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    Choose your portal
+                  </Typography>
                 </Box>
-              </Box>
+                <Divider />
+                {LOGIN_LINKS.map((l) => {
+                  const Icon = l.icon;
+                  return (
+                    <MenuItem
+                      key={l.label}
+                      component={Link}
+                      href={l.href}
+                      onClick={() => setSignInOpen(false)}
+                      sx={{
+                        py: 1.25,
+                        px: 2,
+                        gap: 1.25,
+                        alignItems: "flex-start",
+                        "&:hover": { bgcolor: "rgba(217,168,75,0.08)" },
+                      }}
+                    >
+                      <ListItemIcon sx={{ minWidth: 32, mt: 0.25 }}>
+                        <Icon sx={{ fontSize: 20, color: "#0A1A2F" }} />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={l.label}
+                        secondary={l.sub}
+                        slotProps={{
+                          primary: {
+                            sx: {
+                              fontSize: "0.92rem",
+                              fontWeight: 600,
+                              color: "#0A1A2F",
+                              lineHeight: 1.2,
+                            },
+                          },
+                          secondary: {
+                            sx: {
+                              fontSize: "0.74rem",
+                              color: "#5C6770",
+                              mt: 0.25,
+                            },
+                          },
+                        }}
+                      />
+                    </MenuItem>
+                  );
+                })}
+              </Menu>
+            </Box>
 
+            <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
               <IconButton
                 onClick={() => setDrawer((v) => !v)}
                 sx={{
@@ -222,7 +320,7 @@ export default function Header() {
             }}
           >
             <Typography variant="overline" sx={{ color: "#A07823", display: "block", mb: 0.5, fontSize: "0.66rem", letterSpacing: "0.16em" }}>
-              FOUNDING ACCESS
+              NOW LIVE
             </Typography>
             <Typography variant="body2" sx={{ color: "#3B4A55", fontSize: "0.86rem", lineHeight: 1.55 }}>
               Expert helpline, vendor savings, exclusive content, and a network of 500+ practice owners.
@@ -253,44 +351,48 @@ export default function Header() {
             ))}
           </Stack>
 
-          <Button
-            component={Link}
-            href="/#waitlist"
-            onClick={(e: React.MouseEvent) => {
-              setDrawer(false);
-              const el = document.getElementById("waitlist");
-              if (el) {
-                e.preventDefault();
-                setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 300);
-              }
-            }}
-            variant="contained"
-            color="secondary"
-            fullWidth
-            size="large"
-            endIcon={<ArrowForwardIcon />}
-          >
-            Join the waitlist
-          </Button>
-
-          <Button
-            component={Link}
-            href="/vendor/login"
-            onClick={() => setDrawer(false)}
-            variant="outlined"
-            fullWidth
-            size="large"
-            startIcon={<LoginOutlinedIcon />}
-            sx={{
-              mt: 1.5,
-              borderColor: "rgba(14,42,61,0.18)",
-              color: "#0A1A2F",
-              textTransform: "none",
-              "&:hover": { borderColor: "#A07823", bgcolor: "rgba(217,168,75,0.06)" },
-            }}
-          >
-            Already a partner? Sign in
-          </Button>
+          <Stack spacing={1}>
+            {LOGIN_LINKS.map((l, idx) => {
+              const isPrimary = idx === 0;
+              return (
+                <Button
+                  key={l.label}
+                  component={Link}
+                  href={l.href}
+                  onClick={() => setDrawer(false)}
+                  fullWidth
+                  size="large"
+                  startIcon={<LoginOutlinedIcon />}
+                  endIcon={<ArrowForwardIcon sx={{ fontSize: 16 }} />}
+                  sx={{
+                    justifyContent: "space-between",
+                    textTransform: "none",
+                    fontWeight: 600,
+                    fontSize: "0.95rem",
+                    py: 1.4,
+                    borderRadius: 2,
+                    ...(isPrimary
+                      ? {
+                          bgcolor: "#1A1A1A",
+                          color: "#FFFFFF !important",
+                          "&:hover": { bgcolor: "#2A2A2A" },
+                        }
+                      : {
+                          bgcolor: "transparent",
+                          color: "#0A1A2F",
+                          border: "1px solid rgba(14,42,61,0.18)",
+                          "&:hover": {
+                            borderColor: "#A07823",
+                            bgcolor: "rgba(217,168,75,0.06)",
+                          },
+                        }),
+                  }}
+                >
+                  {l.label} sign in
+                </Button>
+              );
+            })}
+          </Stack>
         </Box>
       </Drawer>
     </>

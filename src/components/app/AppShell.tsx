@@ -23,6 +23,7 @@ import {
 import { useTheme } from "@mui/material/styles";
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import LibraryBooksOutlinedIcon from "@mui/icons-material/LibraryBooksOutlined";
+import HubOutlinedIcon from "@mui/icons-material/HubOutlined";
 import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
@@ -37,6 +38,7 @@ const SIDEBAR_W = 220;
 const navItems = [
   { href: "/dashboard", label: "Overview", icon: DashboardOutlinedIcon },
   { href: "/dashboard/resources", label: "Resource library", icon: LibraryBooksOutlinedIcon },
+  { href: "/dashboard/network", label: "Network", icon: HubOutlinedIcon },
   { href: "/dashboard/account", label: "Profile", icon: PersonOutlineOutlinedIcon },
 ];
 

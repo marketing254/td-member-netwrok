@@ -28,6 +28,7 @@ import type { SvgIconComponent } from "@mui/icons-material";
 import { visualForTopic } from "@/components/member/topicVisuals";
 import { InlineTag, editorialText, ink } from "@/components/member/Editorial";
 import { BookCoachingCard } from "@/components/member/BookCoachingCard";
+import ResourceInquiries from "@/components/member/ResourceInquiries";
 
 type Progress = {
   last_viewed_at: string | null;
@@ -565,6 +566,17 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
           </Box>
         </Grid>
       </Grid>
+
+      {/* Discussion thread — collapsed by default. Anchored to the kit's
+          primary (first) resource so all questions about this kit roll
+          up to one thread. The originating expert (resources.originating_
+          expert_id) is notified on every new inquiry and reply. */}
+      {resources[0] && (
+        <ResourceInquiries
+          resourceId={resources[0].id}
+          resourceTitle={topicTitle}
+        />
+      )}
 
       {/* 1-on-1 coaching booking — every kit page surfaces this so members
           can take what they just learned into a focused call with Gary. */}

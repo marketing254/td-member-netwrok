@@ -25,6 +25,7 @@ import { useTheme } from "@mui/material/styles";
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
 import StoreOutlinedIcon from "@mui/icons-material/StoreOutlined";
+import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
 import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import SupportAgentOutlinedIcon from "@mui/icons-material/SupportAgentOutlined";
 import LibraryBooksOutlinedIcon from "@mui/icons-material/LibraryBooksOutlined";
@@ -51,6 +52,7 @@ type QueueCounts = {
   offersPending: number;
   catalogPending: number;
   resourcesPending: number;
+  expertsPending: number;
 };
 
 function useCurrentAdmin(): CurrentAdmin | null {
@@ -107,14 +109,18 @@ const navSections: { label: string; items: NavItem[] }[] = [
     label: "PEOPLE",
     items: [
       { href: "/admin/members", label: "Members", icon: PeopleAltOutlinedIcon },
-      { href: "/admin/vendors", label: "Vendors", icon: StoreOutlinedIcon, badgeKey: "vendorsPending" },
+      { href: "/admin/experts", label: "Experts", icon: SchoolOutlinedIcon, badgeKey: "expertsPending" },
+      // URL stays /admin/vendors so the routes, /api/admin/vendors, and the
+      // vendors DB table don't have to migrate. Label is "Partners" everywhere
+      // in the UI — public site uses the same convention.
+      { href: "/admin/vendors", label: "Partners", icon: StoreOutlinedIcon, badgeKey: "vendorsPending" },
       { href: "/admin/admins", label: "Admin team", icon: AdminPanelSettingsOutlinedIcon },
     ],
   },
   {
     label: "OPERATIONS",
     items: [
-      { href: "/admin/offers", label: "Vendor offers", icon: LocalOfferOutlinedIcon, badgeKey: "offersPending" },
+      { href: "/admin/offers", label: "Partner offers", icon: LocalOfferOutlinedIcon, badgeKey: "offersPending" },
       { href: "/admin/hotline", label: "Hotline triage", icon: SupportAgentOutlinedIcon },
       { href: "/admin/content", label: "Catalog", icon: LibraryBooksOutlinedIcon, badgeKey: "catalogPending" },
       { href: "/admin/resources", label: "Resources", icon: LibraryBooksOutlinedIcon, badgeKey: "resourcesPending" },
@@ -281,13 +287,21 @@ function SidebarContent({
           <Typography sx={{ fontSize: "0.65rem", letterSpacing: "0.18em", fontWeight: 700, color: "rgba(255,255,255,0.5)", mb: 0.75 }}>
             QUEUES OPEN
           </Typography>
-          <Stack direction="row" spacing={2}>
+          <Stack direction="row" spacing={2} sx={{ flexWrap: "wrap", rowGap: 1.25 }}>
+            <Stack>
+              <Typography sx={{ fontFamily: "var(--font-display)", color: "common.white", fontSize: "1.4rem", lineHeight: 1 }}>
+                {counts.expertsPending}
+              </Typography>
+              <Typography variant="body2" sx={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.6)" }}>
+                experts
+              </Typography>
+            </Stack>
             <Stack>
               <Typography sx={{ fontFamily: "var(--font-display)", color: "common.white", fontSize: "1.4rem", lineHeight: 1 }}>
                 {counts.vendorsPending}
               </Typography>
               <Typography variant="body2" sx={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.6)" }}>
-                vendors
+                partners
               </Typography>
             </Stack>
             <Stack>
@@ -329,6 +343,7 @@ export default function AdminAppShell({ children }: { children: React.ReactNode 
     offersPending: 0,
     catalogPending: 0,
     resourcesPending: 0,
+    expertsPending: 0,
   });
 
   const loadCounts = useCallback(async () => {
@@ -342,6 +357,7 @@ export default function AdminAppShell({ children }: { children: React.ReactNode 
             vendors?: { pending?: number };
             offers?: { pending?: number };
             catalog?: { pending?: number };
+            experts?: { pending?: number };
           })
         : {};
       const resources = resourcesRes.ok
@@ -355,6 +371,7 @@ export default function AdminAppShell({ children }: { children: React.ReactNode 
         catalogPending: overview.catalog?.pending ?? 0,
         resourcesPending:
           (resources.kits ?? []).filter((k) => k.submissionStatus === "pending_review").length,
+        expertsPending: overview.experts?.pending ?? 0,
       });
     } catch {
       // ignore — counts are decorative

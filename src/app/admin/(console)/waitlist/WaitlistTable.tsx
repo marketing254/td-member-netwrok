@@ -185,7 +185,7 @@ export default function WaitlistTable({
         {[
           { label: "Total signups", value: counts.total, icon: null, accent: false },
           { label: "Dentists", value: counts.members, icon: <PersonOutlineOutlinedIcon fontSize="small" />, accent: false },
-          { label: "Vendors", value: counts.vendors, icon: <StoreOutlinedIcon fontSize="small" />, accent: false },
+          { label: "Partners", value: counts.vendors, icon: <StoreOutlinedIcon fontSize="small" />, accent: false },
           { label: "Last 24 hours", value: counts.last_24h, icon: null, accent: true },
         ].map((card) => (
           <Grid key={card.label} size={{ xs: 6, md: 3 }}>
@@ -332,7 +332,7 @@ export default function WaitlistTable({
                               <PersonOutlineOutlinedIcon sx={{ fontSize: 13 }} />
                             )
                           }
-                          label={row.role === "vendor" ? "Vendor" : "Dentist"}
+                          label={row.role === "vendor" ? "Partner" : "Dentist"}
                           size="small"
                           sx={{
                             fontSize: "0.7rem",

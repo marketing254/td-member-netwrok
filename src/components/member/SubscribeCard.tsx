@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Box,
   Button,
@@ -51,7 +52,13 @@ type TierStat = { cap: number; taken: number; remaining: number; isOpen: boolean
 type Availability = { founding: TierStat; early: TierStat };
 
 export function SubscribeCard({ firstName }: { firstName: string }) {
-  const [interval, setInterval] = useState<BillingInterval>("monthly");
+  // Honour ?interval=annual coming from the /pricing page so users land
+  // on /upgrade with the right tab already selected. Falls back to
+  // "monthly" if nothing is passed.
+  const searchParams = useSearchParams();
+  const initialInterval: BillingInterval =
+    searchParams?.get("interval") === "annual" ? "annual" : "monthly";
+  const [interval, setInterval] = useState<BillingInterval>(initialInterval);
   const [busy, setBusy] = useState<PlanKey | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [avail, setAvail] = useState<Availability | null>(null);
@@ -114,12 +121,21 @@ export function SubscribeCard({ firstName }: { firstName: string }) {
             cur ? { ...cur, early: { ...cur.early, isOpen: false, remaining: 0 } } : cur,
           );
         }
-        setError(body.error ?? `Checkout failed (${res.status})`);
+        // 4xx errors from our checkout API are user-friendly (sold out,
+        // already subscribed, invalid plan); trust them. 5xx + network
+        // errors collapse to a generic message so a hacker reading the
+        // browser console doesn't learn anything about the backend.
+        const safe =
+          body.error && res.status >= 400 && res.status < 500
+            ? body.error
+            : "Couldn't start checkout right now. Please try again.";
+        setError(safe);
         return;
       }
       window.location.href = body.url;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Checkout failed.");
+      if (process.env.NODE_ENV !== "production") console.error("[checkout] failed:", err);
+      setError("Couldn't start checkout right now. Please try again.");
     } finally {
       setBusy(null);
     }
@@ -130,8 +146,6 @@ export function SubscribeCard({ firstName }: { firstName: string }) {
   const standardPlan: PlanKey = interval === "monthly" ? "standard_monthly" : "standard_annual";
   const foundingOpen = avail?.founding.isOpen ?? true;
   const earlyOpen = avail?.early.isOpen ?? true;
-
-  const columnCount = (foundingOpen ? 1 : 0) + (earlyOpen ? 1 : 0) + 1;
 
   return (
     <Box>
@@ -178,48 +192,68 @@ export function SubscribeCard({ firstName }: { firstName: string }) {
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: { xs: "1fr", md: `repeat(${columnCount}, 1fr)` },
+          gridTemplateColumns: { xs: "1fr", md: "repeat(3, 1fr)" },
           gap: 2.5,
           mt: 3,
         }}
       >
-        {foundingOpen && (
-          <PlanCard
-            tier="founding"
-            title="Founding"
-            subtitle="First 100 members"
-            ribbon={`★ BEST VALUE — ${avail?.founding.remaining ?? 100} OF 100 LEFT`}
-            price={interval === "monthly" ? "$49" : "$490"}
-            per={interval === "monthly" ? "mo" : "yr"}
-            sub={interval === "monthly" ? "or $490/year" : "$40.83/mo equivalent"}
-            save={interval === "annual" ? "Save $98" : undefined}
-            sectionTitle="WHAT MAKES IT SPECIAL"
-            perks={FOUNDING_PERKS}
-            footnote="No trial — 30-day money-back guarantee · Cancel anytime"
-            cta={busy === foundingPlan ? "Opening Stripe…" : "Claim founding seat"}
-            busy={busy === foundingPlan}
-            onClick={() => startCheckout(foundingPlan)}
-          />
-        )}
+        <PlanCard
+          tier="founding"
+          title="Founding"
+          subtitle="First 100 members"
+          ribbon={
+            foundingOpen
+              ? `★ BEST VALUE — ${avail?.founding.remaining ?? 100} OF 100 LEFT`
+              : "SOLD OUT"
+          }
+          price={interval === "monthly" ? "$49" : "$490"}
+          per={interval === "monthly" ? "mo" : "yr"}
+          sub={interval === "monthly" ? "or $490/year" : "$40.83/mo equivalent"}
+          save={interval === "annual" ? "Save $98" : undefined}
+          sectionTitle="WHAT MAKES IT SPECIAL"
+          perks={FOUNDING_PERKS}
+          footnote="No trial — 30-day money-back guarantee · Cancel anytime"
+          cta={
+            !foundingOpen
+              ? "Sold out — pick Early or Standard"
+              : busy === foundingPlan
+                ? "Opening Stripe…"
+                : "Claim founding seat"
+          }
+          busy={busy === foundingPlan}
+          soldOut={!foundingOpen}
+          onClick={() => startCheckout(foundingPlan)}
+        />
 
-        {earlyOpen && (
-          <PlanCard
-            tier="early"
-            title="Early Member"
-            subtitle="Members 101–500"
-            ribbon={!foundingOpen ? `${avail?.early.remaining ?? 400} OF 400 LEFT` : undefined}
-            price={interval === "monthly" ? "$99" : "$990"}
-            per={interval === "monthly" ? "mo" : "yr"}
-            sub={interval === "monthly" ? "or $990/year" : "$82.50/mo equivalent"}
-            save={interval === "annual" ? "Save $198" : undefined}
-            sectionTitle="WHAT MAKES IT SPECIAL"
-            perks={EARLY_PERKS}
-            footnote="30-day money-back guarantee · Cancel anytime"
-            cta={busy === earlyPlan ? "Opening Stripe…" : "Join as Early Member"}
-            busy={busy === earlyPlan}
-            onClick={() => startCheckout(earlyPlan)}
-          />
-        )}
+        <PlanCard
+          tier="early"
+          title="Early Member"
+          subtitle="Members 101–500"
+          ribbon={
+            !earlyOpen
+              ? "SOLD OUT"
+              : !foundingOpen
+                ? `${avail?.early.remaining ?? 400} OF 400 LEFT`
+                : undefined
+          }
+          price={interval === "monthly" ? "$99" : "$990"}
+          per={interval === "monthly" ? "mo" : "yr"}
+          sub={interval === "monthly" ? "or $990/year" : "$82.50/mo equivalent"}
+          save={interval === "annual" ? "Save $198" : undefined}
+          sectionTitle="WHAT MAKES IT SPECIAL"
+          perks={EARLY_PERKS}
+          footnote="30-day money-back guarantee · Cancel anytime"
+          cta={
+            !earlyOpen
+              ? "Sold out — Standard available"
+              : busy === earlyPlan
+                ? "Opening Stripe…"
+                : "Join as Early Member"
+          }
+          busy={busy === earlyPlan}
+          soldOut={!earlyOpen}
+          onClick={() => startCheckout(earlyPlan)}
+        />
 
         <PlanCard
           tier="standard"
@@ -388,6 +422,7 @@ function PlanCard({
   footnote,
   cta,
   busy,
+  soldOut,
   onClick,
 }: {
   tier: "founding" | "early" | "standard";
@@ -403,6 +438,7 @@ function PlanCard({
   footnote: string;
   cta: string;
   busy?: boolean;
+  soldOut?: boolean;
   onClick?: () => void;
 }) {
   const borderColor =
@@ -420,12 +456,20 @@ function PlanCard({
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
+        // Sold-out tiers stay in the layout but dim slightly + lose their
+        // ribbon glow so the visual hierarchy still points the eye at the
+        // available tier(s).
+        opacity: soldOut ? 0.7 : 1,
+        filter: soldOut ? "saturate(0.7)" : "none",
         boxShadow:
-          tier === "founding"
-            ? "0 24px 60px -30px rgba(217,168,75,0.55)"
-            : tier === "early"
-              ? "0 18px 44px -28px rgba(14,42,61,0.4)"
-              : "0 12px 32px -24px rgba(14,42,61,0.18)",
+          soldOut
+            ? "0 8px 20px -16px rgba(14,42,61,0.18)"
+            : tier === "founding"
+              ? "0 24px 60px -30px rgba(217,168,75,0.55)"
+              : tier === "early"
+                ? "0 18px 44px -28px rgba(14,42,61,0.4)"
+                : "0 12px 32px -24px rgba(14,42,61,0.18)",
+        transition: "opacity 200ms ease, filter 200ms ease",
       }}
     >
       {ribbon && (
@@ -438,8 +482,10 @@ function PlanCard({
             px: 1.5,
             py: 0.5,
             borderRadius: 999,
-            bgcolor: COLORS.accent,
-            color: COLORS.primaryDeep,
+            // Sold-out ribbon switches to a quiet neutral so it doesn't
+            // pull attention to a tier the user can't buy.
+            bgcolor: soldOut ? "rgba(14,42,61,0.10)" : COLORS.accent,
+            color: soldOut ? COLORS.inkSoft : COLORS.primaryDeep,
             fontSize: "0.66rem",
             fontWeight: 800,
             letterSpacing: "0.06em",
@@ -561,10 +607,20 @@ function PlanCard({
           fullWidth
           variant={tier === "standard" ? "outlined" : "contained"}
           color={tier === "founding" ? "secondary" : "primary"}
-          disabled={busy}
+          disabled={busy || soldOut}
           onClick={onClick}
           startIcon={busy ? <CircularProgress size={14} sx={{ color: "inherit" }} /> : null}
-          sx={{ borderRadius: 999, py: 1.15 }}
+          sx={{
+            borderRadius: 999,
+            py: 1.15,
+            // Stronger disabled state so it's obvious the button is dead
+            // (default MUI disabled is quite faint on a dim-saturate card).
+            "&.Mui-disabled": {
+              bgcolor: "rgba(14,42,61,0.10)",
+              color: "rgba(14,42,61,0.55)",
+              border: "1px solid rgba(14,42,61,0.12)",
+            },
+          }}
         >
           {cta}
         </Button>

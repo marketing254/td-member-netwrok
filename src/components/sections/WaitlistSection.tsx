@@ -446,7 +446,7 @@ export default function WaitlistSection({ lockedRole, sectionId }: WaitlistSecti
                           <CompactField
                             name="description"
                             label="What does your company do, in one sentence?"
-                            placeholder="We negotiate PPO contracts on a contingency basis — practices pay only after fee increases land."
+                            placeholder="One sentence on what you do"
                             multiline
                             minRows={2}
                             required
@@ -611,7 +611,7 @@ export default function WaitlistSection({ lockedRole, sectionId }: WaitlistSecti
                           <CompactField
                             name="expertSpecialty"
                             label="What do you teach or coach on?"
-                            placeholder="Practice growth, leadership & culture for owners and team leads"
+                            placeholder="e.g. Practice growth"
                             required
                           />
                         </Grid>
@@ -619,7 +619,7 @@ export default function WaitlistSection({ lockedRole, sectionId }: WaitlistSecti
                           <CompactField
                             name="expertTopics"
                             label="Topics you'd record (one per line)"
-                            placeholder={"How to run an effective morning huddle\nReducing cancellations without scripts\nHiring & onboarding a great office manager"}
+                            placeholder="One topic per line"
                             multiline
                             minRows={3}
                           />

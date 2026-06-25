@@ -51,6 +51,45 @@ export type ExpertApplicationStatus =
   | "declined"
   | "onboarded";
 
+export type ExpertStatus =
+  | "invited"
+  | "active"
+  | "suspended"
+  | "archived";
+
+export type ExpertResourceStatus =
+  | "draft"
+  | "pending_review"
+  | "needs_changes"
+  | "approved"
+  | "rejected"
+  | "archived";
+
+export type ExpertResourceKind =
+  | "sop"
+  | "template"
+  | "slide_deck"
+  | "recording"
+  | "pdf"
+  | "checklist"
+  | "worksheet"
+  | "other";
+
+export type ExpertPostStatus = "draft" | "published" | "hidden" | "deleted";
+
+export type NetworkAuthorKind = "expert" | "member" | "partner" | "admin";
+
+export type PostReactionKind = "heart" | "insightful" | "helpful" | "agree";
+
+export type ChatbotMessageRole = "member" | "bot" | "expert";
+
+export type ChatbotConversationStatus =
+  | "open"
+  | "escalated"
+  | "expert_handling"
+  | "resolved"
+  | "abandoned";
+
 // =====================================================================
 // ROW SHAPES
 // =====================================================================
@@ -414,6 +453,124 @@ export type ExpertApplicationsRow = {
   notes: string | null;
 };
 
+export type ExpertsRow = {
+  id: string;
+  application_id: string | null;
+  auth_user_id: string | null;
+  email: string;
+  full_name: string;
+  display_name: string | null;
+  phone: string | null;
+  company_name: string | null;
+  specialty: string;
+  bio: string | null;
+  topics: string | null;
+  website: string | null;
+  booking_link: string | null;
+  headshot_url: string | null;
+  status: ExpertStatus;
+  invited_at: string;
+  activated_at: string | null;
+  suspended_at: string | null;
+  archived_at: string | null;
+  invited_by: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ExpertResourcesRow = {
+  id: string;
+  expert_id: string;
+  title: string;
+  description: string | null;
+  kind: ExpertResourceKind;
+  storage_bucket: string;
+  storage_path: string;
+  file_name: string | null;
+  file_size: number | null;
+  mime_type: string | null;
+  branded_storage_path: string | null;
+  published_url: string | null;
+  status: ExpertResourceStatus;
+  submitted_at: string | null;
+  reviewed_at: string | null;
+  reviewed_by: string | null;
+  review_note: string | null;
+  published_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ExpertPostsRow = {
+  id: string;
+  expert_id: string;
+  content: string;
+  image_url: string | null;
+  link_url: string | null;
+  status: ExpertPostStatus;
+  published_at: string | null;
+  hidden_at: string | null;
+  hidden_by: string | null;
+  hidden_reason: string | null;
+  reaction_count: number;
+  comment_count: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PostReactionsRow = {
+  id: string;
+  post_id: string;
+  author_auth_user_id: string;
+  author_kind: NetworkAuthorKind;
+  author_display_name: string;
+  kind: PostReactionKind;
+  created_at: string;
+};
+
+export type PostCommentsRow = {
+  id: string;
+  post_id: string;
+  author_auth_user_id: string;
+  author_kind: NetworkAuthorKind;
+  author_display_name: string;
+  author_subtitle: string | null;
+  content: string;
+  hidden_at: string | null;
+  hidden_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ChatbotConversationsRow = {
+  id: string;
+  expert_id: string;
+  member_auth_user_id: string;
+  member_display_name: string;
+  status: ChatbotConversationStatus;
+  last_message_at: string;
+  last_member_message_at: string | null;
+  last_bot_message_at: string | null;
+  last_expert_message_at: string | null;
+  message_count: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ChatbotMessagesRow = {
+  id: string;
+  conversation_id: string;
+  role: ChatbotMessageRole;
+  content: string;
+  bot_provider: string | null;
+  bot_model: string | null;
+  bot_latency_ms: number | null;
+  bot_token_input: number | null;
+  bot_token_output: number | null;
+  created_at: string;
+};
+
 export type EmailEventsRow = {
   id: string;
   template: string;
@@ -478,6 +635,13 @@ export type Database = {
       member_assistant_messages: Table<MemberAssistantMessageRow>;
       stripe_events: Table<StripeEventRow>;
       expert_applications: Table<ExpertApplicationsRow>;
+      experts: Table<ExpertsRow>;
+      expert_resources: Table<ExpertResourcesRow>;
+      expert_posts: Table<ExpertPostsRow>;
+      post_reactions: Table<PostReactionsRow>;
+      post_comments: Table<PostCommentsRow>;
+      chatbot_conversations: Table<ChatbotConversationsRow>;
+      chatbot_messages: Table<ChatbotMessagesRow>;
     };
     Views: {
       waitlist_counts: View<{
@@ -528,6 +692,28 @@ export type Database = {
         onboarded_count: number;
         last_24h: number;
       }>;
+      experts_recent: View<
+        Pick<
+          ExpertsRow,
+          | "id"
+          | "email"
+          | "full_name"
+          | "display_name"
+          | "specialty"
+          | "status"
+          | "invited_at"
+          | "activated_at"
+          | "application_id"
+          | "created_at"
+        >
+      >;
+      expert_counts: View<{
+        total: number;
+        invited: number;
+        active: number;
+        suspended: number;
+        archived: number;
+      }>;
     };
     Functions: Record<string, never>;
     Enums: {
@@ -540,6 +726,14 @@ export type Database = {
       waitlist_role: WaitlistRole;
       waitlist_status: WaitlistStatus;
       expert_application_status: ExpertApplicationStatus;
+      expert_status: ExpertStatus;
+      expert_resource_status: ExpertResourceStatus;
+      expert_resource_kind: ExpertResourceKind;
+      expert_post_status: ExpertPostStatus;
+      network_author_kind: NetworkAuthorKind;
+      post_reaction_kind: PostReactionKind;
+      chatbot_message_role: ChatbotMessageRole;
+      chatbot_conversation_status: ChatbotConversationStatus;
     };
   };
 };

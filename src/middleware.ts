@@ -51,8 +51,9 @@ function buildCsp(): string {
     // frame-src controls <iframe> sources. Supabase is needed so the resource
     // viewer can render PDFs inline; Microsoft Office Online viewer is needed
     // for slide decks (.pptx). YCBM domains let the booking widget render
-    // the calendar iframe.
-    `frame-src 'self' ${supabaseHttps} https://view.officeapps.live.com https://vercel.live https://*.ycb.me https://*.youcanbook.me`,
+    // the calendar iframe. Spline (my.spline.design + prod.spline.design)
+    // hosts the 3D hero scene iframe.
+    `frame-src 'self' ${supabaseHttps} https://view.officeapps.live.com https://vercel.live https://*.ycb.me https://*.youcanbook.me https://my.spline.design https://*.spline.design`,
     "frame-ancestors 'none'",
     "form-action 'self'",
     "base-uri 'self'",
@@ -89,6 +90,16 @@ function isPublicVendorPath(pathname: string) {
   );
 }
 
+// `/experts` (plural, public marketing page with the application form) is
+// completely separate from `/expert/*` (the authenticated portal). The
+// gate below only matches the singular form.
+function isPublicExpertPath(pathname: string) {
+  return (
+    pathname === "/expert/login" ||
+    pathname.startsWith("/expert/login/")
+  );
+}
+
 function isPublicAdminPath(pathname: string) {
   return pathname === "/admin/login" || pathname.startsWith("/admin/login/");
 }
@@ -114,8 +125,15 @@ export async function middleware(req: NextRequest) {
   const isAdmin = pathname.startsWith("/admin") && !isPublicAdminPath(pathname);
   const isMember = pathname.startsWith("/dashboard") && !isPublicMemberPath(pathname);
   const isUpgrade = isUpgradePath(pathname);
+  // Only the singular `/expert/*` is gated. `/experts` (plural) is the
+  // public marketing page — Next.js routes /expert and /experts to
+  // different folders, so prefix-matching with the boundary trailing
+  // slash here is enough to avoid a false positive.
+  const isExpert =
+    (pathname === "/expert" || pathname.startsWith("/expert/")) &&
+    !isPublicExpertPath(pathname);
 
-  if (!isVendor && !isAdmin && !isMember && !isUpgrade) {
+  if (!isVendor && !isAdmin && !isMember && !isUpgrade && !isExpert) {
     // Outside the gated surfaces — still run Supabase to keep the session
     // cookie fresh so /vendor/login etc. read the latest state.
     try {
@@ -182,6 +200,50 @@ export async function middleware(req: NextRequest) {
       console.error("[middleware:admin] auth check failed:", err);
       const target = req.nextUrl.clone();
       target.pathname = "/admin/login";
+      return applySecurityHeaders(NextResponse.redirect(target));
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  // EXPERT PORTAL  (/expert/*)
+  // Requires a Supabase session AND an `experts` row that isn't
+  // suspended/archived. New auth users for experts are only created by
+  // /api/admin/experts (PATCH invite), so a session belonging to a
+  // non-expert email is rejected here too.
+  // ─────────────────────────────────────────────────────────────────
+  if (isExpert) {
+    try {
+      const supabase = createMiddlewareSupabase(req, res);
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) {
+        const target = req.nextUrl.clone();
+        target.pathname = "/expert/login";
+        target.search = `?redirect=${encodeURIComponent(pathname + search)}`;
+        return applySecurityHeaders(NextResponse.redirect(target));
+      }
+
+      const { data: expertRow } = await supabase
+        .from("experts")
+        .select("id, status")
+        .eq("auth_user_id", userData.user.id)
+        .maybeSingle();
+
+      if (
+        !expertRow ||
+        expertRow.status === "suspended" ||
+        expertRow.status === "archived"
+      ) {
+        const target = req.nextUrl.clone();
+        target.pathname = "/expert/login";
+        target.search = `?error=${encodeURIComponent("Your expert portal isn't available right now.")}`;
+        return applySecurityHeaders(NextResponse.redirect(target));
+      }
+
+      return applySecurityHeaders(res);
+    } catch (err) {
+      console.error("[middleware:expert] auth check failed:", err);
+      const target = req.nextUrl.clone();
+      target.pathname = "/expert/login";
       return applySecurityHeaders(NextResponse.redirect(target));
     }
   }

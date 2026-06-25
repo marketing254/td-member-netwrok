@@ -74,29 +74,24 @@ export default function OneNetworkThreeWays() {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Clicking a card's CTA: ensure the waitlist form is on screen, then
-  // smoothly scroll to it and update the URL so WaitlistSection's
-  // useSearchParams effect flips to the right tab. Works whether the
-  // user is already on `/` or on a sub-page that links here.
+  // Clicking a card's CTA: members go to their login page; experts and
+  // partners go to their respective public application pages where the
+  // application form lives (lockedRole=expert / lockedRole=vendor).
   const onCtaClick = (role: CardRole) => {
-    const goHomeAndScroll = (immediate: boolean) => {
-      const tick = () => {
-        const el = document.getElementById("waitlist");
-        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-      };
-      if (immediate) tick();
-      else requestAnimationFrame(() => requestAnimationFrame(tick));
-    };
-
-    if (pathname === "/") {
-      router.replace(`/?role=${role}`, { scroll: false });
-      goHomeAndScroll(true);
-    } else {
-      router.push(`/?role=${role}`);
-      // Wait for nav, then scroll. Two RAFs to clear the route transition.
-      setTimeout(() => goHomeAndScroll(true), 60);
+    if (role === "member") {
+      // Public signup form — admin reviews + activates before portal access.
+      router.push("/join");
+      return;
     }
+    if (role === "expert") {
+      router.push("/experts#apply");
+      return;
+    }
+    router.push("/partners#apply");
   };
+
+  // Silence the unused-var lint now that scroll-on-same-page is gone.
+  void pathname;
 
   return (
     <Box sx={{ py: { xs: 7, md: 10 }, bgcolor: COLORS.surface }}>

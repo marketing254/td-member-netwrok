@@ -672,7 +672,7 @@ function FeaturedCard({
           </Typography>
           <Button
             component={Link}
-            href="/#waitlist"
+            href="/join"
             endIcon={<ArrowRight size={15} />}
             sx={{
               py: 1.1,

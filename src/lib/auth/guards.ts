@@ -41,6 +41,15 @@ export type MemberContext = {
   status: "waitlist" | "invited" | "active" | "paused" | "churned";
 };
 
+export type ExpertContext = {
+  ok: true;
+  userId: string;
+  email: string;
+  expertId: string;
+  fullName: string;
+  status: "invited" | "active" | "suspended" | "archived";
+};
+
 type Failure = { ok: false; response: NextResponse };
 
 const ADMIN_ROLES = ["owner", "admin", "reviewer", "support"] as const;
@@ -216,6 +225,65 @@ export async function requireVerifiedVendor(): Promise<VendorContext | Failure> 
     };
   }
   return guard;
+}
+
+/**
+ * requireExpert
+ *
+ * Returns the experts row for the signed-in user. Allows `invited` (in case
+ * an API call lands before the first sign-in finishes the auth bootstrap)
+ * but blocks `suspended` and `archived`. Used by /api/expert/* endpoints.
+ */
+export async function requireExpert(): Promise<ExpertContext | Failure> {
+  const cookieClient = await createServerSupabase();
+  const { data: userData, error: userErr } = await cookieClient.auth.getUser();
+  if (userErr || !userData?.user) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: "Not signed in." }, { status: 401 }),
+    };
+  }
+
+  const email = userData.user.email?.toLowerCase();
+  if (!email) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: "Account is missing an email." }, { status: 403 }),
+    };
+  }
+
+  const admin = getSupabaseAdmin();
+  const { data: row } = await admin
+    .from("experts")
+    .select("id, status, full_name, auth_user_id")
+    .eq("email", email)
+    .maybeSingle();
+
+  if (!row) {
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { error: "No expert profile linked to this account." },
+        { status: 403 },
+      ),
+    };
+  }
+
+  if (row.status === "suspended" || row.status === "archived") {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: "Expert account is inactive." }, { status: 403 }),
+    };
+  }
+
+  return {
+    ok: true,
+    userId: userData.user.id,
+    email,
+    expertId: row.id,
+    fullName: row.full_name,
+    status: row.status as ExpertContext["status"],
+  };
 }
 
 /**

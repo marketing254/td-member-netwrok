@@ -363,7 +363,7 @@ function CompanyStep({ form, set }: { form: Form; set: <K extends keyof Form>(k:
         <Grid size={{ xs: 12 }}>
           <TextField
             label="Public description"
-            placeholder="2–3 sentences members will see in your profile."
+            placeholder="2–3 sentences"
             value={form.description}
             onChange={(e) => set("description", e.target.value)}
             multiline
@@ -446,7 +446,7 @@ function OfferStep({ form, set }: { form: Form; set: <K extends keyof Form>(k: K
           <Grid size={{ xs: 12 }}>
             <TextField
               label="Terms of the offer"
-              placeholder="E.g. 15% off first year, waived $500 setup fee, free month of service…"
+              placeholder="Short summary of the terms"
               value={form.offerTerms}
               onChange={(e) => set("offerTerms", e.target.value)}
               multiline
@@ -470,7 +470,7 @@ function OfferStep({ form, set }: { form: Form; set: <K extends keyof Form>(k: K
         </Stack>
         <TextField
           label="Best email for hotline notifications"
-          placeholder="Where should we route member inquiries from the partner hotline?"
+          placeholder="hotline@yourcompany.com"
           type="email"
           value={form.hotlineEmail}
           onChange={(e) => set("hotlineEmail", e.target.value)}

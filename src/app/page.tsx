@@ -11,7 +11,6 @@ import ROICalculator from "@/components/sections/ROICalculator";
 import Pricing from "@/components/sections/Pricing";
 import WhoItsFor from "@/components/sections/WhoItsFor";
 import FreeKitMagnet from "@/components/sections/FreeKitMagnet";
-import WaitlistSection from "@/components/sections/WaitlistSection";
 import FAQ from "@/components/sections/FAQ";
 import Footer from "@/components/sections/Footer";
 import ScrollProgressBar from "@/components/effects/ScrollProgressBar";
@@ -80,8 +79,6 @@ export default async function HomePage({ searchParams }: { searchParams: HomeSea
         <FreeKitMagnet />
         {/* One network. Three ways in. — Members / Experts / Partners */}
         <OneNetworkThreeWays />
-        {/* The full waitlist form */}
-        <WaitlistSection />
         {/* Objections */}
         <FAQ />
       </main>

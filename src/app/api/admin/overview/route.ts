@@ -26,6 +26,7 @@ export async function GET() {
       redemptions,
       recentApplications,
       pendingOffers,
+      experts,
     ] = await Promise.all([
       supabase
         .from("vendors")
@@ -54,6 +55,9 @@ export async function GET() {
         .eq("review_status", "pending_review")
         .order("submitted_for_review_at", { ascending: false, nullsFirst: false })
         .limit(6),
+      supabase
+        .from("expert_applications")
+        .select("id, status, created_at"),
     ]);
 
     const now = new Date();
@@ -66,6 +70,7 @@ export async function GET() {
     const o = offers.data ?? [];
     const c = catalog.data ?? [];
     const r = redemptions.data ?? [];
+    const e = experts.data ?? [];
 
     const vendorCounts = {
       total: v.length,
@@ -101,6 +106,18 @@ export async function GET() {
       total: c.length,
     };
 
+    // `pending` here = new + reviewing (everything not yet resolved). That's
+    // what the sidebar badge surfaces — the queue that still needs attention.
+    const expertCounts = {
+      total: e.length,
+      pending: e.filter((x) => x.status === "new" || x.status === "reviewing").length,
+      new: e.filter((x) => x.status === "new").length,
+      reviewing: e.filter((x) => x.status === "reviewing").length,
+      invited: e.filter((x) => x.status === "invited").length,
+      declined: e.filter((x) => x.status === "declined").length,
+      onboarded: e.filter((x) => x.status === "onboarded").length,
+    };
+
     const redemptionStats = {
       lifetimeCount: r.length,
       thisMonthCount: r.filter((x) => (x.redeemed_on ?? "") >= monthStart).length,
@@ -113,6 +130,7 @@ export async function GET() {
       waitlist: waitlistCounts,
       offers: offerCounts,
       catalog: catalogCounts,
+      experts: expertCounts,
       redemptions: redemptionStats,
       recentApplications: recentApplications.data ?? [],
       pendingOffers: pendingOffers.data ?? [],

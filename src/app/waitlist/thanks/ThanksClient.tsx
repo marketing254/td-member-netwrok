@@ -127,8 +127,10 @@ export default function ThanksClient() {
                   lineHeight: 1.65,
                 }}
               >
-                We&apos;ll email you the moment the network goes live. Founding rate stays at $49/month
-                for the duration of your active membership — no surprise increases.
+                The team will review your details and activate your portal — usually within one
+                business day. Once your account is ready, you&apos;ll receive a welcome email
+                with your sign-in link. Founding rate stays at $49/month for the duration of
+                your active membership — no surprise increases.
               </Typography>
             </MotionBox>
 

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { requireMember } from "@/lib/auth/guards";
+import { apiError, serverError } from "@/lib/api/errorResponse";
 import {
   ALL_PLAN_KEYS,
   appOrigin,
@@ -39,12 +40,10 @@ export async function POST(req: Request) {
   const guard = await requireMember();
   if (!guard.ok) return guard.response;
 
+  const route = "POST /api/stripe/checkout";
   const body = (await req.json().catch(() => ({}))) as { plan?: unknown };
   if (!isValidPlan(body.plan)) {
-    return NextResponse.json(
-      { error: `Invalid plan. Use one of: ${ALL_PLAN_KEYS.join(", ")}` },
-      { status: 400 },
-    );
+    return apiError.badRequest("Please pick a valid plan.", route);
   }
   const plan = body.plan;
 
@@ -63,16 +62,13 @@ export async function POST(req: Request) {
       .select("id", { count: "exact", head: true })
       .eq(column, true);
     if (countErr) {
-      return NextResponse.json(
-        { error: `Could not verify ${tier} availability. Please try again.` },
-        { status: 500 },
-      );
+      return serverError(countErr, { route, extra: { stage: "cap_count", tier } });
     }
     if ((count ?? 0) >= cap) {
       const msg =
         tier === "founding"
-          ? "Founding seats are sold out — all 100 spots are taken. Early Member or Standard membership is still available."
-          : "Early Member seats are sold out — all 400 spots are taken. Standard membership is still available.";
+          ? "Founding seats are sold out — Early Member or Standard membership is still available."
+          : "Early Member seats are sold out — Standard membership is still available.";
       return NextResponse.json(
         { error: msg, tierSoldOut: tier },
         { status: 409 },
@@ -90,7 +86,10 @@ export async function POST(req: Request) {
     .single();
 
   if (memErr || !member) {
-    return NextResponse.json({ error: "Member not found." }, { status: 404 });
+    if (memErr) {
+      return serverError(memErr, { route, extra: { stage: "member_lookup" } });
+    }
+    return apiError.notFound(route);
   }
 
   // If they already have an active subscription, don't double-charge — send
@@ -114,10 +113,9 @@ export async function POST(req: Request) {
     stripe = getStripe();
     priceId = priceIdFor(plan);
   } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Stripe is not configured." },
-      { status: 503 },
-    );
+    // Specific Stripe-config errors stay in server logs; user gets a
+    // generic "service unavailable" response.
+    return serverError(err, { route, status: 503, extra: { stage: "stripe_init" } });
   }
 
   // Create or reuse the Stripe Customer for this member. Storing the
@@ -163,7 +161,10 @@ export async function POST(req: Request) {
   });
 
   if (!session.url) {
-    return NextResponse.json({ error: "Stripe didn't return a session URL." }, { status: 500 });
+    return serverError(new Error("Stripe checkout session missing url"), {
+      route,
+      extra: { stage: "session_create" },
+    });
   }
 
   return NextResponse.json({ url: session.url });

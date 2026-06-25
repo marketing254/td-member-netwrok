@@ -94,11 +94,11 @@ export default function LegalShell({
         <Stack direction="row" sx={{ mb: 3, justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1.5 }}>
           <Button
             component={Link}
-            href="/#waitlist"
+            href="/"
             startIcon={<ArrowBackIcon />}
             sx={{ color: "text.secondary", "&:hover": { bgcolor: "rgba(14,42,61,0.04)" } }}
           >
-            Back to waitlist
+            Back to home
           </Button>
           <Button
             startIcon={<PrintOutlinedIcon />}
@@ -377,12 +377,12 @@ export default function LegalShell({
             </Typography>
             <Button
               component={Link}
-              href="/#waitlist"
+              href="/"
               variant="contained"
               color="secondary"
               size="medium"
             >
-              Back to the waitlist
+              Back to home
             </Button>
           </Stack>
         </MotionBox>

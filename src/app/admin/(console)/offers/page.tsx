@@ -96,7 +96,7 @@ export default function AdminOffersPage() {
         setToast(body.error ?? `Action failed (${res.status})`);
         return;
       }
-      setToast(action === "approve" ? "Offer approved & vendor notified." : "Offer rejected & vendor notified.");
+      setToast(action === "approve" ? "Offer approved & partner notified." : "Offer rejected & partner notified.");
       setOpenOffer(null);
       await load();
     } catch (err) {
@@ -113,10 +113,10 @@ export default function AdminOffersPage() {
           OFFERS
         </Typography>
         <Typography variant="h2" sx={{ mt: 0.5, mb: 1, fontSize: { xs: "1.85rem", md: "2.5rem" } }}>
-          Vendor offers — every discount
+          Partner offers — every discount
         </Typography>
         <Typography sx={{ color: "text.secondary", maxWidth: 720 }}>
-          Read-only browser of every offer any vendor has submitted. Click an offer to see the full submission (vendor, attached catalog item, terms, validity), then approve or reject pending submissions inline.
+          Read-only browser of every offer any partner has submitted. Click an offer to see the full submission (partner, attached catalog item, terms, validity), then approve or reject pending submissions inline.
         </Typography>
       </Box>
 
@@ -166,7 +166,7 @@ export default function AdminOffersPage() {
       </Box>
 
       <TextField
-        placeholder="Search by headline, discount, vendor, or catalog item…"
+        placeholder="Search by headline, discount, partner, or catalog item…"
         value={q}
         onChange={(e) => setQ(e.target.value)}
         size="small"
@@ -195,7 +195,7 @@ export default function AdminOffersPage() {
             {q
               ? "Try a different search term."
               : filter === "pending_review"
-                ? "Vendors will submit new offers here as they create discounts on their catalog items."
+                ? "Partners will submit new offers here as they create discounts on their catalog items."
                 : "Offers in this state will show up here as they happen."}
           </Typography>
         </Box>

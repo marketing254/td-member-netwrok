@@ -99,7 +99,7 @@ function Inner() {
             : action === "suspend"
               ? "suspended"
               : "reinstated";
-      setToast(`Vendor ${verb}.`);
+      setToast(`Partner ${verb}.`);
       await load();
     } catch (err) {
       setToast(err instanceof Error ? err.message : "Action failed.");
@@ -128,15 +128,15 @@ function Inner() {
     <Stack spacing={4}>
       <Box>
         <Typography variant="overline" sx={{ color: "text.secondary", display: "block" }}>
-          VENDORS
+          PARTNERS
         </Typography>
         <Typography variant="h2" sx={{ mt: 0.5, mb: 1, fontSize: { xs: "1.85rem", md: "2.5rem" } }}>
-          All vendor partners
+          All partners
         </Typography>
         <Typography sx={{ color: "text.secondary", maxWidth: 620 }}>
-          Approve new applications, manage active partners. Approving a vendor sets their
-          account to verified and sends them a confirmation email so they can publish in the
-          directory.
+          Approve new applications, manage active partners. Approving a
+          partner sets their account to verified and sends them a confirmation
+          email so they can publish in the directory.
         </Typography>
       </Box>
 
@@ -199,7 +199,7 @@ function Inner() {
             borderColor: "divider",
           }}
         >
-          <Cell head>Vendor</Cell>
+          <Cell head>Partner</Cell>
           <Cell head>Category</Cell>
           <Cell head>Plan</Cell>
           <Cell head>Status</Cell>
@@ -213,7 +213,7 @@ function Inner() {
           </Box>
         ) : filtered.length === 0 ? (
           <Box sx={{ p: 6, textAlign: "center" }}>
-            <Typography sx={{ color: "text.secondary" }}>No vendors in this view.</Typography>
+            <Typography sx={{ color: "text.secondary" }}>No partners in this view.</Typography>
           </Box>
         ) : (
           filtered.map((v, i) => (

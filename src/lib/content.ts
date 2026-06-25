@@ -5,12 +5,16 @@
 export const brand = {
   name: "Dental Member Network",
   shortName: "DMN",
-  phoneDisplay: "(855) 756-5323",
-  phoneTel: "+18557565323",
+  // Ekwa Call Tracking number — every inbound call/SMS to this number is
+  // logged with source attribution and forwarded by Ekwa's tracking platform,
+  // then notified to the team's Outlook inbox. Do not replace with an
+  // untracked direct number; we lose attribution if we do.
+  phoneDisplay: "(855) 633-4707",
+  phoneTel: "+18556334707",
   email: "hello@joindmn.com",
   domain: "dentalmembernetwork.com",
-  joinUrl: "#waitlist",
-  signInUrl: "#waitlist",
+  joinUrl: "/join",
+  signInUrl: "/member/login",
 };
 
 export const founding = {
@@ -211,7 +215,6 @@ export const footerLinks = {
     { label: "Partners", href: "/partners" },
     { label: "Reviews", href: "/reviews" },
     { label: "Pricing", href: "/pricing" },
-    { label: "Waitlist", href: "#waitlist" },
     { label: "FAQ", href: "#faq" },
   ],
   Agreements: [
@@ -231,7 +234,6 @@ export const navLinks = [
   { label: "Partners", href: "/partners" },
   { label: "Reviews", href: "/reviews" },
   { label: "Pricing", href: "/pricing" },
-  { label: "Join Waitlist", href: "#waitlist" },
   { label: "FAQ", href: "#faq" },
 ];
 

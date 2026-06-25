@@ -87,7 +87,7 @@ export default function Footer() {
 
               <Button
                 component={Link}
-                href="/#waitlist"
+                href="/join"
                 variant="contained"
                 color="secondary"
                 endIcon={<ArrowForwardIcon sx={{ fontSize: 16 }} />}
