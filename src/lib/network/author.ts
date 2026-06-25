@@ -77,14 +77,14 @@ export async function resolveNetworkAuthor(
   {
     const { data } = await admin
       .from("members")
-      .select("id, first_name, last_name, practice_name, city, state, status")
+      .select("id, first_name, last_name, practice_name, city, status")
       .eq("auth_user_id", authUserId)
       .maybeSingle();
     if (data && data.status === "active") {
       const fullName = [data.first_name, data.last_name].filter(Boolean).join(" ").trim();
       const subtitle = data.practice_name
         ? data.practice_name
-        : [data.city, data.state].filter(Boolean).join(", ") || null;
+        : data.city || null;
       return {
         authUserId,
         kind: "member",

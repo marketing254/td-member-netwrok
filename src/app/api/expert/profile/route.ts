@@ -75,6 +75,9 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: "Invalid JSON." }, { status: 400 });
   }
 
+  // Loose typing here is intentional: the Supabase Update<ExpertsRow> type
+  // is strict and we're building the patch dynamically from an allowlist.
+  // The cast at .update() below narrows it back into the right shape.
   const patch: Record<string, string | null> = {};
   for (const field of EDITABLE_FIELDS) {
     if (!(field in body)) continue;
@@ -122,7 +125,10 @@ export async function PATCH(req: Request) {
     const admin = getSupabaseAdmin();
     const { data, error } = await admin
       .from("experts")
-      .update(patch)
+      // patch keys are validated against EDITABLE_FIELDS above, so the
+      // cast is safe at runtime — the strict generated type just can't
+      // infer it from a dynamically-built Record.
+      .update(patch as never)
       .eq("id", guard.expertId)
       .select(
         "id, email, display_name, phone, company_name, specialty, bio, topics, website, booking_link, headshot_url",

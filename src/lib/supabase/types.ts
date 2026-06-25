@@ -340,6 +340,9 @@ export type ResourcesRow = {
   approved_by: string | null;
   approved_at: string | null;
   rejected_reason: string | null;
+  // Added in 0024_resource_inquiries.sql — nullable link back to the
+  // expert who authored the underlying material (drives inquiry routing).
+  originating_expert_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -394,7 +397,18 @@ export type AdminUsersRow = {
 
 export type ReviewActionsRow = {
   id: string;
-  target_type: "vendor_application" | "catalog_item" | "offer" | "redemption" | "vendor" | "member";
+  // Extend this union whenever a new target gets audited. The DB column is
+  // free-form text; the union is a TypeScript-only safety net so callers
+  // don't typo a target_type. `expert_application` is used by the expert
+  // application + admin add-expert flows in /api/admin/experts.
+  target_type:
+    | "vendor_application"
+    | "catalog_item"
+    | "offer"
+    | "redemption"
+    | "vendor"
+    | "member"
+    | "expert_application";
   target_id: string;
   action: string;
   admin_id: string | null;
@@ -407,7 +421,7 @@ export type AuthAuditRow = {
   event: string;
   email: string | null;
   user_id: string | null;
-  user_type: "vendor" | "member" | "admin" | null;
+  user_type: "vendor" | "member" | "admin" | "expert" | null;
   ip_hash: string | null;
   user_agent: string | null;
   metadata: Record<string, unknown> | null;
@@ -416,9 +430,10 @@ export type AuthAuditRow = {
 
 export type NotificationsRow = {
   id: string;
-  audience: "vendor" | "admin";
+  audience: "vendor" | "admin" | "expert" | "member";
   vendor_id: string | null;
   admin_id: string | null;
+  recipient_auth_user_id: string | null;
   kind: string;
   title: string;
   body: string | null;
@@ -571,6 +586,40 @@ export type ChatbotMessagesRow = {
   created_at: string;
 };
 
+// Discussion thread under each member-library resource. Schema lives in
+// 0024_resource_inquiries.sql.
+export type ResourceInquiryStatus = "open" | "answered" | "closed";
+
+export type ResourceInquiriesRow = {
+  id: string;
+  resource_id: string;
+  author_auth_user_id: string;
+  author_member_id: string | null;
+  author_display_name: string;
+  author_subtitle: string | null;
+  body: string;
+  reply_count: number;
+  status: ResourceInquiryStatus;
+  hidden_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type InquiryReplyKind = "member" | "expert" | "partner" | "admin";
+
+export type ResourceInquiryRepliesRow = {
+  id: string;
+  inquiry_id: string;
+  author_kind: InquiryReplyKind;
+  author_auth_user_id: string;
+  author_id: string | null;
+  author_display_name: string;
+  author_subtitle: string | null;
+  body: string;
+  hidden_at: string | null;
+  created_at: string;
+};
+
 export type EmailEventsRow = {
   id: string;
   template: string;
@@ -642,6 +691,8 @@ export type Database = {
       post_comments: Table<PostCommentsRow>;
       chatbot_conversations: Table<ChatbotConversationsRow>;
       chatbot_messages: Table<ChatbotMessagesRow>;
+      resource_inquiries: Table<ResourceInquiriesRow>;
+      resource_inquiry_replies: Table<ResourceInquiryRepliesRow>;
     };
     Views: {
       waitlist_counts: View<{
