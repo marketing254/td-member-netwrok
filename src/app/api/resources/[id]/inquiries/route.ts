@@ -99,9 +99,12 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   if (!author) {
     return apiError.forbidden();
   }
-  if (author.kind !== "member") {
-    return apiError.forbidden();
-  }
+  // Anyone in the network can start an inquiry — member, expert,
+  // partner, admin. The author_kind is captured on the row so other
+  // viewers see who asked (members ask their peers questions too;
+  // experts/admins can post worked examples or call out clarifications).
+  // Note: the author identity is server-resolved via resolveNetworkAuthor
+  // above, so clients can't spoof their kind.
 
   let body: { body?: string };
   try {
@@ -134,12 +137,21 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       return apiError.notFound();
     }
 
+    // `author_member_id` is a FK to public.members. Only fill it when
+    // the author actually resolved as a member; for expert/partner/admin
+    // authors, `author.roleId` belongs to a different table (experts /
+    // vendors / admin_users) and would fail the FK check. The
+    // author_auth_user_id + author_display_name are still recorded so
+    // attribution + de-dup work the same.
+    const memberIdForRow =
+      author.kind === "member" ? author.roleId : null;
+
     const { data: inserted, error } = await admin
       .from("resource_inquiries")
       .insert({
         resource_id: resourceId,
         author_auth_user_id: author.authUserId,
-        author_member_id: author.roleId,
+        author_member_id: memberIdForRow,
         author_display_name: author.displayName,
         author_subtitle: author.subtitle,
         body: content,

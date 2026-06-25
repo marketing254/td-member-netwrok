@@ -46,6 +46,11 @@ type Kit = {
 export async function GET() {
   const sb = getSupabaseAdmin();
 
+  // Public landing page only — exclude expert-originated resources so they
+  // never appear on /resources. Those belong inside the gated member
+  // portal (members can see them via /api/member/resources). The marker is
+  // `originating_expert_id IS NULL` — admin-curated resources have no
+  // expert link; expert-uploaded ones do.
   const { data: rows, error } = await sb
     .from("resources")
     .select(
@@ -53,6 +58,7 @@ export async function GET() {
     )
     .eq("is_published", true)
     .eq("submission_status", "approved")
+    .is("originating_expert_id", null)
     .order("topic_slug", { ascending: true });
 
   if (error) {

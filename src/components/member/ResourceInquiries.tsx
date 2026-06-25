@@ -73,7 +73,13 @@ type Props = {
 const PAGE_SIZE = 8;
 
 export default function ResourceInquiries({ resourceId, resourceTitle }: Props) {
-  const [open, setOpen] = useState(false);
+  // Open by default — the inquiry composer is the whole reason this
+  // component exists. Hiding it behind a collapsed bar made it
+  // unreachable for members who didn't notice the toggle. The thread
+  // load happens lazily on first open (which fires immediately now via
+  // the load effect below), so this doesn't cost us a flash of empty
+  // state on a fresh page.
+  const [open, setOpen] = useState(true);
   const [loaded, setLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -129,13 +135,16 @@ export default function ResourceInquiries({ resourceId, resourceTitle }: Props) 
     [resourceId],
   );
 
-  // Open + lazy-fetch on first expand.
+  // Lazy-fetch the inquiry list on first open. We default `open=true`,
+  // so this effectively runs on mount.
+  useEffect(() => {
+    if (open && !loaded && !loading) void load();
+  }, [open, loaded, loading, load]);
+
+  // Header chevron toggle — collapse the thread but never close it
+  // permanently. Composer stays mounted independently below.
   const onToggleOpen = () => {
-    setOpen((v) => {
-      const next = !v;
-      if (next && !loaded) void load();
-      return next;
-    });
+    setOpen((v) => !v);
   };
 
   // Realtime — keep the inquiry list fresh while the panel is open.
@@ -236,9 +245,13 @@ export default function ResourceInquiries({ resourceId, resourceTitle }: Props) 
     );
   };
 
-  const canCompose = viewer?.kind === "member";
+  // Every signed-in viewer can ask a question — server-side identity
+  // resolution stamps the right author_kind on the row so other readers
+  // see who asked. (Used to be gated to members only; that made the
+  // composer invisible to anyone testing as expert/partner/admin.)
   const inquiryCount = totalKnown ?? inquiries.length;
   void resourceTitle; // available if we want to embed it in copy later
+  void viewer;        // surfaced for future per-kind affordances
 
   return (
     <Box
@@ -292,28 +305,26 @@ export default function ResourceInquiries({ resourceId, resourceTitle }: Props) 
           <Typography
             sx={{
               fontFamily: "var(--font-display)",
-              fontSize: { xs: "1rem", md: "1.08rem" },
+              fontSize: { xs: "1.05rem", md: "1.15rem" },
               fontWeight: 600,
               color: INK,
               lineHeight: 1.25,
               letterSpacing: "-0.005em",
             }}
           >
-            Discussion
+            Ask a question about this kit
           </Typography>
           <Typography
             sx={{
-              fontSize: "0.82rem",
+              fontSize: "0.85rem",
               color: INK_MUTED,
-              lineHeight: 1.4,
+              lineHeight: 1.45,
               mt: 0.25,
             }}
           >
-            {open
-              ? "Member inquiries. Experts and partners reply directly."
-              : inquiryCount > 0
-                ? `${inquiryCount} inquir${inquiryCount === 1 ? "y" : "ies"} — click to read`
-                : "Ask a question. The originating expert is notified."}
+            {inquiryCount > 0
+              ? `${inquiryCount} inquir${inquiryCount === 1 ? "y" : "ies"} in this thread. The originating expert is notified the moment you post.`
+              : "The originating expert is notified the moment you post — usually a reply within one business day."}
           </Typography>
         </Box>
         <IconButton
@@ -328,115 +339,99 @@ export default function ResourceInquiries({ resourceId, resourceTitle }: Props) 
       {/* Expanded body */}
       {open && (
         <Box sx={{ borderTop: `1px solid ${LINE_SOFT}` }}>
-          {/* Composer or sign-in note */}
-          {canCompose ? (
-            <Box sx={{ px: { xs: 2, md: 3 }, py: 2.5 }}>
-              {!composeOpen ? (
-                <Box
-                  component="button"
-                  type="button"
-                  onClick={() => setComposeOpen(true)}
+          {/* Composer — visible to every signed-in network participant.
+              Server-side identity (resolveNetworkAuthor) decides the
+              author_kind chip on the resulting row; clients can't spoof
+              who they are. */}
+          <Box sx={{ px: { xs: 2, md: 3 }, py: 2.5 }}>
+            {!composeOpen ? (
+              <Box
+                component="button"
+                type="button"
+                onClick={() => setComposeOpen(true)}
+                sx={{
+                  all: "unset",
+                  width: "100%",
+                  px: 2,
+                  py: 1.5,
+                  borderRadius: 2,
+                  border: `1px solid ${LINE}`,
+                  bgcolor: SURFACE_SUNKEN,
+                  color: INK_MUTED,
+                  fontSize: "0.9rem",
+                  cursor: "pointer",
+                  transition: "border-color 150ms ease, background-color 150ms ease",
+                  "&:hover": {
+                    borderColor: GOLD,
+                    bgcolor: "rgba(217,168,75,0.06)",
+                  },
+                }}
+              >
+                Ask a question about this kit…
+              </Box>
+            ) : (
+              <Stack spacing={1.5}>
+                <TextField
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  placeholder="What would you like to ask? Be specific — the originating expert is notified."
+                  multiline
+                  minRows={3}
+                  fullWidth
+                  autoFocus
+                  slotProps={{ inputLabel: { shrink: false } }}
                   sx={{
-                    all: "unset",
-                    width: "100%",
-                    px: 2,
-                    py: 1.5,
-                    borderRadius: 2,
-                    border: `1px solid ${LINE}`,
-                    bgcolor: SURFACE_SUNKEN,
-                    color: INK_MUTED,
-                    fontSize: "0.9rem",
-                    cursor: "pointer",
-                    transition: "border-color 150ms ease, background-color 150ms ease",
-                    "&:hover": {
-                      borderColor: GOLD,
-                      bgcolor: "rgba(217,168,75,0.06)",
+                    "& .MuiOutlinedInput-root": {
+                      fontSize: "0.92rem",
+                      bgcolor: SURFACE,
                     },
                   }}
+                />
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  sx={{ justifyContent: "flex-end" }}
                 >
-                  Ask a question about this resource…
-                </Box>
-              ) : (
-                <Stack spacing={1.5}>
-                  <TextField
-                    value={draft}
-                    onChange={(e) => setDraft(e.target.value)}
-                    placeholder="What would you like to ask the expert? Be specific — they'll reply directly here."
-                    multiline
-                    minRows={3}
-                    fullWidth
-                    autoFocus
-                    slotProps={{ inputLabel: { shrink: false } }}
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        fontSize: "0.92rem",
-                        bgcolor: SURFACE,
-                      },
+                  <Button
+                    onClick={() => {
+                      setComposeOpen(false);
+                      setDraft("");
                     }}
-                  />
-                  <Stack
-                    direction="row"
-                    spacing={1}
-                    sx={{ justifyContent: "flex-end" }}
+                    disabled={submitting}
+                    sx={{
+                      textTransform: "none",
+                      fontWeight: 600,
+                      color: INK_MUTED,
+                    }}
                   >
-                    <Button
-                      onClick={() => {
-                        setComposeOpen(false);
-                        setDraft("");
-                      }}
-                      disabled={submitting}
-                      sx={{
-                        textTransform: "none",
-                        fontWeight: 600,
-                        color: INK_MUTED,
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      onClick={onPostInquiry}
-                      disabled={submitting || draft.trim().length === 0}
-                      variant="contained"
-                      endIcon={
-                        submitting ? (
-                          <CircularProgress size={14} sx={{ color: "#FFFFFF" }} />
-                        ) : (
-                          <SendRoundedIcon sx={{ fontSize: 16 }} />
-                        )
-                      }
-                      sx={{
-                        textTransform: "none",
-                        fontWeight: 700,
-                        borderRadius: 999,
-                        px: 2.5,
-                        bgcolor: INK,
-                        "&:hover": { bgcolor: "#1A3A4F" },
-                      }}
-                    >
-                      {submitting ? "Posting…" : "Post inquiry"}
-                    </Button>
-                  </Stack>
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={onPostInquiry}
+                    disabled={submitting || draft.trim().length === 0}
+                    variant="contained"
+                    endIcon={
+                      submitting ? (
+                        <CircularProgress size={14} sx={{ color: "#FFFFFF" }} />
+                      ) : (
+                        <SendRoundedIcon sx={{ fontSize: 16 }} />
+                      )
+                    }
+                    sx={{
+                      textTransform: "none",
+                      fontWeight: 700,
+                      borderRadius: 999,
+                      px: 2.5,
+                      bgcolor: INK,
+                      "&:hover": { bgcolor: "#1A3A4F" },
+                    }}
+                  >
+                    {submitting ? "Posting…" : "Post inquiry"}
+                  </Button>
                 </Stack>
-              )}
-            </Box>
-          ) : (
-            <Box
-              sx={{
-                px: { xs: 2, md: 3 },
-                py: 1.75,
-                borderBottom: `1px solid ${LINE_SOFT}`,
-                bgcolor: SURFACE_SUNKEN,
-              }}
-            >
-              <Typography sx={{ fontSize: "0.82rem", color: INK_SOFT }}>
-                You can read every inquiry below.{" "}
-                <Box component="span" sx={{ fontWeight: 700, color: INK }}>
-                  Only members can start a new one
-                </Box>{" "}
-                — reply to existing threads to weigh in.
-              </Typography>
-            </Box>
-          )}
+              </Stack>
+            )}
+          </Box>
 
           {error && (
             <Box sx={{ px: { xs: 2, md: 3 }, pt: 1.5 }}>
