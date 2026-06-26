@@ -47,15 +47,67 @@ export async function POST(req: Request) {
     );
   }
 
-  const origin =
-    req.headers.get("origin") ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const emailRedirectTo = `${origin}/auth/callback?next=/expert&role=expert`;
+  // Role-scoped pre-check: only emails with a matching experts row may
+  // receive an expert OTP. A user who's also signed up as a member can't
+  // back-door into the expert portal via /expert/login.
+  try {
+    const adminCheck = getSupabaseAdmin();
+    const { data: expertRow } = await adminCheck
+      .from("experts")
+      .select("id, status")
+      .eq("email", email)
+      .maybeSingle();
+    if (!expertRow) {
+      try {
+        await adminCheck.from("auth_audit").insert({
+          event: "otp_send_denied",
+          email,
+          user_type: "expert",
+          metadata: { reason: "no_expert_row" },
+        });
+      } catch {
+        /* audit best-effort */
+      }
+      return NextResponse.json(
+        {
+          error:
+            "We couldn't find an expert account for that email. Apply at /experts first; we'll email you once the team reviews your application.",
+        },
+        { status: 404 },
+      );
+    }
+    if (expertRow.status === "suspended" || expertRow.status === "archived") {
+      try {
+        await adminCheck.from("auth_audit").insert({
+          event: "otp_send_denied",
+          email,
+          user_type: "expert",
+          metadata: { reason: "expert_status_blocked", status: expertRow.status },
+        });
+      } catch {
+        /* audit best-effort */
+      }
+      return NextResponse.json(
+        { error: "Your expert portal isn't available right now." },
+        { status: 403 },
+      );
+    }
+  } catch (err) {
+    if (process.env.NODE_ENV !== "production")
+      console.error("[expert:login] role pre-check failed:", err);
+    return NextResponse.json(
+      { error: "Couldn't send your sign-in code. Please try again." },
+      { status: 500 },
+    );
+  }
 
+  // OTP send — deliberately NO emailRedirectTo so Supabase delivers
+  // the 6-digit code via the {{ .Token }} template. Verification happens
+  // at /api/expert/verify-otp.
   const supabase = await createServerSupabase();
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo,
       // Never auto-create accounts. Only emails that already exist in
       // auth.users (which is only populated when admin invites an
       // approved expert) can sign in here.
@@ -70,12 +122,13 @@ export async function POST(req: Request) {
       error.status === 422 ||
       error.status === 400;
 
-    console.error("[expert:magic-link] supabase signInWithOtp failed:", error);
+    if (process.env.NODE_ENV !== "production")
+      console.error("[expert:login] supabase signInWithOtp failed:", error);
 
     try {
       const admin = getSupabaseAdmin();
       await admin.from("auth_audit").insert({
-        event: "magic_link_denied",
+        event: "otp_send_denied",
         email,
         user_type: "expert",
         metadata: { reason: msg, isUserNotFound },
@@ -95,7 +148,7 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json(
-      { error: msg || "Could not send sign-in link. Please try again." },
+      { error: "Couldn't send your sign-in code. Please try again." },
       { status: 500 },
     );
   }
@@ -104,26 +157,27 @@ export async function POST(req: Request) {
   try {
     const admin = getSupabaseAdmin();
     await admin.from("auth_audit").insert({
-      event: "magic_link_issued",
+      event: "otp_issued",
       email,
       user_type: "expert",
-      metadata: { provider: "supabase", redirect: emailRedirectTo },
+      metadata: { provider: "supabase" },
     });
     await admin.from("email_events").insert({
-      template: "expert_magic_link",
+      template: "expert_login_otp",
       recipient: email,
       provider: "supabase_auth",
       status: "queued",
-      subject: "Sign in to your expert portal",
+      subject: "Your DMN expert sign-in code",
     });
   } catch (err) {
-    console.error("[expert:magic-link] audit log failed:", err);
+    if (process.env.NODE_ENV !== "production")
+      console.error("[expert:login] audit log failed:", err);
   }
 
   return NextResponse.json({
     ok: true,
     sent: true,
-    message: "We sent a sign-in link to your inbox. It expires in 60 minutes.",
+    message: "We sent a 6-digit code to your inbox. It expires in 5 minutes.",
   });
 }
 

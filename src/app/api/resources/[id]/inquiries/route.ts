@@ -123,10 +123,10 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     const admin = getSupabaseAdmin();
 
     // Confirm the resource exists, is published, and grab the
-    // originating expert so we know who to notify.
+    // originating expert / vendor so we know who to notify.
     const { data: resource } = await admin
       .from("resources")
-      .select("id, topic_title, title, is_published, submission_status, originating_expert_id")
+      .select("id, topic_title, title, is_published, submission_status, originating_expert_id, originating_vendor_id")
       .eq("id", resourceId)
       .maybeSingle();
     if (
@@ -178,6 +178,31 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
           title: `New inquiry on "${resource.topic_title}: ${resource.title}"`,
           body: content.slice(0, 240),
           link: `/expert/inquiries?inquiry=${inserted.id}`,
+          metadata: {
+            resource_id: resourceId,
+            inquiry_id: inserted.id,
+            member_display_name: author.displayName,
+          },
+        });
+      }
+    }
+    // Same fan-out for the originating vendor (partner) on a partner-
+    // published resource. Routes to /vendor/inquiries inbox.
+    if (resource.originating_vendor_id) {
+      const { data: vendorRow } = await admin
+        .from("vendors")
+        .select("id, auth_user_id")
+        .eq("id", resource.originating_vendor_id)
+        .maybeSingle();
+      if (vendorRow?.auth_user_id) {
+        await admin.from("notifications").insert({
+          audience: "vendor",
+          vendor_id: vendorRow.id,
+          recipient_auth_user_id: vendorRow.auth_user_id,
+          kind: "resource_inquiry_new",
+          title: `New inquiry on "${resource.topic_title}: ${resource.title}"`,
+          body: content.slice(0, 240),
+          link: `/vendor/inquiries?inquiry=${inserted.id}`,
           metadata: {
             resource_id: resourceId,
             inquiry_id: inserted.id,

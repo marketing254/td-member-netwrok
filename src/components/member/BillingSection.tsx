@@ -94,10 +94,15 @@ export function BillingSection({ member }: { member: CurrentMember }) {
   const statusTone = useMemo(() => deriveStatusTone(member), [member]);
 
   const hasSubscription = !!member.stripe_subscription_id;
-  // The "Re-sync from Stripe" escape hatch: Stripe has charges/invoices
-  // for this customer but our local row doesn't reflect a subscription.
-  // Usually means the webhook didn't fire / failed signature check.
-  const needsManualSync = !!member.stripe_customer_id && !hasSubscription;
+  // The "Re-sync from Stripe" escape hatch fires when the local row
+  // looks out of date relative to what we *should* have if the webhook
+  // delivered cleanly. Two cases:
+  //   - we have a customer but no subscription (webhook didn't fire), or
+  //   - we have a subscription but no card on file (payment_method lives
+  //     on the customer and the webhook ran before we hydrated it).
+  const needsManualSync =
+    !!member.stripe_customer_id &&
+    (!hasSubscription || (hasSubscription && (!member.card_brand || !member.card_last4)));
 
   const syncFromStripe = async () => {
     setSyncBusy(true);

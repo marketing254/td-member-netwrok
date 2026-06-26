@@ -37,11 +37,16 @@ export async function memberIdForCustomer(
  * Write the full subscription shadow onto the members row. Idempotent —
  * safe to call repeatedly. Handles the founding-lock invariant so we
  * never undo a member's locked rate.
+ *
+ * Pass `stripe` when available — it's used to fall back to the customer's
+ * default payment method when the subscription's own is null (typical for
+ * Checkout-created subs in modern API versions).
  */
 export async function applySubscriptionToMember(
   sb: SupabaseClient,
   memberId: string,
   sub: Stripe.Subscription,
+  stripe?: Stripe,
 ): Promise<void> {
   const firstItem = sub.items.data[0];
   const price = firstItem?.price;
@@ -63,8 +68,10 @@ export async function applySubscriptionToMember(
   // checkout route for every new sub.
   const tierMeta = (sub.metadata?.tier as "founding" | "early" | "standard" | undefined) ?? null;
 
-  // Card metadata — only available if default_payment_method is expanded
-  // to a Card payment method.
+  // Card metadata. The subscription's own default_payment_method is
+  // often null for Checkout-created subs — the PM lives on the customer's
+  // invoice_settings.default_payment_method instead. Try the sub first,
+  // then fall back to the customer.
   let cardBrand: string | null = null;
   let cardLast4: string | null = null;
   if (sub.default_payment_method && typeof sub.default_payment_method !== "string") {
@@ -72,6 +79,25 @@ export async function applySubscriptionToMember(
     if (pm.card) {
       cardBrand = pm.card.brand ?? null;
       cardLast4 = pm.card.last4 ?? null;
+    }
+  }
+  if ((!cardBrand || !cardLast4) && stripe) {
+    const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer?.id ?? null;
+    if (customerId) {
+      try {
+        const customer = await stripe.customers.retrieve(customerId, {
+          expand: ["invoice_settings.default_payment_method"],
+        });
+        if (!customer.deleted) {
+          const pm = customer.invoice_settings?.default_payment_method;
+          if (pm && typeof pm !== "string" && pm.card) {
+            cardBrand = pm.card.brand ?? null;
+            cardLast4 = pm.card.last4 ?? null;
+          }
+        }
+      } catch {
+        /* best-effort hydration */
+      }
     }
   }
 

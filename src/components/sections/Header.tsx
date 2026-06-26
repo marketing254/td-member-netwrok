@@ -176,11 +176,16 @@ export default function Header() {
                   textTransform: "none",
                   borderRadius: 999,
                   letterSpacing: "-0.005em",
-                  bgcolor: "#1A1A1A",
+                  bgcolor: "#1A1A1A !important",
+                  backgroundImage: "none !important",
                   color: "#FFFFFF !important",
                   boxShadow:
                     "0 1px 2px rgba(0,0,0,0.06), 0 8px 22px -12px rgba(20,20,20,0.4)",
-                  "&:hover": { bgcolor: "#2A2A2A" },
+                  "&:hover": {
+                    bgcolor: "#2A2A2A !important",
+                    backgroundImage: "none !important",
+                    color: "#FFFFFF !important",
+                  },
                 }}
               >
                 Sign in
@@ -373,9 +378,14 @@ export default function Header() {
                     borderRadius: 2,
                     ...(isPrimary
                       ? {
-                          bgcolor: "#1A1A1A",
+                          bgcolor: "#1A1A1A !important",
+                          backgroundImage: "none !important",
                           color: "#FFFFFF !important",
-                          "&:hover": { bgcolor: "#2A2A2A" },
+                          "&:hover": {
+                            bgcolor: "#2A2A2A !important",
+                            backgroundImage: "none !important",
+                            color: "#FFFFFF !important",
+                          },
                         }
                       : {
                           bgcolor: "transparent",

@@ -21,19 +21,19 @@ const MotionBox = motion.create(Box);
 
 const NEXT_STEPS = [
   {
-    when: "This week",
-    title: "A short note from our team",
-    body: "Two paragraphs about what we're solving and what we're not. No pitch.",
+    when: "Right now",
+    title: "Open the sign-in email we just sent",
+    body: "Single-use link from hello@joindmn.com — check spam if you don't see it within a minute.",
   },
   {
-    when: "48 hours before launch",
-    title: "Your founding invitation link",
-    body: "Sent to the email on your signup. The link is single-use and tied to your $49/mo founding rate.",
+    when: "Two clicks later",
+    title: "Pick your tier and pay",
+    body: "Stripe-secure checkout. Founding ($49/mo) while seats last, then Early ($99/mo) and Standard ($199/mo).",
   },
   {
-    when: "Launch day",
-    title: "The doors open",
-    body: "Sign in, claim your founding spot, and the hotline is yours.",
+    when: "Portal unlocks instantly",
+    title: "Hotline, library, partner deals",
+    body: "The moment Stripe confirms the charge, /dashboard opens with the full member library and the hotline ready to take your first question.",
   },
 ];
 
@@ -116,7 +116,7 @@ export default function ThanksClient() {
                   mb: 2,
                 }}
               >
-                {again ? "Still on the list." : "You're on the list."}
+                {again ? "Welcome back." : "Check your email."}
               </Typography>
               <Typography
                 sx={{
@@ -127,10 +127,10 @@ export default function ThanksClient() {
                   lineHeight: 1.65,
                 }}
               >
-                The team will review your details and activate your portal — usually within one
-                business day. Once your account is ready, you&apos;ll receive a welcome email
-                with your sign-in link. Founding rate stays at $49/month for the duration of
-                your active membership — no surprise increases.
+                We just sent your sign-in link. Click it from your inbox, pick your
+                membership tier, and finish payment — your portal unlocks the moment
+                Stripe confirms the charge. Founding rate stays at $49/month for the
+                duration of your active membership.
               </Typography>
             </MotionBox>
 
@@ -173,7 +173,7 @@ export default function ThanksClient() {
                 mb: 3,
               }}
             >
-              Three emails. That&apos;s it.
+              Three steps. That&apos;s it.
             </Typography>
             <Stack spacing={2.5}>
               {NEXT_STEPS.map((step, i) => (

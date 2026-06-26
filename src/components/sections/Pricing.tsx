@@ -345,9 +345,14 @@ export default function Pricing() {
                   fontWeight: 700,
                   textTransform: "none",
                   borderRadius: 2,
-                  bgcolor: "#1A1A1A",
+                  bgcolor: "#1A1A1A !important",
+                  backgroundImage: "none !important",
                   color: "#FFFFFF !important",
-                  "&:hover": { bgcolor: "#2A2A2A" },
+                  "&:hover": {
+                    bgcolor: "#2A2A2A !important",
+                    backgroundImage: "none !important",
+                    color: "#FFFFFF !important",
+                  },
                 }}
               >
                 {cardCopy.cta}

@@ -9,10 +9,14 @@ export const dynamic = "force-dynamic";
 /**
  * POST /api/member/login
  *
- * Magic-link sign-in for members. shouldCreateUser:false — only emails
- * that already exist in auth.users can receive a link. New auth users
- * are pre-created when an admin activates a waitlist signup
- * (/api/admin/members/activate).
+ * OTP sign-in for members. shouldCreateUser:false — only emails
+ * that already exist in auth.users can receive a code. New auth users
+ * are pre-created at /api/member/signup (self-serve) or by admin via
+ * /api/admin/members/activate (legacy path).
+ *
+ * Deliberately NO emailRedirectTo: the Supabase email template renders
+ * `{{ .Token }}` as a 6-digit code, not a clickable link. Verification
+ * happens at /api/member/verify-otp.
  *
  * Rate-limited per IP+email so a bot can't spray.
  *
@@ -47,14 +51,67 @@ export async function POST(req: Request) {
     );
   }
 
-  const origin =
-    req.headers.get("origin") ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const emailRedirectTo = `${origin}/auth/callback?next=/dashboard&role=member`;
+  // Role-scoped pre-check. Even if this email exists in auth.users for
+  // another role (e.g. signed up as an expert), block sending a member
+  // code unless there's also a members row for them. Prevents cross-role
+  // OTPs (a partner's auth user can't sign in via /member/login).
+  try {
+    const adminCheck = getSupabaseAdmin();
+    const { data: memberRow } = await adminCheck
+      .from("members")
+      .select("id, status")
+      .eq("email", email)
+      .maybeSingle();
+    if (!memberRow) {
+      try {
+        await adminCheck.from("auth_audit").insert({
+          event: "otp_send_denied",
+          email,
+          user_type: "member",
+          metadata: { reason: "no_member_row" },
+        });
+      } catch {
+        /* audit best-effort */
+      }
+      return NextResponse.json(
+        {
+          error:
+            "We couldn't find a member account for that email. Sign up at /join, or check the spelling.",
+        },
+        { status: 404 },
+      );
+    }
+    if (memberRow.status !== "active" && memberRow.status !== "invited") {
+      try {
+        await adminCheck.from("auth_audit").insert({
+          event: "otp_send_denied",
+          email,
+          user_type: "member",
+          metadata: { reason: "member_status_blocked", status: memberRow.status },
+        });
+      } catch {
+        /* audit best-effort */
+      }
+      return NextResponse.json(
+        {
+          error: "Your portal isn't active. Contact the team to reactivate.",
+        },
+        { status: 403 },
+      );
+    }
+  } catch (err) {
+    if (process.env.NODE_ENV !== "production")
+      console.error("[member:login] role pre-check failed:", err);
+    return NextResponse.json(
+      { error: "Couldn't send your sign-in code. Please try again." },
+      { status: 500 },
+    );
+  }
 
   const supabase = await createServerSupabase();
   const { error } = await supabase.auth.signInWithOtp({
     email,
-    options: { emailRedirectTo, shouldCreateUser: false },
+    options: { shouldCreateUser: false },
   });
 
   if (error) {
@@ -65,7 +122,7 @@ export async function POST(req: Request) {
     try {
       const admin = getSupabaseAdmin();
       await admin.from("auth_audit").insert({
-        event: "magic_link_denied",
+        event: "otp_send_denied",
         email,
         user_type: "member",
         metadata: { reason: msg, isUserNotFound },
@@ -78,13 +135,13 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           error:
-            "We couldn't find a member account for that email. The team will email you once your access is active.",
+            "We couldn't find a member account for that email. Sign up at /join, or check the spelling.",
         },
         { status: 404 },
       );
     }
     return NextResponse.json(
-      { error: msg || "Could not send sign-in link. Please try again." },
+      { error: "Couldn't send your sign-in code. Please try again." },
       { status: 500 },
     );
   }
@@ -92,26 +149,27 @@ export async function POST(req: Request) {
   try {
     const admin = getSupabaseAdmin();
     await admin.from("auth_audit").insert({
-      event: "magic_link_issued",
+      event: "otp_issued",
       email,
       user_type: "member",
-      metadata: { provider: "supabase", redirect: emailRedirectTo },
+      metadata: { provider: "supabase" },
     });
     await admin.from("email_events").insert({
-      template: "member_magic_link",
+      template: "member_login_otp",
       recipient: email,
       provider: "supabase_auth",
       status: "queued",
-      subject: "Sign in to your DMN portal",
+      subject: "Your DMN sign-in code",
     });
   } catch (err) {
-    console.error("[member:magic-link] audit log failed:", err);
+    if (process.env.NODE_ENV !== "production")
+      console.error("[member:login] audit log failed:", err);
   }
 
   return NextResponse.json({
     ok: true,
     sent: true,
-    message: "We sent a sign-in link to your inbox. It expires in 60 minutes.",
+    message: "We sent a 6-digit code to your inbox. It expires in 5 minutes.",
   });
 }
 

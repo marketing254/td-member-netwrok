@@ -127,7 +127,7 @@ export async function POST(req: Request, ctx: RouteCtx) {
     // Look up the resource to surface its title in the notification.
     const { data: resource } = await admin
       .from("resources")
-      .select("topic_title, title, originating_expert_id")
+      .select("topic_title, title, originating_expert_id, originating_vendor_id")
       .eq("id", resourceId)
       .maybeSingle();
 
@@ -165,6 +165,33 @@ export async function POST(req: Request, ctx: RouteCtx) {
           title: `New reply on "${resource.topic_title}: ${resource.title}"`,
           body: content.slice(0, 240),
           link: `/expert/inquiries?inquiry=${inquiryId}`,
+          metadata: { resource_id: resourceId, inquiry_id: inquiryId },
+        });
+      }
+    }
+    // Same fan-out for vendor-originated resources — route to the partner
+    // portal inbox so they see the question on their own resource.
+    if (
+      resource?.originating_vendor_id &&
+      author.kind !== "partner"
+    ) {
+      const { data: vendorRow } = await admin
+        .from("vendors")
+        .select("id, auth_user_id")
+        .eq("id", resource.originating_vendor_id)
+        .maybeSingle();
+      if (
+        vendorRow?.auth_user_id &&
+        vendorRow.auth_user_id !== author.authUserId
+      ) {
+        await admin.from("notifications").insert({
+          audience: "vendor",
+          vendor_id: vendorRow.id,
+          recipient_auth_user_id: vendorRow.auth_user_id,
+          kind: "resource_inquiry_reply",
+          title: `New reply on "${resource.topic_title}: ${resource.title}"`,
+          body: content.slice(0, 240),
+          link: `/vendor/inquiries?inquiry=${inquiryId}`,
           metadata: { resource_id: resourceId, inquiry_id: inquiryId },
         });
       }

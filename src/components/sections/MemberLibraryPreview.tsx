@@ -201,17 +201,17 @@ export default function MemberLibraryPreview() {
               gap: 1.5,
               px: 2,
               py: 1.5,
-              bgcolor: "#FBF8F1",
-              borderBottom: "1px solid #E7E2D6",
+              bgcolor: "#0A2236",
+              borderBottom: "1px solid rgba(255,255,255,0.06)",
             }}
           >
             <Box sx={{ display: "flex", gap: 0.75 }}>
               <Box sx={{ width: 11, height: 11, borderRadius: "50%", bgcolor: "#E07A5F" }} />
-              <Box sx={{ width: 11, height: 11, borderRadius: "50%", bgcolor: "#C9A876" }} />
+              <Box sx={{ width: 11, height: 11, borderRadius: "50%", bgcolor: "#F0C16E" }} />
               <Box sx={{ width: 11, height: 11, borderRadius: "50%", bgcolor: "#81B29A" }} />
             </Box>
             <Box sx={{ flex: 1, textAlign: "center" }}>
-              <Typography sx={{ color: "#71717A", fontSize: "0.78rem", fontWeight: 500 }}>
+              <Typography sx={{ color: "rgba(255,255,255,0.55)", fontSize: "0.78rem", fontWeight: 500 }}>
                 app.dentalmembernetwork.com / library
               </Typography>
             </Box>
@@ -220,13 +220,16 @@ export default function MemberLibraryPreview() {
 
           {/* Body — sidebar + main content */}
           <Grid container sx={{ minHeight: { xs: 540, md: 640 } }}>
-            {/* SIDEBAR — slim, clean */}
+            {/* SIDEBAR — dark navy, makes the cream player pop */}
             <Grid
               size={{ xs: 12, md: 2.5 }}
               sx={{
-                bgcolor: "#FBF8F1",
-                borderRight: { md: "1px solid #E7E2D6" },
+                bgcolor: "#0E2A3D",
+                backgroundImage:
+                  "linear-gradient(180deg, #0E2A3D 0%, #06182A 100%)",
+                borderRight: { md: "1px solid rgba(255,255,255,0.06)" },
                 p: 2,
+                color: "#FFFFFF",
               }}
             >
               <Stack spacing={2.5}>
@@ -236,22 +239,23 @@ export default function MemberLibraryPreview() {
                       width: 30,
                       height: 30,
                       borderRadius: "50%",
-                      background: "linear-gradient(135deg, #C9A876 0%, #9B7B3A 100%)",
-                      color: "#FFFFFF",
+                      background: "linear-gradient(135deg, #F0C16E 0%, #A07823 100%)",
+                      color: "#0A1320",
                       display: "grid",
                       placeItems: "center",
                       fontFamily: "var(--font-display)",
                       fontWeight: 700,
                       fontSize: "0.74rem",
+                      boxShadow: "0 4px 12px -4px rgba(217,168,75,0.5)",
                     }}
                   >
                     Dr
                   </Box>
                   <Box>
-                    <Typography sx={{ color: "#1A1A1A", fontSize: "0.82rem", fontWeight: 600, lineHeight: 1.2 }}>
+                    <Typography sx={{ color: "#FFFFFF", fontSize: "0.82rem", fontWeight: 600, lineHeight: 1.2 }}>
                       You
                     </Typography>
-                    <Typography sx={{ color: "#71717A", fontSize: "0.66rem" }}>
+                    <Typography sx={{ color: "rgba(255,255,255,0.55)", fontSize: "0.66rem" }}>
                       Founding · #007
                     </Typography>
                   </Box>
@@ -271,14 +275,14 @@ export default function MemberLibraryPreview() {
                           px: 1,
                           py: 0.85,
                           borderRadius: 1.25,
-                          bgcolor: isActive ? "#FFFFFF" : "transparent",
-                          border: isActive ? "1px solid #E7E2D6" : "1px solid transparent",
-                          color: isActive ? "#1A1A1A" : "#52525B",
+                          bgcolor: isActive ? "rgba(255,255,255,0.08)" : "transparent",
+                          border: isActive ? "1px solid rgba(217,168,75,0.35)" : "1px solid transparent",
+                          color: isActive ? "#FFFFFF" : "rgba(255,255,255,0.7)",
                           fontWeight: isActive ? 600 : 500,
-                          boxShadow: isActive ? "0 1px 2px rgba(20,20,20,0.05)" : "none",
+                          boxShadow: isActive ? "0 1px 2px rgba(0,0,0,0.18)" : "none",
                         }}
                       >
-                        <Icon size={14} color={isActive ? "#9B7B3A" : "#71717A"} />
+                        <Icon size={14} color={isActive ? "#F0C16E" : "rgba(255,255,255,0.55)"} />
                         <Typography sx={{ fontSize: "0.82rem", flex: 1, color: "inherit", fontWeight: "inherit" }}>
                           {item.label}
                         </Typography>
@@ -287,11 +291,11 @@ export default function MemberLibraryPreview() {
                             px: 0.65,
                             py: 0.1,
                             borderRadius: 0.85,
-                            bgcolor: isActive ? "#FBF8F1" : "transparent",
-                            color: isActive ? "#9B7B3A" : "#A8A29E",
+                            bgcolor: isActive ? "rgba(217,168,75,0.18)" : "transparent",
+                            color: isActive ? "#F0C16E" : "rgba(255,255,255,0.5)",
                             fontSize: "0.6rem",
                             fontWeight: 700,
-                            border: isActive ? "1px solid #E7E2D6" : "none",
+                            border: isActive ? "1px solid rgba(217,168,75,0.35)" : "none",
                           }}
                         >
                           {item.badge}
@@ -301,10 +305,10 @@ export default function MemberLibraryPreview() {
                   })}
                 </Stack>
 
-                <Box sx={{ pt: 1.5, borderTop: "1px solid #E7E2D6" }}>
+                <Box sx={{ pt: 1.5, borderTop: "1px solid rgba(255,255,255,0.1)" }}>
                   <Typography
                     sx={{
-                      color: "#9B7B3A",
+                      color: "#F0C16E",
                       fontSize: "0.6rem",
                       fontWeight: 700,
                       letterSpacing: "0.14em",
@@ -314,10 +318,10 @@ export default function MemberLibraryPreview() {
                   >
                     Savings ledger
                   </Typography>
-                  <Typography sx={{ color: "#1A1A1A", fontFamily: "var(--font-display)", fontSize: "1.35rem", fontWeight: 600, lineHeight: 1 }}>
+                  <Typography sx={{ color: "#FFFFFF", fontFamily: "var(--font-display)", fontSize: "1.35rem", fontWeight: 600, lineHeight: 1 }}>
                     $4,820
                   </Typography>
-                  <Typography sx={{ color: "#71717A", fontSize: "0.7rem", mt: 0.4 }}>
+                  <Typography sx={{ color: "rgba(255,255,255,0.55)", fontSize: "0.7rem", mt: 0.4 }}>
                     via vendor network YTD
                   </Typography>
                 </Box>
@@ -416,20 +420,21 @@ function FeaturedCard({
       sx={{
         position: "relative",
         borderRadius: 2.5,
-        bgcolor: "#1A1A1A",
+        bgcolor: "#FBF6EA",
         overflow: "hidden",
+        border: "1px solid #E7DBBA",
         // Soft pulsing ring around the whole card to indicate live playback
         boxShadow:
-          "0 0 0 1px rgba(201,168,118,0.45), 0 20px 40px -16px rgba(201,168,118,0.35)",
+          "0 0 0 1px rgba(160,120,35,0.18), 0 20px 40px -16px rgba(160,120,35,0.25)",
         animation: "featuredPulse 3s ease-in-out infinite",
         "@keyframes featuredPulse": {
           "0%, 100%": {
             boxShadow:
-              "0 0 0 1px rgba(201,168,118,0.4), 0 20px 40px -16px rgba(201,168,118,0.25)",
+              "0 0 0 1px rgba(160,120,35,0.18), 0 20px 40px -16px rgba(160,120,35,0.18)",
           },
           "50%": {
             boxShadow:
-              "0 0 0 1px rgba(201,168,118,0.7), 0 24px 48px -16px rgba(201,168,118,0.5)",
+              "0 0 0 1px rgba(160,120,35,0.4), 0 24px 48px -16px rgba(160,120,35,0.32)",
           },
         },
         "@media (prefers-reduced-motion: reduce)": { animation: "none" },
@@ -441,7 +446,7 @@ function FeaturedCard({
           position: "relative",
           aspectRatio: "16 / 6.5",
           background:
-            "linear-gradient(135deg, #1F1F22 0%, #131316 100%)",
+            "linear-gradient(135deg, #FFFBED 0%, #F2E5C5 100%)",
           display: "grid",
           gridTemplateColumns: { xs: "1fr", sm: "auto 1fr auto" },
           alignItems: "center",
@@ -461,7 +466,7 @@ function FeaturedCard({
             height: 280,
             borderRadius: "50%",
             background:
-              "radial-gradient(circle, rgba(201,168,118,0.28) 0%, transparent 70%)",
+              "radial-gradient(circle, rgba(217,168,75,0.32) 0%, transparent 70%)",
             filter: "blur(60px)",
             pointerEvents: "none",
           }}
@@ -475,9 +480,9 @@ function FeaturedCard({
             borderRadius: 2,
             display: "grid",
             placeItems: "center",
-            bgcolor: "rgba(201,168,118,0.18)",
-            border: "1px solid rgba(201,168,118,0.35)",
-            color: "#C9A876",
+            bgcolor: "rgba(160,120,35,0.12)",
+            border: "1px solid rgba(160,120,35,0.32)",
+            color: "#7A5B17",
             flexShrink: 0,
           }}
         >
@@ -503,7 +508,7 @@ function FeaturedCard({
             />
             <Typography
               sx={{
-                color: "#E07A5F",
+                color: "#C24B30",
                 fontSize: "0.62rem",
                 fontWeight: 700,
                 letterSpacing: "0.16em",
@@ -514,7 +519,7 @@ function FeaturedCard({
             </Typography>
             <Typography
               sx={{
-                color: "#C9A876",
+                color: "#7A5B17",
                 fontSize: "0.62rem",
                 fontWeight: 700,
                 letterSpacing: "0.14em",
@@ -527,7 +532,7 @@ function FeaturedCard({
           </Stack>
           <Typography
             sx={{
-              color: "#FFFFFF",
+              color: "#0A1320",
               fontFamily: "var(--font-display)",
               fontSize: { xs: "1.05rem", sm: "1.25rem" },
               fontWeight: 600,
@@ -537,7 +542,7 @@ function FeaturedCard({
           >
             {entry.title}
           </Typography>
-          <Stack direction="row" spacing={1} sx={{ alignItems: "center", mt: 1, color: "#A8A29E" }}>
+          <Stack direction="row" spacing={1} sx={{ alignItems: "center", mt: 1, color: "#5C6770" }}>
             {/* Gary host bug */}
             <Box
               sx={{
@@ -546,7 +551,7 @@ function FeaturedCard({
                 height: 18,
                 borderRadius: "50%",
                 overflow: "hidden",
-                border: "1px solid rgba(201,168,118,0.45)",
+                border: "1px solid rgba(160,120,35,0.45)",
               }}
             >
               <Image
@@ -557,11 +562,11 @@ function FeaturedCard({
                 style={{ objectFit: "cover", objectPosition: "center top" }}
               />
             </Box>
-            <Typography sx={{ color: "#A8A29E", fontSize: "0.75rem", fontWeight: 500 }}>
+            <Typography sx={{ color: "#5C6770", fontSize: "0.75rem", fontWeight: 500 }}>
               {libraryPresenter.name}
             </Typography>
-            <Box sx={{ width: 2, height: 2, borderRadius: "50%", bgcolor: "#52525B" }} />
-            <Typography sx={{ color: "#A8A29E", fontSize: "0.75rem" }}>
+            <Box sx={{ width: 2, height: 2, borderRadius: "50%", bgcolor: "#C5BDAB" }} />
+            <Typography sx={{ color: "#5C6770", fontSize: "0.75rem" }}>
               {entry.duration}
             </Typography>
           </Stack>
@@ -575,20 +580,20 @@ function FeaturedCard({
             width: 50,
             height: 50,
             borderRadius: "50%",
-            bgcolor: locked ? "rgba(201,168,118,0.2)" : "#C9A876",
-            color: locked ? "#C9A876" : "#1A1A1A",
-            border: locked ? "1px solid rgba(201,168,118,0.5)" : "none",
+            bgcolor: locked ? "rgba(160,120,35,0.12)" : "#A07823",
+            color: locked ? "#7A5B17" : "#FFFBED",
+            border: locked ? "1px solid rgba(160,120,35,0.45)" : "none",
             cursor: locked ? "default" : "pointer",
             transition: "transform 200ms ease, background 200ms ease",
             "&:hover": locked
               ? undefined
-              : { transform: "scale(1.05)", bgcolor: "#D4B07A" },
+              : { transform: "scale(1.05)", bgcolor: "#7A5B17" },
           }}
         >
           {locked ? (
             <Lock size={18} strokeWidth={2.4} />
           ) : (
-            <Pause size={20} strokeWidth={2.5} fill="#1A1A1A" />
+            <Pause size={20} strokeWidth={2.5} fill="#FFFBED" />
           )}
         </Box>
       </Box>
@@ -600,7 +605,7 @@ function FeaturedCard({
             position: "absolute",
             inset: 0,
             background:
-              "linear-gradient(180deg, rgba(19,19,22,0.55) 0%, rgba(19,19,22,0.88) 60%, rgba(19,19,22,0.95) 100%)",
+              "linear-gradient(180deg, rgba(251,246,234,0.55) 0%, rgba(251,246,234,0.92) 60%, rgba(251,246,234,0.97) 100%)",
             backdropFilter: "blur(2px)",
             display: "flex",
             flexDirection: "column",
@@ -624,10 +629,10 @@ function FeaturedCard({
               borderRadius: "50%",
               display: "grid",
               placeItems: "center",
-              bgcolor: "rgba(201,168,118,0.18)",
-              border: "1px solid rgba(201,168,118,0.5)",
-              color: "#C9A876",
-              boxShadow: "0 0 30px rgba(201,168,118,0.35)",
+              bgcolor: "rgba(160,120,35,0.14)",
+              border: "1px solid rgba(160,120,35,0.45)",
+              color: "#7A5B17",
+              boxShadow: "0 0 30px rgba(160,120,35,0.28)",
               mb: 0.5,
             }}
           >
@@ -635,7 +640,7 @@ function FeaturedCard({
           </Box>
           <Typography
             sx={{
-              color: "#C9A876",
+              color: "#7A5B17",
               fontSize: "0.62rem",
               fontWeight: 700,
               letterSpacing: "0.18em",
@@ -646,7 +651,7 @@ function FeaturedCard({
           </Typography>
           <Typography
             sx={{
-              color: "#FFFFFF",
+              color: "#0A1320",
               fontFamily: "var(--font-display)",
               fontSize: { xs: "1.05rem", sm: "1.25rem" },
               fontWeight: 600,
@@ -660,7 +665,7 @@ function FeaturedCard({
           </Typography>
           <Typography
             sx={{
-              color: "rgba(255,255,255,0.7)",
+              color: "#3B4A55",
               fontSize: "0.86rem",
               lineHeight: 1.5,
               textAlign: "center",
@@ -681,9 +686,15 @@ function FeaturedCard({
               fontWeight: 600,
               textTransform: "none",
               borderRadius: 2,
-              bgcolor: "#C9A876",
-              color: "#1A1A1A !important",
-              "&:hover": { bgcolor: "#D4B07A" },
+              bgcolor: "#0E2A3D !important",
+              backgroundImage: "none !important",
+              color: "#FFFBED !important",
+              boxShadow: "0 8px 22px -10px rgba(14,42,61,0.45)",
+              "&:hover": {
+                bgcolor: "#06182A !important",
+                backgroundImage: "none !important",
+                color: "#FFFBED !important",
+              },
             }}
           >
             Claim founding spot
@@ -692,13 +703,13 @@ function FeaturedCard({
       )}
 
       {/* Progress bar with time stamps */}
-      <Box sx={{ position: "relative", px: { xs: 2.5, md: 3.5 }, pb: 2 }}>
+      <Box sx={{ position: "relative", px: { xs: 2.5, md: 3.5 }, pb: 2, pt: 1 }}>
         <Box
           sx={{
             position: "relative",
             height: 4,
             borderRadius: 999,
-            bgcolor: "rgba(255,255,255,0.1)",
+            bgcolor: "rgba(160,120,35,0.18)",
             overflow: "hidden",
           }}
         >
@@ -708,9 +719,9 @@ function FeaturedCard({
               inset: 0,
               width: `${progress}%`,
               background:
-                "linear-gradient(90deg, #C9A876 0%, #D4B07A 50%, #E8D5A8 100%)",
+                "linear-gradient(90deg, #A07823 0%, #C9A876 50%, #E8D5A8 100%)",
               borderRadius: 999,
-              boxShadow: "0 0 6px rgba(201,168,118,0.6)",
+              boxShadow: "0 0 6px rgba(160,120,35,0.55)",
               transition: "width 0.1s linear",
             }}
           />
@@ -724,9 +735,9 @@ function FeaturedCard({
               width: 11,
               height: 11,
               borderRadius: "50%",
-              bgcolor: "#FFFFFF",
-              border: "2px solid #C9A876",
-              boxShadow: "0 0 8px rgba(201,168,118,0.7)",
+              bgcolor: "#FFFBED",
+              border: "2px solid #A07823",
+              boxShadow: "0 0 8px rgba(160,120,35,0.6)",
               transition: "left 0.1s linear",
             }}
           />
@@ -737,18 +748,18 @@ function FeaturedCard({
             justifyContent: "space-between",
             alignItems: "center",
             mt: 1.25,
-            color: "rgba(255,255,255,0.65)",
+            color: "#7A8590",
           }}
         >
           <Stack direction="row" spacing={1.25} sx={{ alignItems: "center" }}>
-            <Typography sx={{ color: "#C9A876", fontSize: "0.75rem", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
+            <Typography sx={{ color: "#7A5B17", fontSize: "0.75rem", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
               {currentTime}
             </Typography>
-            <Typography sx={{ color: "rgba(255,255,255,0.45)", fontSize: "0.75rem" }}>
+            <Typography sx={{ color: "#7A8590", fontSize: "0.75rem" }}>
               / {totalTime}
             </Typography>
           </Stack>
-          <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", color: "rgba(255,255,255,0.55)" }}>
+          <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", color: "#7A8590" }}>
             <Volume2 size={14} />
             <MessageSquare size={14} />
           </Stack>
@@ -797,13 +808,14 @@ function ThumbnailCard({ entry, index }: { entry: LibraryEntry; index: number })
           position: "relative",
           aspectRatio: "16 / 9",
           background:
-            "linear-gradient(135deg, #1F1F22 0%, #131316 100%)",
+            "linear-gradient(135deg, #FFFBED 0%, #F2E5C5 100%)",
           display: "grid",
           placeItems: "center",
           overflow: "hidden",
+          borderBottom: "1px solid #E7DBBA",
         }}
       >
-        {/* Soft gold glow */}
+        {/* Soft warm glow */}
         <Box
           aria-hidden
           sx={{
@@ -814,7 +826,7 @@ function ThumbnailCard({ entry, index }: { entry: LibraryEntry; index: number })
             height: 180,
             borderRadius: "50%",
             background:
-              "radial-gradient(circle, rgba(201,168,118,0.18) 0%, transparent 70%)",
+              "radial-gradient(circle, rgba(217,168,75,0.28) 0%, transparent 70%)",
             filter: "blur(40px)",
           }}
         />
@@ -828,9 +840,9 @@ function ThumbnailCard({ entry, index }: { entry: LibraryEntry; index: number })
             borderRadius: 1.5,
             display: "grid",
             placeItems: "center",
-            bgcolor: "rgba(201,168,118,0.18)",
-            border: "1px solid rgba(201,168,118,0.32)",
-            color: "#C9A876",
+            bgcolor: "rgba(160,120,35,0.12)",
+            border: "1px solid rgba(160,120,35,0.32)",
+            color: "#7A5B17",
           }}
         >
           <Icon size={26} strokeWidth={1.8} />
@@ -842,7 +854,7 @@ function ThumbnailCard({ entry, index }: { entry: LibraryEntry; index: number })
             position: "absolute",
             top: 10,
             left: 12,
-            color: "#C9A876",
+            color: "#7A5B17",
             fontSize: "0.58rem",
             letterSpacing: "0.16em",
             fontWeight: 700,
@@ -861,8 +873,8 @@ function ThumbnailCard({ entry, index }: { entry: LibraryEntry; index: number })
             px: 0.85,
             py: 0.25,
             borderRadius: 0.85,
-            bgcolor: "rgba(0,0,0,0.7)",
-            color: "#FFFFFF",
+            bgcolor: "rgba(10,19,32,0.85)",
+            color: "#FFFBED",
             fontSize: "0.62rem",
             fontWeight: 700,
           }}
@@ -878,7 +890,7 @@ function ThumbnailCard({ entry, index }: { entry: LibraryEntry; index: number })
             inset: 0,
             display: "grid",
             placeItems: "center",
-            bgcolor: "rgba(0,0,0,0.3)",
+            bgcolor: "rgba(10,19,32,0.18)",
             opacity: 0,
             transition: "opacity 200ms ease",
             ".MuiBox-root:hover > &": { opacity: 1 },
@@ -889,13 +901,14 @@ function ThumbnailCard({ entry, index }: { entry: LibraryEntry; index: number })
               width: 38,
               height: 38,
               borderRadius: "50%",
-              bgcolor: "#C9A876",
-              color: "#1A1A1A",
+              bgcolor: "#0E2A3D",
+              color: "#FFFBED",
               display: "grid",
               placeItems: "center",
+              boxShadow: "0 6px 16px -6px rgba(14,42,61,0.5)",
             }}
           >
-            <Play size={16} strokeWidth={2.5} fill="#1A1A1A" />
+            <Play size={16} strokeWidth={2.5} fill="#FFFBED" />
           </Box>
         </Box>
       </Box>

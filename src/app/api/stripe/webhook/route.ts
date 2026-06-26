@@ -132,7 +132,7 @@ async function handleEvent(event: Stripe.Event, stripe: Stripe): Promise<string 
       expand: ["default_payment_method", "items.data.price"],
     });
 
-    await applySubscriptionToMember(sb, memberId, sub);
+    await applySubscriptionToMember(sb, memberId, sub, stripe);
     return memberId;
   }
 
@@ -153,7 +153,7 @@ async function handleEvent(event: Stripe.Event, stripe: Stripe): Promise<string 
       ? sub
       : await stripe.subscriptions.retrieve(sub.id, { expand: ["default_payment_method"] });
 
-    await applySubscriptionToMember(sb, memberId, hydrated);
+    await applySubscriptionToMember(sb, memberId, hydrated, stripe);
     return memberId;
   }
 

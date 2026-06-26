@@ -30,6 +30,7 @@ import StoreOutlinedIcon from "@mui/icons-material/StoreOutlined";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import ManageAccountsOutlinedIcon from "@mui/icons-material/ManageAccountsOutlined";
 import GavelOutlinedIcon from "@mui/icons-material/GavelOutlined";
+import ChatBubbleOutlineRoundedIcon from "@mui/icons-material/ChatBubbleOutlineRounded";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
 import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
@@ -81,6 +82,7 @@ const navItems = [
   { href: "/vendor/profile", label: "Company profile", icon: StoreOutlinedIcon },
   { href: "/vendor/catalog", label: "Catalog", icon: Inventory2OutlinedIcon },
   { href: "/vendor/offers", label: "Offers", icon: LocalOfferOutlinedIcon },
+  { href: "/vendor/inquiries", label: "Inquiries", icon: ChatBubbleOutlineRoundedIcon },
   { href: "/vendor/redemptions", label: "Redemptions", icon: ReceiptLongOutlinedIcon },
   { href: "/vendor/account", label: "Account & billing", icon: ManageAccountsOutlinedIcon },
   { href: "/vendor/agreement", label: "Agreement", icon: GavelOutlinedIcon },

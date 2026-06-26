@@ -228,7 +228,11 @@ export default function WaitlistSection({ lockedRole, sectionId }: WaitlistSecti
         return;
       }
 
-      // Member waitlist branch
+      // Member signup branch — self-serve. Creates the members row +
+      // Supabase auth user, then sends the magic-link sign-in email so
+      // the user lands on /upgrade to pick a plan + pay.
+      // Admin no longer reviews/activates; they CAN deactivate later
+      // from /admin/members.
       const memberPayload = {
         role: "member" as const,
         fullName,
@@ -238,7 +242,7 @@ export default function WaitlistSection({ lockedRole, sectionId }: WaitlistSecti
         smsConsent: memberSmsConsent,
         smsConsentText: memberSmsConsent ? SMS_CONSENT_TEXT : null,
         smsConsentAt: memberSmsConsent ? new Date().toISOString() : null,
-        source: "landing-waitlist",
+        source: "landing-join",
         utm: {
           role_label: resolveOther(fd.get("roleLabel"), fd.get("roleLabelOther")),
           locations: fd.get("locations"),
@@ -249,18 +253,26 @@ export default function WaitlistSection({ lockedRole, sectionId }: WaitlistSecti
         },
       };
 
-      const res = await fetch("/api/waitlist", {
+      const res = await fetch("/api/member/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(memberPayload),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data?.error ?? "Something went wrong. Please try again.");
+        setError(
+          data?.error ??
+            "Couldn't complete signup right now. Please try again.",
+        );
         setSubmitting(false);
         return;
       }
-      router.push(`/waitlist/thanks?role=member${data.duplicate ? "&again=1" : ""}`);
+      // Hand off straight to the OTP step on /member/login. The page
+      // detects ?email=… and renders the code input pre-focused, so the
+      // user goes form → email → code in one continuous flow without a
+      // thanks-page detour.
+      const emailRaw = String(fd.get("email") ?? "").trim().toLowerCase();
+      router.push(`/member/login?email=${encodeURIComponent(emailRaw)}`);
     } catch {
       setError("Network error. Check your connection and try again.");
       setSubmitting(false);
@@ -873,13 +885,19 @@ export default function WaitlistSection({ lockedRole, sectionId }: WaitlistSecti
                   fontWeight: 600,
                   textTransform: "none",
                   borderRadius: 2,
-                  bgcolor: "#1A1A1A",
+                  bgcolor: "#1A1A1A !important",
+                  backgroundImage: "none !important",
                   color: "#FFFFFF !important",
                   letterSpacing: "-0.005em",
                   boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-                  "&:hover": { bgcolor: "#2A2A2A" },
+                  "&:hover": {
+                    bgcolor: "#2A2A2A !important",
+                    backgroundImage: "none !important",
+                    color: "#FFFFFF !important",
+                  },
                   "&.Mui-disabled": {
-                    bgcolor: "#E7E2D6",
+                    bgcolor: "#E7E2D6 !important",
+                    backgroundImage: "none !important",
                     color: "#A8A29E !important",
                   },
                 }}

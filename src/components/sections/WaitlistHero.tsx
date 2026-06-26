@@ -166,9 +166,15 @@ export default function WaitlistHero() {
                 fontWeight: 600,
                 textTransform: "none",
                 borderRadius: 2,
-                bgcolor: "#1A1A1A",
+                bgcolor: "#1A1A1A !important",
+                backgroundImage: "none !important",
                 color: "#FFFFFF !important",
-                "&:hover": { bgcolor: "#2A2A2A", transform: "translateY(-1px)" },
+                "&:hover": {
+                  bgcolor: "#2A2A2A !important",
+                  backgroundImage: "none !important",
+                  color: "#FFFFFF !important",
+                  transform: "translateY(-1px)",
+                },
                 transition: "transform 150ms ease, background 150ms ease",
               }}
             >

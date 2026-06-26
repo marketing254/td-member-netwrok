@@ -343,6 +343,9 @@ export type ResourcesRow = {
   // Added in 0024_resource_inquiries.sql — nullable link back to the
   // expert who authored the underlying material (drives inquiry routing).
   originating_expert_id: string | null;
+  // Added in 0025_resource_originating_vendor.sql — same idea for partner
+  // (vendor) published resources. Routes inquiries to /vendor/inquiries.
+  originating_vendor_id: string | null;
   created_at: string;
   updated_at: string;
 };

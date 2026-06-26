@@ -77,7 +77,7 @@ export async function POST() {
   const sub = ranked[0];
 
   try {
-    await applySubscriptionToMember(sb, member.id, sub);
+    await applySubscriptionToMember(sb, member.id, sub, stripe);
   } catch (err) {
     return NextResponse.json(
       { synced: false, reason: err instanceof Error ? err.message : "Sync failed" },
