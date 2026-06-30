@@ -34,7 +34,6 @@ const SITEMAP_URLS = [
   "https://dentalmembernetwork.com/join",
   "https://dentalmembernetwork.com/experts",
   "https://dentalmembernetwork.com/partners",
-  "https://dentalmembernetwork.com/partners/pricing",
   "https://dentalmembernetwork.com/resources",
   "https://dentalmembernetwork.com/reviews",
 ];

@@ -26,12 +26,15 @@ import InsightsOutlinedIcon from "@mui/icons-material/InsightsOutlined";
 import ChatBubbleOutlineOutlinedIcon from "@mui/icons-material/ChatBubbleOutlineOutlined";
 import SmartToyOutlinedIcon from "@mui/icons-material/SmartToyOutlined";
 import ManageAccountsOutlinedIcon from "@mui/icons-material/ManageAccountsOutlined";
+import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import KeyboardArrowDownOutlinedIcon from "@mui/icons-material/KeyboardArrowDownOutlined";
 import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import type { ExpertsRow } from "@/lib/supabase/types";
+import { checkBillingAccess } from "@/lib/stripe";
+import BillingGate from "@/components/shared/BillingGate";
 
 const EXPERT_GREEN = "#2C7A52";
 const EXPERT_GREEN_DARK = "#1F5238";
@@ -45,7 +48,15 @@ const LINE = "#E6DDCF";
 
 type CurrentExpert = Pick<
   ExpertsRow,
-  "id" | "email" | "full_name" | "display_name" | "specialty" | "status" | "headshot_url"
+  | "id"
+  | "email"
+  | "full_name"
+  | "display_name"
+  | "specialty"
+  | "status"
+  | "headshot_url"
+  | "months_in_program"
+  | "subscription_status"
 >;
 
 function useCurrentExpert(): { expert: CurrentExpert | null; loading: boolean } {
@@ -64,7 +75,9 @@ function useCurrentExpert(): { expert: CurrentExpert | null; loading: boolean } 
       }
       const { data } = await supabase
         .from("experts")
-        .select("id, email, full_name, display_name, specialty, status, headshot_url")
+        .select(
+          "id, email, full_name, display_name, specialty, status, headshot_url, months_in_program, subscription_status",
+        )
         .eq("email", email)
         .maybeSingle();
       if (!active) return;
@@ -102,6 +115,7 @@ const navItems: NavItem[] = [
   { href: "/expert/posts", label: "Feed", icon: ChatBubbleOutlineOutlinedIcon },
   { href: "/expert/chatbot", label: "AI helper", icon: SmartToyOutlinedIcon },
   { href: "/expert/inquiries", label: "Inquiries", icon: InsightsOutlinedIcon },
+  { href: "/expert/billing", label: "Billing", icon: ReceiptLongOutlinedIcon },
   { href: "/expert/profile", label: "Profile", icon: ManageAccountsOutlinedIcon },
 ];
 
@@ -470,10 +484,38 @@ export default function ExpertAppShell({ children }: { children: React.ReactNode
         </Box>
       </Drawer>
 
-      {/* Main content area */}
+      {/* Main content area — gated by billing access. The gate is a
+          no-op when the founding waiver is active or when the expert has
+          a healthy subscription. Past the waiver with no/canceled sub,
+          it replaces children with a paywall card. The `/expert/billing`
+          page is allow-listed so the expert can always reach billing to
+          fix the underlying issue. */}
       <Box component="main" sx={{ py: { xs: 4, md: 6 } }}>
         <Container maxWidth="lg" sx={{ px: { xs: 2, md: 3 } }}>
-          {children}
+          {(() => {
+            const access = expert
+              ? checkBillingAccess({
+                  monthsInProgram: expert.months_in_program ?? 0,
+                  subscriptionStatus: expert.subscription_status ?? null,
+                })
+              : { allowed: true as const };
+            // Always let the billing page render so the user can update
+            // their card / re-sync from Stripe even when blocked.
+            const onBillingPage = pathname.startsWith("/expert/billing");
+            if (!access.allowed && !onBillingPage) {
+              return (
+                <BillingGate
+                  access={access}
+                  portalEndpoint="/api/expert/billing/portal"
+                  billingHref="/expert/billing"
+                  accent="green"
+                >
+                  {children}
+                </BillingGate>
+              );
+            }
+            return children;
+          })()}
         </Container>
       </Box>
 

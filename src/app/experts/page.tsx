@@ -71,6 +71,15 @@ const WHAT_YOU_GET = [
   },
 ];
 
+// Phase ladder — same shape as the /partners page so both audiences
+// read consistently. Headline takeaway: every phase includes the same
+// Featured Expert benefits, and the bench keeps 90% of course revenue.
+const PRICE_TIERS = [
+  { cap: "Months 1–6", price: "$0", per: "", body: "Founding-cohort waiver. Build your library + warm-lead pipeline first.", hot: true },
+  { cap: "Months 7–12", price: "$49", per: "/mo", body: "Locked launch rate. Auto-rolls from Phase 1.", hot: true },
+  { cap: "Month 13+", price: "$199", per: "/mo", body: "Standard rate · or $1,990/yr annual pre-pay (2 months free).", hot: false },
+];
+
 const FIT_YES = [
   "You coach, consult or teach in dentistry",
   "You have content, or can record it",
@@ -306,8 +315,58 @@ export default function ExpertsPage() {
         </Container>
       </Box>
 
-      {/* Is this a fit? */}
+      {/* What it costs — simple 3-phase ladder. Full details on /pricing. */}
       <Box sx={{ py: { xs: 6, md: 9 }, bgcolor: COLORS.surfaceAlt }}>
+        <Container maxWidth="lg">
+          <SectionHeading title="What it costs" />
+          <Typography sx={{ textAlign: "center", color: COLORS.muted, maxWidth: 620, mx: "auto", mt: 1.5, fontSize: "1rem" }}>
+            Same Featured Expert benefits at every phase. Annual pre-pay unlocks at month 7.
+          </Typography>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", md: "repeat(3, 1fr)" },
+              gap: 2.5,
+              mt: 4,
+            }}
+          >
+            {PRICE_TIERS.map((p) => (
+              <PriceCard key={p.cap} {...p} />
+            ))}
+          </Box>
+          <Box
+            sx={{
+              mt: 3,
+              p: 2.5,
+              borderRadius: 2,
+              bgcolor: "#FFFFFF",
+              border: `1px solid ${COLORS.line}`,
+              textAlign: "center",
+            }}
+          >
+            <Typography sx={{ fontSize: "0.94rem", color: COLORS.inkSoft, lineHeight: 1.55 }}>
+              ★{" "}
+              <Box component="strong" sx={{ color: COLORS.ink }}>
+                Course revenue split — keep 90%.
+              </Box>{" "}
+              Sell your own paid courses through DMN. We run the platform; you keep 90% of net, paid monthly via Stripe Connect.
+            </Typography>
+          </Box>
+          <Stack direction="row" sx={{ justifyContent: "center", mt: 2.5 }}>
+            <Button
+              variant="outlined"
+              component={Link}
+              href="/pricing"
+              sx={{ borderRadius: 999, px: 3 }}
+            >
+              See full pricing
+            </Button>
+          </Stack>
+        </Container>
+      </Box>
+
+      {/* Is this a fit? */}
+      <Box sx={{ py: { xs: 6, md: 9 } }}>
         <Container maxWidth="lg">
           <SectionHeading title="Is this a fit?" />
           <Box
@@ -473,6 +532,100 @@ function PerkCard({ title, body }: { title: string; body: string }) {
       <Typography sx={{ color: COLORS.muted, fontSize: "0.9rem", lineHeight: 1.55 }}>
         {body}
       </Typography>
+    </Box>
+  );
+}
+
+function PriceCard({
+  cap,
+  price,
+  per,
+  body,
+  hot,
+}: {
+  cap: string;
+  price: string;
+  per: string;
+  body: string;
+  hot: boolean;
+}) {
+  // Green accent for the expert page (vs. gold on /partners), so the
+  // pricing band reads as expert-branded without breaking the palette.
+  return (
+    <Box
+      sx={{
+        borderRadius: 2.5,
+        border: hot ? `2px solid ${EXPERT_GREEN}` : `1px solid ${COLORS.line}`,
+        bgcolor: "#FFFFFF",
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+        boxShadow: hot
+          ? "0 20px 50px -28px rgba(44,122,82,0.4)"
+          : "0 12px 32px -24px rgba(14,42,61,0.18)",
+      }}
+    >
+      <Box
+        sx={{
+          bgcolor: hot ? EXPERT_GREEN : COLORS.primary,
+          color: "#FFFFFF",
+          textAlign: "center",
+          py: 1.25,
+          fontSize: "0.74rem",
+          fontWeight: 800,
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+        }}
+      >
+        {cap}
+      </Box>
+      <Box sx={{ textAlign: "center", py: 3, flex: 1 }}>
+        <Stack direction="row" spacing={0.5} sx={{ justifyContent: "center", alignItems: "baseline" }}>
+          <Typography
+            sx={{
+              fontFamily: "var(--font-display)",
+              fontSize: { xs: "2.6rem", md: "3rem" },
+              fontWeight: 600,
+              color: COLORS.ink,
+              lineHeight: 1,
+              letterSpacing: "-0.02em",
+            }}
+          >
+            {price}
+          </Typography>
+          {per && (
+            <Typography sx={{ fontSize: "0.95rem", color: COLORS.muted, fontWeight: 500 }}>
+              {per}
+            </Typography>
+          )}
+        </Stack>
+        <Typography sx={{ fontSize: "0.88rem", color: COLORS.muted, mt: 1.25, px: 2.5, lineHeight: 1.55 }}>
+          {body}
+        </Typography>
+      </Box>
+      <Box sx={{ px: 3, pb: 3 }}>
+        <Button
+          fullWidth
+          variant={hot ? "contained" : "outlined"}
+          component={Link}
+          href="#apply"
+          sx={{
+            borderRadius: 999,
+            py: 1,
+            ...(hot && {
+              bgcolor: EXPERT_GREEN,
+              color: "#FFFFFF",
+              backgroundImage: `linear-gradient(180deg, ${EXPERT_GREEN} 0%, ${EXPERT_GREEN_DARK} 100%)`,
+              "&:hover": {
+                bgcolor: EXPERT_GREEN_DARK,
+                backgroundImage: `linear-gradient(180deg, ${EXPERT_GREEN} 0%, ${EXPERT_GREEN_DARK} 100%)`,
+              },
+            }),
+          }}
+        >
+          Apply to the bench
+        </Button>
+      </Box>
     </Box>
   );
 }

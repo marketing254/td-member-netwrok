@@ -186,8 +186,9 @@ function memberDraft(input: ConfirmationInput): EmailDraft {
 }
 
 function draftFor(input: ConfirmationInput): EmailDraft {
-  // Waitlist is members-only. Vendors apply via /vendor/signup and receive a
-  // separate magic-link email (see sendVendorMagicLinkEmail).
+  // Waitlist is members-only. Vendors apply via the WaitlistSection on
+  // /partners (posts to /api/vendor/signup) and receive a separate
+  // magic-link email (see sendVendorMagicLinkEmail).
   return memberDraft(input);
 }
 

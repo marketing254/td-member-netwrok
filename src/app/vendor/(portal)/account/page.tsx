@@ -14,19 +14,71 @@ import {
   Typography,
 } from "@mui/material";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
+import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
 import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
+import SyncRoundedIcon from "@mui/icons-material/SyncRounded";
 import VolunteerActivismOutlinedIcon from "@mui/icons-material/VolunteerActivismOutlined";
 import { PageHeader, SectionCard, StatCard, TagPill, portalText } from "@/components/vendor/PortalUI";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { fetchCurrentVendor } from "@/lib/supabase/vendorQueries";
 import type { VendorsRow } from "@/lib/supabase/types";
+import UpgradePlanChoice, { type UpgradePlan } from "@/components/shared/UpgradePlanChoice";
 
-type InvoiceStatus = "paid" | "open" | "due" | "failed";
+const PARTNER_UPGRADE_PLANS: UpgradePlan[] = [
+  {
+    key: "partner_growth_monthly",
+    cap: "Months 7–12",
+    price: "$49",
+    per: "/mo",
+    highlight: "LOCK LAUNCH RATE",
+    body: "Locked launch rate — a fraction of standard.",
+    features: [
+      "Auto-rolls to $199 at month 13",
+      "All Featured Partner benefits",
+      "Cancel anytime",
+    ],
+    ctaLabel: "Start at $49/mo",
+  },
+  {
+    key: "partner_standard_monthly",
+    cap: "Month 13+",
+    price: "$199",
+    per: "/mo",
+    body: "Featured Partner rate — billed monthly.",
+    features: [
+      "All Featured Partner benefits",
+      "Refer & earn $50 per member",
+      "Cancel anytime",
+    ],
+    ctaLabel: "Start at $199/mo",
+  },
+  {
+    key: "partner_standard_annual",
+    cap: "Annual pre-pay",
+    price: "$1,990",
+    per: "/yr",
+    body: "12 months for the price of 10 — save 2 months (~17%).",
+    features: [
+      "All Featured Partner benefits",
+      "Save ~$398 vs. monthly",
+      "Rate locked for 12 months",
+    ],
+    ctaLabel: "Save with annual",
+  },
+];
 
-// Invoices aren't wired yet (no billing engine connected). Once Stripe or
-// similar lands, replace with a real fetch. For now this is an empty list
-// so the UI shows the "no invoices yet" state honestly.
-const sampleInvoices: { id: string; number: string; date: string; amount: number; status: InvoiceStatus; period: string }[] = [];
+type Invoice = {
+  id: string;
+  number: string | null;
+  createdAt: string;
+  amountPaid: number;
+  amountDue: number;
+  currency: string;
+  status: string | null;
+  description: string | null;
+  pdfUrl: string | null;
+  hostedUrl: string | null;
+};
 
 const PLAN_LABELS: Record<string, { name: string; cadenceLabel: string }> = {
   founding: { name: "Founding Partner", cadenceLabel: "12-month founding cohort · waived months 1-6" },
@@ -36,6 +88,11 @@ const PLAN_LABELS: Record<string, { name: string; cadenceLabel: string }> = {
 export default function VendorAccountPage() {
   const [loading, setLoading] = useState(true);
   const [vendor, setVendor] = useState<VendorsRow | null>(null);
+  const [invoices, setInvoices] = useState<Invoice[] | null>(null);
+  const [portalBusy, setPortalBusy] = useState(false);
+  const [portalError, setPortalError] = useState<string | null>(null);
+  const [syncBusy, setSyncBusy] = useState(false);
+  const [syncMessage, setSyncMessage] = useState<{ tone: "ok" | "err"; text: string } | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -50,6 +107,83 @@ export default function VendorAccountPage() {
       active = false;
     };
   }, []);
+
+  // Pull invoices from Stripe as soon as we know there's a customer.
+  useEffect(() => {
+    if (!vendor?.stripe_customer_id) {
+      // No Stripe customer yet (waiver phase) — render the empty state.
+      setInvoices([]);
+      return;
+    }
+    let active = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/vendor/billing/invoices", { cache: "no-store" });
+        if (!active) return;
+        if (!res.ok) {
+          if (active) setInvoices([]);
+          return;
+        }
+        const body = (await res.json()) as { invoices: Invoice[] };
+        if (active) setInvoices(body.invoices ?? []);
+      } catch {
+        if (active) setInvoices([]);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [vendor?.stripe_customer_id]);
+
+  const openPortal = async () => {
+    setPortalBusy(true);
+    setPortalError(null);
+    try {
+      const res = await fetch("/api/vendor/billing/portal", { method: "POST" });
+      const body = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
+      if (!res.ok || !body.url) {
+        setPortalError(body.error ?? `Could not open portal (${res.status})`);
+        return;
+      }
+      window.location.href = body.url;
+    } catch (err) {
+      setPortalError(err instanceof Error ? err.message : "Could not open portal.");
+    } finally {
+      setPortalBusy(false);
+    }
+  };
+
+  const syncFromStripe = async () => {
+    setSyncBusy(true);
+    setSyncMessage(null);
+    try {
+      const res = await fetch("/api/vendor/billing/sync", { method: "POST" });
+      const body = (await res.json().catch(() => ({}))) as {
+        synced?: boolean;
+        reason?: string;
+        status?: string;
+      };
+      if (res.ok && body.synced) {
+        setSyncMessage({
+          tone: "ok",
+          text: `Synced — subscription is "${body.status ?? "active"}". Reload to see the updated plan.`,
+        });
+        setTimeout(() => window.location.reload(), 1500);
+      } else {
+        setSyncMessage({
+          tone: "err",
+          text: body.reason ?? `Sync failed (${res.status})`,
+        });
+      }
+    } catch (err) {
+      setSyncMessage({
+        tone: "err",
+        text: err instanceof Error ? err.message : "Sync failed.",
+      });
+    } finally {
+      setSyncBusy(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -212,33 +346,96 @@ export default function VendorAccountPage() {
             <SectionCard
               title="Payment method"
               padding="default"
-              action={<TagPill label="WAIVED" tone="gold" size="sm" />}
+              action={
+                vendor.card_brand && vendor.card_last4 ? (
+                  <TagPill label="ON FILE" tone="navy" size="sm" />
+                ) : (
+                  <TagPill label="WAIVED" tone="gold" size="sm" />
+                )
+              }
             >
-              <Stack direction="row" spacing={1.5} sx={{ alignItems: "flex-start" }}>
-                <Box
-                  sx={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 1.5,
-                    bgcolor: "rgba(217,168,75,0.12)",
-                    border: "1px solid rgba(217,168,75,0.3)",
-                    color: "#A07823",
-                    display: "grid",
-                    placeItems: "center",
-                    flexShrink: 0,
-                  }}
-                >
-                  <VolunteerActivismOutlinedIcon sx={{ fontSize: 18 }} />
-                </Box>
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Typography sx={{ fontSize: "0.88rem", fontWeight: 700, color: "#0A1A2F", mb: 0.25 }}>
-                    No payment method required yet
-                  </Typography>
-                  <Typography sx={{ ...portalText.body, fontSize: "0.82rem" }}>
-                    Your first {monthsLeftInWaiver === 6 ? "6 months" : `${monthsLeftInWaiver} month${monthsLeftInWaiver === 1 ? "" : "s"}`} are <Box component="strong" sx={{ color: "#7A5B17" }}>completely free</Box> as a founding partner. We&apos;ll ask you to add a card a few weeks before month 7 — billing email is {vendor.billing_email ?? vendor.contact_email}.
-                  </Typography>
-                </Box>
-              </Stack>
+              {vendor.card_brand && vendor.card_last4 ? (
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ alignItems: { sm: "center" }, justifyContent: "space-between" }}>
+                  <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+                    <Box
+                      sx={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 1.5,
+                        bgcolor: "#0A1A2F",
+                        color: "#F0C16E",
+                        display: "grid",
+                        placeItems: "center",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <ReceiptLongOutlinedIcon sx={{ fontSize: 18 }} />
+                    </Box>
+                    <Box>
+                      <Typography sx={{ fontSize: "0.88rem", fontWeight: 700, color: "#0A1A2F" }}>
+                        {capitaliseFirst(vendor.card_brand)} ending {vendor.card_last4}
+                      </Typography>
+                      <Typography sx={{ ...portalText.body, fontSize: "0.78rem" }}>
+                        Default for future charges
+                      </Typography>
+                    </Box>
+                  </Stack>
+                  <Button
+                    onClick={openPortal}
+                    disabled={portalBusy}
+                    size="small"
+                    variant="outlined"
+                    startIcon={
+                      portalBusy ? (
+                        <CircularProgress size={12} sx={{ color: "inherit" }} />
+                      ) : (
+                        <OpenInNewRoundedIcon sx={{ fontSize: 14 }} />
+                      )
+                    }
+                    sx={{
+                      borderColor: "rgba(14,42,61,0.18)",
+                      color: "#0A1A2F",
+                      textTransform: "none",
+                      fontSize: "0.78rem",
+                      fontWeight: 600,
+                      borderRadius: 0.75,
+                    }}
+                  >
+                    Update
+                  </Button>
+                </Stack>
+              ) : (
+                <Stack direction="row" spacing={1.5} sx={{ alignItems: "flex-start" }}>
+                  <Box
+                    sx={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 1.5,
+                      bgcolor: "rgba(217,168,75,0.12)",
+                      border: "1px solid rgba(217,168,75,0.3)",
+                      color: "#A07823",
+                      display: "grid",
+                      placeItems: "center",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <VolunteerActivismOutlinedIcon sx={{ fontSize: 18 }} />
+                  </Box>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography sx={{ fontSize: "0.88rem", fontWeight: 700, color: "#0A1A2F", mb: 0.25 }}>
+                      No payment method required yet
+                    </Typography>
+                    <Typography sx={{ ...portalText.body, fontSize: "0.82rem" }}>
+                      Your first {monthsLeftInWaiver === 6 ? "6 months" : `${monthsLeftInWaiver} month${monthsLeftInWaiver === 1 ? "" : "s"}`} are <Box component="strong" sx={{ color: "#7A5B17" }}>completely free</Box> as a founding partner. We&apos;ll ask you to add a card a few weeks before month 7 — billing email is {vendor.billing_email ?? vendor.contact_email}.
+                    </Typography>
+                  </Box>
+                </Stack>
+              )}
+              {portalError && (
+                <Typography sx={{ fontSize: "0.74rem", color: "#8C1D1D", mt: 1 }}>
+                  {portalError}
+                </Typography>
+              )}
             </SectionCard>
 
             <SectionCard title="Cancellation" padding="default">
@@ -248,6 +445,8 @@ export default function VendorAccountPage() {
                 termination.
               </Typography>
               <Button
+                onClick={openPortal}
+                disabled={portalBusy || !vendor.stripe_customer_id}
                 size="small"
                 sx={{
                   mt: 1.5,
@@ -259,34 +458,82 @@ export default function VendorAccountPage() {
                   "&:hover": { bgcolor: "rgba(220,60,60,0.06)" },
                 }}
               >
-                Start cancellation
+                {vendor.stripe_customer_id ? "Open Stripe portal to cancel" : "Available once subscription is active"}
               </Button>
             </SectionCard>
+
+            {/* Re-sync escape hatch — appears only when state looks stale */}
+            {vendor.stripe_customer_id && (!vendor.stripe_subscription_id || (vendor.stripe_subscription_id && (!vendor.card_brand || !vendor.card_last4))) && (
+              <SectionCard title="Plan looks out of date?" padding="default">
+                <Typography sx={portalText.body}>
+                  If Stripe charged your card but this page still shows the waiver, the webhook didn&apos;t reach us. Pull the latest state directly from Stripe.
+                </Typography>
+                <Button
+                  onClick={syncFromStripe}
+                  disabled={syncBusy}
+                  size="small"
+                  variant="contained"
+                  startIcon={
+                    syncBusy ? (
+                      <CircularProgress size={12} sx={{ color: "inherit" }} />
+                    ) : (
+                      <SyncRoundedIcon sx={{ fontSize: 14 }} />
+                    )
+                  }
+                  sx={{
+                    mt: 1.5,
+                    bgcolor: "#A07823",
+                    color: "#FFFFFF",
+                    textTransform: "none",
+                    fontSize: "0.78rem",
+                    fontWeight: 600,
+                    borderRadius: 0.75,
+                    "&:hover": { bgcolor: "#7A5B17" },
+                  }}
+                >
+                  {syncBusy ? "Syncing…" : "Re-sync from Stripe"}
+                </Button>
+                {syncMessage && (
+                  <Typography
+                    sx={{
+                      mt: 1,
+                      fontSize: "0.74rem",
+                      color: syncMessage.tone === "ok" ? "#1F5C40" : "#8C1D1D",
+                      fontWeight: 500,
+                    }}
+                  >
+                    {syncMessage.text}
+                  </Typography>
+                )}
+              </SectionCard>
+            )}
           </Stack>
         </Grid>
       </Grid>
 
-      {/* Invoices */}
+      {/* Upgrade plan choice — shown when there's no active subscription.
+          During the founding waiver (months 1-6) we frame it as locking
+          the launch rate early. Past the waiver, this is the recovery
+          path; the BillingGate already blocks other portal pages. */}
+      {!vendor.stripe_subscription_id && (
+        <UpgradePlanChoice
+          endpoint="/api/vendor/billing/checkout"
+          plans={PARTNER_UPGRADE_PLANS}
+          audience="gold"
+          title={monthsLeftInWaiver > 0 ? "Upgrade early — keep portal access past the waiver" : "Choose a plan to keep your portal active"}
+          subtitle={
+            monthsLeftInWaiver > 0
+              ? `Your founding waiver lasts ${monthsLeftInWaiver} more month${monthsLeftInWaiver === 1 ? "" : "s"}. Lock the launch rate now or go straight to annual.`
+              : "Your founding waiver has ended. Pick a plan to keep your portal and listing active."
+          }
+        />
+      )}
+
+      {/* Invoices — live from Stripe via /api/vendor/billing/invoices */}
       <SectionCard
         title="Invoices"
-        subtitle="Download for your records."
+        subtitle="Pulled live from Stripe. PDF receipts available for every charge."
         padding="none"
-        action={
-          <Stack direction="row" spacing={0.5}>
-            <Button
-              size="small"
-              startIcon={<DownloadOutlinedIcon sx={{ fontSize: 14 }} />}
-              sx={{
-                textTransform: "none",
-                fontSize: "0.78rem",
-                color: "#0A1A2F",
-                "&:hover": { bgcolor: "rgba(14,42,61,0.04)" },
-              }}
-            >
-              Export all
-            </Button>
-          </Stack>
-        }
       >
         <Box
           sx={{
@@ -305,17 +552,21 @@ export default function VendorAccountPage() {
         >
           <Box>Invoice</Box>
           <Box>Date</Box>
-          <Box>Period</Box>
+          <Box>Description</Box>
           <Box>Amount</Box>
           <Box>Status</Box>
         </Box>
-        {sampleInvoices.length === 0 ? (
+        {invoices === null ? (
+          <Stack sx={{ alignItems: "center", py: 4 }}>
+            <CircularProgress size={18} sx={{ color: "#A07823" }} />
+          </Stack>
+        ) : invoices.length === 0 ? (
           <Box sx={{ px: 2, py: 3, color: "#9CA3AB", fontSize: "0.84rem" }}>
-            No invoices yet. Your first invoice ships next month.
+            No invoices yet. Your first invoice ships once the waiver period ends.
           </Box>
         ) : (
           <Stack divider={<Box sx={{ borderTop: "1px solid rgba(14,42,61,0.06)" }} />}>
-            {sampleInvoices.map((inv) => (
+            {invoices.map((inv) => (
               <Box
                 key={inv.id}
                 sx={{
@@ -331,21 +582,34 @@ export default function VendorAccountPage() {
                 <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
                   <ReceiptLongOutlinedIcon sx={{ fontSize: 16, color: "#7A8590" }} />
                   <Typography sx={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: "0.76rem", color: "#0A1A2F" }}>
-                    {inv.number}
+                    {inv.number ?? inv.id.slice(0, 10)}
                   </Typography>
                 </Stack>
-                <Box sx={{ display: { xs: "none", md: "block" }, fontSize: "0.82rem", color: "#3B4A55" }}>{inv.date}</Box>
-                <Box sx={{ display: { xs: "none", md: "block" }, fontSize: "0.78rem", color: "#5C6770" }}>{inv.period}</Box>
+                <Box sx={{ display: { xs: "none", md: "block" }, fontSize: "0.82rem", color: "#3B4A55" }}>
+                  {formatInvoiceDate(inv.createdAt)}
+                </Box>
+                <Box sx={{ display: { xs: "none", md: "block" }, fontSize: "0.78rem", color: "#5C6770" }}>
+                  {inv.description ?? "—"}
+                </Box>
                 <Box sx={{ display: { xs: "none", md: "block" }, fontSize: "0.86rem", fontWeight: 700, color: "#0A1A2F" }}>
-                  ${inv.amount.toFixed(2)}
+                  ${inv.amountPaid.toFixed(2)}
                 </Box>
                 <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", justifyContent: { xs: "flex-end", md: "flex-start" } }}>
-                  <InvoiceStatusPill status={inv.status} />
-                  <Tooltip title="Download PDF">
-                    <IconButton size="small" sx={{ color: "#5C6770" }}>
-                      <DownloadOutlinedIcon sx={{ fontSize: 15 }} />
-                    </IconButton>
-                  </Tooltip>
+                  <InvoiceStatusPill status={mapStripeStatusToPill(inv.status)} />
+                  {inv.pdfUrl || inv.hostedUrl ? (
+                    <Tooltip title="Download PDF">
+                      <IconButton
+                        component="a"
+                        href={inv.pdfUrl ?? inv.hostedUrl ?? "#"}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        size="small"
+                        sx={{ color: "#5C6770" }}
+                      >
+                        <DownloadOutlinedIcon sx={{ fontSize: 15 }} />
+                      </IconButton>
+                    </Tooltip>
+                  ) : null}
                 </Stack>
               </Box>
             ))}
@@ -354,6 +618,34 @@ export default function VendorAccountPage() {
       </SectionCard>
     </Stack>
   );
+}
+
+type InvoiceStatus = "paid" | "open" | "due" | "failed";
+
+// Map Stripe's invoice statuses to the 4 visual states the pill knows.
+// Anything not in the canonical set becomes "open" so we never throw.
+function mapStripeStatusToPill(status: string | null): InvoiceStatus {
+  if (status === "paid") return "paid";
+  if (status === "uncollectible" || status === "void") return "failed";
+  if (status === "open") return "open";
+  return "open";
+}
+
+function formatInvoiceDate(iso: string): string {
+  if (!iso) return "—";
+  try {
+    return new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }).format(new Date(iso));
+  } catch {
+    return iso.slice(0, 10);
+  }
+}
+
+function capitaliseFirst(s: string): string {
+  return s.length > 0 ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 }
 
 function LadderRow({

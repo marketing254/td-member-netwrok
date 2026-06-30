@@ -6,12 +6,25 @@ import Stripe from "stripe";
  * Price IDs are read from env vars so the same code runs against the test
  * sandbox locally and against live prices in production without an edit.
  *
- *   STRIPE_PRICE_FOUNDING_MONTHLY  - $49/mo   (CAD)  — first 100 members
- *   STRIPE_PRICE_FOUNDING_ANNUAL   - $490/yr  (CAD)
- *   STRIPE_PRICE_EARLY_MONTHLY     - $99/mo   (CAD)  — members 101–500
- *   STRIPE_PRICE_EARLY_ANNUAL      - $990/yr  (CAD)
- *   STRIPE_PRICE_STANDARD_MONTHLY  - $199/mo  (CAD)  — open enrollment
- *   STRIPE_PRICE_STANDARD_ANNUAL   - $1,990/yr (CAD)
+ *   STRIPE_PRICE_FOUNDING_MONTHLY            - $49/mo   (CAD)  — first 100 members
+ *   STRIPE_PRICE_FOUNDING_ANNUAL             - $490/yr  (CAD)
+ *   STRIPE_PRICE_EARLY_MONTHLY               - $99/mo   (CAD)  — members 101–500
+ *   STRIPE_PRICE_EARLY_ANNUAL                - $990/yr  (CAD)
+ *   STRIPE_PRICE_STANDARD_MONTHLY            - $199/mo  (CAD)  — open enrollment
+ *   STRIPE_PRICE_STANDARD_ANNUAL             - $1,990/yr (CAD)
+ *
+ *   STRIPE_PRICE_PARTNER_GROWTH_MONTHLY      - $49/mo   (USD)  — partner months 7-12
+ *   STRIPE_PRICE_PARTNER_STANDARD_MONTHLY    - $199/mo  (USD)  — partner month 13+
+ *   STRIPE_PRICE_PARTNER_STANDARD_ANNUAL     - $1,990/yr (USD) — annual pre-pay
+ *
+ *   STRIPE_PRICE_EXPERT_GROWTH_MONTHLY       - $49/mo   (USD)  — expert months 7-12
+ *   STRIPE_PRICE_EXPERT_STANDARD_MONTHLY     - $199/mo  (USD)  — expert month 13+
+ *   STRIPE_PRICE_EXPERT_STANDARD_ANNUAL      - $1,990/yr (USD) — annual pre-pay
+ *
+ * Note: months 1-6 (launch / founding waiver) are NOT in Stripe at all —
+ * the partner/expert signs up via form, an admin activates them from the
+ * admin portal, and they get free portal access without a Stripe
+ * customer. Stripe enters the picture only when they upgrade at month 7.
  *
  * Tier caps (lifetime — cancellations do NOT free a seat):
  *   Founding: first 100 lifetime  → FOUNDING_MEMBER_CAP
@@ -118,6 +131,208 @@ export function isEarlyPlan(plan: SubscriptionPlanKey): boolean {
 
 export function billingIntervalFor(plan: SubscriptionPlanKey): "month" | "year" {
   return PLAN_DISPLAY[plan].per === "yr" ? "year" : "month";
+}
+
+// =====================================================================
+// EXPERT + PARTNER PLANS
+// =====================================================================
+//
+// Members and the two business audiences (vendors/partners + experts) all
+// run through Stripe but with separate products + price IDs so we can
+// tell them apart in reports + dashboards. Both partners and experts use
+// the same 3-phase ladder:
+//
+//   Phase 1 (months 1-6)   $0/mo   "Launch" — waived founding cohort
+//   Phase 2 (months 7-12)  $49/mo  "Growth" — locked launch rate
+//   Phase 3 (month 13+)    $199/mo "Standard" — open rate
+//   Annual pre-pay         $1,990/yr — 2 months free, available after month 6
+//
+// The "phase" is just the price the customer is paying RIGHT NOW. We move
+// them between prices either by:
+//   (a) subscription schedules — define the ladder once on signup, Stripe
+//       auto-rolls the customer up at month 7 and month 13, or
+//   (b) admin-side switch via the customer portal at the right time.
+// (a) is the recommended approach; the dashboard guide covers it.
+
+// Phase 1 (months 1-6) doesn't exist in Stripe — admin activates the
+// partner/expert and they get free portal access. The keys here only
+// cover the phases where money actually changes hands.
+export type PartnerPlanKey =
+  | "partner_growth_monthly"     // $49 months 7-12
+  | "partner_standard_monthly"   // $199 month 13+
+  | "partner_standard_annual";   // $1,990/year
+
+export type ExpertPlanKey =
+  | "expert_growth_monthly"      // $49 months 7-12
+  | "expert_standard_monthly"    // $199 month 13+
+  | "expert_standard_annual";    // $1,990/year
+
+export type PartnerPhase = "launch" | "growth" | "standard";
+export type ExpertPhase = "launch" | "growth" | "standard";
+
+export const ALL_PARTNER_PLAN_KEYS: PartnerPlanKey[] = [
+  "partner_growth_monthly",
+  "partner_standard_monthly",
+  "partner_standard_annual",
+];
+
+export const ALL_EXPERT_PLAN_KEYS: ExpertPlanKey[] = [
+  "expert_growth_monthly",
+  "expert_standard_monthly",
+  "expert_standard_annual",
+];
+
+export const PARTNER_PLAN_DISPLAY: Record<
+  PartnerPlanKey,
+  { amount: number; per: "mo" | "yr"; phase: PartnerPhase; label: string }
+> = {
+  partner_growth_monthly:   { amount: 49,   per: "mo", phase: "growth",   label: "Partner Growth (months 7-12)" },
+  partner_standard_monthly: { amount: 199,  per: "mo", phase: "standard", label: "Partner Standard Monthly" },
+  partner_standard_annual:  { amount: 1990, per: "yr", phase: "standard", label: "Partner Standard Annual" },
+};
+
+export const EXPERT_PLAN_DISPLAY: Record<
+  ExpertPlanKey,
+  { amount: number; per: "mo" | "yr"; phase: ExpertPhase; label: string }
+> = {
+  expert_growth_monthly:   { amount: 49,   per: "mo", phase: "growth",   label: "Expert Growth (months 7-12)" },
+  expert_standard_monthly: { amount: 199,  per: "mo", phase: "standard", label: "Expert Standard Monthly" },
+  expert_standard_annual:  { amount: 1990, per: "yr", phase: "standard", label: "Expert Standard Annual" },
+};
+
+export function partnerPriceIdFor(plan: PartnerPlanKey): string {
+  const envKey =
+    plan === "partner_growth_monthly"   ? "STRIPE_PRICE_PARTNER_GROWTH_MONTHLY"
+      : plan === "partner_standard_monthly" ? "STRIPE_PRICE_PARTNER_STANDARD_MONTHLY"
+      : "STRIPE_PRICE_PARTNER_STANDARD_ANNUAL";
+  const value = process.env[envKey];
+  if (!value) {
+    throw new Error(
+      `Missing env var ${envKey}. Set this in landing/.env.local (and Vercel) to a Stripe price ID like "price_1Te9...".`,
+    );
+  }
+  return value;
+}
+
+export function expertPriceIdFor(plan: ExpertPlanKey): string {
+  const envKey =
+    plan === "expert_growth_monthly"   ? "STRIPE_PRICE_EXPERT_GROWTH_MONTHLY"
+      : plan === "expert_standard_monthly" ? "STRIPE_PRICE_EXPERT_STANDARD_MONTHLY"
+      : "STRIPE_PRICE_EXPERT_STANDARD_ANNUAL";
+  const value = process.env[envKey];
+  if (!value) {
+    throw new Error(
+      `Missing env var ${envKey}. Set this in landing/.env.local (and Vercel) to a Stripe price ID like "price_1Te9...".`,
+    );
+  }
+  return value;
+}
+
+/**
+ * Phase the customer is currently in, derived from months_in_program.
+ * Used to render the right "current rate" line in the billing UI without
+ * round-tripping to Stripe on every render.
+ */
+export function phaseForMonth(monthsInProgram: number): "launch" | "growth" | "standard" {
+  if (monthsInProgram <= 6) return "launch";
+  if (monthsInProgram <= 12) return "growth";
+  return "standard";
+}
+
+/**
+ * Pretty "$0/mo" / "$49/mo" / "$199/mo" label for the given phase.
+ */
+export function priceLabelForPhase(phase: "launch" | "growth" | "standard"): string {
+  if (phase === "launch") return "$0 / mo";
+  if (phase === "growth") return "$49 / mo";
+  return "$199 / mo";
+}
+
+// =====================================================================
+// BILLING ACCESS GATE — applied to vendor + expert portals.
+// =====================================================================
+// Decide whether the user's portal access should be locked based on
+// their position in the 3-phase ladder + current Stripe subscription
+// status. Used by:
+//   - components/shared/BillingGate.tsx (renders a paywall card if
+//     blocked, but always lets them through to the billing page itself
+//     so they can update the card or re-subscribe)
+//   - lib/auth/guards.ts (returns 402 Payment Required on API calls if
+//     blocked, so a client that bypasses the wall still can't write).
+//
+// Why the months-in-program check matters: during the founding waiver
+// (months 1-6) we don't expect a card on file, so a NULL subscription
+// status is normal — don't lock those users out. After the waiver ends,
+// they should have an `active`/`trialing` subscription; anything else
+// means there's a problem we should surface.
+
+export type BillingAccess =
+  | { allowed: true }
+  | { allowed: false; reason: BillingBlockReason; title: string; message: string; cta: string };
+
+export type BillingBlockReason =
+  | "subscription_required"  // waiver ended, no subscription created
+  | "past_due"               // card declined on latest invoice
+  | "canceled"               // subscription terminated
+  | "unpaid";                // multiple retry failures, Stripe marked unpaid
+
+export function checkBillingAccess(opts: {
+  monthsInProgram: number;
+  subscriptionStatus: string | null;
+}): BillingAccess {
+  const { monthsInProgram, subscriptionStatus } = opts;
+
+  // Phase 1 (months 1-6): waiver active, no card needed.
+  if (monthsInProgram <= 6) return { allowed: true };
+
+  // Healthy subscriptions always pass.
+  if (subscriptionStatus === "active" || subscriptionStatus === "trialing") {
+    return { allowed: true };
+  }
+
+  if (subscriptionStatus === "past_due") {
+    return {
+      allowed: false,
+      reason: "past_due",
+      title: "Payment failed on your last invoice",
+      message:
+        "Your card was declined on the latest charge. Update your payment method to keep your portal and listing active. Stripe will retry once more before suspending.",
+      cta: "Update payment method",
+    };
+  }
+  if (subscriptionStatus === "unpaid") {
+    return {
+      allowed: false,
+      reason: "unpaid",
+      title: "Subscription suspended",
+      message:
+        "Your subscription was suspended after repeated payment failures. Add a working card to reactivate.",
+      cta: "Reactivate subscription",
+    };
+  }
+  if (
+    subscriptionStatus === "canceled" ||
+    subscriptionStatus === "incomplete_expired"
+  ) {
+    return {
+      allowed: false,
+      reason: "canceled",
+      title: "Subscription is no longer active",
+      message:
+        "Your subscription has ended. Reactivate to restore portal access and your public listing.",
+      cta: "Reactivate subscription",
+    };
+  }
+
+  // No subscription at all, past the waiver — they never started one.
+  return {
+    allowed: false,
+    reason: "subscription_required",
+    title: "Founding waiver has ended",
+    message:
+      "Your 6-month founding waiver is up. Add a subscription to keep your portal and public listing active.",
+    cta: "Start subscription",
+  };
 }
 
 /**

@@ -83,9 +83,9 @@ const WHAT_YOU_OFFER = [
 ];
 
 const PRICE_TIERS = [
-  { cap: "Months 1–6", price: "$0", per: "", body: "Build your pipeline first, pay later.", hot: true },
-  { cap: "Months 7–12", price: "$49", per: "/mo", body: "Founding locked rate.", hot: true },
-  { cap: "Month 13+", price: "$199", per: "/mo", body: "Featured Partner rate.", hot: false },
+  { cap: "Months 1–6", price: "$0", per: "", body: "Founding-cohort waiver. Build your pipeline first.", hot: true },
+  { cap: "Months 7–12", price: "$49", per: "/mo", body: "Locked launch rate. Auto-rolls from Phase 1.", hot: true },
+  { cap: "Month 13+", price: "$199", per: "/mo", body: "Standard rate · or $1,990/yr annual pre-pay (2 months free).", hot: false },
 ];
 
 const FIT_YES = [
@@ -417,6 +417,9 @@ export default function PartnersPage() {
       <Box sx={{ py: { xs: 6, md: 9 }, bgcolor: COLORS.surfaceAlt }}>
         <Container maxWidth="lg">
           <SectionHeading title="What it costs" />
+          <Typography sx={{ textAlign: "center", color: COLORS.muted, maxWidth: 620, mx: "auto", mt: 1.5, fontSize: "1rem" }}>
+            Same Featured Partner benefits at every phase. Annual pre-pay unlocks at month 7.
+          </Typography>
           <Box
             sx={{
               display: "grid",
@@ -429,6 +432,8 @@ export default function PartnersPage() {
               <PriceCard key={p.cap} {...p} />
             ))}
           </Box>
+
+          {/* Refer-and-earn — the headline addition vs the old ladder. */}
           <Box
             sx={{
               mt: 3,
@@ -439,17 +444,25 @@ export default function PartnersPage() {
               textAlign: "center",
             }}
           >
-            <Typography sx={{ fontSize: "0.94rem", color: COLORS.inkSoft }}>
+            <Typography sx={{ fontSize: "0.94rem", color: COLORS.inkSoft, lineHeight: 1.55 }}>
+              ★{" "}
               <Box component="strong" sx={{ color: COLORS.ink }}>
-                Annual prepay
+                Refer a practice, earn $50.
               </Box>{" "}
-              = 2 months free.{" "}
-              <Box component="strong" sx={{ color: COLORS.ink }}>
-                Founding partners
-              </Box>{" "}
-              get priority placement in the directory launch.
+              Every partner gets a referral link. Bring a practice owner who becomes a paying DMN member — earn $50 credit on your next invoice. Annual pre-pay = 2 months free. Founding partners get priority placement in the directory launch.
             </Typography>
           </Box>
+
+          <Stack direction="row" sx={{ justifyContent: "center", mt: 2.5 }}>
+            <Button
+              variant="outlined"
+              component={Link}
+              href="/pricing"
+              sx={{ borderRadius: 999, px: 3 }}
+            >
+              See full pricing
+            </Button>
+          </Stack>
         </Container>
       </Box>
 
@@ -515,36 +528,16 @@ export default function PartnersPage() {
         </Container>
       </Box>
 
-      {/* Partner application form — same form, fields and submission flow
-          as the home page, locked to the partner role. Writes to the
-          vendor_applications table via /api/vendor/signup.
+      {/* Partner application form — single in-page form. Writes to the
+          vendor_applications table via /api/vendor/signup. The standalone
+          5-step /vendor/signup wizard has been removed; applicants
+          submit here, the team reviews, and an admin activates them
+          from the admin portal.
           Suspense boundary required because WaitlistSection reads
           useSearchParams() (Next.js needs it to know prerender can defer). */}
       <Suspense fallback={null}>
         <WaitlistSection lockedRole="vendor" sectionId="apply" />
       </Suspense>
-
-      {/* Already vetted → full onboarding link */}
-      <Box sx={{ py: { xs: 3, md: 4 }, textAlign: "center" }}>
-        <Container maxWidth="md">
-          <Typography sx={{ fontSize: "0.95rem", color: COLORS.muted }}>
-            Already spoken to us?{" "}
-            <Box
-              component={Link}
-              href="/vendor/signup"
-              sx={{
-                color: COLORS.accentDeep,
-                fontWeight: 700,
-                textDecoration: "underline",
-                textUnderlineOffset: 3,
-              }}
-            >
-              Complete partner onboarding
-            </Box>{" "}
-            (plan, agreement, member offer).
-          </Typography>
-        </Container>
-      </Box>
 
       {/* Meet the experts link */}
       <Box sx={{ py: { xs: 5, md: 7 } }}>
@@ -728,6 +721,8 @@ function PriceCard({
         border: hot ? `2px solid ${COLORS.accent}` : `1px solid ${COLORS.line}`,
         bgcolor: "#FFFFFF",
         overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
         boxShadow: hot
           ? "0 20px 50px -28px rgba(217,168,75,0.4)"
           : "0 12px 32px -24px rgba(14,42,61,0.18)",
@@ -747,7 +742,7 @@ function PriceCard({
       >
         {cap}
       </Box>
-      <Box sx={{ textAlign: "center", py: 3 }}>
+      <Box sx={{ textAlign: "center", py: 3, flex: 1 }}>
         <Stack direction="row" spacing={0.5} sx={{ justifyContent: "center", alignItems: "baseline" }}>
           <Typography
             sx={{
@@ -770,6 +765,18 @@ function PriceCard({
         <Typography sx={{ fontSize: "0.88rem", color: COLORS.muted, mt: 1.25, px: 2 }}>
           {body}
         </Typography>
+      </Box>
+      <Box sx={{ px: 3, pb: 3 }}>
+        <Button
+          fullWidth
+          variant={hot ? "contained" : "outlined"}
+          color={hot ? "secondary" : "primary"}
+          component={Link}
+          href="#apply"
+          sx={{ borderRadius: 999, py: 1 }}
+        >
+          {hot ? "Apply for Founding" : "Become a Partner"}
+        </Button>
       </Box>
     </Box>
   );

@@ -173,6 +173,18 @@ export type VendorsRow = {
   sms_consent_text: string | null;
   // Added in 0030_profile_avatars.sql.
   avatar_url: string | null;
+  // Added in 0033_vendor_expert_billing.sql.
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  stripe_price_id: string | null;
+  subscription_status: string | null;
+  subscription_interval: string | null;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean | null;
+  canceled_at: string | null;
+  card_brand: string | null;
+  card_last4: string | null;
+  founding_partner_locked: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -516,6 +528,19 @@ export type ExpertsRow = {
   notes: string | null;
   // Added in 0030_profile_avatars.sql.
   avatar_url: string | null;
+  // Added in 0033_vendor_expert_billing.sql.
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  stripe_price_id: string | null;
+  subscription_status: string | null;
+  subscription_interval: string | null;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean | null;
+  canceled_at: string | null;
+  card_brand: string | null;
+  card_last4: string | null;
+  months_in_program: number;
+  founding_expert_locked: boolean;
   created_at: string;
   updated_at: string;
 };
