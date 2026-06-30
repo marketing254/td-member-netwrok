@@ -19,10 +19,10 @@ import Footer from "@/components/sections/Footer";
 
 /**
  * Vendor "application received" thank-you page.
- * Reached after submitting the vendor branch of the landing-page form or the
- * dedicated /vendor/signup wizard. Tells the partner exactly what happens
- * next + points them at /vendor/login so they can hit the portal as soon as
- * the magic-link email arrives.
+ * Reached after submitting the partner WaitlistSection on /partners
+ * (which posts to /api/vendor/signup). Tells the partner exactly what
+ * happens next + points them at /vendor/login so they can hit the
+ * portal as soon as the magic-link email arrives.
  */
 export default function VendorAppliedPage() {
   const STEPS = [

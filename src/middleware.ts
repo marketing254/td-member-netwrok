@@ -5,7 +5,9 @@ import { createMiddlewareSupabase } from "@/lib/supabase/middleware-ssr";
  * Auth gates for the portal surfaces + security headers on every response.
  *
  *   /vendor/*  → requires a Supabase session OR the legacy test/test cookie.
- *                Public exceptions: /vendor/login, /vendor/signup, /vendor/applied.
+ *                Public exceptions: /vendor/login, /vendor/applied.
+ *                (Partner applications now live inline on /partners#apply —
+ *                the standalone /vendor/signup wizard has been removed.)
  *   /admin/*   → requires a Supabase session AND an active admin_users row.
  *                Public exceptions: /admin/login.
  *   /dashboard/* → requires a member session AND subscription_status = 'active'.
@@ -84,8 +86,6 @@ function isPublicVendorPath(pathname: string) {
   return (
     pathname === "/vendor/login" ||
     pathname.startsWith("/vendor/login/") ||
-    pathname === "/vendor/signup" ||
-    pathname.startsWith("/vendor/signup/") ||
     pathname === "/vendor/applied"
   );
 }

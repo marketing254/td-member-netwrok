@@ -10,8 +10,8 @@ export const dynamic = "force-dynamic";
 /**
  * POST /api/vendor/signup
  *
- * Receives a vendor application from the public landing form (or the
- * dedicated /vendor/signup wizard) and:
+ * Receives a vendor application from the public WaitlistSection
+ * embedded on /partners (or the homepage form) and:
  *   1. Validates the minimum required fields
  *   2. Inserts a row into vendor_applications (status='pending_review')
  *   3. Generates a magic-link token + URL (vendors can sign in immediately;

@@ -528,36 +528,16 @@ export default function PartnersPage() {
         </Container>
       </Box>
 
-      {/* Partner application form — same form, fields and submission flow
-          as the home page, locked to the partner role. Writes to the
-          vendor_applications table via /api/vendor/signup.
+      {/* Partner application form — single in-page form. Writes to the
+          vendor_applications table via /api/vendor/signup. The standalone
+          5-step /vendor/signup wizard has been removed; applicants
+          submit here, the team reviews, and an admin activates them
+          from the admin portal.
           Suspense boundary required because WaitlistSection reads
           useSearchParams() (Next.js needs it to know prerender can defer). */}
       <Suspense fallback={null}>
         <WaitlistSection lockedRole="vendor" sectionId="apply" />
       </Suspense>
-
-      {/* Already vetted → full onboarding link */}
-      <Box sx={{ py: { xs: 3, md: 4 }, textAlign: "center" }}>
-        <Container maxWidth="md">
-          <Typography sx={{ fontSize: "0.95rem", color: COLORS.muted }}>
-            Already spoken to us?{" "}
-            <Box
-              component={Link}
-              href="/vendor/signup"
-              sx={{
-                color: COLORS.accentDeep,
-                fontWeight: 700,
-                textDecoration: "underline",
-                textUnderlineOffset: 3,
-              }}
-            >
-              Complete partner onboarding
-            </Box>{" "}
-            (plan, agreement, member offer).
-          </Typography>
-        </Container>
-      </Box>
 
       {/* Meet the experts link */}
       <Box sx={{ py: { xs: 5, md: 7 } }}>

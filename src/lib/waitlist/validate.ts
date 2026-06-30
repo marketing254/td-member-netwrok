@@ -1,7 +1,9 @@
-// Members are the only ones who use the waitlist; vendors apply directly via
-// /vendor/signup so they can be reviewed and onboarded individually. The role
-// field is kept for future use (e.g. associate, office manager) but every
-// signup today resolves to "member".
+// Members are the only ones who use this waitlist validator. Vendors
+// and experts apply inline via the WaitlistSection on /partners and
+// /experts respectively, which posts to /api/vendor/signup or
+// /api/expert/signup (separate routes from this one). The role field
+// here is kept for future use but every signup today resolves to
+// "member".
 export type WaitlistRole = "member";
 
 export type WaitlistPayload = {

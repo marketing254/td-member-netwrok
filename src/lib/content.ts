@@ -104,8 +104,9 @@ export const waitlist = {
     "No spam. Just early access, launch updates, and founding-member opportunities.",
 };
 
-// Copy for the WaitlistSection LEFT panel. Members-only; vendors don't use
-// the waitlist (they apply directly via /vendor/signup).
+// Copy for the WaitlistSection LEFT panel. Members-only by default; the
+// vendor (partner) and expert variants are shown when the section is
+// embedded inline on /partners and /experts respectively.
 export const waitlistByRole = {
   member: {
     eyebrow: "FOUNDING MEMBER",

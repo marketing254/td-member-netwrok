@@ -146,7 +146,7 @@ export async function POST(req: Request) {
         return NextResponse.json(
           {
             error:
-              "We couldn't find an application for that email. Apply at /vendor/signup first, then come back to sign in.",
+              "We couldn't find an application for that email. Apply at /partners first, then come back to sign in.",
           },
           { status: 404 },
         );
@@ -219,7 +219,7 @@ export async function POST(req: Request) {
         return NextResponse.json(
           {
             error:
-              "We couldn't find an application for that email. Apply at /vendor/signup first, then come back to sign in.",
+              "We couldn't find an application for that email. Apply at /partners first, then come back to sign in.",
           },
           { status: 404 },
         );

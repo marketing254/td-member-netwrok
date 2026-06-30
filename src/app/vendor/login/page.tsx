@@ -5,8 +5,9 @@ import OtpLoginForm from "@/components/auth/OtpLoginForm";
 
 /**
  * Partner (vendor) sign-in. OTP-based: enter email → receive 6-digit
- * code → enter code → land on /vendor. Application + approval happens
- * at /vendor/signup; the team activates the auth user from there.
+ * code → enter code → land on /vendor. Application happens at
+ * /partners#apply (in-page WaitlistSection); the team reviews and an
+ * admin activates the auth user from the admin portal.
  */
 export default function VendorLoginPage() {
   return (
@@ -24,10 +25,10 @@ export default function VendorLoginPage() {
             "Check your inbox for a 6-digit code from hello@joindmn.com.",
           accentColor: "#6E3346",
           accentTint: "rgba(110,51,70,0.12)",
-          signupHref: "/vendor/signup",
+          signupHref: "/partners#apply",
           signupLabel: "Want to become a partner?",
           unknownEmailMessage:
-            "We couldn't find an application for that email. Apply at /vendor/signup first, then come back to sign in.",
+            "We couldn't find an application for that email. Apply at /partners first, then come back to sign in.",
         }}
       />
     </Suspense>
