@@ -111,17 +111,30 @@ export function KitCover({
       )}
 
       {/* Status badges — always at top-left, kept small so they don't crowd
-          a baked-in image title. */}
+          a baked-in image title. On narrow tiles (sm) we only show the
+          higher-signal badge (progress > done > free) so two pills never
+          stack on top of each other. */}
       {(isFree || completed || inProgress) && (
-        <Stack
-          direction="row"
-          spacing={0.5}
-          sx={{ position: "absolute", top: 10, left: 10, zIndex: 2 }}
+        <Box
+          sx={{
+            position: "absolute",
+            top: 10,
+            left: 10,
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 0.5,
+            zIndex: 2,
+            maxWidth: "calc(100% - 20px)",
+          }}
         >
-          {isFree && <CoverBadge label="Free" tone="leaf" />}
-          {completed && <CoverBadge label="Done" tone="paper" />}
-          {inProgress && !completed && <CoverBadge label="In progress" tone="gold" />}
-        </Stack>
+          {completed ? (
+            <CoverBadge label="Done" tone="paper" />
+          ) : inProgress ? (
+            <CoverBadge label="In progress" tone="gold" />
+          ) : isFree ? (
+            <CoverBadge label="Free" tone="leaf" />
+          ) : null}
+        </Box>
       )}
 
       {/* Play button.
@@ -263,8 +276,8 @@ export function KitCover({
             bottom: 0,
             left: 0,
             right: 0,
-            height: 2,
-            bgcolor: "rgba(255,255,255,0.2)",
+            height: 4,
+            bgcolor: "rgba(0,0,0,0.25)",
             zIndex: 3,
           }}
         >
@@ -273,6 +286,7 @@ export function KitCover({
               height: "100%",
               width: `${progressPct}%`,
               bgcolor: visual.accent,
+              boxShadow: `0 0 8px ${visual.accent}`,
               transition: "width var(--dur-base, 200ms) var(--ease-out, ease-out)",
             }}
           />
@@ -309,6 +323,11 @@ function CoverBadge({
         fontWeight: 800,
         letterSpacing: "0.12em",
         textTransform: "uppercase",
+        // Keep the pill on one line — without this, narrow tiles wrap
+        // "In progress" vertically inside the fixed 18 px height.
+        whiteSpace: "nowrap",
+        lineHeight: 1,
+        flexShrink: 0,
       }}
     >
       {label}

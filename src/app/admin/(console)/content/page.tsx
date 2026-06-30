@@ -97,7 +97,7 @@ export default function AdminContentPage() {
         setToast(body.error ?? `Action failed (${res.status})`);
         return;
       }
-      setToast(action === "approve" ? "Catalog item approved & vendor notified." : "Catalog item rejected & vendor notified.");
+      setToast(action === "approve" ? "Catalog item approved & partner notified." : "Catalog item rejected & partner notified.");
       setOpenItem(null);
       await load();
     } catch (err) {
@@ -114,10 +114,10 @@ export default function AdminContentPage() {
           CATALOG
         </Typography>
         <Typography variant="h2" sx={{ mt: 0.5, mb: 1, fontSize: { xs: "1.85rem", md: "2.5rem" } }}>
-          Vendor catalog — every item
+          Partner catalog — every item
         </Typography>
         <Typography sx={{ color: "text.secondary", maxWidth: 720 }}>
-          Read-only browser of every service, product, and course any vendor has submitted. Click a row to see the full listing exactly as the vendor sees it, then approve or reject pending submissions inline.
+          Read-only browser of every service, product, and course any partner has submitted. Click a row to see the full listing exactly as the partner sees it, then approve or reject pending submissions inline.
         </Typography>
       </Box>
 
@@ -167,7 +167,7 @@ export default function AdminContentPage() {
       </Box>
 
       <TextField
-        placeholder="Search by item name, category, vendor, or email…"
+        placeholder="Search by item name, category, partner, or email…"
         value={q}
         onChange={(e) => setQ(e.target.value)}
         size="small"
@@ -196,7 +196,7 @@ export default function AdminContentPage() {
             {q
               ? "Try a different search term."
               : filter === "pending_review"
-                ? "Vendors will submit new items here as they fill out their catalog."
+                ? "Partners will submit new items here as they fill out their catalog."
                 : "Items in this state will show up here as they happen."}
           </Typography>
         </Box>

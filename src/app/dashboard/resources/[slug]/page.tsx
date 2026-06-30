@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useMemo, useRef, useState } from "react";
+import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Box,
@@ -28,6 +28,8 @@ import type { SvgIconComponent } from "@mui/icons-material";
 import { visualForTopic } from "@/components/member/topicVisuals";
 import { InlineTag, editorialText, ink } from "@/components/member/Editorial";
 import { BookCoachingCard } from "@/components/member/BookCoachingCard";
+import FeedbackDialog from "@/components/member/FeedbackDialog";
+import ResourceInquiries from "@/components/member/ResourceInquiries";
 
 type Progress = {
   last_viewed_at: string | null;
@@ -54,6 +56,11 @@ type ResourceItem = {
   duration_label: string | null;
   position: number;
   is_free: boolean;
+  kit_type?: "standard" | "book_club" | null;
+  book_club_payload?: {
+    shorts?: { index: number; principle: string; public_url: string | null }[];
+    has_infographic?: boolean;
+  } | null;
   progress: Progress | null;
 };
 
@@ -77,8 +84,14 @@ const KIND_META: Record<
   checklist: { icon: ChecklistOutlinedIcon, defaultMeta: "PDF · set up → track → review", actionLabel: "Download", badge: "PDF" },
   key_takeaways: { icon: StickyNote2OutlinedIcon, defaultMeta: "PDF · the gist in 2 minutes", actionLabel: "Download", badge: "PDF" },
   worksheet: { icon: EditNoteOutlinedIcon, defaultMeta: "PDF · fillable", actionLabel: "Download", badge: "PDF" },
-  slide_deck: { icon: SlideshowOutlinedIcon, defaultMeta: "Slide deck · PowerPoint", actionLabel: "Download", badge: "Slides" },
+  slide_deck: { icon: SlideshowOutlinedIcon, defaultMeta: "Slide deck · flip through inline", actionLabel: "Open", badge: "Slides" },
   email_sequence: { icon: EmailOutlinedIcon, defaultMeta: "PDF · ready-to-send scripts", actionLabel: "Download", badge: "PDF" },
+  // Book Club kinds — produced by the bulk importer.
+  book_study_guide: { icon: ListAltOutlinedIcon, defaultMeta: "PDF · full study guide", actionLabel: "Download", badge: "PDF" },
+  discussion_questions: { icon: EditNoteOutlinedIcon, defaultMeta: "PDF · discussion prompts", actionLabel: "Download", badge: "PDF" },
+  infographic: { icon: SlideshowOutlinedIcon, defaultMeta: "PDF · one-page visual summary", actionLabel: "Download", badge: "PDF" },
+  infographic_image: { icon: SlideshowOutlinedIcon, defaultMeta: "PNG · printable visual summary", actionLabel: "Download", badge: "Image" },
+  video_short: { icon: PlayArrowRoundedIcon, defaultMeta: "Key principle · 9×16 short", actionLabel: "Watch", badge: "Short" },
   other: { icon: InsertDriveFileOutlinedIcon, defaultMeta: "File", actionLabel: "Open", badge: "File" },
 };
 
@@ -108,17 +121,13 @@ function isPdf(r: { kind: string; mime_type: string | null }): boolean {
 }
 
 /**
- * PowerPoint slide decks — browsers can't render .pptx natively, but
- * Microsoft Office Online has a free public embed viewer that does.
- * Only the .pptx file itself gets the Office viewer; the matching .pdf
- * version (also classified as slide_deck) is handled by the PDF path.
+ * .pptx files used to render through Microsoft Office Online's public
+ * embed viewer, which is slow and shows MS chrome. We now always prefer
+ * the matching PDF (every kit ships both); the .pptx stays in the
+ * curriculum as a download for members who want an editable copy.
  */
-function isOffice(r: { kind: string; mime_type: string | null }): boolean {
-  return (
-    r.kind === "slide_deck" &&
-    r.mime_type ===
-      "application/vnd.openxmlformats-officedocument.presentationml.presentation"
-  );
+function isOffice(_r: { kind: string; mime_type: string | null }): boolean {
+  return false;
 }
 
 /**
@@ -129,28 +138,18 @@ function isPreviewable(r: { kind: string; mime_type: string | null }): boolean {
 }
 
 /**
- * Build the iframe src for a previewable file:
- *   - PDFs: Supabase URL directly with native PDF reader hash params
- *   - .pptx slide decks: Microsoft Office Online embed viewer wrapping the URL
+ * Build the iframe src for a previewable file. Native browser PDF reader,
+ * fitted to page width with the toolbar on so members can flip slides,
+ * fullscreen, and download from inside the viewer.
  */
-function previewSrc(r: { kind: string; mime_type: string | null }, url: string): string {
-  if (isOffice(r)) {
-    return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`;
-  }
-  return `${url}#view=FitH&toolbar=1`;
+function previewSrc(_r: { kind: string; mime_type: string | null }, url: string): string {
+  return `${url}#view=FitH&toolbar=1&navpanes=0`;
 }
 
-async function markProgress(resourceId: string, action: "view" | "complete") {
-  try {
-    await fetch(`/api/member/resources/${resourceId}/progress`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action }),
-    });
-  } catch {
-    /* silent */
-  }
-}
+// Note: progress is now tracked OPTIMISTICALLY inside the page component
+// so the local `resources` array reflects the change immediately. This
+// powers the live progress bar AND lets the 50% feedback prompt fire
+// without a page refresh.
 
 export default function ResourceKitDetailPage({ params }: { params: RouteParams }) {
   const { slug } = use(params);
@@ -158,6 +157,46 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
   const [loading, setLoading] = useState(true);
   const [activeId, setActiveId] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  /**
+   * Marks a resource as viewed (or completed) AND updates local state so
+   * the progress bar + 50% feedback prompt react instantly. Without the
+   * local mirror, the user had to refresh to see progress at all because
+   * the React state stayed at the values fetched on mount.
+   */
+  const markProgress = useCallback(async (resourceId: string, action: "view" | "complete") => {
+    const now = new Date().toISOString();
+    setResources((prev) =>
+      prev.map((r) => {
+        if (r.id !== resourceId) return r;
+        const previousProgress: Progress = r.progress ?? {
+          last_viewed_at: null,
+          completed_at: null,
+          watch_seconds: 0,
+        };
+        return {
+          ...r,
+          progress: {
+            last_viewed_at: previousProgress.last_viewed_at ?? now,
+            completed_at:
+              action === "complete"
+                ? (previousProgress.completed_at ?? now)
+                : previousProgress.completed_at,
+            watch_seconds: previousProgress.watch_seconds,
+          },
+        };
+      }),
+    );
+    try {
+      await fetch(`/api/member/resources/${resourceId}/progress`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+    } catch {
+      /* silent — optimistic state already reflects the intent */
+    }
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -230,6 +269,42 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
   const isFree = resources.length > 0 && resources.every((r) => r.is_free);
   const viewedCount = resources.filter((r) => r.progress?.last_viewed_at).length;
   const progressPct = resources.length > 0 ? Math.round((viewedCount / resources.length) * 100) : 0;
+  const kitType = resources[0]?.kit_type ?? "standard";
+  const isBookClub = kitType === "book_club";
+  // Pull the named principle shorts out of the resource list for the
+  // dedicated reel render. They still show in the curriculum below.
+  const shortResources = resources.filter((r) => r.kind === "video_short");
+
+  // Mid-kit feedback prompt — fires once when the member crosses 50%
+  // and we haven't already shown / submitted in this session.
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const feedbackChecked = useRef(false);
+  useEffect(() => {
+    if (feedbackChecked.current) return;
+    if (resources.length === 0) return;
+    if (progressPct < 50) return;
+    const slug = resources[0]?.topic_slug;
+    if (!slug) return;
+    // Already submitted or dismissed this session — skip.
+    try {
+      if (sessionStorage.getItem(`feedback_done:${slug}`) === "1") return;
+      if (sessionStorage.getItem(`feedback_dismissed:${slug}`) === "1") return;
+    } catch { /* private mode etc — proceed */ }
+    feedbackChecked.current = true;
+    // Confirm server-side that the feedback hasn't already been recorded
+    // (different session, different device). Only pop if no row.
+    (async () => {
+      try {
+        const res = await fetch(
+          `/api/member/resources/feedback?topic_slug=${encodeURIComponent(slug)}`,
+          { cache: "no-store" },
+        );
+        if (!res.ok) return;
+        const body = (await res.json()) as { submitted?: boolean };
+        if (!body.submitted) setFeedbackOpen(true);
+      } catch { /* best-effort */ }
+    })();
+  }, [progressPct, resources]);
 
   if (loading) {
     return (
@@ -283,8 +358,30 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
           sx={{ justifyContent: "space-between", alignItems: { md: "flex-end" } }}
         >
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", mb: 1 }}>
-              <Typography sx={editorialText.eyebrow}>Resource kit</Typography>
+            <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", mb: 1, flexWrap: "wrap", rowGap: 0.5 }}>
+              <Typography sx={editorialText.eyebrow}>
+                {isBookClub ? "Book club kit" : "Resource kit"}
+              </Typography>
+              {isBookClub && (
+                <Box
+                  component="span"
+                  sx={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    height: 18,
+                    px: 0.85,
+                    borderRadius: 0.5,
+                    bgcolor: "rgba(110,51,70,0.12)",
+                    color: "#6E3346",
+                    fontSize: "0.58rem",
+                    fontWeight: 800,
+                    letterSpacing: "0.14em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Book Club
+                </Box>
+              )}
               {isFree && <InlineTag label="Free" tone="leaf" />}
             </Stack>
             <Typography component="h1" sx={editorialText.display}>
@@ -323,6 +420,159 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
           </Box>
         </Stack>
       </Box>
+
+      {/* Book Club only — Key Principles reel. Each short represents one
+          named principle from the book; clicking plays it in the player. */}
+      {isBookClub && shortResources.length > 0 && (
+        <Box sx={{ mb: 3.5 }}>
+          <Stack
+            direction="row"
+            sx={{ alignItems: "baseline", justifyContent: "space-between", mb: 1.5 }}
+          >
+            <Box>
+              <Typography sx={{ ...editorialText.eyebrow, color: "#6E3346" }}>
+                Key principles
+              </Typography>
+              <Typography
+                sx={{
+                  fontFamily: "var(--font-display)",
+                  fontSize: { xs: "1.2rem", md: "1.4rem" },
+                  fontWeight: 500,
+                  color: "var(--ink)",
+                  letterSpacing: "-0.01em",
+                  mt: 0.25,
+                }}
+              >
+                The {shortResources.length} ideas from the book
+              </Typography>
+            </Box>
+          </Stack>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                sm: "repeat(2, 1fr)",
+                md: `repeat(${Math.min(shortResources.length, 3)}, 1fr)`,
+              },
+              gap: 2,
+            }}
+          >
+            {shortResources.map((s, i) => (
+              <Box
+                key={s.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => playLesson(s)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    playLesson(s);
+                  }
+                }}
+                sx={{
+                  cursor: "pointer",
+                  borderRadius: 1.5,
+                  border: "1px solid var(--paper-rule)",
+                  bgcolor: "var(--paper, #FBF8F1)",
+                  overflow: "hidden",
+                  transition: "transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease",
+                  "&:hover": {
+                    transform: "translateY(-2px)",
+                    borderColor: "#6E3346",
+                    boxShadow: "0 16px 32px -16px rgba(110,51,70,0.25)",
+                  },
+                  "&:focus-visible": {
+                    outline: "2px solid var(--gold)",
+                    outlineOffset: 2,
+                  },
+                }}
+              >
+                <Box
+                  sx={{
+                    position: "relative",
+                    aspectRatio: "9 / 16",
+                    bgcolor: "#0A1A2F",
+                    backgroundImage:
+                      "linear-gradient(160deg, #14334A 0%, #0A2236 100%)",
+                    display: "grid",
+                    placeItems: "center",
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: "50%",
+                      bgcolor: "rgba(217,168,75,0.85)",
+                      color: "#0A1A2F",
+                      display: "grid",
+                      placeItems: "center",
+                      boxShadow: "0 8px 22px -8px rgba(217,168,75,0.5)",
+                    }}
+                  >
+                    <PlayArrowRoundedIcon sx={{ fontSize: 28 }} />
+                  </Box>
+                  <Typography
+                    sx={{
+                      position: "absolute",
+                      top: 10,
+                      left: 10,
+                      fontSize: "0.62rem",
+                      fontWeight: 800,
+                      letterSpacing: "0.14em",
+                      color: "#F0C16E",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    Principle {i + 1}
+                  </Typography>
+                  {s.progress?.completed_at && (
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        top: 10,
+                        right: 10,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 0.4,
+                        height: 18,
+                        px: 0.75,
+                        borderRadius: 0.5,
+                        bgcolor: "rgba(34,108,78,0.85)",
+                        color: "#FFFFFF",
+                        fontSize: "0.58rem",
+                        fontWeight: 800,
+                        letterSpacing: "0.12em",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      Done
+                    </Box>
+                  )}
+                </Box>
+                <Box sx={{ p: 1.5 }}>
+                  <Typography
+                    sx={{
+                      fontFamily: "var(--font-display)",
+                      fontSize: "1rem",
+                      fontWeight: 600,
+                      color: "var(--ink)",
+                      letterSpacing: "-0.005em",
+                      lineHeight: 1.25,
+                    }}
+                  >
+                    {s.title}
+                  </Typography>
+                  <Typography sx={{ ...editorialText.meta, fontSize: "0.72rem", mt: 0.4 }}>
+                    9×16 short · Tap to play
+                  </Typography>
+                </Box>
+              </Box>
+            ))}
+          </Box>
+        </Box>
+      )}
 
       {/* PLAYER + CURRICULUM — Udemy-style balanced split */}
       <Grid container spacing={{ xs: 3, lg: 4 }}>
@@ -566,11 +816,31 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
         </Grid>
       </Grid>
 
+      {/* Discussion thread — collapsed by default. Anchored to the kit's
+          primary (first) resource so all questions about this kit roll
+          up to one thread. The originating expert (resources.originating_
+          expert_id) is notified on every new inquiry and reply. */}
+      {resources[0] && (
+        <ResourceInquiries
+          resourceId={resources[0].id}
+          resourceTitle={topicTitle}
+        />
+      )}
+
       {/* 1-on-1 coaching booking — every kit page surfaces this so members
           can take what they just learned into a focused call with Gary. */}
       <Box sx={{ mt: { xs: 4, lg: 5 } }}>
         <BookCoachingCard topicTitle={topicTitle} />
       </Box>
+
+      {/* Mid-kit feedback — fires once at 50% (see effect above). */}
+      <FeedbackDialog
+        open={feedbackOpen}
+        topicSlug={resources[0]?.topic_slug ?? ""}
+        topicTitle={topicTitle}
+        progressPct={progressPct}
+        onClose={() => setFeedbackOpen(false)}
+      />
     </Box>
   );
 }

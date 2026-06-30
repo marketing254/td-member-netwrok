@@ -31,6 +31,7 @@ import {
 } from "@/lib/supabase/vendorQueries";
 import type { VendorsRow } from "@/lib/supabase/types";
 import { SectionCard, StatusPill, portalText } from "@/components/vendor/PortalUI";
+import ReferralCard from "@/components/shared/ReferralCard";
 
 export default function VendorOverview() {
   const [loading, setLoading] = useState(true);
@@ -349,6 +350,11 @@ export default function VendorOverview() {
             </Typography>
           </Box>
         </Box>
+      </Box>
+
+      {/* Referral link — partners can share this on their own marketing */}
+      <Box sx={{ mb: 2 }}>
+        <ReferralCard endpoint="/api/vendor/referral" accent="#6E3346" />
       </Box>
 
       {/* Below the hero */}

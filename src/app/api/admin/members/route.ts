@@ -14,9 +14,7 @@ export async function GET() {
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from("members")
-      .select(
-        "id, first_name, last_name, credential, email, phone, practice_name, practice_role, city, status, tier, joined_at, created_at",
-      )
+      .select("*")
       .order("created_at", { ascending: false })
       .limit(500);
     if (error) throw error;

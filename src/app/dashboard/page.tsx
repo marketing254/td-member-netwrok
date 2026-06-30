@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
 import {
   Box,
   Button,
@@ -17,7 +16,6 @@ import PolicyOutlinedIcon from "@mui/icons-material/PolicyOutlined";
 import RuleFolderOutlinedIcon from "@mui/icons-material/RuleFolderOutlined";
 import { useCurrentMember } from "@/lib/hooks/useCurrentMember";
 import { KitCover } from "@/components/member/KitCover";
-import { SubscribeCard } from "@/components/member/SubscribeCard";
 import {
   EditorialHeader,
   EditorialSection,
@@ -134,6 +132,17 @@ export default function DashboardHome() {
     .filter((t) => t.lastViewedAt)
     .sort((a, b) => (a.lastViewedAt! < b.lastViewedAt! ? 1 : -1))
     .slice(0, 4);
+  // The single most-recently-touched kit that isn't already finished. This
+  // powers the "Pick up where you left off" hero card so the next click is
+  // never more than one tap away.
+  const continueKit =
+    topics
+      .filter(
+        (t) =>
+          t.lastViewedAt &&
+          !(t.completedCount === t.resourceCount && t.resourceCount > 0),
+      )
+      .sort((a, b) => (a.lastViewedAt! < b.lastViewedAt! ? 1 : -1))[0] ?? null;
 
   if (loading) {
     return (
@@ -145,18 +154,9 @@ export default function DashboardHome() {
 
   const firstName = member?.first_name ?? "there";
   const memberSince = formatJoined(member?.joined_at ?? member?.activated_at ?? null);
-  const isSubscribed =
-    member?.subscription_status === "active" || member?.subscription_status === "trialing";
 
   return (
     <Box sx={{ color: ink.primary }}>
-      <SubscriptionGate
-        member={member}
-        isSubscribed={isSubscribed}
-        firstName={firstName}
-      />
-
-
       <EditorialHeader
         eyebrow={`Member portal · ${member?.tier === "founding" ? "Founding cohort" : "Member"}`}
         title={`Welcome back, ${firstName}.`}
@@ -193,6 +193,14 @@ export default function DashboardHome() {
           </Button>
         }
       />
+
+      {/* Continue Watching hero — only renders when there's an in-progress
+          kit. Single big card so the next click is immediate. */}
+      {continueKit && (
+        <Box sx={{ mb: 3 }}>
+          <ContinueHero topic={continueKit} />
+        </Box>
+      )}
 
       {/* Metric strip — replaces 4-card grid */}
       <Box sx={{ mb: 3 }}>
@@ -324,282 +332,11 @@ export default function DashboardHome() {
   );
 }
 
-/**
- * SubscriptionGate decides whether to show the SubscribeCard, the
- * "payment received, account being set up" banner, or nothing.
- *
- * Without this, a member who just paid on Stripe gets bounced back to
- * /dashboard with `?subscribed=1` and briefly sees the Subscribe card
- * again (until the webhook lands and updates the DB). That looks
- * broken. We optimistically hide the SubscribeCard the moment we see
- * the query param and show a small success banner while we poll the
- * member API for the canonical subscription state.
+/* --- removed: SubscriptionGate, ProcessingBanner, CheckoutCanceledNote ---
+ * The /upgrade page now owns the paywall + post-Stripe processing flow.
+ * Middleware guarantees only paid members reach /dashboard.
  */
-function SubscriptionGate({
-  member,
-  isSubscribed,
-  firstName,
-}: {
-  member: ReturnType<typeof useCurrentMember>["member"];
-  isSubscribed: boolean;
-  firstName: string;
-}) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const justSubscribed = searchParams.get("subscribed") === "1";
-  const checkoutCanceled = searchParams.get("subscribed") === "0";
-  const [pollExhausted, setPollExhausted] = useState(false);
 
-  // Poll /api/member/me for up to ~30 seconds after the redirect, then
-  // surface a clear "still confirming" state with a manual refresh button.
-  useEffect(() => {
-    if (!justSubscribed || isSubscribed) return;
-    let attempts = 0;
-    const interval = setInterval(async () => {
-      attempts += 1;
-      try {
-        const res = await fetch("/api/member/me", { cache: "no-store" });
-        if (res.ok) {
-          const body = (await res.json()) as {
-            member?: { subscription_status?: string | null };
-          };
-          const status = body.member?.subscription_status;
-          if (status === "active" || status === "trialing") {
-            clearInterval(interval);
-            router.replace("/dashboard");
-            router.refresh();
-            return;
-          }
-        }
-      } catch {
-        /* swallow — try again next tick */
-      }
-      if (attempts >= 15) {
-        clearInterval(interval);
-        setPollExhausted(true);
-      }
-    }, 2000);
-    return () => clearInterval(interval);
-  }, [justSubscribed, isSubscribed, router]);
-
-  if (!member) return null;
-
-  // Real subscribed state — clean dashboard.
-  if (isSubscribed) {
-    if (justSubscribed) {
-      return (
-        <Box sx={{ mb: 3 }}>
-          <ProcessingBanner variant="success" />
-        </Box>
-      );
-    }
-    return null;
-  }
-
-  // Just came back from Stripe — webhook hasn't landed yet.
-  if (justSubscribed) {
-    return (
-      <Box sx={{ mb: 3 }}>
-        <ProcessingBanner variant={pollExhausted ? "stuck" : "pending"} />
-      </Box>
-    );
-  }
-
-  // Came back from a cancelled Checkout — show SubscribeCard with note.
-  return (
-    <Box sx={{ mb: 3 }}>
-      {checkoutCanceled && <CheckoutCanceledNote />}
-      <SubscribeCard firstName={firstName} />
-    </Box>
-  );
-}
-
-function ProcessingBanner({ variant }: { variant: "pending" | "stuck" | "success" }) {
-  const palette =
-    variant === "success"
-      ? {
-          bg: "rgba(34,108,78,0.06)",
-          border: "1px solid rgba(34,108,78,0.25)",
-          icon: "#1F5C40",
-          iconBg: "rgba(34,108,78,0.18)",
-          title: "#1F5C40",
-          body: "#3B4A55",
-        }
-      : variant === "stuck"
-        ? {
-            bg: "rgba(140,29,29,0.04)",
-            border: "1px solid rgba(140,29,29,0.22)",
-            icon: "#8C1D1D",
-            iconBg: "rgba(140,29,29,0.1)",
-            title: "#8C1D1D",
-            body: "#3B4A55",
-          }
-        : {
-            bg: "rgba(217,168,75,0.08)",
-            border: "1px solid rgba(217,168,75,0.32)",
-            icon: "#A07823",
-            iconBg: "rgba(217,168,75,0.16)",
-            title: "#7A5B17",
-            body: "#5C6770",
-          };
-
-  const title =
-    variant === "success"
-      ? "Payment received — your membership is active."
-      : variant === "stuck"
-        ? "Payment received — still confirming with Stripe."
-        : "Payment received — setting up your account…";
-
-  const body =
-    variant === "success"
-      ? "Reload the page if anything still looks stale. Your invoice is on the Profile page."
-      : variant === "stuck"
-        ? "This usually clears in seconds. Refresh below, or check the Profile page for your subscription status. If it's still not updated after a minute, email members@joindmn.com — we can confirm manually."
-        : "Stripe is confirming the payment. This usually takes a few seconds — feel free to keep browsing.";
-
-  return (
-    <Box
-      sx={{
-        position: "relative",
-        overflow: "hidden",
-        borderRadius: 2,
-        bgcolor: palette.bg,
-        border: palette.border,
-        px: { xs: 2, md: 2.5 },
-        py: { xs: 1.75, md: 2 },
-      }}
-    >
-      <Stack
-        direction={{ xs: "column", sm: "row" }}
-        spacing={1.5}
-        sx={{ alignItems: { sm: "center" } }}
-      >
-        {variant === "success" ? (
-          <Box
-            sx={{
-              width: 32,
-              height: 32,
-              borderRadius: "50%",
-              bgcolor: palette.iconBg,
-              color: palette.icon,
-              display: "grid",
-              placeItems: "center",
-              flexShrink: 0,
-            }}
-          >
-            ✓
-          </Box>
-        ) : variant === "stuck" ? (
-          <Box
-            sx={{
-              width: 32,
-              height: 32,
-              borderRadius: "50%",
-              bgcolor: palette.iconBg,
-              color: palette.icon,
-              display: "grid",
-              placeItems: "center",
-              flexShrink: 0,
-              fontWeight: 700,
-              fontSize: "1rem",
-            }}
-          >
-            !
-          </Box>
-        ) : (
-          <CircularProgress size={20} sx={{ color: palette.icon, flexShrink: 0 }} />
-        )}
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography
-            sx={{
-              fontSize: "0.94rem",
-              fontWeight: 600,
-              color: palette.title,
-              lineHeight: 1.3,
-            }}
-          >
-            {title}
-          </Typography>
-          <Typography
-            sx={{ fontSize: "0.78rem", color: palette.body, mt: 0.25, lineHeight: 1.5 }}
-          >
-            {body}
-          </Typography>
-        </Box>
-        {variant !== "pending" && (
-          <Stack
-            direction="row"
-            spacing={0.75}
-            sx={{ flexShrink: 0, alignSelf: { xs: "flex-start", sm: "center" } }}
-          >
-            <Button
-              onClick={() => {
-                // Bypass the cached fetch by hitting the network again.
-                window.location.assign("/dashboard");
-              }}
-              size="small"
-              variant="contained"
-              disableElevation
-              sx={{
-                bgcolor: palette.icon,
-                color: "#FFFFFF",
-                textTransform: "none",
-                fontSize: "0.78rem",
-                fontWeight: 600,
-                borderRadius: 0.75,
-                px: 1.5,
-                py: 0.5,
-                "&:hover": {
-                  bgcolor: "color-mix(in oklch, var(--ink) 12%, " + palette.icon + ")",
-                },
-              }}
-            >
-              Refresh
-            </Button>
-            <Button
-              component={Link}
-              href="/dashboard/account"
-              size="small"
-              variant="outlined"
-              sx={{
-                borderColor: palette.icon,
-                color: palette.icon,
-                textTransform: "none",
-                fontSize: "0.78rem",
-                fontWeight: 600,
-                borderRadius: 0.75,
-                px: 1.5,
-                py: 0.5,
-                "&:hover": { bgcolor: palette.iconBg },
-              }}
-            >
-              View Profile
-            </Button>
-          </Stack>
-        )}
-      </Stack>
-    </Box>
-  );
-}
-
-function CheckoutCanceledNote() {
-  return (
-    <Box
-      sx={{
-        borderRadius: 1.25,
-        bgcolor: "rgba(14,42,61,0.04)",
-        border: "1px solid rgba(14,42,61,0.1)",
-        px: 1.75,
-        py: 1.25,
-        mb: 2,
-        fontSize: "0.84rem",
-        color: "#3B4A55",
-      }}
-    >
-      Checkout was cancelled. Pick a plan when you&apos;re ready.
-    </Box>
-  );
-}
 
 function SeeAllLink({ href, label }: { href: string; label: string }) {
   return (
@@ -748,14 +485,177 @@ function DashboardKitTile({ topic }: { topic: TopicCard }) {
           portalCardUrl={topic.portalCardUrl}
         />
       </Box>
-      <Typography sx={{ ...editorialText.meta, mt: "auto" }}>
-        {topic.resourceCount} {topic.resourceCount === 1 ? "item" : "items"}
-        {topic.viewedCount > 0
-          ? ` · ${topic.viewedCount} done`
-          : topic.videoCount > 0
-            ? ` · ${topic.videoCount} video${topic.videoCount === 1 ? "" : "s"}`
-            : ""}
-      </Typography>
+      <Box sx={{ mt: "auto" }}>
+        <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center", mb: 0.5 }}>
+          <Typography
+            sx={{
+              fontSize: "0.62rem",
+              fontWeight: 700,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              color: completed ? "var(--leaf, #1F5C40)" : inProgress ? "var(--gold-deep)" : "var(--ink-fade)",
+            }}
+          >
+            {completed ? "Complete" : inProgress ? `${progressPct}% complete` : "Not started"}
+          </Typography>
+          <Typography sx={{ ...editorialText.meta, fontSize: "0.7rem" }}>
+            {topic.viewedCount}/{topic.resourceCount}
+          </Typography>
+        </Stack>
+        <Box sx={{ height: 5, borderRadius: 999, bgcolor: "rgba(14,42,61,0.08)", overflow: "hidden" }}>
+          <Box
+            sx={{
+              height: "100%",
+              width: `${progressPct}%`,
+              borderRadius: 999,
+              bgcolor: completed ? "var(--leaf, #1F5C40)" : "var(--gold-deep, #A07823)",
+              transition: "width 240ms cubic-bezier(0.16, 1, 0.3, 1)",
+            }}
+          />
+        </Box>
+      </Box>
+    </Box>
+  );
+}
+
+function ContinueHero({ topic }: { topic: TopicCard }) {
+  const progressPct =
+    topic.resourceCount > 0
+      ? Math.round((topic.viewedCount / topic.resourceCount) * 100)
+      : 0;
+  return (
+    <Box
+      component={Link}
+      href={`/dashboard/resources/${topic.slug}`}
+      sx={{
+        display: "block",
+        textDecoration: "none",
+        color: "inherit",
+        borderRadius: 2,
+        border: "1px solid var(--paper-rule, rgba(14,42,61,0.08))",
+        bgcolor: "var(--paper, #FBF8F1)",
+        overflow: "hidden",
+        transition: "transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out)",
+        "&:hover": {
+          transform: "translateY(-2px)",
+          boxShadow: "0 16px 40px -28px rgba(14,42,61,0.4)",
+        },
+        "&:focus-visible": {
+          outline: "2px solid var(--gold)",
+          outlineOffset: 3,
+        },
+      }}
+    >
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        spacing={{ xs: 2, sm: 2.5 }}
+        sx={{ p: { xs: 2, sm: 2.5 }, alignItems: { sm: "center" } }}
+      >
+        <Box sx={{ width: { xs: "100%", sm: 130 }, flexShrink: 0 }}>
+          <KitCover
+            slug={topic.slug}
+            title={topic.title}
+            videoCount={topic.videoCount}
+            resourceCount={topic.resourceCount}
+            isFree={topic.isFree}
+            inProgress
+            progressPct={progressPct}
+            portalCardUrl={topic.portalCardUrl}
+            size="sm"
+          />
+        </Box>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Stack
+            direction="row"
+            sx={{ alignItems: "center", justifyContent: "space-between", gap: 1, mb: 0.5 }}
+          >
+            <Typography
+              sx={{
+                fontSize: "0.65rem",
+                fontWeight: 800,
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: "var(--gold-deep, #A07823)",
+                lineHeight: 1,
+              }}
+            >
+              Continue where you left off
+            </Typography>
+            <Typography
+              sx={{
+                fontSize: "0.75rem",
+                fontWeight: 800,
+                color: "var(--gold-deep, #A07823)",
+                lineHeight: 1,
+                whiteSpace: "nowrap",
+                fontVariantNumeric: "tabular-nums",
+              }}
+            >
+              {progressPct}% complete
+            </Typography>
+          </Stack>
+          <Typography
+            sx={{
+              fontFamily: "var(--font-display)",
+              fontSize: { xs: "1.15rem", md: "1.35rem" },
+              fontWeight: 600,
+              color: "var(--ink, #0A1A2F)",
+              lineHeight: 1.2,
+              letterSpacing: "-0.01em",
+              mb: 1,
+              display: "-webkit-box",
+              WebkitLineClamp: 1,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+            }}
+          >
+            {topic.title}
+          </Typography>
+          <Typography
+            sx={{
+              fontSize: "0.74rem",
+              color: "var(--ink-soft, #3B4A55)",
+              fontWeight: 500,
+              mb: 0.6,
+            }}
+          >
+            {topic.viewedCount} of {topic.resourceCount} resources opened
+          </Typography>
+          <Box sx={{ height: 6, borderRadius: 999, bgcolor: "rgba(14,42,61,0.08)", overflow: "hidden" }}>
+            <Box
+              sx={{
+                height: "100%",
+                width: `${progressPct}%`,
+                borderRadius: 999,
+                bgcolor: "var(--gold-deep, #A07823)",
+                transition: "width 240ms cubic-bezier(0.16, 1, 0.3, 1)",
+              }}
+            />
+          </Box>
+        </Box>
+        <Box
+          sx={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 0.5,
+            color: "var(--paper)",
+            bgcolor: "var(--ink, #0A1A2F)",
+            fontSize: "0.85rem",
+            fontWeight: 700,
+            borderRadius: 999,
+            px: 2,
+            alignSelf: { xs: "stretch", sm: "center" },
+            justifyContent: { xs: "center", sm: "flex-start" },
+            py: 1,
+            flexShrink: 0,
+            whiteSpace: "nowrap",
+            transition: "background-color var(--dur-fast) var(--ease-out)",
+            "a:hover &": { bgcolor: "color-mix(in oklch, var(--ink) 88%, white)" },
+          }}
+        >
+          Continue <ArrowForwardIcon sx={{ fontSize: 14 }} />
+        </Box>
+      </Stack>
     </Box>
   );
 }

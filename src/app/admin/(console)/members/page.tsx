@@ -6,6 +6,14 @@ import {
   Button,
   Chip,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Divider,
+  Drawer,
+  IconButton,
   InputAdornment,
   Snackbar,
   Stack,
@@ -16,9 +24,16 @@ import {
 } from "@mui/material";
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
+import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import PauseCircleOutlineRoundedIcon from "@mui/icons-material/PauseCircleOutlineRounded";
+import PlayArrowRoundedIcon from "@mui/icons-material/PlayArrowRounded";
+import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 
+// Full members-table row. The list API returns SELECT * so every column the
+// admin might want to see is here, not just the summary columns.
 type MemberRow = {
   id: string;
+  auth_user_id?: string | null;
   first_name: string;
   last_name: string | null;
   credential: string | null;
@@ -27,10 +42,26 @@ type MemberRow = {
   practice_name: string | null;
   practice_role: string | null;
   city: string | null;
+  state?: string | null;
   status: "waitlist" | "invited" | "active" | "paused" | "churned";
   tier: string | null;
   joined_at: string | null;
+  activated_at?: string | null;
   created_at: string;
+  updated_at?: string | null;
+
+  // Stripe billing
+  stripe_customer_id?: string | null;
+  stripe_subscription_id?: string | null;
+  stripe_price_id?: string | null;
+  subscription_status?: string | null;
+  subscription_interval?: string | null;
+  current_period_end?: string | null;
+  cancel_at_period_end?: boolean | null;
+  canceled_at?: string | null;
+  card_brand?: string | null;
+  card_last4?: string | null;
+  founding_member_locked?: boolean | null;
 };
 
 type WaitlistRow = {
@@ -90,6 +121,8 @@ function MembersPanel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState("");
+  const [selected, setSelected] = useState<MemberRow | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -197,6 +230,15 @@ function MembersPanel() {
           filtered.map((m, i) => (
             <Box
               key={m.id}
+              role="button"
+              tabIndex={0}
+              onClick={() => setSelected(m)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setSelected(m);
+                }
+              }}
               sx={{
                 display: "grid",
                 gridTemplateColumns: { xs: "1fr", md: "1.8fr 1.4fr 0.8fr 0.8fr 0.9fr" },
@@ -206,7 +248,9 @@ function MembersPanel() {
                 py: 2,
                 borderBottom: i === filtered.length - 1 ? 0 : "1px solid",
                 borderColor: "divider",
+                cursor: "pointer",
                 "&:hover": { bgcolor: "grey.50" },
+                "&:focus-visible": { outline: "2px solid #A07823", outlineOffset: -2 },
               }}
             >
               <Box sx={{ minWidth: 0 }}>
@@ -247,8 +291,372 @@ function MembersPanel() {
           ))
         )}
       </Box>
+
+      <MemberDetailDrawer
+        member={selected}
+        onClose={() => setSelected(null)}
+        onToast={setToast}
+        onChanged={load}
+      />
+      <Snackbar
+        open={!!toast}
+        autoHideDuration={4000}
+        onClose={() => setToast(null)}
+        message={toast ?? ""}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      />
     </Stack>
   );
+}
+
+function MemberDetailDrawer({
+  member,
+  onClose,
+  onToast,
+  onChanged,
+}: {
+  member: MemberRow | null;
+  onClose: () => void;
+  onToast: (msg: string) => void;
+  onChanged: () => void | Promise<void>;
+}) {
+  const [busy, setBusy] = useState<"deactivate" | "reactivate" | "delete" | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [typedEmail, setTypedEmail] = useState("");
+  const open = !!member;
+
+  // Reset confirmation state every time a different member is opened.
+  useEffect(() => {
+    setConfirmDelete(false);
+    setTypedEmail("");
+  }, [member?.id]);
+
+  if (!member) {
+    return (
+      <Drawer
+        anchor="right"
+        open={open}
+        onClose={onClose}
+        slotProps={{ paper: { sx: { width: { xs: "100%", sm: 480 } } } }}
+      />
+    );
+  }
+
+  const isPaused = member.status === "paused";
+  const fullName = [member.first_name, member.last_name].filter(Boolean).join(" ") || "—";
+
+  const doAction = async (action: "deactivate" | "reactivate") => {
+    setBusy(action);
+    try {
+      const res = await fetch(`/api/admin/members/${member.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      const body = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+      if (!res.ok || body.error) {
+        onToast(body.error ?? `${action} failed (${res.status})`);
+        return;
+      }
+      onToast(action === "deactivate" ? "Member deactivated." : "Member reactivated.");
+      await onChanged();
+      onClose();
+    } catch (err) {
+      onToast(err instanceof Error ? err.message : `${action} failed.`);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const doDelete = async () => {
+    setBusy("delete");
+    try {
+      const res = await fetch(`/api/admin/members/${member.id}`, { method: "DELETE" });
+      const body = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+      if (!res.ok || body.error) {
+        onToast(body.error ?? `Delete failed (${res.status})`);
+        return;
+      }
+      onToast(`Deleted ${member.email}.`);
+      await onChanged();
+      onClose();
+    } catch (err) {
+      onToast(err instanceof Error ? err.message : "Delete failed.");
+    } finally {
+      setBusy(null);
+      setConfirmDelete(false);
+    }
+  };
+
+  return (
+    <>
+      <Drawer
+        anchor="right"
+        open={open}
+        onClose={onClose}
+        slotProps={{ paper: { sx: { width: { xs: "100%", sm: 480 } } } }}
+      >
+        <Box sx={{ p: 3 }}>
+          <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+            <Typography sx={{ fontSize: "0.7rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "text.secondary", fontWeight: 700 }}>
+              Member detail
+            </Typography>
+            <IconButton size="small" onClick={onClose}>
+              <CloseRoundedIcon fontSize="small" />
+            </IconButton>
+          </Stack>
+          <Typography sx={{ fontSize: "1.4rem", fontWeight: 700, color: "#0A1A2F" }}>
+            {fullName}
+            {member.credential ? `, ${member.credential}` : ""}
+          </Typography>
+          <Typography sx={{ fontSize: "0.86rem", color: "text.secondary", mt: 0.25 }}>
+            {member.email}
+          </Typography>
+          <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
+            <StatusChip status={member.status} />
+            <TierChip tier={member.tier} />
+            {member.founding_member_locked && (
+              <Chip
+                label="FOUNDING LOCKED"
+                size="small"
+                sx={{
+                  bgcolor: "rgba(217,168,75,0.18)",
+                  color: "#A07823",
+                  fontWeight: 800,
+                  fontSize: "0.66rem",
+                  height: 22,
+                }}
+              />
+            )}
+          </Stack>
+
+          <Divider sx={{ my: 2.5 }} />
+
+          <Section title="Identity">
+            <Field label="First name" value={member.first_name} />
+            <Field label="Last name" value={member.last_name} />
+            <Field label="Credential" value={member.credential} />
+            <Field label="Email" value={member.email} mono />
+            <Field label="Phone" value={member.phone} />
+            <Field label="Member ID" value={member.id} mono small />
+            {member.auth_user_id && <Field label="Auth user ID" value={member.auth_user_id} mono small />}
+          </Section>
+
+          <Section title="Practice">
+            <Field label="Practice name" value={member.practice_name} />
+            <Field label="Role" value={member.practice_role} />
+            <Field label="City" value={member.city} />
+            {member.state && <Field label="State / Region" value={member.state} />}
+          </Section>
+
+          <Section title="Subscription">
+            <Field label="Subscription status" value={member.subscription_status} />
+            <Field label="Interval" value={member.subscription_interval} />
+            <Field label="Current period ends" value={formatDate(member.current_period_end)} />
+            <Field
+              label="Cancel at period end?"
+              value={member.cancel_at_period_end ? "Yes" : "No"}
+            />
+            <Field label="Canceled at" value={formatDate(member.canceled_at)} />
+            <Field label="Card" value={cardLabel(member)} />
+            <Field
+              label="Founding rate locked?"
+              value={member.founding_member_locked ? "Yes" : "No"}
+            />
+          </Section>
+
+          <Section title="Stripe IDs">
+            <Field label="Customer ID" value={member.stripe_customer_id} mono small />
+            <Field label="Subscription ID" value={member.stripe_subscription_id} mono small />
+            <Field label="Price ID" value={member.stripe_price_id} mono small />
+          </Section>
+
+          <Section title="Activity">
+            <Field label="Joined" value={formatDate(member.joined_at)} />
+            <Field label="Activated" value={formatDate(member.activated_at)} />
+            <Field label="Created" value={formatDate(member.created_at)} />
+            <Field label="Updated" value={formatDate(member.updated_at)} />
+          </Section>
+
+          <Divider sx={{ my: 2.5 }} />
+
+          <Stack spacing={1}>
+            {isPaused ? (
+              <Button
+                fullWidth
+                variant="outlined"
+                disabled={busy !== null}
+                onClick={() => doAction("reactivate")}
+                startIcon={
+                  busy === "reactivate" ? (
+                    <CircularProgress size={14} />
+                  ) : (
+                    <PlayArrowRoundedIcon fontSize="small" />
+                  )
+                }
+                sx={{
+                  textTransform: "none",
+                  fontWeight: 700,
+                  borderColor: "#1F5C40",
+                  color: "#1F5C40",
+                  "&:hover": { borderColor: "#1F5C40", bgcolor: "rgba(31,92,64,0.06)" },
+                }}
+              >
+                {busy === "reactivate" ? "Reactivating…" : "Reactivate member"}
+              </Button>
+            ) : (
+              <Button
+                fullWidth
+                variant="outlined"
+                disabled={busy !== null}
+                onClick={() => doAction("deactivate")}
+                startIcon={
+                  busy === "deactivate" ? (
+                    <CircularProgress size={14} />
+                  ) : (
+                    <PauseCircleOutlineRoundedIcon fontSize="small" />
+                  )
+                }
+                sx={{
+                  textTransform: "none",
+                  fontWeight: 700,
+                  borderColor: "#A07823",
+                  color: "#A07823",
+                  "&:hover": { borderColor: "#A07823", bgcolor: "rgba(160,120,35,0.06)" },
+                }}
+              >
+                {busy === "deactivate" ? "Deactivating…" : "Deactivate (pause + cancel Stripe at period end)"}
+              </Button>
+            )}
+
+            <Button
+              fullWidth
+              variant="contained"
+              color="error"
+              disabled={busy !== null}
+              onClick={() => setConfirmDelete(true)}
+              startIcon={<DeleteOutlineRoundedIcon fontSize="small" />}
+              sx={{
+                textTransform: "none",
+                fontWeight: 700,
+                bgcolor: "#8C1D1D",
+                "&:hover": { bgcolor: "#6F1717" },
+              }}
+            >
+              Delete member permanently
+            </Button>
+          </Stack>
+        </Box>
+      </Drawer>
+
+      <Dialog open={confirmDelete} onClose={() => setConfirmDelete(false)}>
+        <DialogTitle sx={{ fontWeight: 700 }}>Delete this member?</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            This permanently removes <strong>{fullName}</strong>{" "}
+            ({member.email}). Their Stripe subscription will be cancelled
+            immediately and their auth user deleted. The email can re-signup
+            from scratch.
+          </DialogContentText>
+          <DialogContentText sx={{ mb: 1, fontSize: "0.85rem" }}>
+            Type the email to confirm:
+          </DialogContentText>
+          <TextField
+            fullWidth
+            size="small"
+            value={typedEmail}
+            onChange={(e) => setTypedEmail(e.target.value)}
+            placeholder={member.email}
+            autoFocus
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmDelete(false)} sx={{ textTransform: "none" }}>
+            Cancel
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            disabled={typedEmail.trim().toLowerCase() !== member.email.toLowerCase() || busy === "delete"}
+            onClick={doDelete}
+            sx={{ textTransform: "none", bgcolor: "#8C1D1D", "&:hover": { bgcolor: "#6F1717" } }}
+          >
+            {busy === "delete" ? "Deleting…" : "Delete permanently"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <Box sx={{ mb: 2.5 }}>
+      <Typography
+        sx={{
+          fontSize: "0.7rem",
+          letterSpacing: "0.12em",
+          textTransform: "uppercase",
+          color: "text.secondary",
+          fontWeight: 700,
+          mb: 1,
+        }}
+      >
+        {title}
+      </Typography>
+      <Stack spacing={0.75}>{children}</Stack>
+    </Box>
+  );
+}
+
+function Field({
+  label,
+  value,
+  mono,
+  small,
+}: {
+  label: string;
+  value: string | null | undefined;
+  mono?: boolean;
+  small?: boolean;
+}) {
+  return (
+    <Stack direction="row" sx={{ alignItems: "baseline", gap: 1.5 }}>
+      <Typography sx={{ fontSize: "0.78rem", color: "text.secondary", width: 150, flexShrink: 0 }}>
+        {label}
+      </Typography>
+      <Typography
+        sx={{
+          fontSize: small ? "0.74rem" : "0.86rem",
+          fontFamily: mono ? "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace)" : undefined,
+          color: value ? "text.primary" : "text.secondary",
+          wordBreak: "break-all",
+        }}
+      >
+        {value ?? "—"}
+      </Typography>
+    </Stack>
+  );
+}
+
+function formatDate(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  try {
+    return new Intl.DateTimeFormat("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    }).format(new Date(iso));
+  } catch {
+    return iso.slice(0, 19).replace("T", " ");
+  }
+}
+
+function cardLabel(m: MemberRow): string | null {
+  if (!m.card_brand && !m.card_last4) return null;
+  return `${m.card_brand ?? "Card"} •••• ${m.card_last4 ?? "----"}`;
 }
 
 function WaitlistPanel() {

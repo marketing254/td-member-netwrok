@@ -14,7 +14,7 @@ const FIT_YES = [
 
 const FIT_NO = [
   "You're looking for free generic content (plenty exists)",
-  "You want a high-ticket coaching program — that's not us",
+  "If you're after a $20k one-on-one coaching contract — that's not us. DMN is the experts, resources, and answers, for $49.",
   "You won't ever message the helpline or use a deal",
   "You're not a decision-maker in a practice",
 ];

@@ -172,6 +172,28 @@ export function BookCoachingCard({ topicTitle }: { topicTitle?: string }) {
             </Button>
           </Box>
         </Stack>
+
+        {/* Disclaimer — sits directly below the CTA row, bold and high-contrast
+            so members read it before they click. */}
+        <Box
+          sx={{
+            mt: 1.25,
+            px: { xs: 2, md: 3 },
+            pb: { xs: 1.75, md: 2 },
+          }}
+        >
+          <Typography
+            sx={{
+              fontSize: { xs: "0.82rem", md: "0.86rem" },
+              fontWeight: 700,
+              color: "var(--gold-deep, #A07823)",
+              lineHeight: 1.5,
+              textAlign: { xs: "center", md: "right" },
+            }}
+          >
+            Experts may offer their own services when you reach out — always your choice.
+          </Typography>
+        </Box>
       </Box>
 
       <BookingDialog

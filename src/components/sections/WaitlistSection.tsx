@@ -1,6 +1,6 @@
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   Box,
@@ -18,6 +18,7 @@ import {
 import {
   ArrowRight,
   ExternalLink,
+  GraduationCap,
   Lock,
   Store,
   User,
@@ -32,28 +33,61 @@ import { vendorCategories } from "@/lib/vendorData";
 
 const MotionBox = motion.create(Box);
 
-type HeroRole = "member" | "vendor";
+// Internal value is still "vendor" so the /api/vendor/signup endpoint and
+// vendor_applications schema don't have to migrate. The UI label is
+// "Partner" everywhere. Same for routes — /vendor/* stay as-is.
+type HeroRole = "member" | "vendor" | "expert";
 
 const OTHER = "Other";
+
+// The EXACT copy users accept when they check the SMS box. Persisted
+// verbatim on the server so we have an audit trail for TCPA / CASL.
+// Update this string in lockstep with the JSX label below — they must match.
+const SMS_CONSENT_TEXT =
+  "I agree to receive SMS messages from the Dental Member Network, including hotline replies. Reply STOP to opt out.";
+
+type WaitlistSectionProps = {
+  /**
+   * Lock the form to a single role and hide the segmented toggle. Used on
+   * /experts and /partners so the same form appears there as on the home
+   * page but only shows the relevant fields. Omit to render the full
+   * three-tab UX (the home-page behavior).
+   */
+  lockedRole?: HeroRole;
+  /** DOM id used for in-page anchor links (defaults to "waitlist"). */
+  sectionId?: string;
+};
 
 /**
  * Standalone waitlist form section. Field structure and payload shape are
  * IDENTICAL to the previous hero-embedded version so the Supabase schema and
  * admin reporting continue to work unchanged.
+ *
+ * When `lockedRole` is set, the segmented toggle is hidden and the form is
+ * locked to that role — used to embed the exact same UX on /experts
+ * (expert) and /partners (vendor) pages without duplicating the form.
  */
-export default function WaitlistSection() {
+export default function WaitlistSection({ lockedRole, sectionId }: WaitlistSectionProps = {}) {
   const router = useRouter();
+  const params = useSearchParams();
   const reduced = useReducedMotion();
 
-  const [role, setRole] = useState<HeroRole>("member");
+  const [role, setRole] = useState<HeroRole>(lockedRole ?? "member");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Vendor partnership agreement (left checkbox in vendor mode).
+  // Partner partnership agreement (left checkbox in partner mode).
   const [agreed, setAgreed] = useState(false);
-  // Vendor authorization (right checkbox in vendor mode).
+  // Partner authorization (right checkbox in partner mode).
   const [authorized, setAuthorized] = useState(false);
   // Member agreement acceptance (only checkbox in member mode).
   const [memberAgreed, setMemberAgreed] = useState(false);
+  // Expert agreement acceptance (only checkbox in expert mode).
+  const [expertAgreed, setExpertAgreed] = useState(false);
+  // SMS consent — required for the Hotline reply flow + announcements.
+  // The exact text below is persisted server-side as evidence (TCPA/CASL).
+  const [memberSmsConsent, setMemberSmsConsent] = useState(false);
+  const [vendorSmsConsent, setVendorSmsConsent] = useState(false);
+  const [expertSmsConsent, setExpertSmsConsent] = useState(false);
 
   // Tracked dropdown values so we can reveal an "Other" text input when
   // the user picks "Other".
@@ -62,16 +96,36 @@ export default function WaitlistSection() {
   const [memberChallenge, setMemberChallenge] = useState("");
 
   const isVendor = role === "vendor";
+  const isExpert = role === "expert";
+
+  // Pre-select tab from ?role=member|expert|partner (set by the
+  // OneNetworkThreeWays CTAs and the public /experts and /partners pages).
+  // Skip when `lockedRole` is set — the form is already pinned to a role
+  // and we don't want URL params to override the page-locked choice.
+  useEffect(() => {
+    if (lockedRole) return;
+    const r = params?.get("role");
+    if (r === "member" || r === "vendor" || r === "expert") {
+      setRole(r);
+    } else if (r === "partner") {
+      // Public-facing alias for the internal "vendor" value.
+      setRole("vendor");
+    }
+  }, [params, lockedRole]);
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
 
     if (isVendor && (!agreed || !authorized)) {
-      setError("Please confirm both boxes before applying as a vendor partner.");
+      setError("Please confirm both boxes before applying as a partner.");
       return;
     }
-    if (!isVendor && !memberAgreed) {
+    if (isExpert && !expertAgreed) {
+      setError("Please confirm you'd like to be considered as a Founding Expert.");
+      return;
+    }
+    if (!isVendor && !isExpert && !memberAgreed) {
       setError("Please agree to the Member Agreement to join the waitlist.");
       return;
     }
@@ -111,6 +165,9 @@ export default function WaitlistSection() {
           signatureTitle: fd.get("signatureTitle"),
           agreedToTerms: agreed,
           confirmedAuthority: authorized,
+          smsConsent: vendorSmsConsent,
+          smsConsentText: vendorSmsConsent ? SMS_CONSENT_TEXT : null,
+          smsConsentAt: vendorSmsConsent ? new Date().toISOString() : null,
           planId: "founding",
           source: "landing-vendor-cta",
         };
@@ -130,14 +187,67 @@ export default function WaitlistSection() {
         return;
       }
 
-      // Member waitlist branch
+      // Expert application branch — dedicated endpoint + table now
+      // (was previously coerced into waitlist_signups with role marker
+      // in utm; switched to /api/expert/signup → expert_applications so
+      // the team can triage applications separately and the applicant
+      // gets the expert-specific confirmation email).
+      if (isExpert) {
+        const nowIso = new Date().toISOString();
+        const expertPayload = {
+          fullName,
+          email: fd.get("email"),
+          phone: fd.get("phone") ?? undefined,
+          companyName: fd.get("companyName") ?? undefined,
+          specialty: String(fd.get("expertSpecialty") ?? "").trim(),
+          topics: String(fd.get("expertTopics") ?? "").trim() || undefined,
+          website: String(fd.get("expertWebsite") ?? "").trim() || undefined,
+          bookingLink: String(fd.get("expertBookingLink") ?? "").trim() || undefined,
+          source: lockedRole === "expert" ? "experts-page" : "landing-expert-cta",
+          utm: {
+            role_label: "expert",
+          },
+          agreementAccepted: expertAgreed,
+          agreementAcceptedAt: nowIso,
+          smsConsent: expertSmsConsent,
+          smsConsentText: expertSmsConsent ? SMS_CONSENT_TEXT : null,
+          smsConsentAt: expertSmsConsent ? nowIso : null,
+        };
+        const res = await fetch("/api/expert/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(expertPayload),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          setError(data?.error ?? "Could not submit your application. Please try again.");
+          setSubmitting(false);
+          return;
+        }
+        router.push(`/waitlist/thanks?role=expert${data.duplicate ? "&again=1" : ""}`);
+        return;
+      }
+
+      // Member signup branch — self-serve. Creates the members row +
+      // Supabase auth user, then sends the magic-link sign-in email so
+      // the user lands on /upgrade to pick a plan + pay.
+      // Admin no longer reviews/activates; they CAN deactivate later
+      // from /admin/members.
       const memberPayload = {
         role: "member" as const,
         fullName,
         email: fd.get("email"),
         practiceName: fd.get("practiceName"),
         phone: fd.get("phone"),
-        source: "landing-waitlist",
+        smsConsent: memberSmsConsent,
+        smsConsentText: memberSmsConsent ? SMS_CONSENT_TEXT : null,
+        smsConsentAt: memberSmsConsent ? new Date().toISOString() : null,
+        source: "landing-join",
+        // ?ref=CODE → attributes the signup to that expert/partner.
+        ref:
+          typeof window !== "undefined"
+            ? new URLSearchParams(window.location.search).get("ref") ?? undefined
+            : undefined,
         utm: {
           role_label: resolveOther(fd.get("roleLabel"), fd.get("roleLabelOther")),
           locations: fd.get("locations"),
@@ -148,18 +258,26 @@ export default function WaitlistSection() {
         },
       };
 
-      const res = await fetch("/api/waitlist", {
+      const res = await fetch("/api/member/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(memberPayload),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data?.error ?? "Something went wrong. Please try again.");
+        setError(
+          data?.error ??
+            "Couldn't complete signup right now. Please try again.",
+        );
         setSubmitting(false);
         return;
       }
-      router.push(`/waitlist/thanks?role=member${data.duplicate ? "&again=1" : ""}`);
+      // Hand off straight to the OTP step on /member/login. The page
+      // detects ?email=… and renders the code input pre-focused, so the
+      // user goes form → email → code in one continuous flow without a
+      // thanks-page detour.
+      const emailRaw = String(fd.get("email") ?? "").trim().toLowerCase();
+      router.push(`/member/login?email=${encodeURIComponent(emailRaw)}`);
     } catch {
       setError("Network error. Check your connection and try again.");
       setSubmitting(false);
@@ -168,7 +286,7 @@ export default function WaitlistSection() {
 
   return (
     <Box
-      id="waitlist"
+      id={sectionId ?? "waitlist"}
       component="section"
       sx={{
         py: { xs: 7, md: 9 },
@@ -187,7 +305,11 @@ export default function WaitlistSection() {
               textTransform: "uppercase",
             }}
           >
-            Reserve your spot
+            {isExpert
+              ? "Apply as an expert"
+              : isVendor
+                ? "Apply as a partner"
+                : "Reserve your spot"}
           </Typography>
           <Typography
             variant="h2"
@@ -200,10 +322,18 @@ export default function WaitlistSection() {
               lineHeight: 1.1,
             }}
           >
-            Lock the $49 founding rate.
+            {isExpert
+              ? "Join the founding expert bench."
+              : isVendor
+                ? "Become a Founding Partner."
+                : "Lock the $49 founding rate."}
           </Typography>
           <Typography sx={{ color: "#52525B", fontSize: { xs: "0.95rem", md: "1.02rem" } }}>
-            Takes 60 seconds. No payment now — you&apos;re only billed when doors open.
+            {isExpert
+              ? "Tell us about your expertise. We review every applicant — the team will be in touch within a few business days."
+              : isVendor
+                ? "Tell us about your company and the member discount you'll offer. We review every applicant."
+                : "Takes 60 seconds. No payment now — you're only billed when doors open."}
           </Typography>
         </Stack>
 
@@ -224,7 +354,9 @@ export default function WaitlistSection() {
         >
           <Box component="form" onSubmit={onSubmit}>
             <Stack spacing={2}>
-              {/* Segmented toggle */}
+              {/* Segmented toggle — hidden when the form is locked to a
+                  single role (used on /experts and /partners). */}
+              {!lockedRole && (
               <Box
                 sx={{
                   display: "flex",
@@ -235,10 +367,11 @@ export default function WaitlistSection() {
                   border: "1px solid #E7E2D6",
                 }}
               >
-                {(["member", "vendor"] as HeroRole[]).map((r) => {
+                {(["member", "expert", "vendor"] as HeroRole[]).map((r) => {
                   const isActive = role === r;
-                  const Icon = r === "member" ? User : Store;
-                  const label = r === "member" ? "I'm a dentist" : "I'm a vendor";
+                  const Icon = r === "member" ? User : r === "expert" ? GraduationCap : Store;
+                  const label =
+                    r === "member" ? "I'm a dentist" : r === "expert" ? "I'm an expert" : "I'm a partner";
                   return (
                     <Box
                       key={r}
@@ -249,6 +382,7 @@ export default function WaitlistSection() {
                         setAgreed(false);
                         setAuthorized(false);
                         setMemberAgreed(false);
+                        setExpertAgreed(false);
                         setVendorCategory("");
                         setMemberRoleValue("");
                         setMemberChallenge("");
@@ -279,6 +413,7 @@ export default function WaitlistSection() {
                   );
                 })}
               </Box>
+              )}
 
               <AnimatePresence mode="wait" initial={false}>
                 {isVendor ? (
@@ -328,7 +463,7 @@ export default function WaitlistSection() {
                           <CompactField
                             name="description"
                             label="What does your company do, in one sentence?"
-                            placeholder="We negotiate PPO contracts on a contingency basis — practices pay only after fee increases land."
+                            placeholder="One sentence on what you do"
                             multiline
                             minRows={2}
                             required
@@ -405,7 +540,7 @@ export default function WaitlistSection() {
                                   gap: 0.4,
                                 }}
                               >
-                                Vendor Partnership Agreement
+                                Partner Agreement
                                 <ExternalLink size={11} />
                               </Box>
                               .
@@ -435,8 +570,130 @@ export default function WaitlistSection() {
                           }
                           sx={{ alignItems: "flex-start", m: 0 }}
                         />
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={vendorSmsConsent}
+                              onChange={(e) => setVendorSmsConsent(e.target.checked)}
+                              size="small"
+                              sx={{
+                                color: "#A8A29E",
+                                "&.Mui-checked": { color: "#9B7B3A" },
+                                p: 0.5,
+                                mr: 0.5,
+                              }}
+                            />
+                          }
+                          label={
+                            <Typography sx={{ fontSize: "0.8rem", color: "#52525B", lineHeight: 1.5 }}>
+                              {SMS_CONSENT_TEXT}
+                            </Typography>
+                          }
+                          sx={{ alignItems: "flex-start", m: 0 }}
+                        />
                       </Stack>
                     </Stack>
+                  </motion.div>
+                ) : isExpert ? (
+                  <motion.div
+                    key="expert"
+                    initial={reduced ? false : { opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={reduced ? { opacity: 0 } : { opacity: 0, y: -8 }}
+                    transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                  >
+                    <Stack spacing={1.5}>
+                      <SectionLabel num="01" title="You" />
+                      <Grid container spacing={1.25}>
+                        <Grid size={{ xs: 6 }}>
+                          <CompactField name="firstName" label="First name" placeholder="Dr. Taylor" autoComplete="given-name" required />
+                        </Grid>
+                        <Grid size={{ xs: 6 }}>
+                          <CompactField name="lastName" label="Last name" placeholder="Morgan" autoComplete="family-name" required />
+                        </Grid>
+                        <Grid size={{ xs: 12 }}>
+                          <CompactField name="email" type="email" label="Work email" placeholder="taylor@coachingco.com" autoComplete="email" required />
+                        </Grid>
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <CompactField name="phone" type="tel" label="Phone (optional)" placeholder="(555) 000-0000" autoComplete="tel" />
+                        </Grid>
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <CompactField name="companyName" label="Company / brand (optional)" placeholder="Takacs Learning Center" autoComplete="organization" />
+                        </Grid>
+                      </Grid>
+
+                      <SectionLabel num="02" title="Your expertise" />
+                      <Grid container spacing={1.25}>
+                        <Grid size={{ xs: 12 }}>
+                          <CompactField
+                            name="expertSpecialty"
+                            label="What do you teach or coach on?"
+                            placeholder="e.g. Practice growth"
+                            required
+                          />
+                        </Grid>
+                        <Grid size={{ xs: 12 }}>
+                          <CompactField
+                            name="expertTopics"
+                            label="Topics you'd record (one per line)"
+                            placeholder="One topic per line"
+                            multiline
+                            minRows={3}
+                          />
+                        </Grid>
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <CompactField name="expertWebsite" label="Website (optional)" placeholder="https://yourcoaching.com" autoComplete="url" />
+                        </Grid>
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <CompactField name="expertBookingLink" label="Booking link (optional)" placeholder="https://cal.com/you/intro" autoComplete="url" />
+                        </Grid>
+                      </Grid>
+                    </Stack>
+
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={expertAgreed}
+                          onChange={(e) => setExpertAgreed(e.target.checked)}
+                          size="small"
+                          sx={{
+                            color: "#A8A29E",
+                            "&.Mui-checked": { color: "#9B7B3A" },
+                            p: 0.5,
+                            mr: 0.5,
+                          }}
+                        />
+                      }
+                      label={
+                        <Typography sx={{ fontSize: "0.8rem", color: "#52525B", lineHeight: 1.5 }}>
+                          I'd like to be considered as a Founding Expert and consent
+                          to the team reviewing my materials.
+                        </Typography>
+                      }
+                      sx={{ alignItems: "flex-start", m: 0, mt: 1.5 }}
+                    />
+
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={expertSmsConsent}
+                          onChange={(e) => setExpertSmsConsent(e.target.checked)}
+                          size="small"
+                          sx={{
+                            color: "#A8A29E",
+                            "&.Mui-checked": { color: "#9B7B3A" },
+                            p: 0.5,
+                            mr: 0.5,
+                          }}
+                        />
+                      }
+                      label={
+                        <Typography sx={{ fontSize: "0.8rem", color: "#52525B", lineHeight: 1.5 }}>
+                          {SMS_CONSENT_TEXT}
+                        </Typography>
+                      }
+                      sx={{ alignItems: "flex-start", m: 0, mt: 1 }}
+                    />
                   </motion.div>
                 ) : (
                   <motion.div
@@ -564,6 +821,29 @@ export default function WaitlistSection() {
                       }
                       sx={{ alignItems: "flex-start", m: 0, mt: 1.5 }}
                     />
+
+                    {/* SMS consent — optional but stored verbatim if checked */}
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={memberSmsConsent}
+                          onChange={(e) => setMemberSmsConsent(e.target.checked)}
+                          size="small"
+                          sx={{
+                            color: "#A8A29E",
+                            "&.Mui-checked": { color: "#9B7B3A" },
+                            p: 0.5,
+                            mr: 0.5,
+                          }}
+                        />
+                      }
+                      label={
+                        <Typography sx={{ fontSize: "0.8rem", color: "#52525B", lineHeight: 1.5 }}>
+                          {SMS_CONSENT_TEXT}
+                        </Typography>
+                      }
+                      sx={{ alignItems: "flex-start", m: 0, mt: 1 }}
+                    />
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -590,7 +870,11 @@ export default function WaitlistSection() {
                 type="submit"
                 disabled={
                   submitting ||
-                  (isVendor ? !agreed || !authorized : !memberAgreed)
+                  (isVendor
+                    ? !agreed || !authorized
+                    : isExpert
+                      ? !expertAgreed
+                      : !memberAgreed)
                 }
                 fullWidth
                 endIcon={
@@ -606,22 +890,30 @@ export default function WaitlistSection() {
                   fontWeight: 600,
                   textTransform: "none",
                   borderRadius: 2,
-                  bgcolor: "#1A1A1A",
+                  bgcolor: "#1A1A1A !important",
+                  backgroundImage: "none !important",
                   color: "#FFFFFF !important",
                   letterSpacing: "-0.005em",
                   boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-                  "&:hover": { bgcolor: "#2A2A2A" },
+                  "&:hover": {
+                    bgcolor: "#2A2A2A !important",
+                    backgroundImage: "none !important",
+                    color: "#FFFFFF !important",
+                  },
                   "&.Mui-disabled": {
-                    bgcolor: "#E7E2D6",
+                    bgcolor: "#E7E2D6 !important",
+                    backgroundImage: "none !important",
                     color: "#A8A29E !important",
                   },
                 }}
               >
                 {submitting
-                  ? "Reserving…"
+                  ? "Sending…"
                   : isVendor
-                  ? "Apply as vendor partner"
-                  : "Reserve my founding spot"}
+                    ? "Apply as a partner"
+                    : isExpert
+                      ? "Apply as an expert"
+                      : "Reserve my founding spot"}
               </Button>
 
               <Stack direction="row" spacing={0.65} sx={{ alignItems: "center", justifyContent: "center", color: "#71717A" }}>

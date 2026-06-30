@@ -8,6 +8,10 @@ import { createMiddlewareSupabase } from "@/lib/supabase/middleware-ssr";
  *                Public exceptions: /vendor/login, /vendor/signup, /vendor/applied.
  *   /admin/*   → requires a Supabase session AND an active admin_users row.
  *                Public exceptions: /admin/login.
+ *   /dashboard/* → requires a member session AND subscription_status = 'active'.
+ *                  Unpaid members are redirected to /upgrade.
+ *   /upgrade   → requires a member session. Already-paid members are
+ *                redirected back to /dashboard.
  *
  * The middleware also refreshes the Supabase session cookie on every
  * request (createMiddlewareSupabase + getUser handles this automatically).
@@ -47,8 +51,9 @@ function buildCsp(): string {
     // frame-src controls <iframe> sources. Supabase is needed so the resource
     // viewer can render PDFs inline; Microsoft Office Online viewer is needed
     // for slide decks (.pptx). YCBM domains let the booking widget render
-    // the calendar iframe.
-    `frame-src 'self' ${supabaseHttps} https://view.officeapps.live.com https://vercel.live https://*.ycb.me https://*.youcanbook.me`,
+    // the calendar iframe. Spline (my.spline.design + prod.spline.design)
+    // hosts the 3D hero scene iframe.
+    `frame-src 'self' ${supabaseHttps} https://view.officeapps.live.com https://vercel.live https://*.ycb.me https://*.youcanbook.me https://my.spline.design https://*.spline.design`,
     "frame-ancestors 'none'",
     "form-action 'self'",
     "base-uri 'self'",
@@ -85,14 +90,28 @@ function isPublicVendorPath(pathname: string) {
   );
 }
 
+// `/experts` (plural, public marketing page with the application form) is
+// completely separate from `/expert/*` (the authenticated portal). The
+// gate below only matches the singular form.
+function isPublicExpertPath(pathname: string) {
+  return (
+    pathname === "/expert/login" ||
+    pathname.startsWith("/expert/login/")
+  );
+}
+
 function isPublicAdminPath(pathname: string) {
   return pathname === "/admin/login" || pathname.startsWith("/admin/login/");
 }
 
 function isPublicMemberPath(_pathname: string) {
   // All /dashboard/* paths are gated. Members enter via /member/login → magic
-  // link → /auth/callback → /dashboard.
+  // link → /auth/callback → /upgrade (if unpaid) → /dashboard (once paid).
   return false;
+}
+
+function isUpgradePath(pathname: string) {
+  return pathname === "/upgrade" || pathname.startsWith("/upgrade/");
 }
 
 export async function middleware(req: NextRequest) {
@@ -105,8 +124,16 @@ export async function middleware(req: NextRequest) {
   const isVendor = pathname.startsWith("/vendor") && !isPublicVendorPath(pathname);
   const isAdmin = pathname.startsWith("/admin") && !isPublicAdminPath(pathname);
   const isMember = pathname.startsWith("/dashboard") && !isPublicMemberPath(pathname);
+  const isUpgrade = isUpgradePath(pathname);
+  // Only the singular `/expert/*` is gated. `/experts` (plural) is the
+  // public marketing page — Next.js routes /expert and /experts to
+  // different folders, so prefix-matching with the boundary trailing
+  // slash here is enough to avoid a false positive.
+  const isExpert =
+    (pathname === "/expert" || pathname.startsWith("/expert/")) &&
+    !isPublicExpertPath(pathname);
 
-  if (!isVendor && !isAdmin && !isMember) {
+  if (!isVendor && !isAdmin && !isMember && !isUpgrade && !isExpert) {
     // Outside the gated surfaces — still run Supabase to keep the session
     // cookie fresh so /vendor/login etc. read the latest state.
     try {
@@ -178,9 +205,54 @@ export async function middleware(req: NextRequest) {
   }
 
   // ─────────────────────────────────────────────────────────────────
-  // MEMBER PORTAL  (/dashboard/*)
+  // EXPERT PORTAL  (/expert/*)
+  // Requires a Supabase session AND an `experts` row that isn't
+  // suspended/archived. New auth users for experts are only created by
+  // /api/admin/experts (PATCH invite), so a session belonging to a
+  // non-expert email is rejected here too.
   // ─────────────────────────────────────────────────────────────────
-  if (isMember) {
+  if (isExpert) {
+    try {
+      const supabase = createMiddlewareSupabase(req, res);
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) {
+        const target = req.nextUrl.clone();
+        target.pathname = "/expert/login";
+        target.search = `?redirect=${encodeURIComponent(pathname + search)}`;
+        return applySecurityHeaders(NextResponse.redirect(target));
+      }
+
+      const { data: expertRow } = await supabase
+        .from("experts")
+        .select("id, status")
+        .eq("auth_user_id", userData.user.id)
+        .maybeSingle();
+
+      if (
+        !expertRow ||
+        expertRow.status === "suspended" ||
+        expertRow.status === "archived"
+      ) {
+        const target = req.nextUrl.clone();
+        target.pathname = "/expert/login";
+        target.search = `?error=${encodeURIComponent("Your expert portal isn't available right now.")}`;
+        return applySecurityHeaders(NextResponse.redirect(target));
+      }
+
+      return applySecurityHeaders(res);
+    } catch (err) {
+      console.error("[middleware:expert] auth check failed:", err);
+      const target = req.nextUrl.clone();
+      target.pathname = "/expert/login";
+      return applySecurityHeaders(NextResponse.redirect(target));
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  // MEMBER PORTAL  (/dashboard/*)  — requires paid subscription
+  // /upgrade — requires member session but blocks if already paid
+  // ─────────────────────────────────────────────────────────────────
+  if (isMember || isUpgrade) {
     try {
       const supabase = createMiddlewareSupabase(req, res);
       const { data: userData } = await supabase.auth.getUser();
@@ -191,10 +263,10 @@ export async function middleware(req: NextRequest) {
         return applySecurityHeaders(NextResponse.redirect(target));
       }
 
-      // Confirm the user has an active members row.
+      // Confirm the user has an active members row + read their billing status.
       const { data: memberRow } = await supabase
         .from("members")
-        .select("id, status")
+        .select("id, status, subscription_status")
         .eq("auth_user_id", userData.user.id)
         .maybeSingle();
 
@@ -203,6 +275,30 @@ export async function middleware(req: NextRequest) {
         target.pathname = "/member/login";
         target.search = `?error=${encodeURIComponent("Your member portal isn't active yet. We'll email you when it is.")}`;
         return applySecurityHeaders(NextResponse.redirect(target));
+      }
+
+      const isPaid = memberRow.subscription_status === "active";
+
+      // /dashboard/* → must be paid. Bounce unpaid members to /upgrade.
+      if (isMember && !isPaid) {
+        const target = req.nextUrl.clone();
+        target.pathname = "/upgrade";
+        target.search = "";
+        return applySecurityHeaders(NextResponse.redirect(target));
+      }
+
+      // /upgrade → already paid members go straight to /dashboard.
+      // Exception: keep them on /upgrade if they're returning from Stripe
+      // (subscribed=1 or subscribed=0) so they see the processing banner /
+      // cancel note instead of getting punted away mid-flow.
+      if (isUpgrade && isPaid) {
+        const sub = req.nextUrl.searchParams.get("subscribed");
+        if (sub !== "1" && sub !== "0") {
+          const target = req.nextUrl.clone();
+          target.pathname = "/dashboard";
+          target.search = "";
+          return applySecurityHeaders(NextResponse.redirect(target));
+        }
       }
 
       return applySecurityHeaders(res);

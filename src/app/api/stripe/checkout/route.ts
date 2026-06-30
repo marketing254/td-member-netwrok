@@ -1,12 +1,18 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { requireMember } from "@/lib/auth/guards";
+import { apiError, serverError } from "@/lib/api/errorResponse";
 import {
+  ALL_PLAN_KEYS,
   appOrigin,
   billingIntervalFor,
+  EARLY_MEMBER_CAP,
+  FOUNDING_MEMBER_CAP,
   getStripe,
+  isEarlyPlan,
   isFoundingPlan,
   priceIdFor,
+  tierForPlan,
   type SubscriptionPlanKey,
 } from "@/lib/stripe";
 
@@ -16,7 +22,7 @@ export const dynamic = "force-dynamic";
 /**
  * POST /api/stripe/checkout
  *
- * Body: { plan: "founding_monthly" | "founding_annual" | "standard_monthly" }
+ * Body: { plan: "founding_monthly" | "founding_annual" | "standard_monthly" | "standard_annual" }
  *
  * Creates a Stripe Checkout Session for a subscription and returns the
  * redirect URL. The actual subscription state lives in Stripe — we just
@@ -26,30 +32,49 @@ export const dynamic = "force-dynamic";
  * the subscription so the webhook can lock the member into the founding
  * grandfathered rate.
  */
-const VALID_PLANS: SubscriptionPlanKey[] = [
-  "founding_monthly",
-  "founding_annual",
-  "standard_monthly",
-];
-
 function isValidPlan(p: unknown): p is SubscriptionPlanKey {
-  return typeof p === "string" && (VALID_PLANS as string[]).includes(p);
+  return typeof p === "string" && (ALL_PLAN_KEYS as string[]).includes(p);
 }
 
 export async function POST(req: Request) {
   const guard = await requireMember();
   if (!guard.ok) return guard.response;
 
+  const route = "POST /api/stripe/checkout";
   const body = (await req.json().catch(() => ({}))) as { plan?: unknown };
   if (!isValidPlan(body.plan)) {
-    return NextResponse.json(
-      { error: `Invalid plan. Use one of: ${VALID_PLANS.join(", ")}` },
-      { status: 400 },
-    );
+    return apiError.badRequest("Please pick a valid plan.", route);
   }
   const plan = body.plan;
 
   const sb = getSupabaseAdmin();
+
+  // Tier caps — Founding (100) and Early (400) are LIFETIME. Cancellations
+  // do NOT free a seat. We count the {tier}_member_locked boolean which is
+  // set on first successful checkout and never reset.
+  if (isFoundingPlan(plan) || isEarlyPlan(plan)) {
+    const tier = tierForPlan(plan); // "founding" | "early"
+    const column = tier === "founding" ? "founding_member_locked" : "early_member_locked";
+    const cap = tier === "founding" ? FOUNDING_MEMBER_CAP : EARLY_MEMBER_CAP;
+
+    const { count, error: countErr } = await sb
+      .from("members")
+      .select("id", { count: "exact", head: true })
+      .eq(column, true);
+    if (countErr) {
+      return serverError(countErr, { route, extra: { stage: "cap_count", tier } });
+    }
+    if ((count ?? 0) >= cap) {
+      const msg =
+        tier === "founding"
+          ? "Founding seats are sold out — Early Member or Standard membership is still available."
+          : "Early Member seats are sold out — Standard membership is still available.";
+      return NextResponse.json(
+        { error: msg, tierSoldOut: tier },
+        { status: 409 },
+      );
+    }
+  }
 
   // Pull the latest member row to see if they already have a Stripe customer/sub.
   const { data: member, error: memErr } = await sb
@@ -61,7 +86,10 @@ export async function POST(req: Request) {
     .single();
 
   if (memErr || !member) {
-    return NextResponse.json({ error: "Member not found." }, { status: 404 });
+    if (memErr) {
+      return serverError(memErr, { route, extra: { stage: "member_lookup" } });
+    }
+    return apiError.notFound(route);
   }
 
   // If they already have an active subscription, don't double-charge — send
@@ -85,10 +113,9 @@ export async function POST(req: Request) {
     stripe = getStripe();
     priceId = priceIdFor(plan);
   } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Stripe is not configured." },
-      { status: 503 },
-    );
+    // Specific Stripe-config errors stay in server logs; user gets a
+    // generic "service unavailable" response.
+    return serverError(err, { route, status: 503, extra: { stage: "stripe_init" } });
   }
 
   // Create or reuse the Stripe Customer for this member. Storing the
@@ -105,7 +132,7 @@ export async function POST(req: Request) {
   }
 
   const origin = appOrigin();
-  const founding = isFoundingPlan(plan);
+  const tier = tierForPlan(plan);
 
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
@@ -119,19 +146,25 @@ export async function POST(req: Request) {
         member_id: member.id,
         plan,
         billing_interval: billingIntervalFor(plan),
-        founding_member: founding ? "true" : "false",
+        tier,
+        founding_member: isFoundingPlan(plan) ? "true" : "false",
+        early_member: isEarlyPlan(plan) ? "true" : "false",
       },
     },
     metadata: {
       member_id: member.id,
       plan,
+      tier,
     },
-    success_url: `${origin}/dashboard?subscribed=1&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${origin}/dashboard?subscribed=0`,
+    success_url: `${origin}/upgrade?subscribed=1&session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${origin}/upgrade?subscribed=0`,
   });
 
   if (!session.url) {
-    return NextResponse.json({ error: "Stripe didn't return a session URL." }, { status: 500 });
+    return serverError(new Error("Stripe checkout session missing url"), {
+      route,
+      extra: { stage: "session_create" },
+    });
   }
 
   return NextResponse.json({ url: session.url });

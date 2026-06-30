@@ -3,6 +3,7 @@ import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { applySubscriptionToMember, memberIdForCustomer } from "@/lib/billing";
+import { notifyTeam } from "@/lib/email/teamNotify";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -120,7 +121,8 @@ async function handleEvent(event: Stripe.Event, stripe: Stripe): Promise<string 
 
   // ---- checkout.session.completed -----------------------------------
   // Fires the moment the customer finishes paying. We pull the freshly
-  // created subscription and write the full shape onto the member row.
+  // created subscription and write the full shape onto the member row,
+  // then notify the team distribution list so they can see the sale.
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
     const memberId = (session.metadata?.member_id ?? null) as string | null;
@@ -132,7 +134,57 @@ async function handleEvent(event: Stripe.Event, stripe: Stripe): Promise<string 
       expand: ["default_payment_method", "items.data.price"],
     });
 
-    await applySubscriptionToMember(sb, memberId, sub);
+    await applySubscriptionToMember(sb, memberId, sub, stripe);
+
+    // Best-effort team alert. Pull the member's name + email + amount.
+    try {
+      const { data: member } = await sb
+        .from("members")
+        .select("first_name, last_name, email, practice_name, tier, subscription_interval")
+        .eq("id", memberId)
+        .maybeSingle();
+      const firstItem = sub.items.data[0];
+      const amountCents = firstItem?.price?.unit_amount ?? 0;
+      const currency = (firstItem?.price?.currency ?? "usd").toUpperCase();
+      const interval = firstItem?.price?.recurring?.interval ?? null;
+      const memberName = member
+        ? `${member.first_name ?? ""} ${member.last_name ?? ""}`.trim() || member.email
+        : "Unknown member";
+      const amountStr = (amountCents / 100).toFixed(2);
+
+      await notifyTeam({
+        tag: "stripe-payment",
+        subject: `New paid member: ${memberName} — $${amountStr}/${interval ?? "subscription"}`,
+        html: `
+          <div style="font-family:Inter,Arial,sans-serif;line-height:1.55;color:#0A1A2F;">
+            <p><strong>A new member just completed checkout.</strong></p>
+            <ul>
+              <li><strong>Name:</strong> ${memberName}</li>
+              <li><strong>Email:</strong> ${member?.email ?? "—"}</li>
+              <li><strong>Practice:</strong> ${member?.practice_name ?? "—"}</li>
+              <li><strong>Tier:</strong> ${member?.tier ?? "—"}</li>
+              <li><strong>Interval:</strong> ${interval ?? "—"}</li>
+              <li><strong>Amount:</strong> ${currency} $${amountStr}</li>
+              <li><strong>Stripe sub:</strong> ${sub.id}</li>
+            </ul>
+            <p>See it at <a href="https://www.dentalmembernetwork.com/admin/members">/admin/members</a>.</p>
+          </div>
+        `,
+        text: [
+          "New paid member.",
+          `Name:     ${memberName}`,
+          `Email:    ${member?.email ?? "—"}`,
+          `Practice: ${member?.practice_name ?? "—"}`,
+          `Tier:     ${member?.tier ?? "—"}`,
+          `Interval: ${interval ?? "—"}`,
+          `Amount:   ${currency} $${amountStr}`,
+          `Stripe sub: ${sub.id}`,
+        ].join("\n"),
+      });
+    } catch (err) {
+      console.error("[stripe webhook] team-notify failed:", err);
+    }
+
     return memberId;
   }
 
@@ -153,7 +205,7 @@ async function handleEvent(event: Stripe.Event, stripe: Stripe): Promise<string 
       ? sub
       : await stripe.subscriptions.retrieve(sub.id, { expand: ["default_payment_method"] });
 
-    await applySubscriptionToMember(sb, memberId, hydrated);
+    await applySubscriptionToMember(sb, memberId, hydrated, stripe);
     return memberId;
   }
 

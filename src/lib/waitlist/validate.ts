@@ -14,6 +14,13 @@ export type WaitlistPayload = {
   message?: string;
   source?: string;
   utm?: Record<string, string>;
+  /** Referral code from `?ref=CODE`. Validated server-side before being
+   *  stamped onto the members row. */
+  ref?: string;
+  // SMS consent — captured verbatim for TCPA/CASL audit purposes.
+  smsConsent?: boolean;
+  smsConsentText?: string | null;
+  smsConsentAt?: string | null;
 };
 
 export type ValidationResult =
@@ -75,8 +82,30 @@ export function validateWaitlist(body: unknown): ValidationResult {
       ? (utmRaw as Record<string, string>)
       : undefined;
 
+  const smsConsent = b.smsConsent === true;
+  const smsConsentText = smsConsent ? (asString(b.smsConsentText) || null) : null;
+  const smsConsentAt = smsConsent ? (asString(b.smsConsentAt) || new Date().toISOString()) : null;
+
+  // Cheap referral-code shape check — letters + digits, 4-16 chars.
+  const ref = asString(b.ref)?.toUpperCase();
+  const refValid = ref && /^[A-Z0-9]{4,16}$/.test(ref) ? ref : undefined;
+
   return {
     ok: true,
-    data: { role, fullName, email, practiceName, phone, cityState, message, source, utm },
+    data: {
+      role,
+      fullName,
+      email,
+      practiceName,
+      phone,
+      cityState,
+      message,
+      source,
+      utm,
+      ref: refValid,
+      smsConsent,
+      smsConsentText,
+      smsConsentAt,
+    },
   };
 }

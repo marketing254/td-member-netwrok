@@ -18,12 +18,13 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
   const topicSlug = url.searchParams.get("topic_slug");
+  const expertId = url.searchParams.get("expert");
   const sb = getSupabaseAdmin();
 
   let query = sb
     .from("resources")
     .select(
-      "id, topic_slug, topic_title, topic_summary, category, portal_card_url, resource_card_url, title, description, kind, storage_path, external_url, thumbnail_url, mime_type, file_size_bytes, duration_label, position, is_free, is_published, created_at",
+      "id, topic_slug, topic_title, topic_summary, category, portal_card_url, resource_card_url, title, description, kind, storage_path, external_url, thumbnail_url, mime_type, file_size_bytes, duration_label, position, is_free, is_published, created_at, kit_type, book_club_payload, originating_expert_id",
     )
     .eq("is_published", true)
     .eq("submission_status", "approved")
@@ -31,6 +32,7 @@ export async function GET(req: Request) {
     .order("position", { ascending: true });
 
   if (topicSlug) query = query.eq("topic_slug", topicSlug);
+  if (expertId) query = query.eq("originating_expert_id", expertId);
 
   const { data: resources, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

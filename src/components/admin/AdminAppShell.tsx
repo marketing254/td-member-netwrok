@@ -25,12 +25,18 @@ import { useTheme } from "@mui/material/styles";
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
 import StoreOutlinedIcon from "@mui/icons-material/StoreOutlined";
+import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
 import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import SupportAgentOutlinedIcon from "@mui/icons-material/SupportAgentOutlined";
 import LibraryBooksOutlinedIcon from "@mui/icons-material/LibraryBooksOutlined";
 import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
 import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
 import MarkEmailReadOutlinedIcon from "@mui/icons-material/MarkEmailReadOutlined";
+import ChatBubbleOutlineOutlinedIcon from "@mui/icons-material/ChatBubbleOutlineOutlined";
+import StarOutlineRoundedIcon from "@mui/icons-material/StarOutlineRounded";
+import CampaignOutlinedIcon from "@mui/icons-material/CampaignOutlined";
+import LinkRoundedIcon from "@mui/icons-material/LinkRounded";
+import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import KeyboardArrowDownOutlinedIcon from "@mui/icons-material/KeyboardArrowDownOutlined";
@@ -51,6 +57,7 @@ type QueueCounts = {
   offersPending: number;
   catalogPending: number;
   resourcesPending: number;
+  expertsPending: number;
 };
 
 function useCurrentAdmin(): CurrentAdmin | null {
@@ -95,36 +102,58 @@ function initials(full: string): string {
 
 type NavItem = { href: string; label: string; icon: React.ElementType<{ sx?: object }>; badgeKey?: keyof QueueCounts };
 
+// Sidebar nav — five collapsible groups so the menu fits on any zoom
+// level without forcing a scrollbar. Each group's collapsed state is
+// remembered in localStorage; the group containing the active route is
+// always expanded automatically.
 const navSections: { label: string; items: NavItem[] }[] = [
-  {
-    label: "OVERVIEW",
-    items: [
-      { href: "/admin", label: "Dashboard", icon: DashboardOutlinedIcon },
-      { href: "/admin/waitlist", label: "Launch waitlist", icon: MarkEmailReadOutlinedIcon },
-    ],
-  },
   {
     label: "PEOPLE",
     items: [
+      { href: "/admin", label: "Dashboard", icon: DashboardOutlinedIcon },
       { href: "/admin/members", label: "Members", icon: PeopleAltOutlinedIcon },
-      { href: "/admin/vendors", label: "Vendors", icon: StoreOutlinedIcon, badgeKey: "vendorsPending" },
+      { href: "/admin/experts", label: "Experts", icon: SchoolOutlinedIcon, badgeKey: "expertsPending" },
+      // URL stays /admin/vendors so routes, /api/admin/vendors, and the
+      // vendors DB table don't have to migrate. Label is "Partners"
+      // everywhere in the UI.
+      { href: "/admin/vendors", label: "Partners", icon: StoreOutlinedIcon, badgeKey: "vendorsPending" },
       { href: "/admin/admins", label: "Admin team", icon: AdminPanelSettingsOutlinedIcon },
     ],
   },
   {
-    label: "OPERATIONS",
+    label: "CONTENT",
     items: [
-      { href: "/admin/offers", label: "Vendor offers", icon: LocalOfferOutlinedIcon, badgeKey: "offersPending" },
-      { href: "/admin/hotline", label: "Hotline triage", icon: SupportAgentOutlinedIcon },
-      { href: "/admin/content", label: "Catalog", icon: LibraryBooksOutlinedIcon, badgeKey: "catalogPending" },
       { href: "/admin/resources", label: "Resources", icon: LibraryBooksOutlinedIcon, badgeKey: "resourcesPending" },
+      { href: "/admin/content", label: "Catalog", icon: LibraryBooksOutlinedIcon, badgeKey: "catalogPending" },
+      { href: "/admin/offers", label: "Partner offers", icon: LocalOfferOutlinedIcon, badgeKey: "offersPending" },
     ],
   },
   {
-    label: "AUDIT",
-    items: [{ href: "/admin/audit-log", label: "Audit log", icon: HistoryOutlinedIcon }],
+    label: "ENGAGEMENT",
+    items: [
+      { href: "/admin/inquiries", label: "Inquiries", icon: ChatBubbleOutlineOutlinedIcon },
+      { href: "/admin/feedback", label: "Kit feedback", icon: StarOutlineRoundedIcon },
+      { href: "/admin/broadcast", label: "Broadcast", icon: CampaignOutlinedIcon },
+      { href: "/admin/hotline", label: "Hotline triage", icon: SupportAgentOutlinedIcon },
+    ],
+  },
+  {
+    label: "GROWTH",
+    items: [
+      { href: "/admin/referrals", label: "Referrals", icon: LinkRoundedIcon },
+      { href: "/admin/lead-magnets", label: "Lead magnets", icon: DownloadOutlinedIcon },
+      { href: "/admin/waitlist", label: "Launch waitlist", icon: MarkEmailReadOutlinedIcon },
+    ],
+  },
+  {
+    label: "SYSTEM",
+    items: [
+      { href: "/admin/audit-log", label: "Audit log", icon: HistoryOutlinedIcon },
+    ],
   },
 ];
+
+const COLLAPSE_STORAGE_KEY = "admin-sidebar-collapsed-groups";
 
 function SidebarContent({
   pathname,
@@ -139,6 +168,40 @@ function SidebarContent({
 }) {
   const displayName = me?.full_name ?? "—";
   const role = me?.role ?? "admin";
+
+  // Collapsed-group state — persisted across page loads. Default: every
+  // group expanded so first-time admins see everything.
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(COLLAPSE_STORAGE_KEY);
+      if (raw) setCollapsedGroups(new Set(JSON.parse(raw) as string[]));
+    } catch {
+      /* ignore — fresh state is fine */
+    }
+  }, []);
+  const toggleGroup = (label: string) => {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(label)) next.delete(label);
+      else next.add(label);
+      try {
+        localStorage.setItem(COLLAPSE_STORAGE_KEY, JSON.stringify(Array.from(next)));
+      } catch {
+        /* private mode etc — collapsed state just doesn't persist */
+      }
+      return next;
+    });
+  };
+
+  // Force-expand any group whose item matches the current pathname, so
+  // the user always sees their location in the nav.
+  const activeGroupLabel = navSections.find((sec) =>
+    sec.items.some((it) =>
+      it.href === "/admin" ? pathname === "/admin" : pathname.startsWith(it.href),
+    ),
+  )?.label;
+
   return (
     <Box
       sx={{
@@ -151,18 +214,18 @@ function SidebarContent({
           "radial-gradient(120% 60% at 50% -20%, rgba(217,168,75,0.12) 0%, transparent 60%)",
       }}
     >
-      <Box sx={{ px: 3, pt: 3, pb: 2 }}>
-        <Logo dark height={30} href="/admin" />
-        <Typography variant="body2" sx={{ mt: 1.25, color: "rgba(255,255,255,0.55)", fontSize: "0.68rem", letterSpacing: "0.18em", fontWeight: 700, textTransform: "uppercase" }}>
+      <Box sx={{ px: 2.5, pt: 2.5, pb: 1.5 }}>
+        <Logo dark height={26} href="/admin" />
+        <Typography variant="body2" sx={{ mt: 1, color: "rgba(255,255,255,0.55)", fontSize: "0.62rem", letterSpacing: "0.18em", fontWeight: 700, textTransform: "uppercase" }}>
           Admin Console
         </Typography>
       </Box>
 
-      <Box sx={{ px: 2.25, pb: 1 }}>
+      <Box sx={{ px: 2.25, pb: 0.75 }}>
         <Box
           sx={{
-            p: 2,
-            borderRadius: "14px",
+            p: 1.5,
+            borderRadius: "12px",
             border: "1px solid rgba(255,255,255,0.08)",
             bgcolor: "rgba(255,255,255,0.03)",
           }}
@@ -172,20 +235,20 @@ function SidebarContent({
               sx={{
                 bgcolor: "rgba(217,168,75,0.18)",
                 color: "secondary.light",
-                width: 38,
-                height: 38,
+                width: 32,
+                height: 32,
                 fontWeight: 700,
-                fontSize: "0.9rem",
+                fontSize: "0.78rem",
                 border: "1px solid rgba(217,168,75,0.4)",
               }}
             >
               {initials(displayName)}
             </Avatar>
             <Box sx={{ minWidth: 0, flex: 1 }}>
-              <Typography sx={{ color: "common.white", fontWeight: 600, fontSize: "0.9rem", lineHeight: 1.2 }} noWrap>
+              <Typography sx={{ color: "common.white", fontWeight: 600, fontSize: "0.84rem", lineHeight: 1.2 }} noWrap>
                 {displayName}
               </Typography>
-              <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.7)", fontSize: "0.72rem", textTransform: "capitalize" }} noWrap>
+              <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.7)", fontSize: "0.68rem", textTransform: "capitalize" }} noWrap>
                 {role}
               </Typography>
             </Box>
@@ -193,23 +256,97 @@ function SidebarContent({
         </Box>
       </Box>
 
-      <Box sx={{ px: 2.25, py: 1.5, flex: 1 }}>
-        <Stack spacing={2}>
-          {navSections.map((sec) => (
+      {/* Scrollable nav — `flex: 1 + minHeight: 0` is the magic combo
+          that lets this box shrink inside its flex parent so a long nav
+          list can scroll instead of pushing the queue card off-screen.
+          A custom thin scrollbar keeps it discreet. */}
+      <Box
+        sx={{
+          px: 2.25,
+          py: 1,
+          flex: 1,
+          minHeight: 0,
+          overflowY: "auto",
+          // Slim scrollbar — visible on hover but unobtrusive
+          "&::-webkit-scrollbar": { width: 6 },
+          "&::-webkit-scrollbar-thumb": {
+            bgcolor: "rgba(255,255,255,0.10)",
+            borderRadius: 4,
+          },
+          "&::-webkit-scrollbar-thumb:hover": {
+            bgcolor: "rgba(255,255,255,0.18)",
+          },
+        }}
+      >
+        <Stack spacing={1}>
+          {navSections.map((sec) => {
+            const isCollapsed = collapsedGroups.has(sec.label) && sec.label !== activeGroupLabel;
+            // Sum of unhandled queue items inside the group so a closed
+            // group still shows pending work at a glance.
+            const groupBadge = sec.items.reduce(
+              (n, it) => n + (it.badgeKey ? counts[it.badgeKey] ?? 0 : 0),
+              0,
+            );
+            return (
             <Box key={sec.label}>
-              <Typography
+              <Box
+                component="button"
+                type="button"
+                onClick={() => toggleGroup(sec.label)}
                 sx={{
-                  color: "rgba(255,255,255,0.4)",
-                  fontSize: "0.65rem",
-                  letterSpacing: "0.18em",
-                  fontWeight: 700,
-                  mb: 0.75,
+                  all: "unset",
+                  display: "flex",
+                  alignItems: "center",
+                  width: "100%",
+                  cursor: "pointer",
                   px: 1,
+                  py: 0.65,
+                  borderRadius: 1,
+                  mb: 0.35,
+                  color: "rgba(255,255,255,0.5)",
+                  transition: "background-color 150ms ease, color 150ms ease",
+                  "&:hover": { bgcolor: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.9)" },
+                  "&:focus-visible": { outline: "2px solid rgba(217,168,75,0.45)", outlineOffset: 1 },
                 }}
               >
-                {sec.label}
-              </Typography>
-              <Stack spacing={0.25}>
+                <Typography
+                  sx={{
+                    fontSize: "0.62rem",
+                    letterSpacing: "0.18em",
+                    fontWeight: 700,
+                    color: "inherit",
+                    flex: 1,
+                  }}
+                >
+                  {sec.label}
+                </Typography>
+                {groupBadge > 0 && isCollapsed && (
+                  <Chip
+                    label={groupBadge}
+                    size="small"
+                    sx={{
+                      bgcolor: "rgba(217,168,75,0.2)",
+                      color: "secondary.light",
+                      fontWeight: 700,
+                      fontSize: "0.6rem",
+                      height: 16,
+                      minWidth: 20,
+                      mr: 0.5,
+                      "& .MuiChip-label": { px: 0.65 },
+                    }}
+                  />
+                )}
+                <KeyboardArrowDownOutlinedIcon
+                  sx={{
+                    fontSize: 16,
+                    color: "rgba(255,255,255,0.55)",
+                    transition: "transform 200ms ease",
+                    transform: isCollapsed ? "rotate(-90deg)" : "rotate(0deg)",
+                  }}
+                />
+              </Box>
+              {!isCollapsed && (
+              <Stack spacing={0.15}>
                 {sec.items.map((item) => {
                   const Icon = item.icon;
                   const active =
@@ -226,16 +363,16 @@ function SidebarContent({
                       sx={{
                         display: "flex",
                         alignItems: "center",
-                        gap: 1.5,
-                        px: 1.5,
-                        py: 1.05,
+                        gap: 1.25,
+                        px: 1.25,
+                        py: 0.85,
                         borderRadius: 2,
                         color: active ? "common.white" : "rgba(255,255,255,0.65)",
                         bgcolor: active ? "rgba(217,168,75,0.12)" : "transparent",
                         border: "1px solid",
                         borderColor: active ? "rgba(217,168,75,0.25)" : "transparent",
                         textDecoration: "none",
-                        fontSize: "0.9rem",
+                        fontSize: "0.86rem",
                         fontWeight: active ? 600 : 500,
                         "&:hover": {
                           bgcolor: active ? "rgba(217,168,75,0.16)" : "rgba(255,255,255,0.05)",
@@ -243,7 +380,7 @@ function SidebarContent({
                         },
                       }}
                     >
-                      <Icon sx={{ fontSize: 20, color: active ? "secondary.light" : "inherit" }} />
+                      <Icon sx={{ fontSize: 18, color: active ? "secondary.light" : "inherit" }} />
                       <Box sx={{ flex: 1 }}>{item.label}</Box>
                       {badge > 0 && (
                         <Chip
@@ -253,59 +390,58 @@ function SidebarContent({
                             bgcolor: "rgba(217,168,75,0.2)",
                             color: "secondary.light",
                             fontWeight: 700,
-                            fontSize: "0.65rem",
-                            height: 18,
-                            minWidth: 22,
-                            "& .MuiChip-label": { px: 0.75 },
+                            fontSize: "0.62rem",
+                            height: 16,
+                            minWidth: 20,
+                            "& .MuiChip-label": { px: 0.65 },
                           }}
                         />
                       )}
                     </Box>
                   );
                 })}
-              </Stack>
+            </Stack>
+              )}
             </Box>
-          ))}
+            );
+          })}
         </Stack>
       </Box>
 
-      <Box sx={{ px: 2.25, pb: 2.5 }}>
+      <Box sx={{ px: 2.25, pb: 1.75, pt: 0.5, flexShrink: 0 }}>
         <Box
           sx={{
-            p: 2,
-            borderRadius: "14px",
+            px: 1.5,
+            py: 1.25,
+            borderRadius: "12px",
             border: "1px solid rgba(255,255,255,0.08)",
             bgcolor: "rgba(255,255,255,0.03)",
           }}
         >
-          <Typography sx={{ fontSize: "0.65rem", letterSpacing: "0.18em", fontWeight: 700, color: "rgba(255,255,255,0.5)", mb: 0.75 }}>
+          <Typography sx={{ fontSize: "0.6rem", letterSpacing: "0.18em", fontWeight: 700, color: "rgba(255,255,255,0.5)", mb: 0.85 }}>
             QUEUES OPEN
           </Typography>
-          <Stack direction="row" spacing={2}>
-            <Stack>
-              <Typography sx={{ fontFamily: "var(--font-display)", color: "common.white", fontSize: "1.4rem", lineHeight: 1 }}>
-                {counts.vendorsPending}
-              </Typography>
-              <Typography variant="body2" sx={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.6)" }}>
-                vendors
-              </Typography>
-            </Stack>
-            <Stack>
-              <Typography sx={{ fontFamily: "var(--font-display)", color: "common.white", fontSize: "1.4rem", lineHeight: 1 }}>
-                {counts.offersPending}
-              </Typography>
-              <Typography variant="body2" sx={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.6)" }}>
-                offers
-              </Typography>
-            </Stack>
-            <Stack>
-              <Typography sx={{ fontFamily: "var(--font-display)", color: "common.white", fontSize: "1.4rem", lineHeight: 1 }}>
-                {counts.catalogPending}
-              </Typography>
-              <Typography variant="body2" sx={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.6)" }}>
-                catalog
-              </Typography>
-            </Stack>
+          {/* 4-column compact stat row — fits cleanly on a single line and
+              keeps the bottom of the sidebar small. */}
+          <Stack
+            direction="row"
+            sx={{ justifyContent: "space-between", alignItems: "flex-end" }}
+          >
+            {[
+              { value: counts.expertsPending, label: "exp" },
+              { value: counts.vendorsPending, label: "par" },
+              { value: counts.offersPending, label: "off" },
+              { value: counts.catalogPending, label: "cat" },
+            ].map((s) => (
+              <Stack key={s.label} sx={{ alignItems: "center", minWidth: 0 }}>
+                <Typography sx={{ fontFamily: "var(--font-display)", color: "common.white", fontSize: "1.15rem", lineHeight: 1 }}>
+                  {s.value}
+                </Typography>
+                <Typography variant="body2" sx={{ fontSize: "0.62rem", color: "rgba(255,255,255,0.55)", mt: 0.4, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                  {s.label}
+                </Typography>
+              </Stack>
+            ))}
           </Stack>
         </Box>
       </Box>
@@ -329,6 +465,7 @@ export default function AdminAppShell({ children }: { children: React.ReactNode 
     offersPending: 0,
     catalogPending: 0,
     resourcesPending: 0,
+    expertsPending: 0,
   });
 
   const loadCounts = useCallback(async () => {
@@ -342,6 +479,7 @@ export default function AdminAppShell({ children }: { children: React.ReactNode 
             vendors?: { pending?: number };
             offers?: { pending?: number };
             catalog?: { pending?: number };
+            experts?: { pending?: number };
           })
         : {};
       const resources = resourcesRes.ok
@@ -355,6 +493,7 @@ export default function AdminAppShell({ children }: { children: React.ReactNode 
         catalogPending: overview.catalog?.pending ?? 0,
         resourcesPending:
           (resources.kits ?? []).filter((k) => k.submissionStatus === "pending_review").length,
+        expertsPending: overview.experts?.pending ?? 0,
       });
     } catch {
       // ignore — counts are decorative

@@ -15,32 +15,32 @@ const MotionBox = motion.create(Box);
 const FEATURES = [
   {
     Icon: PhoneCall,
-    title: "24/7 expert helpline",
-    body: "Submit any problem; written answer + the right people within 3 business days.",
+    title: "Expert Hotline",
+    body: "Bring any practice problem — get a written action plan plus the right experts to contact within 2–3 business days.",
   },
   {
     Icon: Handshake,
-    title: "Vendor savings",
-    body: "Member-only rates on labs, software & supplies — averaging $6,000+/yr.",
+    title: "Exclusive partner savings",
+    body: "Member-only deals on software, supplies and services from vetted DMN Partners.",
   },
   {
     Icon: Video,
-    title: "Curated content library",
-    body: "Expert panels, training & book studies — every kit has a video, worksheet & SOP.",
+    title: "A growing resource library",
+    body: "New content every week — videos, action guides, checklists, worksheets and CE-ready kits.",
   },
   {
     Icon: Users,
-    title: "500+ owner directory",
-    body: "Searchable peers who've solved what you're facing. No tire-kickers.",
+    title: "A community of Experts and Partners",
+    body: "A searchable network of experts and partners who are at your fingertips, ready to solve your challenges.",
   },
   {
     Icon: Ticket,
-    title: "Monthly live AMAs",
-    body: "Real-time access to specialists across clinical, financial & marketing.",
+    title: "Live AMAs & CE events",
+    body: "Inside-the-portal sessions with specialists across clinical, financial and marketing.",
   },
   {
     Icon: Wrench,
-    title: "Systems & templates",
+    title: "Templates & worksheets",
     body: "Proven checklists, SOPs and scripts you can deploy in your practice today.",
   },
 ];
@@ -85,7 +85,7 @@ export default function Features() {
             The membership is the product.
           </Typography>
           <Typography sx={{ color: "#52525B", fontSize: { xs: "0.95rem", md: "1.02rem" } }}>
-            No four-figure upsells. No surprise coaching pitches.
+            No funnels, no &ldquo;next step&rdquo; that costs four figures. Just the value you joined for.
           </Typography>
         </Stack>
 

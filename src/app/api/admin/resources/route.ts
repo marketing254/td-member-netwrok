@@ -129,12 +129,19 @@ const FILE_FIELD_MAP: Record<
 > = {
   training_video: { kind: "video_full", title: "Training Video", position: 10 },
   action_guide: { kind: "action_guide", title: "Action Guide", position: 20 },
+  book_study_guide: { kind: "book_study_guide", title: "Book Study Guide", position: 20 },
+  discussion_questions: { kind: "discussion_questions", title: "Discussion Questions", position: 25 },
   checklist: { kind: "checklist", title: "Checklist", position: 30 },
   worksheet: { kind: "worksheet", title: "Worksheet", position: 40 },
   key_takeaways: { kind: "key_takeaways", title: "Key Takeaways", position: 50 },
   slide_deck_pdf: { kind: "slide_deck", title: "Slide Deck", position: 60 },
   slide_deck_pptx: { kind: "slide_deck", title: "Slide Deck (PowerPoint)", position: 65 },
   wall_poster: { kind: "other", title: "Wall Poster", position: 70 },
+  infographic_pdf: { kind: "infographic", title: "Infographic", position: 35 },
+  infographic_image: { kind: "infographic_image", title: "Infographic Image", position: 36 },
+  short_1: { kind: "video_short", title: "Principle 1", position: 101 },
+  short_2: { kind: "video_short", title: "Principle 2", position: 102 },
+  short_3: { kind: "video_short", title: "Principle 3", position: 103 },
 };
 
 const SLUG_RE = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
@@ -156,6 +163,17 @@ type SubmissionBody = {
   portalCardUrl?: string | null;
   resourceCardUrl?: string | null;
   files?: FileSubmission[];
+  /**
+   * Optional originating-author IDs. When set, member inquiries on the
+   * resource fan out a notification to that expert/partner and the kit
+   * shows up in their portal's "Your library" view.
+   */
+  originatingExpertId?: string | null;
+  originatingVendorId?: string | null;
+  /** "standard" (default) or "book_club" — drives kit_type + payload. */
+  kitType?: "standard" | "book_club";
+  /** Book Club only — names the 3 shorts. Indexes 0/1/2 → short_1/2/3. */
+  principleTitles?: string[] | null;
 };
 
 export async function POST(req: Request) {
@@ -243,6 +261,44 @@ export async function POST(req: Request) {
   const submission_status = approveOnSubmit ? "approved" : "pending_review";
   const now = new Date().toISOString();
 
+  const originatingExpertId = body.originatingExpertId?.toString().trim() || null;
+  const originatingVendorId = body.originatingVendorId?.toString().trim() || null;
+  const kitType: "standard" | "book_club" = body.kitType === "book_club" ? "book_club" : "standard";
+  const principleTitles =
+    kitType === "book_club" && Array.isArray(body.principleTitles)
+      ? body.principleTitles.map((s) => (typeof s === "string" ? s.trim() : "")).slice(0, 3)
+      : [];
+
+  // For Book Club uploads, override the `video_short` row titles with the
+  // principle names the admin entered (positions 101/102/103 → indexes 0/1/2).
+  const principleTitleByPosition: Record<number, string> = {};
+  if (kitType === "book_club") {
+    for (let i = 0; i < principleTitles.length; i += 1) {
+      const t = (principleTitles[i] ?? "").trim();
+      if (t) principleTitleByPosition[101 + i] = t;
+    }
+  }
+
+  // Book Club payload — captured here from the inserts we're about to do,
+  // then duplicated onto every row of the kit so any single row carries
+  // the full key-principles + has-infographic context.
+  const bookClubPayload =
+    kitType === "book_club"
+      ? {
+          shorts: rowsToInsert
+            .filter((r) => r.kind === "video_short")
+            .map((r) => ({
+              index: r.position - 100,
+              principle: principleTitleByPosition[r.position] ?? r.title,
+              position: r.position,
+              public_url: r.externalUrl,
+            })),
+          has_infographic: rowsToInsert.some(
+            (r) => r.kind === "infographic" || r.kind === "infographic_image",
+          ),
+        }
+      : null;
+
   const inserts = rowsToInsert.map((r) => ({
     topic_slug: slug,
     topic_title: title,
@@ -250,7 +306,7 @@ export async function POST(req: Request) {
     category,
     portal_card_url: body.portalCardUrl ?? null,
     resource_card_url: body.resourceCardUrl ?? null,
-    title: r.title,
+    title: principleTitleByPosition[r.position] ?? r.title,
     description: null,
     kind: r.kind,
     storage_path: r.storagePath,
@@ -264,6 +320,10 @@ export async function POST(req: Request) {
     submitted_by: guard.adminId,
     submitted_at: now,
     approved_by: approveOnSubmit ? guard.adminId : null,
+    originating_expert_id: originatingExpertId,
+    originating_vendor_id: originatingVendorId,
+    kit_type: kitType,
+    book_club_payload: bookClubPayload,
     // approved_at stamped by trigger when status transitions
   }));
 

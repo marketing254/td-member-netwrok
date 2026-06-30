@@ -6,12 +6,27 @@ import Stripe from "stripe";
  * Price IDs are read from env vars so the same code runs against the test
  * sandbox locally and against live prices in production without an edit.
  *
- *   STRIPE_PRICE_FOUNDING_MONTHLY  - $49/mo
- *   STRIPE_PRICE_FOUNDING_ANNUAL   - $490/yr
- *   STRIPE_PRICE_STANDARD_MONTHLY  - $99/mo (or whatever you settle on)
+ *   STRIPE_PRICE_FOUNDING_MONTHLY  - $49/mo   (CAD)  — first 100 members
+ *   STRIPE_PRICE_FOUNDING_ANNUAL   - $490/yr  (CAD)
+ *   STRIPE_PRICE_EARLY_MONTHLY     - $99/mo   (CAD)  — members 101–500
+ *   STRIPE_PRICE_EARLY_ANNUAL      - $990/yr  (CAD)
+ *   STRIPE_PRICE_STANDARD_MONTHLY  - $199/mo  (CAD)  — open enrollment
+ *   STRIPE_PRICE_STANDARD_ANNUAL   - $1,990/yr (CAD)
+ *
+ * Tier caps (lifetime — cancellations do NOT free a seat):
+ *   Founding: first 100 lifetime  → FOUNDING_MEMBER_CAP
+ *   Early:    next 400 (101–500) → EARLY_MEMBER_CAP
+ *   Standard: unlimited
  *
  * The webhook handler also needs STRIPE_WEBHOOK_SECRET.
  */
+
+// Lifetime caps. Once N members have ever subscribed to a tier, the tier
+// closes permanently — cancellations do NOT free a seat. We track this by
+// the {founding,early}_member_locked boolean on members, set by the
+// Stripe webhook on first successful checkout and never reset.
+export const FOUNDING_MEMBER_CAP = 100;
+export const EARLY_MEMBER_CAP = 400; // members 101–500 inclusive
 
 let _client: Stripe | null = null;
 
@@ -35,7 +50,41 @@ export function getStripe(): Stripe {
 export type SubscriptionPlanKey =
   | "founding_monthly"
   | "founding_annual"
-  | "standard_monthly";
+  | "early_monthly"
+  | "early_annual"
+  | "standard_monthly"
+  | "standard_annual";
+
+export type SubscriptionTier = "founding" | "early" | "standard";
+
+export const ALL_PLAN_KEYS: SubscriptionPlanKey[] = [
+  "founding_monthly",
+  "founding_annual",
+  "early_monthly",
+  "early_annual",
+  "standard_monthly",
+  "standard_annual",
+];
+
+/**
+ * Display price for each plan (CAD). Used by the UI — Stripe still
+ * charges based on the price ID in the env var, this is just the label.
+ */
+export const PLAN_DISPLAY: Record<
+  SubscriptionPlanKey,
+  { amount: number; per: "mo" | "yr"; tier: SubscriptionTier; label: string }
+> = {
+  founding_monthly: { amount: 49,   per: "mo", tier: "founding", label: "Founding Monthly" },
+  founding_annual:  { amount: 490,  per: "yr", tier: "founding", label: "Founding Annual"  },
+  early_monthly:    { amount: 99,   per: "mo", tier: "early",    label: "Early Monthly"    },
+  early_annual:     { amount: 990,  per: "yr", tier: "early",    label: "Early Annual"     },
+  standard_monthly: { amount: 199,  per: "mo", tier: "standard", label: "Standard Monthly" },
+  standard_annual:  { amount: 1990, per: "yr", tier: "standard", label: "Standard Annual"  },
+};
+
+export function tierForPlan(plan: SubscriptionPlanKey): SubscriptionTier {
+  return PLAN_DISPLAY[plan].tier;
+}
 
 /**
  * Map our plan keys to the price IDs configured in Stripe Dashboard.
@@ -44,11 +93,12 @@ export type SubscriptionPlanKey =
  */
 export function priceIdFor(plan: SubscriptionPlanKey): string {
   const envKey =
-    plan === "founding_monthly"
-      ? "STRIPE_PRICE_FOUNDING_MONTHLY"
-      : plan === "founding_annual"
-        ? "STRIPE_PRICE_FOUNDING_ANNUAL"
-        : "STRIPE_PRICE_STANDARD_MONTHLY";
+    plan === "founding_monthly"   ? "STRIPE_PRICE_FOUNDING_MONTHLY"
+      : plan === "founding_annual"  ? "STRIPE_PRICE_FOUNDING_ANNUAL"
+      : plan === "early_monthly"    ? "STRIPE_PRICE_EARLY_MONTHLY"
+      : plan === "early_annual"     ? "STRIPE_PRICE_EARLY_ANNUAL"
+      : plan === "standard_monthly" ? "STRIPE_PRICE_STANDARD_MONTHLY"
+      : "STRIPE_PRICE_STANDARD_ANNUAL";
   const value = process.env[envKey];
   if (!value) {
     throw new Error(
@@ -62,8 +112,12 @@ export function isFoundingPlan(plan: SubscriptionPlanKey): boolean {
   return plan === "founding_monthly" || plan === "founding_annual";
 }
 
+export function isEarlyPlan(plan: SubscriptionPlanKey): boolean {
+  return plan === "early_monthly" || plan === "early_annual";
+}
+
 export function billingIntervalFor(plan: SubscriptionPlanKey): "month" | "year" {
-  return plan === "founding_annual" ? "year" : "month";
+  return PLAN_DISPLAY[plan].per === "yr" ? "year" : "month";
 }
 
 /**

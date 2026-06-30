@@ -1,7 +1,14 @@
 import type { WaitlistPayload, WaitlistRole } from "@/lib/waitlist/validate";
+import type { ExpertApplicationPayload } from "@/lib/expert/validate";
 
 type ConfirmationInput = {
   signup: WaitlistPayload;
+  referenceId: string;
+  submittedAt: string;
+};
+
+type ExpertConfirmationInput = {
+  application: ExpertApplicationPayload;
   referenceId: string;
   submittedAt: string;
 };
@@ -72,18 +79,26 @@ const BRAND = {
   goldLight: "#F0C16E",
 };
 
-// Email-safe font stacks. We import Fraunces from Google Fonts in <head> for
-// the clients that support it (Apple Mail, iOS Mail, Gmail web, Yahoo); for
-// Outlook + Windows Mail (which strip @import), the stacks fall back to
-// Georgia/system sans, which already look refined, far better than Arial.
+// Email-safe font stacks.
 //
-// Body uses a "system stack" that renders as San Francisco on macOS/iOS,
-// Segoe UI on Windows, Roboto on Android, every reader sees the sharpest
-// native font on their device.
+// Body uses a humanist serif stack (Charter / Iowan / Georgia) that reads
+// like a personal letter — Substack, Stripe transactional, and Linear use
+// the same approach to keep emails from feeling like system notifications.
+// Falls back to Georgia (preinstalled on Windows + Mac + iOS + Android)
+// when Charter / Iowan aren't available, which still feels warm and human.
+//
+// Display continues to import Fraunces from Google Fonts in <head> for
+// clients that support it; Outlook + Windows Mail (which strip @import)
+// fall through to the same warm-serif stack.
+//
+// UI chrome (CTAs, eyebrows, footer microcopy) uses a humanist sans stack
+// so buttons stay legible and feel modern next to the serif body.
 const FONT_DISPLAY =
   "'Fraunces','Iowan Old Style','Apple Garamond','Baskerville','Times New Roman', Georgia, serif";
 const FONT_BODY =
-  "-apple-system, BlinkMacSystemFont,'Segoe UI', Roboto,'Helvetica Neue', Helvetica, Arial, sans-serif";
+  "'Charter','Iowan Old Style','Apple Garamond','Palatino Linotype','Book Antiqua', Georgia,'Times New Roman', serif";
+const FONT_UI =
+  "'Inter','Helvetica Neue', Helvetica,'Segoe UI', Roboto, Arial, sans-serif";
 const FONT_MONO =
   "ui-monospace, SFMono-Regular,'SF Mono', Menlo, Consolas,'Liberation Mono', monospace";
 
@@ -225,7 +240,7 @@ function renderCta(cta: CtaSpec, accent: string): string {
         <table role="presentation" cellpadding="0" cellspacing="0">
           <tr>
             <td bgcolor="${accent}" style="border-radius:8px;background:${accent};">
-              <a href="${cta.url}" style="display:inline-block;padding:14px 24px;color:#FFFFFF;font-family:${FONT_BODY};font-size:14px;font-weight:700;letter-spacing:.005em;text-decoration:none;border-radius:8px;mso-padding-alt:0;">${escapeHtml(cta.label)} &nbsp;→</a>
+              <a href="${cta.url}" style="display:inline-block;padding:14px 24px;color:#FFFFFF;font-family:${FONT_UI};font-size:14px;font-weight:700;letter-spacing:.005em;text-decoration:none;border-radius:8px;mso-padding-alt:0;">${escapeHtml(cta.label)} &nbsp;→</a>
             </td>
           </tr>
         </table>
@@ -258,7 +273,7 @@ function renderHtml(draft: EmailDraft): string {
   const footer = draft.footerLines
     .map(
       (line) =>
-        `<div style="margin:3px 0;color:rgba(247,245,240,0.55);font-family:${FONT_BODY};font-size:11.5px;line-height:1.6;letter-spacing:.002em;">${escapeHtml(line)}</div>`,
+        `<div style="margin:3px 0;color:rgba(247,245,240,0.55);font-family:${FONT_UI};font-size:11.5px;line-height:1.6;letter-spacing:.002em;">${escapeHtml(line)}</div>`,
     )
     .join("");
 
@@ -318,11 +333,11 @@ function renderHtml(draft: EmailDraft): string {
                     <td>
                       <div class="dmn-display" style="font-family:${FONT_DISPLAY};font-size:24px;font-weight:600;letter-spacing:-.025em;color:${BRAND.ink};line-height:1;">
                         <span style="color:${BRAND.ink};">D</span><span style="color:${BRAND.gold};">M</span><span style="color:${BRAND.ink};">N</span>
-                        <span style="display:inline-block;margin-left:10px;padding-left:12px;border-left:1px solid ${BRAND.line};font-family:${FONT_BODY};font-size:10.5px;font-weight:700;letter-spacing:.18em;color:${BRAND.inkMute};text-transform:uppercase;vertical-align:4px;">Dental Member Network</span>
+                        <span style="display:inline-block;margin-left:10px;padding-left:12px;border-left:1px solid ${BRAND.line};font-family:${FONT_UI};font-size:10.5px;font-weight:700;letter-spacing:.18em;color:${BRAND.inkMute};text-transform:uppercase;vertical-align:4px;">Dental Member Network</span>
                       </div>
                     </td>
                     <td align="right" style="white-space:nowrap;">
-                      <span style="display:inline-block;padding:6px 11px;border-radius:999px;background:${BRAND.creamSoft};border:1px solid ${BRAND.line};color:${draft.accent};font-family:${FONT_BODY};font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;">${escapeHtml(draft.eyebrow)}</span>
+                      <span style="display:inline-block;padding:6px 11px;border-radius:999px;background:${BRAND.creamSoft};border:1px solid ${BRAND.line};color:${draft.accent};font-family:${FONT_UI};font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;">${escapeHtml(draft.eyebrow)}</span>
                     </td>
                   </tr>
                 </table>
@@ -355,7 +370,7 @@ function renderHtml(draft: EmailDraft): string {
             <!-- Footer -->
             <tr>
               <td class="footer-pad" style="padding:22px 34px;background:${BRAND.ink};">
-                <div style="color:${BRAND.goldLight};font-family:${FONT_BODY};font-size:10.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;margin:0 0 8px;">${escapeHtml(draft.footerNote)}</div>
+                <div style="color:${BRAND.goldLight};font-family:${FONT_UI};font-size:10.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;margin:0 0 8px;">${escapeHtml(draft.footerNote)}</div>
                 ${footer}
               </td>
             </tr>
@@ -363,8 +378,8 @@ function renderHtml(draft: EmailDraft): string {
           </table>
 
           <!-- Outside footer (legal hint) -->
-          <div style="max-width:620px;margin:14px auto 0;color:${BRAND.inkMute};font-family:${FONT_BODY};font-size:11px;line-height:1.55;text-align:center;letter-spacing:.002em;">
-            You received this because you submitted the Dental Member Network waitlist form.
+          <div style="max-width:620px;margin:14px auto 0;color:${BRAND.inkMute};font-family:${FONT_UI};font-size:11px;line-height:1.55;text-align:center;letter-spacing:.002em;">
+            You received this because you contacted the Dental Member Network.
           </div>
         </td>
       </tr>
@@ -560,7 +575,7 @@ function buildVendorMagicEmail({ link }: VendorMagicInput): { subject: string; h
 <title>${escapeHtml(subject)}</title></head>
 <body style="margin:0;padding:0;background:${BRAND.creamSoft};font-family:${FONT_BODY};color:${BRAND.ink};">
 <div style="max-width:560px;margin:0 auto;padding:40px 24px;">
-  <div style="font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:${BRAND.goldDeep};font-weight:700;margin-bottom:16px;">PARTNER PORTAL</div>
+  <div style="font-family:${FONT_UI};font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:${BRAND.goldDeep};font-weight:700;margin-bottom:16px;">PARTNER PORTAL</div>
   <h1 style="font-family:${FONT_DISPLAY};font-size:28px;line-height:1.2;font-weight:500;color:${BRAND.ink};margin:0 0 16px;">Your sign-in link</h1>
   <p style="font-size:15px;line-height:1.65;color:${BRAND.inkSoft};margin:0 0 28px;">
     Click the button below to access your Dental Member Network partner portal. The link expires in 30 minutes for your security.
@@ -607,7 +622,7 @@ function buildVendorApprovalEmail({
 <title>${escapeHtml(subject)}</title></head>
 <body style="margin:0;padding:0;background:${BRAND.creamSoft};font-family:${FONT_BODY};color:${BRAND.ink};">
 <div style="max-width:580px;margin:0 auto;padding:44px 24px;">
-  <div style="font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:#1F5C40;font-weight:700;margin-bottom:18px;">PARTNER VERIFIED</div>
+  <div style="font-family:${FONT_UI};font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:#1F5C40;font-weight:700;margin-bottom:18px;">PARTNER VERIFIED</div>
   <h1 style="font-family:${FONT_DISPLAY};font-size:30px;line-height:1.18;font-weight:500;color:${BRAND.ink};margin:0 0 18px;letter-spacing:-.02em;">You're in, ${safeName}.</h1>
   <p style="font-size:16px;line-height:1.7;color:${BRAND.inkSoft};margin:0 0 14px;">
     Our team reviewed <strong>${safeCompany}</strong> and we're delighted to confirm your partner account is now approved and verified.
@@ -617,7 +632,7 @@ function buildVendorApprovalEmail({
   </p>
   <a href="${safePortal}" style="display:inline-block;background:${BRAND.ink};color:#FFFFFF;text-decoration:none;padding:14px 28px;border-radius:999px;font-weight:600;font-size:15px;">Open your portal →</a>
   <hr style="border:0;border-top:1px solid ${BRAND.line};margin:36px 0 24px;" />
-  <h2 style="font-family:${FONT_BODY};font-size:14px;font-weight:700;color:${BRAND.ink};letter-spacing:.005em;margin:0 0 10px;">What's next</h2>
+  <h2 style="font-family:${FONT_UI};font-size:14px;font-weight:700;color:${BRAND.ink};letter-spacing:.005em;margin:0 0 10px;text-transform:uppercase;">What's next</h2>
   <ul style="font-size:14.5px;line-height:1.75;color:${BRAND.inkSoft};margin:0;padding-left:20px;">
     <li>Add your first catalog items — services, products, or courses.</li>
     <li>Attach member offers (discounts, bonuses) to each item.</li>
@@ -674,7 +689,7 @@ function buildMemberWelcomeEmail({ firstName, portalUrl }: MemberWelcomeInput): 
 <title>${escapeHtml(subject)}</title></head>
 <body style="margin:0;padding:0;background:${BRAND.creamSoft};font-family:${FONT_BODY};color:${BRAND.ink};">
 <div style="max-width:580px;margin:0 auto;padding:44px 24px;">
-  <div style="font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:${BRAND.goldDeep};font-weight:700;margin-bottom:18px;">FOUNDING MEMBER · PORTAL ACTIVE</div>
+  <div style="font-family:${FONT_UI};font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:${BRAND.goldDeep};font-weight:700;margin-bottom:18px;">FOUNDING MEMBER · PORTAL ACTIVE</div>
   <h1 style="font-family:${FONT_DISPLAY};font-size:30px;line-height:1.18;font-weight:500;color:${BRAND.ink};margin:0 0 18px;letter-spacing:-.02em;">Welcome, ${safeName}.</h1>
   <p style="font-size:16px;line-height:1.7;color:${BRAND.inkSoft};margin:0 0 14px;">
     Your founding-member portal is live. You'll find the full Resource Kit library waiting for you — practical, no-fluff training built for practice owners. Pick a topic and dig in.
@@ -684,7 +699,7 @@ function buildMemberWelcomeEmail({ firstName, portalUrl }: MemberWelcomeInput): 
   </p>
   <a href="${safePortal}" style="display:inline-block;background:${BRAND.ink};color:#FFFFFF;text-decoration:none;padding:14px 28px;border-radius:999px;font-weight:600;font-size:15px;">Open your portal →</a>
   <hr style="border:0;border-top:1px solid ${BRAND.line};margin:36px 0 24px;" />
-  <h2 style="font-family:${FONT_BODY};font-size:14px;font-weight:700;color:${BRAND.ink};letter-spacing:.005em;margin:0 0 10px;">What you have access to today</h2>
+  <h2 style="font-family:${FONT_UI};font-size:14px;font-weight:700;color:${BRAND.ink};letter-spacing:.005em;margin:0 0 10px;text-transform:uppercase;">What you have access to today</h2>
   <ul style="font-size:14.5px;line-height:1.75;color:${BRAND.inkSoft};margin:0;padding-left:20px;">
     <li>The full Resource Kit library — videos, action guides, worksheets, checklists</li>
     <li>Topic packs on KPIs, scheduling, PPO renegotiation, marketing, SEO and more</li>
@@ -762,6 +777,221 @@ export async function sendVendorMagicLinkEmail(input: VendorMagicInput): Promise
     from: FROM_EMAIL,
     mail,
     tag: "vendor:magic-link",
+  });
+  if (result.transport === "log") {
+    return { sent: false, reason: "missing_api_key" };
+  }
+  return { sent: true, id: result.id };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// EXPERT APPLICATION CONFIRMATION
+// Sent by /api/expert/signup when a coach / consultant / educator
+// submits the application form. Tells them the team reviews every
+// applicant and will be in touch — uses the same brand framework as
+// the member welcome email but a green accent (expert tier color).
+// ─────────────────────────────────────────────────────────────────────────
+
+const EXPERT_ACCENT = "#2C7A52";
+const EXPERT_ACCENT_LIGHT = "#5DA585";
+
+// Copy below is verbatim from `Confirmation emails.md` (the source-of-truth
+// content doc) — section "Experts". Wording stays in lockstep with that
+// file. If you edit copy here, update the doc first.
+function expertDraft(input: ExpertConfirmationInput): EmailDraft {
+  const submitted = formatDate(input.submittedAt);
+  const name = firstName(input.application.fullName);
+  return {
+    role: "member", // schema reused; expert isn't in WaitlistRole enum
+    subject: "Your Dental Member Network expert application — what happens next",
+    preview:
+      "We've received your application and it's now in review. Our team will respond within 5 business days.",
+    eyebrow: "Expert Application",
+    headline: "Application in review.",
+    accent: EXPERT_ACCENT,
+    accentLight: EXPERT_ACCENT_LIGHT,
+    replyTo: PARTNERSHIPS_EMAIL,
+    intro: [
+      `Hi ${name},`,
+      "Thank you for applying to join the Dental Member Network as a founding expert. We've received your application and it's now in review.",
+    ],
+    sections: [
+      {
+        title: "Here's what to expect",
+        body:
+          "Within the next 5 business days, our team will review your application against our founding expert criteria — primarily your track record serving dental practice owners, the distinctiveness of your coaching or consulting approach, and the fit with our member base. We review carefully because protecting member trust is the whole point of curation.",
+      },
+      {
+        title: "If your application is approved",
+        items: [
+          "You'll receive an approval email with a link to schedule a 30-minute onboarding conversation with our team.",
+          "During onboarding, we'll set up your expert profile, walk you through how to publish your first paid course, and connect you with the Thriving Dentist editorial team for newsletter, podcast, and webinar feature opportunities.",
+          "Your founding offer locks in: free for the first 6 months, then $99/month. No commission on any courses you sell to members during your founding window.",
+        ],
+      },
+      {
+        title: "If we have follow-up questions",
+        body: `We may reach out by email to clarify aspects of your application or request additional information about your coaching approach. Watch for a message from ${PARTNERSHIPS_EMAIL}.`,
+      },
+      {
+        title: "A few things worth knowing while you wait",
+        items: [
+          "Founding expert spots are limited. We're curating launch experts deliberately to cover the full range of practice growth specialties without overlapping too heavily in any one area.",
+          "You set your own course prices. The network handles the platform, payment processing, and member promotion; the pricing and content of your offerings stay entirely yours.",
+          "Members get a discount on every paid course. This is standard across all expert offerings and helps your courses reach more members faster.",
+        ],
+      },
+    ],
+    closing:
+      "If you have questions in the meantime, reply to this email and we'll get back to you within one business day.",
+    signoff: [
+      "Thanks for your interest in helping us build the network.",
+      " The Dental Member Network Team",
+      "Powered by Thriving Dentist",
+    ],
+    footerNote: "Do not reply to this email.",
+    footerLines: [
+      "This is an automated confirmation email for your Dental Member Network expert application.",
+      `Application reference: ${input.referenceId} · Submitted: ${submitted}`,
+      `Dental Member Network · ${PARTNERSHIPS_EMAIL} · dentalmembernetwork.com`,
+    ],
+  };
+}
+
+function buildExpertConfirmationEmail(input: ExpertConfirmationInput): BuiltEmail {
+  const draft = expertDraft(input);
+  return {
+    subject: draft.subject,
+    html: renderHtml(draft),
+    text: renderText(draft),
+    replyTo: draft.replyTo,
+  };
+}
+
+export async function sendExpertConfirmationEmail(
+  input: ExpertConfirmationInput,
+): Promise<SendResult> {
+  if (process.env.WAITLIST_EMAIL_DISABLED === "true") {
+    return { sent: false, reason: "disabled" };
+  }
+
+  const mail = buildExpertConfirmationEmail(input);
+  const result = await dispatchMail({
+    to: input.application.email,
+    from: FROM_EMAIL,
+    mail,
+    tag: "expert:application",
+  });
+  if (result.transport === "log") {
+    return { sent: false, reason: "missing_api_key" };
+  }
+  return { sent: true, id: result.id };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// EXPERT ONBOARDED EMAIL
+// Sent by /api/admin/experts when the team clicks "Mark onboarded" — by
+// then the onboarding call has already happened, so this is the welcome
+// packet that hands them the portal. Carries a one-click Supabase magic
+// link to /expert/(portal). Copy is verbatim from `Confirmation emails.md`
+// (Experts - Onboarded section). Update the doc first, then mirror here.
+// ─────────────────────────────────────────────────────────────────────────
+
+type ExpertApprovalInput = {
+  email: string;
+  firstName: string;
+  expertId: string;
+  portalLink: string;        // pre-generated Supabase magic link, one-click sign-in
+  portalLoginUrl: string;    // fallback page (e.g. https://.../expert/login)
+  activatedAt?: string;
+};
+
+function expertApprovalDraft(input: ExpertApprovalInput): EmailDraft {
+  const activated = formatDate(input.activatedAt ?? new Date().toISOString());
+  return {
+    role: "member", // reusing schema; expert isn't in WaitlistRole enum
+    subject: "You're onboarded — your Dental Member Network expert portal is live",
+    preview:
+      "Your portal is live. Sign in with the one-click link below — no password needed.",
+    eyebrow: "Expert Portal · Live",
+    headline: "Welcome to the bench.",
+    accent: EXPERT_ACCENT,
+    accentLight: EXPERT_ACCENT_LIGHT,
+    replyTo: PARTNERSHIPS_EMAIL,
+    intro: [
+      `Hi ${escapeHtmlSafe(input.firstName)},`,
+      "Great to have you on the bench. Now that we've finished the onboarding conversation, your expert portal is live and ready for you.",
+      "Use the sign-in link below to set up your profile, upload your first resources, and see members and partners engaging with your work.",
+    ],
+    sections: [
+      {
+        title: "Here's what you can do inside the portal",
+        items: [
+          "Upload resources — SOPs, templates, slide decks, recordings, PDFs. Our team will review, brand them in the Dental Member Network style, and publish to the member library.",
+          "See who's engaging — view which members open your resources and which ones inquire about working with you.",
+          "Post updates — write short status updates that appear in the member and partner feeds. Members can comment and react.",
+        ],
+      },
+      {
+        title: "A few things to know",
+        items: [
+          "Your founding offer is locked in: free for the first 6 months, then $99/month. No commission on any courses you sell to members during your founding window.",
+          "You set your own course prices. The network handles the platform, payment processing, and member promotion; the pricing and content of your offerings stay entirely yours.",
+          "Members get a discount on every paid course. This is standard across all expert offerings and helps your courses reach more members faster.",
+        ],
+      },
+    ],
+    cta: {
+      label: "Sign in to your portal",
+      url: input.portalLink,
+    },
+    closing: `This link signs you in directly — no password needed. If you need a new link later, request one at ${input.portalLoginUrl}.`,
+    signoff: [
+      "Welcome to the bench.",
+      " The Dental Member Network Team",
+      "Powered by Thriving Dentist",
+    ],
+    footerNote: "Do not reply to this email except to ask a question.",
+    footerLines: [
+      "This is an automated confirmation that your Dental Member Network expert portal is active.",
+      `Account reference: ${input.expertId} · Activated: ${activated}`,
+      `Dental Member Network · ${PARTNERSHIPS_EMAIL} · dentalmembernetwork.com`,
+    ],
+  };
+}
+
+// escapeHtml() is defined at the top of this module for the renderer, but
+// intro lines are passed through renderIntro() which escapes for us. This
+// thin wrapper is just here so the draft function reads cleanly. Treats
+// undefined / null as the empty string.
+function escapeHtmlSafe(value: string | null | undefined): string {
+  if (!value) return "";
+  return value;
+}
+
+function buildExpertApprovalEmail(input: ExpertApprovalInput): BuiltEmail {
+  const draft = expertApprovalDraft(input);
+  return {
+    subject: draft.subject,
+    html: renderHtml(draft),
+    text: renderText(draft),
+    replyTo: draft.replyTo,
+  };
+}
+
+export async function sendExpertApprovalEmail(
+  input: ExpertApprovalInput,
+): Promise<SendResult> {
+  if (process.env.WAITLIST_EMAIL_DISABLED === "true") {
+    return { sent: false, reason: "disabled" };
+  }
+
+  const mail = buildExpertApprovalEmail(input);
+  const result = await dispatchMail({
+    to: input.email,
+    from: FROM_EMAIL,
+    mail,
+    tag: "expert:approved",
   });
   if (result.transport === "log") {
     return { sent: false, reason: "missing_api_key" };

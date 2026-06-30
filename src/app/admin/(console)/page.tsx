@@ -118,7 +118,7 @@ export default function AdminOverviewPage() {
         <Grid container spacing={2.5}>
           <ActionQueue
             icon={StoreOutlinedIcon}
-            label="Vendor approvals"
+            label="Partner approvals"
             count={data.vendors.pending}
             detail="pending review"
             href="/admin/vendors?filter=pending_review"
@@ -164,7 +164,7 @@ export default function AdminOverviewPage() {
           />
           <Stat
             icon={StoreOutlinedIcon}
-            label="Active vendors"
+            label="Active partners"
             value={`${data.vendors.approved}`}
             footer={`${data.vendors.pending} pending · ${data.vendors.verified} verified · ${data.vendors.total} total`}
             accent="secondary"
@@ -177,7 +177,7 @@ export default function AdminOverviewPage() {
           />
           <Stat
             icon={SavingsOutlinedIcon}
-            label="Vendor savings · lifetime"
+            label="Partner savings · lifetime"
             value={`$${data.redemptions.lifetimeSavings.toLocaleString()}`}
             footer={`${data.offers.approved} active offers in market`}
             accent="secondary"
@@ -259,7 +259,7 @@ export default function AdminOverviewPage() {
               <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "flex-end" }}>
                 <Box>
                   <Typography variant="overline" sx={{ color: "text.secondary", display: "block" }}>
-                    VENDORS
+                    PARTNERS
                   </Typography>
                   <Typography variant="h5">Recent applications</Typography>
                 </Box>
@@ -315,7 +315,7 @@ export default function AdminOverviewPage() {
                   <Typography variant="overline" sx={{ color: "text.secondary", display: "block" }}>
                     OFFER REVIEW
                   </Typography>
-                  <Typography variant="h5">Pending vendor offers</Typography>
+                  <Typography variant="h5">Pending partner offers</Typography>
                 </Box>
                 <Box component={Link} href="/admin/offers" sx={{ color: "primary.main", fontWeight: 600, fontSize: "0.85rem", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 0.5 }}>
                   Review <ArrowForwardIcon sx={{ fontSize: 16 }} />

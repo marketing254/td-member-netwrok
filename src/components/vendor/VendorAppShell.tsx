@@ -30,8 +30,11 @@ import StoreOutlinedIcon from "@mui/icons-material/StoreOutlined";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import ManageAccountsOutlinedIcon from "@mui/icons-material/ManageAccountsOutlined";
 import GavelOutlinedIcon from "@mui/icons-material/GavelOutlined";
+import ChatBubbleOutlineRoundedIcon from "@mui/icons-material/ChatBubbleOutlineRounded";
+import InsightsRoundedIcon from "@mui/icons-material/InsightsRounded";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
 import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
+import PhoneRoundedIcon from "@mui/icons-material/PhoneRounded";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import KeyboardArrowDownOutlinedIcon from "@mui/icons-material/KeyboardArrowDownOutlined";
 import VerifiedUserOutlinedIcon from "@mui/icons-material/VerifiedUserOutlined";
@@ -42,6 +45,7 @@ import NotificationsBell from "@/components/shared/NotificationsBell";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { fetchCurrentVendor } from "@/lib/supabase/vendorQueries";
 import type { VendorsRow } from "@/lib/supabase/types";
+import ProfileEditDialog from "@/components/shared/ProfileEditDialog";
 
 function useCurrentVendorRow(): { vendor: VendorsRow | null; loading: boolean } {
   const [vendor, setVendor] = useState<VendorsRow | null>(null);
@@ -81,6 +85,8 @@ const navItems = [
   { href: "/vendor/profile", label: "Company profile", icon: StoreOutlinedIcon },
   { href: "/vendor/catalog", label: "Catalog", icon: Inventory2OutlinedIcon },
   { href: "/vendor/offers", label: "Offers", icon: LocalOfferOutlinedIcon },
+  { href: "/vendor/inquiries", label: "Inquiries", icon: ChatBubbleOutlineRoundedIcon },
+  { href: "/vendor/analytics", label: "Analytics", icon: InsightsRoundedIcon },
   { href: "/vendor/redemptions", label: "Redemptions", icon: ReceiptLongOutlinedIcon },
   { href: "/vendor/account", label: "Account & billing", icon: ManageAccountsOutlinedIcon },
   { href: "/vendor/agreement", label: "Agreement", icon: GavelOutlinedIcon },
@@ -93,11 +99,15 @@ function SidebarContent({
   onClose,
   onToggleCollapse,
   showCollapseToggle,
+  onEditProfile,
+  avatarUrl,
 }: {
   pathname: string;
   collapsed: boolean;
   vendor: VendorsRow | null;
   onClose?: () => void;
+  onEditProfile: () => void;
+  avatarUrl?: string | null;
   onToggleCollapse?: () => void;
   showCollapseToggle?: boolean;
 }) {
@@ -174,16 +184,27 @@ function SidebarContent({
       {!collapsed && (
         <Box sx={{ px: 1.75, pb: 1.25, flexShrink: 0 }}>
           <Box
+            component="button"
+            type="button"
+            onClick={onEditProfile}
             sx={{
+              all: "unset",
+              display: "block",
+              width: "100%",
+              cursor: "pointer",
               p: 1.5,
               borderRadius: 1.5,
               border: "1px solid rgba(255,255,255,0.08)",
               bgcolor: "rgba(255,255,255,0.03)",
+              textAlign: "left",
+              transition: "background-color 160ms ease, border-color 160ms ease",
+              "&:hover": { bgcolor: "rgba(255,255,255,0.07)", borderColor: "rgba(217,168,75,0.32)" },
+              "&:focus-visible": { outline: "2px solid #F0C16E", outlineOffset: 2 },
             }}
           >
             <Stack direction="row" spacing={1.25} sx={{ alignItems: "center", mb: 1 }}>
               <Avatar
-                src={logoUrl ?? undefined}
+                src={avatarUrl ?? logoUrl ?? undefined}
                 sx={{
                   bgcolor: "rgba(217,168,75,0.18)",
                   color: "secondary.light",
@@ -201,7 +222,7 @@ function SidebarContent({
                   {displayName}
                 </Typography>
                 <Typography sx={{ color: "rgba(255,255,255,0.6)", fontSize: "0.68rem" }} noWrap>
-                  {category}
+                  {category || "Edit profile →"}
                 </Typography>
               </Box>
             </Stack>
@@ -307,6 +328,45 @@ function SidebarContent({
       {!collapsed && (
         <Box sx={{ px: 1.5, pb: 1.5, flexShrink: 0 }}>
           <Divider sx={{ borderColor: "rgba(255,255,255,0.06)", mb: 1 }} />
+          <Typography
+            sx={{
+              color: "rgba(255,255,255,0.4)",
+              fontSize: "0.58rem",
+              letterSpacing: "0.18em",
+              fontWeight: 700,
+              textTransform: "uppercase",
+              mb: 0.75,
+              px: 0.5,
+            }}
+          >
+            Support
+          </Typography>
+          <Box
+            component="a"
+            href="tel:+18556334707"
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1.25,
+              px: 1.25,
+              py: 0.85,
+              borderRadius: 1.25,
+              color: "rgba(255,255,255,0.65)",
+              textDecoration: "none",
+              transition: "background-color 160ms ease, color 160ms ease",
+              "&:hover": { bgcolor: "rgba(255,255,255,0.04)", color: "common.white" },
+            }}
+          >
+            <PhoneRoundedIcon sx={{ fontSize: 16, color: "rgba(255,255,255,0.55)" }} />
+            <Box sx={{ minWidth: 0, flex: 1 }}>
+              <Typography sx={{ fontSize: "0.66rem", color: "rgba(255,255,255,0.45)", lineHeight: 1 }}>
+                Hotline
+              </Typography>
+              <Typography sx={{ fontSize: "0.78rem", fontWeight: 600, color: "inherit", lineHeight: 1.2, mt: 0.2 }}>
+                (855) 633-4707
+              </Typography>
+            </Box>
+          </Box>
           <Box
             component="a"
             href="mailto:partnerships@joindmn.com"
@@ -315,7 +375,7 @@ function SidebarContent({
               alignItems: "center",
               gap: 1.25,
               px: 1.25,
-              py: 1,
+              py: 0.85,
               borderRadius: 1.25,
               color: "rgba(255,255,255,0.65)",
               textDecoration: "none",
@@ -325,15 +385,16 @@ function SidebarContent({
           >
             <HelpOutlineOutlinedIcon sx={{ fontSize: 16, color: "rgba(255,255,255,0.55)" }} />
             <Box sx={{ minWidth: 0, flex: 1 }}>
-              <Typography sx={{ fontSize: "0.78rem", fontWeight: 600, color: "inherit", lineHeight: 1.2 }}>
-                Need help?
+              <Typography sx={{ fontSize: "0.66rem", color: "rgba(255,255,255,0.45)", lineHeight: 1 }}>
+                Email
               </Typography>
               <Typography
                 sx={{
-                  fontSize: "0.68rem",
-                  color: "rgba(255,255,255,0.45)",
-                  lineHeight: 1.3,
-                  mt: 0.25,
+                  fontSize: "0.78rem",
+                  fontWeight: 600,
+                  color: "inherit",
+                  lineHeight: 1.2,
+                  mt: 0.2,
                   whiteSpace: "nowrap",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
@@ -377,6 +438,8 @@ export default function VendorAppShell({ children }: { children: React.ReactNode
   const userMenuAnchor = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
   const signOut = useSignOut("vendor");
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
   // Hydrate sidebar state from localStorage after mount. We can't read
   // localStorage in the initial state (SSR vs client mismatch), so we read
@@ -448,6 +511,11 @@ export default function VendorAppShell({ children }: { children: React.ReactNode
             vendor={currentVendor}
             onToggleCollapse={toggleCollapse}
             showCollapseToggle
+            onEditProfile={() => setProfileOpen(true)}
+            avatarUrl={
+              avatarPreview ??
+              ((currentVendor as { avatar_url?: string | null } | null)?.avatar_url ?? null)
+            }
           />
         </Box>
       )}
@@ -462,9 +530,34 @@ export default function VendorAppShell({ children }: { children: React.ReactNode
             collapsed={false}
             vendor={currentVendor}
             onClose={() => setDrawerOpen(false)}
+            onEditProfile={() => {
+              setDrawerOpen(false);
+              setProfileOpen(true);
+            }}
+            avatarUrl={
+              avatarPreview ??
+              ((currentVendor as { avatar_url?: string | null } | null)?.avatar_url ?? null)
+            }
           />
         </Drawer>
       )}
+
+      <ProfileEditDialog
+        open={profileOpen}
+        endpoint="/api/vendor/profile/avatar"
+        nameField="displayName"
+        initial={{
+          avatarUrl:
+            avatarPreview ??
+            ((currentVendor as { avatar_url?: string | null } | null)?.avatar_url ?? currentVendor?.logo_url ?? null),
+          displayName: currentVendor?.display_name ?? currentVendor?.company_name ?? "",
+        }}
+        onClose={() => setProfileOpen(false)}
+        onSaved={(next) => {
+          if (next.avatarPreview) setAvatarPreview(next.avatarPreview);
+        }}
+      />
+
 
       <Box
         sx={{

@@ -6,6 +6,7 @@ import {
   Box,
   CircularProgress,
   InputAdornment,
+  MenuItem,
   Stack,
   TextField,
   Typography,
@@ -31,6 +32,9 @@ type ResourceItem = {
   title: string;
   kind: string;
   is_free: boolean;
+  kit_type?: "standard" | "book_club" | null;
+  originating_expert_id?: string | null;
+  created_at?: string | null;
   progress: { last_viewed_at: string | null; completed_at: string | null } | null;
 };
 
@@ -46,7 +50,13 @@ type TopicCard = {
   viewedCount: number;
   completedCount: number;
   isFree: boolean;
+  kitType: "standard" | "book_club";
+  originatingExpertId: string | null;
+  // Newest member-facing publish date — used by the "Latest" sort.
+  newestAt: string | null;
 };
+
+type SortKey = "latest" | "oldest" | "alpha" | "most-resources";
 
 // Filter key — either a special slot or a literal category name from the DB.
 type FilterKey = "all" | "free" | string;
@@ -58,13 +68,43 @@ export default function ResourceLibraryPage() {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [filter, setFilterState] = useState<FilterKey>("all");
+  const [sort, setSort] = useState<SortKey>("latest");
+  const [expertFilter, setExpertFilter] = useState<string>("all");
+  const [expertOptions, setExpertOptions] = useState<{ id: string; name: string }[]>([]);
   const [page, setPage] = useState(1);
+
+  // Load the expert option list once so the filter dropdown is populated.
+  useEffect(() => {
+    let active = true;
+    fetch("/api/member/experts", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : { experts: [] }))
+      .then((body: { experts?: { id: string; name: string; kit_count: number }[] }) => {
+        if (!active) return;
+        // Only experts who have at least 1 kit are useful as a filter.
+        setExpertOptions(
+          (body.experts ?? [])
+            .filter((e) => e.kit_count > 0)
+            .map((e) => ({ id: e.id, name: e.name })),
+        );
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
+
+  // Honour ?expert=<id> deep-links from /dashboard/experts so the same
+  // listing UI can be re-used as a "kits by this expert" view.
+  const expertId = typeof window !== "undefined"
+    ? new URLSearchParams(window.location.search).get("expert")
+    : null;
 
   useEffect(() => {
     let active = true;
     (async () => {
       try {
-        const res = await fetch("/api/member/resources", { cache: "no-store" });
+        const url = expertId
+          ? `/api/member/resources?expert=${encodeURIComponent(expertId)}`
+          : "/api/member/resources";
+        const res = await fetch(url, { cache: "no-store" });
         if (!active) return;
         if (!res.ok) {
           setResources([]);
@@ -80,7 +120,7 @@ export default function ResourceLibraryPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [expertId]);
 
   // Wrap filter & query setters so the page resets at the same time the user
   // changes them — avoids a separate effect that would cause a cascading render.
@@ -107,6 +147,9 @@ export default function ResourceLibraryPage() {
         if (viewed) existing.viewedCount += 1;
         if (completed) existing.completedCount += 1;
         if (!r.is_free) existing.isFree = false;
+        if (r.created_at && (!existing.newestAt || r.created_at > existing.newestAt)) {
+          existing.newestAt = r.created_at;
+        }
       } else {
         map.set(r.topic_slug, {
           slug: r.topic_slug,
@@ -120,11 +163,21 @@ export default function ResourceLibraryPage() {
           viewedCount: viewed ? 1 : 0,
           completedCount: completed ? 1 : 0,
           isFree: r.is_free,
+          kitType: r.kit_type === "book_club" ? "book_club" : "standard",
+          originatingExpertId: r.originating_expert_id ?? null,
+          newestAt: r.created_at ?? null,
         });
       }
     }
     return Array.from(map.values());
   }, [resources]);
+
+  // Index expert name → id for matching the search against expert names.
+  const expertNameById = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const e of expertOptions) m.set(e.id, e.name.toLowerCase());
+    return m;
+  }, [expertOptions]);
 
   const filtered = useMemo(() => {
     let out = topics;
@@ -133,16 +186,51 @@ export default function ResourceLibraryPage() {
     } else if (filter !== "all") {
       out = out.filter((t) => t.category === filter);
     }
+    if (expertFilter !== "all") {
+      out = out.filter((t) => t.originatingExpertId === expertFilter);
+    }
     if (q.trim()) {
       const lc = q.toLowerCase();
       out = out.filter(
         (t) =>
           t.title.toLowerCase().includes(lc) ||
-          (t.summary ?? "").toLowerCase().includes(lc),
+          (t.summary ?? "").toLowerCase().includes(lc) ||
+          (t.category ?? "").toLowerCase().includes(lc) ||
+          // Match expert names as well so "atomic" finds Atomic Habits AND
+          // "gary" finds every kit tagged to Gary.
+          (t.originatingExpertId
+            ? (expertNameById.get(t.originatingExpertId) ?? "").includes(lc)
+            : false),
       );
     }
-    return out;
-  }, [topics, q, filter]);
+    // Stable sort — duplicate the array first so the underlying memo doesn't
+    // mutate.
+    const sorted = [...out];
+    switch (sort) {
+      case "alpha":
+        sorted.sort((a, b) => a.title.localeCompare(b.title));
+        break;
+      case "most-resources":
+        sorted.sort((a, b) => b.resourceCount - a.resourceCount);
+        break;
+      case "oldest":
+        sorted.sort((a, b) => {
+          const av = a.newestAt ?? "";
+          const bv = b.newestAt ?? "";
+          return av.localeCompare(bv);
+        });
+        break;
+      case "latest":
+      default:
+        sorted.sort((a, b) => {
+          const av = a.newestAt ?? "";
+          const bv = b.newestAt ?? "";
+          return bv.localeCompare(av);
+        });
+        break;
+    }
+    return sorted;
+  }, [topics, q, filter, expertFilter, expertNameById, sort]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -168,66 +256,108 @@ export default function ResourceLibraryPage() {
         standfirst="Each kit is a topic pack — training video, action guide, worksheets, checklist, and ready-to-use templates. Stream the video, download the rest."
       />
 
-      {/* Filter row */}
+      {/* Toolbar — dropdown filters + sort + search. Scales as we add more
+          categories and experts without consuming an extra row. */}
       <Stack
         direction={{ xs: "column", md: "row" }}
-        spacing={2}
+        spacing={1.25}
         sx={{
           alignItems: { md: "center" },
-          justifyContent: "space-between",
           mb: 3,
         }}
       >
-        <Box sx={{ display: "flex", flexWrap: "wrap", columnGap: 2.5, rowGap: 1 }}>
-          <FilterLink
-            label="All"
-            count={topics.length}
-            active={filter === "all"}
-            onClick={() => setFilter("all")}
-          />
-          <FilterLink
-            label="Free"
-            count={freeCount}
-            active={filter === "free"}
-            onClick={() => setFilter("free")}
-            tone="leaf"
-          />
-          {availableCategories.map((c) => (
-            <FilterLink
-              key={c}
-              label={c}
-              count={topics.filter((t) => t.category === c).length}
-              active={filter === c}
-              onClick={() => setFilter(c)}
-            />
-          ))}
-        </Box>
-
         <TextField
           size="small"
-          placeholder="Search kits"
+          placeholder="Search by title, category, or expert"
           value={q}
           onChange={(e) => setQuery(e.target.value)}
-          variant="standard"
+          fullWidth
           slotProps={{
             input: {
               startAdornment: (
                 <InputAdornment position="start">
-                  <SearchOutlinedIcon sx={{ fontSize: 15, color: ink.fade }} />
+                  <SearchOutlinedIcon sx={{ fontSize: 18, color: ink.fade }} />
                 </InputAdornment>
               ),
             },
           }}
           sx={{
-            maxWidth: 240,
-            "& .MuiInputBase-input": { fontSize: "0.84rem", py: 0.5 },
-            "& .MuiInput-underline:before": { borderBottomColor: "var(--paper-rule)" },
-            "& .MuiInput-underline:hover:not(.Mui-disabled):before": {
-              borderBottomColor: "var(--ink-rule)",
+            flex: { md: 1.4 },
+            "& .MuiOutlinedInput-root": {
+              borderRadius: 999,
+              fontSize: "0.88rem",
+              bgcolor: "#FFFFFF",
             },
-            "& .MuiInput-underline:after": { borderBottomColor: "var(--gold)" },
           }}
         />
+        <TextField
+          select
+          size="small"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value as FilterKey)}
+          label="Category"
+          slotProps={{ inputLabel: { sx: { fontSize: "0.82rem" } } }}
+          sx={{
+            minWidth: 180,
+            "& .MuiOutlinedInput-root": {
+              borderRadius: 999,
+              fontSize: "0.86rem",
+              bgcolor: "#FFFFFF",
+            },
+          }}
+        >
+          <MenuItem value="all" sx={{ fontSize: "0.86rem" }}>All categories ({topics.length})</MenuItem>
+          <MenuItem value="free" sx={{ fontSize: "0.86rem" }}>Free ({freeCount})</MenuItem>
+          {availableCategories.map((c) => (
+            <MenuItem key={c} value={c} sx={{ fontSize: "0.86rem" }}>
+              {c} ({topics.filter((t) => t.category === c).length})
+            </MenuItem>
+          ))}
+        </TextField>
+        <TextField
+          select
+          size="small"
+          value={expertFilter}
+          onChange={(e) => setExpertFilter(e.target.value)}
+          label="Expert"
+          slotProps={{ inputLabel: { sx: { fontSize: "0.82rem" } } }}
+          sx={{
+            minWidth: 170,
+            "& .MuiOutlinedInput-root": {
+              borderRadius: 999,
+              fontSize: "0.86rem",
+              bgcolor: "#FFFFFF",
+            },
+          }}
+        >
+          <MenuItem value="all" sx={{ fontSize: "0.86rem" }}>All experts</MenuItem>
+          {expertOptions.map((e) => (
+            <MenuItem key={e.id} value={e.id} sx={{ fontSize: "0.86rem" }}>
+              {e.name}
+            </MenuItem>
+          ))}
+        </TextField>
+        <TextField
+          select
+          size="small"
+          value={sort}
+          onChange={(e) => setSort(e.target.value as SortKey)}
+          label="Sort"
+          slotProps={{ inputLabel: { sx: { fontSize: "0.82rem" } } }}
+          sx={{
+            minWidth: 150,
+            "& .MuiOutlinedInput-root": {
+              borderRadius: 999,
+              fontSize: "0.86rem",
+              bgcolor: "#FFFFFF",
+            },
+          }}
+        >
+          <MenuItem value="latest" sx={{ fontSize: "0.86rem" }}>Latest</MenuItem>
+          <MenuItem value="oldest" sx={{ fontSize: "0.86rem" }}>Oldest</MenuItem>
+          <MenuItem value="alpha" sx={{ fontSize: "0.86rem" }}>A–Z</MenuItem>
+          <MenuItem value="most-resources" sx={{ fontSize: "0.86rem" }}>Most resources</MenuItem>
+        </TextField>
       </Stack>
 
       {/* Grid */}
@@ -285,57 +415,6 @@ export default function ResourceLibraryPage() {
   );
 }
 
-function FilterLink({
-  label,
-  count,
-  active,
-  onClick,
-  tone,
-}: {
-  label: string;
-  count: number;
-  active: boolean;
-  onClick: () => void;
-  tone?: "leaf";
-}) {
-  const activeColor = tone === "leaf" ? "var(--leaf)" : "var(--ink)";
-  return (
-    <Box
-      role="button"
-      tabIndex={0}
-      onClick={onClick}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onClick();
-        }
-      }}
-      sx={{
-        display: "inline-flex",
-        alignItems: "baseline",
-        gap: 0.5,
-        py: 0.5,
-        cursor: "pointer",
-        userSelect: "none",
-        color: active ? activeColor : ink.fade,
-        borderBottom: active ? `1px solid ${activeColor}` : "1px solid transparent",
-        fontSize: "0.82rem",
-        fontWeight: active ? 700 : 500,
-        letterSpacing: active ? "-0.005em" : "0",
-        transition:
-          "color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out)",
-        "&:hover": { color: activeColor },
-        "&:focus-visible": { outline: "2px solid var(--gold)", outlineOffset: 2 },
-      }}
-    >
-      <span>{label}</span>
-      <Box component="span" sx={{ fontSize: "0.66rem", opacity: 0.6, fontWeight: 600 }}>
-        {count}
-      </Box>
-    </Box>
-  );
-}
-
 function KitTile({ topic }: { topic: TopicCard }) {
   const progressPct =
     topic.resourceCount > 0
@@ -376,11 +455,33 @@ function KitTile({ topic }: { topic: TopicCard }) {
         />
       </Box>
 
-      {topic.category && (
-        <Typography sx={{ ...editorialText.eyebrow, color: ink.fade, mb: 0.5 }}>
-          {topic.category}
-        </Typography>
-      )}
+      <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", mb: 0.5, flexWrap: "wrap", rowGap: 0.5 }}>
+        {topic.kitType === "book_club" && (
+          <Box
+            sx={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 0.4,
+              height: 16,
+              px: 0.75,
+              borderRadius: 0.5,
+              bgcolor: "rgba(110,51,70,0.12)",
+              color: "#6E3346",
+              fontSize: "0.58rem",
+              fontWeight: 800,
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+            }}
+          >
+            Book Club
+          </Box>
+        )}
+        {topic.category && (
+          <Typography sx={{ ...editorialText.eyebrow, color: ink.fade }}>
+            {topic.category}
+          </Typography>
+        )}
+      </Stack>
       {topic.summary && (
         <Typography
           sx={{
@@ -395,33 +496,82 @@ function KitTile({ topic }: { topic: TopicCard }) {
           {topic.summary}
         </Typography>
       )}
-      <Stack
-        direction="row"
+      <Box
         sx={{
-          alignItems: "center",
-          justifyContent: "space-between",
           mt: "auto",
           pt: 1,
           borderTop: "1px solid var(--paper-rule)",
         }}
       >
-        <Typography sx={editorialText.meta}>
-          {topic.resourceCount} {topic.resourceCount === 1 ? "item" : "items"}
-          {topic.viewedCount > 0 ? ` · ${topic.viewedCount} done` : ""}
-        </Typography>
-        <Box
+        {/* Progress bar — replaces the "X items · Y done" line */}
+        <Stack
+          direction="row"
           sx={{
-            display: "inline-flex",
             alignItems: "center",
-            gap: 0.4,
-            fontSize: "0.73rem",
-            fontWeight: 700,
-            color: "var(--gold-deep)",
+            justifyContent: "space-between",
+            mb: 0.6,
           }}
         >
-          Open <ArrowForwardIcon sx={{ fontSize: 12 }} />
+          <Typography
+            sx={{
+              fontSize: "0.66rem",
+              fontWeight: 700,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              color: completed ? "var(--leaf, #1F5C40)" : inProgress ? "var(--gold-deep, #A07823)" : "var(--ink-fade, #7A8590)",
+            }}
+          >
+            {completed
+              ? "Complete"
+              : inProgress
+                ? `${progressPct}% complete`
+                : "Not started"}
+          </Typography>
+          <Typography sx={{ ...editorialText.meta, fontSize: "0.7rem" }}>
+            {topic.viewedCount}/{topic.resourceCount}
+          </Typography>
+        </Stack>
+        <Box
+          sx={{
+            height: 6,
+            borderRadius: 999,
+            bgcolor: "rgba(14,42,61,0.08)",
+            overflow: "hidden",
+          }}
+        >
+          <Box
+            sx={{
+              height: "100%",
+              width: `${progressPct}%`,
+              borderRadius: 999,
+              bgcolor: completed ? "var(--leaf, #1F5C40)" : "var(--gold-deep, #A07823)",
+              transition: "width 240ms cubic-bezier(0.16, 1, 0.3, 1)",
+            }}
+          />
         </Box>
-      </Stack>
+        <Stack
+          direction="row"
+          sx={{
+            alignItems: "center",
+            justifyContent: "flex-end",
+            mt: 0.8,
+          }}
+        >
+          <Box
+            sx={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 0.4,
+              fontSize: "0.72rem",
+              fontWeight: 700,
+              color: "var(--gold-deep)",
+            }}
+          >
+            {inProgress && !completed ? "Continue" : completed ? "Re-open" : "Open"}{" "}
+            <ArrowForwardIcon sx={{ fontSize: 12 }} />
+          </Box>
+        </Stack>
+      </Box>
     </Box>
   );
 }

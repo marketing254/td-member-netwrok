@@ -44,6 +44,19 @@ next-env.d.ts
 
 # clerk configuration (can include secrets)
 /.clerk/
+
+# Local test runners + scratch scripts. They use service-role + Stripe
+# secret keys and must NEVER end up in version control — anyone with
+# read access to the repo could reproduce admin-level operations.
+stripe-test-runner.mjs
+stripe-test-runner.*.mjs
+*test-runner*.mjs
+*test-runner*.cjs
+/scripts/local-*
+/scripts/.dev-*
+*.local.log
+test-output.log
+run-output.log
 -supabase
 +supabase/.branches/
 +supabase/.temp/

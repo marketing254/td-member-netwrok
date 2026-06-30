@@ -26,6 +26,30 @@ export const dynamic = "force-dynamic";
  *   }
  */
 const ALLOWED_BUCKETS = new Set(["member-resources", "kit-thumbnails"]);
+const MAX_PATH_LEN = 512;
+// Allow letters, digits, underscore, hyphen, period, and forward slash for
+// nested folders. Explicitly rejects backslash, null bytes, and parent-dir
+// traversal — the per-character allowlist already covers each individually
+// but keeping the explicit checks below makes the intent obvious to future
+// readers and tightens defense-in-depth.
+const PATH_RE = /^[A-Za-z0-9_./\-]+$/;
+
+function isSafeStoragePath(path: string): boolean {
+  if (path.length === 0 || path.length > MAX_PATH_LEN) return false;
+  if (path.startsWith("/")) return false; // no absolute paths
+  if (path.includes("..")) return false; // no parent traversal
+  if (path.includes("\\")) return false; // no backslash escape
+  if (path.includes("\0")) return false; // no null byte
+  if (path.includes("//")) return false; // no empty segments
+  if (path.endsWith("/")) return false; // must point at a file
+  if (!PATH_RE.test(path)) return false;
+  // Reject any individual segment that's `.` or `..` even though the
+  // regex above forbids `..` — belt-and-braces in case PATH_RE changes.
+  for (const seg of path.split("/")) {
+    if (seg === "" || seg === "." || seg === "..") return false;
+  }
+  return true;
+}
 
 export async function POST(req: Request) {
   const guard = await requireAdmin();
@@ -39,7 +63,7 @@ export async function POST(req: Request) {
   if (!body.bucket || !ALLOWED_BUCKETS.has(body.bucket)) {
     return NextResponse.json({ error: "Invalid bucket" }, { status: 400 });
   }
-  if (!body.path || typeof body.path !== "string" || body.path.includes("..")) {
+  if (!body.path || typeof body.path !== "string" || !isSafeStoragePath(body.path)) {
     return NextResponse.json({ error: "Invalid path" }, { status: 400 });
   }
 

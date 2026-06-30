@@ -1,32 +1,95 @@
 "use client";
 
-import { useState } from "react";
-import { Box, Button, CircularProgress, Stack, Typography } from "@mui/material";
-import LockOpenRoundedIcon from "@mui/icons-material/LockOpenRounded";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import {
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  Stack,
+  Typography,
+} from "@mui/material";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
+import StarRoundedIcon from "@mui/icons-material/StarRounded";
+import { COLORS } from "@/theme";
 
-type PlanKey = "founding_monthly" | "founding_annual" | "standard_monthly";
+type BillingInterval = "monthly" | "annual";
+type PlanKey =
+  | "founding_monthly"
+  | "founding_annual"
+  | "early_monthly"
+  | "early_annual"
+  | "standard_monthly"
+  | "standard_annual";
 
-const FOUNDING_PERKS = [
-  "Full library access — every kit, every download",
-  "1-on-1 coaching with Gary Takacs",
-  "Founding rate locked for the lifetime of the product",
+const UNIVERSAL_PERKS = [
+  "Expert Hotline — written action plan in 2–3 days",
+  "Full video course library",
+  "New resources every week",
+  "Live webinars, events & roundtables (CE)",
+  "Templates & worksheets",
+  "Community access",
+  "A growing bench of experts",
 ];
 
-/**
- * SubscribeCard — the paywall-style call-to-action shown on the member
- * dashboard when a member doesn't have an active subscription yet.
- *
- * Posts to /api/stripe/checkout to start a Checkout Session, then
- * redirects the browser to Stripe's hosted page.
- */
-export function SubscribeCard({ firstName }: { firstName: string }) {
-  const [plan, setPlan] = useState<PlanKey>("founding_monthly");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+const FOUNDING_PERKS = [
+  "Price locked for life",
+  "“Founding Member” status",
+  "A vote in the content roadmap",
+  "Early access to new kits",
+];
 
-  const startCheckout = async () => {
-    setBusy(true);
+const EARLY_PERKS = [
+  "Price locked for life",
+  "“Founding Member” status",
+  "Early access to new kits",
+];
+
+const STANDARD_PERKS = ["Standard rate", "Open enrollment", "Full core membership"];
+
+type TierStat = { cap: number; taken: number; remaining: number; isOpen: boolean };
+type Availability = { founding: TierStat; early: TierStat };
+
+export function SubscribeCard({ firstName }: { firstName: string }) {
+  // Honour ?interval=annual coming from the /pricing page so users land
+  // on /upgrade with the right tab already selected. Falls back to
+  // "monthly" if nothing is passed.
+  const searchParams = useSearchParams();
+  const initialInterval: BillingInterval =
+    searchParams?.get("interval") === "annual" ? "annual" : "monthly";
+  const [interval, setInterval] = useState<BillingInterval>(initialInterval);
+  const [busy, setBusy] = useState<PlanKey | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [avail, setAvail] = useState<Availability | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/stripe/availability", { cache: "no-store" });
+        const body = (await res.json()) as Partial<Availability>;
+        if (!active) return;
+        setAvail({
+          founding: normalise(body.founding, 100),
+          early: normalise(body.early, 400),
+        });
+      } catch {
+        if (active) {
+          setAvail({
+            founding: { cap: 100, taken: 0, remaining: 100, isOpen: true },
+            early: { cap: 400, taken: 0, remaining: 400, isOpen: true },
+          });
+        }
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const startCheckout = async (plan: PlanKey) => {
+    setBusy(plan);
     setError(null);
     try {
       const res = await fetch("/api/stripe/checkout", {
@@ -38,230 +101,530 @@ export function SubscribeCard({ firstName }: { firstName: string }) {
         url?: string;
         error?: string;
         redirectTo?: string;
+        tierSoldOut?: "founding" | "early";
       };
       if (!res.ok || !body.url) {
         if (body.redirectTo) {
-          // Already subscribed — go straight to portal
           const portalRes = await fetch(body.redirectTo, { method: "POST" });
-          const portalBody = (await portalRes.json()) as { url?: string };
+          const portalBody = (await portalRes.json().catch(() => ({}))) as { url?: string };
           if (portalBody.url) {
             window.location.href = portalBody.url;
             return;
           }
         }
-        setError(body.error ?? `Checkout failed (${res.status})`);
+        if (body.tierSoldOut === "founding") {
+          setAvail((cur) =>
+            cur ? { ...cur, founding: { ...cur.founding, isOpen: false, remaining: 0 } } : cur,
+          );
+        } else if (body.tierSoldOut === "early") {
+          setAvail((cur) =>
+            cur ? { ...cur, early: { ...cur.early, isOpen: false, remaining: 0 } } : cur,
+          );
+        }
+        // 4xx errors from our checkout API are user-friendly (sold out,
+        // already subscribed, invalid plan); trust them. 5xx + network
+        // errors collapse to a generic message so a hacker reading the
+        // browser console doesn't learn anything about the backend.
+        const safe =
+          body.error && res.status >= 400 && res.status < 500
+            ? body.error
+            : "Couldn't start checkout right now. Please try again.";
+        setError(safe);
         return;
       }
       window.location.href = body.url;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Checkout failed.");
+      if (process.env.NODE_ENV !== "production") console.error("[checkout] failed:", err);
+      setError("Couldn't start checkout right now. Please try again.");
     } finally {
-      setBusy(false);
+      setBusy(null);
     }
   };
+
+  const foundingPlan: PlanKey = interval === "monthly" ? "founding_monthly" : "founding_annual";
+  const earlyPlan: PlanKey = interval === "monthly" ? "early_monthly" : "early_annual";
+  const standardPlan: PlanKey = interval === "monthly" ? "standard_monthly" : "standard_annual";
+  const foundingOpen = avail?.founding.isOpen ?? true;
+  const earlyOpen = avail?.early.isOpen ?? true;
+
+  return (
+    <Box>
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        spacing={2}
+        sx={{ alignItems: { sm: "center" }, justifyContent: "space-between", mb: 3 }}
+      >
+        <Box>
+          <Typography
+            sx={{
+              fontSize: "0.72rem",
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              fontWeight: 700,
+              color: COLORS.accentDeep,
+              mb: 0.5,
+            }}
+          >
+            Activate your membership
+          </Typography>
+          <Typography
+            sx={{
+              fontFamily: "var(--font-display)",
+              fontSize: { xs: "1.6rem", md: "2rem" },
+              fontWeight: 500,
+              color: COLORS.ink,
+              lineHeight: 1.2,
+              letterSpacing: "-0.01em",
+            }}
+          >
+            Welcome, {firstName}. Pick your plan.
+          </Typography>
+          <Typography sx={{ color: COLORS.muted, mt: 1, maxWidth: 560, fontSize: "0.92rem" }}>
+            Your portal unlocks the moment payment is confirmed.
+          </Typography>
+        </Box>
+
+        <BillingToggle interval={interval} onChange={setInterval} />
+      </Stack>
+
+      <UniversalPerksBanner perks={UNIVERSAL_PERKS} />
+
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", md: "repeat(3, 1fr)" },
+          gap: 2.5,
+          mt: 3,
+        }}
+      >
+        <PlanCard
+          tier="founding"
+          title="Founding"
+          subtitle="First 100 members"
+          ribbon={
+            foundingOpen
+              ? `★ BEST VALUE — ${avail?.founding.remaining ?? 100} OF 100 LEFT`
+              : "SOLD OUT"
+          }
+          price={interval === "monthly" ? "$49" : "$490"}
+          per={interval === "monthly" ? "mo" : "yr"}
+          sub={interval === "monthly" ? "or $490/year" : "$40.83/mo equivalent"}
+          save={interval === "annual" ? "Save $98" : undefined}
+          sectionTitle="WHAT MAKES IT SPECIAL"
+          perks={FOUNDING_PERKS}
+          footnote="No trial — 30-day money-back guarantee · Cancel anytime"
+          cta={
+            !foundingOpen
+              ? "Sold out — pick Early or Standard"
+              : busy === foundingPlan
+                ? "Opening Stripe…"
+                : "Claim founding seat"
+          }
+          busy={busy === foundingPlan}
+          soldOut={!foundingOpen}
+          onClick={() => startCheckout(foundingPlan)}
+        />
+
+        <PlanCard
+          tier="early"
+          title="Early Member"
+          subtitle="Members 101–500"
+          ribbon={
+            !earlyOpen
+              ? "SOLD OUT"
+              : !foundingOpen
+                ? `${avail?.early.remaining ?? 400} OF 400 LEFT`
+                : undefined
+          }
+          price={interval === "monthly" ? "$99" : "$990"}
+          per={interval === "monthly" ? "mo" : "yr"}
+          sub={interval === "monthly" ? "or $990/year" : "$82.50/mo equivalent"}
+          save={interval === "annual" ? "Save $198" : undefined}
+          sectionTitle="WHAT MAKES IT SPECIAL"
+          perks={EARLY_PERKS}
+          footnote="30-day money-back guarantee · Cancel anytime"
+          cta={
+            !earlyOpen
+              ? "Sold out — Standard available"
+              : busy === earlyPlan
+                ? "Opening Stripe…"
+                : "Join as Early Member"
+          }
+          busy={busy === earlyPlan}
+          soldOut={!earlyOpen}
+          onClick={() => startCheckout(earlyPlan)}
+        />
+
+        <PlanCard
+          tier="standard"
+          title="Standard"
+          subtitle="Regular membership"
+          price={interval === "monthly" ? "$199" : "$1,990"}
+          per={interval === "monthly" ? "mo" : "yr"}
+          sub={interval === "monthly" ? "or $1,990/year" : "$165.83/mo equivalent"}
+          save={interval === "annual" ? "Save $398" : undefined}
+          sectionTitle="DETAILS"
+          perks={STANDARD_PERKS}
+          footnote="14-day free trial · Cancel anytime"
+          cta={busy === standardPlan ? "Opening Stripe…" : "Start membership"}
+          busy={busy === standardPlan}
+          onClick={() => startCheckout(standardPlan)}
+        />
+      </Box>
+
+      <Box
+        sx={{
+          mt: 3,
+          px: { xs: 2, md: 3 },
+          py: 1.75,
+          borderRadius: 2,
+          bgcolor: COLORS.surfaceAlt,
+          border: `1px dashed ${COLORS.accent}`,
+          textAlign: "center",
+        }}
+      >
+        <Typography sx={{ fontSize: "0.85rem", color: COLORS.accentDeep, fontWeight: 600 }}>
+          ★ Coming in Phase 2 — Premium: 1-on-1 coaching · practice audit &amp; review · priority Hotline (24–48h) · advanced masterclasses · whole-team seats
+        </Typography>
+      </Box>
+
+      {error && (
+        <Typography sx={{ mt: 2, fontSize: "0.85rem", color: "#8C1D1D", textAlign: "center" }}>
+          {error}
+        </Typography>
+      )}
+
+      <Typography
+        sx={{ mt: 2.5, fontSize: "0.78rem", color: COLORS.muted, textAlign: "center" }}
+      >
+        Cancel anytime · 30-day money-back guarantee on Founding &amp; Early · Secure checkout via Stripe
+      </Typography>
+    </Box>
+  );
+}
+
+function normalise(v: Partial<TierStat> | undefined, cap: number): TierStat {
+  const taken = typeof v?.taken === "number" ? v.taken : 0;
+  const capped = typeof v?.cap === "number" ? v.cap : cap;
+  const remaining = typeof v?.remaining === "number" ? v.remaining : Math.max(0, capped - taken);
+  const isOpen = typeof v?.isOpen === "boolean" ? v.isOpen : remaining > 0;
+  return { cap: capped, taken, remaining, isOpen };
+}
+
+function UniversalPerksBanner({ perks }: { perks: string[] }) {
+  return (
+    <Box
+      sx={{
+        borderRadius: 2,
+        bgcolor: COLORS.surfaceAlt,
+        border: `1px solid ${COLORS.line}`,
+        px: { xs: 2.5, md: 3 },
+        py: { xs: 2, md: 2.25 },
+      }}
+    >
+      <Typography
+        sx={{
+          fontSize: "0.72rem",
+          letterSpacing: "0.18em",
+          textTransform: "uppercase",
+          fontWeight: 800,
+          color: COLORS.accentDeep,
+          mb: 1.25,
+        }}
+      >
+        Every membership includes
+      </Typography>
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", md: "1fr 1fr", lg: "1fr 1fr 1fr 1fr" },
+          gap: 1,
+          rowGap: 1,
+        }}
+      >
+        {perks.map((p) => (
+          <Stack key={p} direction="row" spacing={1} sx={{ alignItems: "flex-start" }}>
+            <CheckRoundedIcon sx={{ fontSize: 16, color: COLORS.primary, mt: 0.25, flexShrink: 0 }} />
+            <Typography sx={{ fontSize: "0.86rem", color: COLORS.ink, lineHeight: 1.5 }}>
+              {p}
+            </Typography>
+          </Stack>
+        ))}
+      </Box>
+    </Box>
+  );
+}
+
+function BillingToggle({
+  interval,
+  onChange,
+}: {
+  interval: BillingInterval;
+  onChange: (i: BillingInterval) => void;
+}) {
+  return (
+    <Box
+      sx={{
+        display: "inline-flex",
+        p: 0.5,
+        borderRadius: 999,
+        bgcolor: COLORS.surfaceAlt,
+        border: `1px solid ${COLORS.line}`,
+      }}
+    >
+      {(["monthly", "annual"] as BillingInterval[]).map((v) => {
+        const active = interval === v;
+        return (
+          <Box
+            key={v}
+            role="button"
+            tabIndex={0}
+            onClick={() => onChange(v)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onChange(v);
+              }
+            }}
+            sx={{
+              px: 2.25,
+              py: 0.85,
+              borderRadius: 999,
+              fontSize: "0.82rem",
+              fontWeight: 700,
+              letterSpacing: "0.02em",
+              color: active ? "#FFFFFF" : COLORS.ink,
+              bgcolor: active ? COLORS.primary : "transparent",
+              cursor: "pointer",
+              transition: "background-color 160ms ease, color 160ms ease",
+              userSelect: "none",
+            }}
+          >
+            {v === "monthly" ? "Monthly" : "Annual · save 2 mo"}
+          </Box>
+        );
+      })}
+    </Box>
+  );
+}
+
+function PlanCard({
+  tier,
+  title,
+  subtitle,
+  ribbon,
+  price,
+  per,
+  sub,
+  save,
+  sectionTitle,
+  perks,
+  footnote,
+  cta,
+  busy,
+  soldOut,
+  onClick,
+}: {
+  tier: "founding" | "early" | "standard";
+  title: string;
+  subtitle: string;
+  ribbon?: string;
+  price: string;
+  per?: string;
+  sub?: string;
+  save?: string;
+  sectionTitle: string;
+  perks: string[];
+  footnote: string;
+  cta: string;
+  busy?: boolean;
+  soldOut?: boolean;
+  onClick?: () => void;
+}) {
+  const borderColor =
+    tier === "founding" ? COLORS.accent : tier === "early" ? COLORS.primary : COLORS.line;
+  const borderWidth = tier === "founding" ? 2 : 1;
+  const isStarTier = tier === "founding" || tier === "early";
 
   return (
     <Box
       sx={{
         position: "relative",
+        borderRadius: 2.5,
+        border: `${borderWidth}px solid ${borderColor}`,
+        bgcolor: "#FFFFFF",
         overflow: "hidden",
-        borderRadius: 2,
-        bgcolor: "#0A1A2F",
-        backgroundImage:
-          "radial-gradient(50% 60% at 100% 0%, rgba(217,168,75,0.18) 0%, transparent 60%), linear-gradient(135deg, #061322 0%, #0A1A2F 60%, #0F2540 100%)",
-        border: "1px solid rgba(217,168,75,0.28)",
-        color: "#F6F1E7",
-        p: { xs: 2.5, md: 3 },
-        boxShadow: "0 16px 40px -24px rgba(14,42,61,0.55)",
+        display: "flex",
+        flexDirection: "column",
+        // Sold-out tiers stay in the layout but dim slightly + lose their
+        // ribbon glow so the visual hierarchy still points the eye at the
+        // available tier(s).
+        opacity: soldOut ? 0.7 : 1,
+        filter: soldOut ? "saturate(0.7)" : "none",
+        boxShadow:
+          soldOut
+            ? "0 8px 20px -16px rgba(14,42,61,0.18)"
+            : tier === "founding"
+              ? "0 24px 60px -30px rgba(217,168,75,0.55)"
+              : tier === "early"
+                ? "0 18px 44px -28px rgba(14,42,61,0.4)"
+                : "0 12px 32px -24px rgba(14,42,61,0.18)",
+        transition: "opacity 200ms ease, filter 200ms ease",
       }}
     >
-      <Stack
-        direction={{ xs: "column", md: "row" }}
-        spacing={3}
-        sx={{ alignItems: { md: "flex-start" }, justifyContent: "space-between" }}
-      >
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography
-            sx={{
-              fontSize: "0.66rem",
-              fontWeight: 800,
-              letterSpacing: "0.18em",
-              color: "#F0C16E",
-              textTransform: "uppercase",
-              mb: 1,
-            }}
-          >
-            Founding membership
-          </Typography>
+      {ribbon && (
+        <Box
+          sx={{
+            position: "absolute",
+            top: 14,
+            right: 14,
+            zIndex: 2,
+            px: 1.5,
+            py: 0.5,
+            borderRadius: 999,
+            // Sold-out ribbon switches to a quiet neutral so it doesn't
+            // pull attention to a tier the user can't buy.
+            bgcolor: soldOut ? "rgba(14,42,61,0.10)" : COLORS.accent,
+            color: soldOut ? COLORS.inkSoft : COLORS.primaryDeep,
+            fontSize: "0.66rem",
+            fontWeight: 800,
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+          }}
+        >
+          {ribbon}
+        </Box>
+      )}
+      <Box sx={{ bgcolor: COLORS.primary, color: "#FFFFFF", px: 3, pt: 3, pb: 2.25 }}>
+        <Typography
+          sx={{
+            fontFamily: "var(--font-display)",
+            fontSize: "1.5rem",
+            fontWeight: 500,
+            lineHeight: 1.2,
+            letterSpacing: "-0.01em",
+            color: "#FFFFFF",
+          }}
+        >
+          {title}
+        </Typography>
+        <Typography sx={{ fontSize: "0.84rem", color: "rgba(255,255,255,0.72)", mt: 0.5 }}>
+          {subtitle}
+        </Typography>
+      </Box>
+
+      <Box sx={{ px: 3, py: 3, borderBottom: `1px solid ${COLORS.line}`, textAlign: "center", bgcolor: "#FFFFFF" }}>
+        <Stack direction="row" spacing={0.5} sx={{ justifyContent: "center", alignItems: "baseline" }}>
           <Typography
             sx={{
               fontFamily: "var(--font-display)",
-              fontSize: { xs: "1.5rem", md: "1.85rem" },
-              fontWeight: 500,
-              color: "#FFFFFF",
-              lineHeight: 1.2,
-              letterSpacing: "-0.01em",
-              mb: 1,
+              fontSize: { xs: "2.6rem", md: "3rem" },
+              fontWeight: 600,
+              color: COLORS.ink,
+              lineHeight: 1,
+              letterSpacing: "-0.02em",
             }}
           >
-            Lock in $49/mo, {firstName}.
+            {price}
           </Typography>
-          <Typography
+          {per && (
+            <Typography sx={{ fontSize: "0.95rem", color: COLORS.muted, fontWeight: 500 }}>
+              /{per}
+            </Typography>
+          )}
+        </Stack>
+        {sub && (
+          <Typography sx={{ fontSize: "0.85rem", color: COLORS.muted, mt: 0.75 }}>
+            {sub}
+          </Typography>
+        )}
+        {save && (
+          <Chip
+            label={save}
+            size="small"
             sx={{
-              fontSize: "0.92rem",
-              color: "rgba(246,241,231,0.75)",
-              lineHeight: 1.6,
-              maxWidth: 520,
-              mb: 2,
+              mt: 1.25,
+              bgcolor: "rgba(217,168,75,0.18)",
+              color: COLORS.accentDeep,
+              fontWeight: 700,
+              fontSize: "0.72rem",
+              height: 24,
             }}
-          >
-            First 1,000 members get the founding rate, locked for the lifetime of the current product. Cancel any time inside the Stripe customer portal.
-          </Typography>
-          <Stack spacing={0.75} sx={{ mb: 2.5 }}>
-            {FOUNDING_PERKS.map((p) => (
-              <Stack key={p} direction="row" spacing={1} sx={{ alignItems: "flex-start" }}>
-                <CheckRoundedIcon sx={{ fontSize: 16, color: "#F0C16E", mt: 0.25, flexShrink: 0 }} />
+          />
+        )}
+      </Box>
+
+      <Box sx={{ px: 3, py: 2.5, flex: 1 }}>
+        <Typography
+          sx={{
+            fontSize: "0.72rem",
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            color: COLORS.muted,
+            fontWeight: 800,
+            mb: 1.25,
+          }}
+        >
+          {sectionTitle}
+        </Typography>
+        <Stack spacing={1.1}>
+          {perks.map((p) => {
+            const Icon = isStarTier ? StarRoundedIcon : CheckRoundedIcon;
+            return (
+              <Stack key={p} direction="row" spacing={1.25} sx={{ alignItems: "flex-start" }}>
+                <Icon
+                  sx={{
+                    fontSize: 18,
+                    color: isStarTier ? COLORS.accentDeep : COLORS.primary,
+                    mt: 0.15,
+                    flexShrink: 0,
+                  }}
+                />
                 <Typography
-                  sx={{ fontSize: "0.84rem", color: "rgba(246,241,231,0.85)", lineHeight: 1.55 }}
+                  sx={{
+                    fontSize: "0.88rem",
+                    color: COLORS.ink,
+                    fontWeight: isStarTier ? 700 : 500,
+                    lineHeight: 1.45,
+                  }}
                 >
                   {p}
                 </Typography>
               </Stack>
-            ))}
-          </Stack>
-        </Box>
+            );
+          })}
+        </Stack>
+      </Box>
 
-        <Box sx={{ flexShrink: 0, width: { xs: "100%", md: 280 } }}>
-          <Stack spacing={1.25}>
-            <PlanPicker plan={plan} onChange={setPlan} />
-            <Button
-              onClick={startCheckout}
-              disabled={busy}
-              variant="contained"
-              size="large"
-              disableElevation
-              startIcon={
-                busy ? (
-                  <CircularProgress size={14} sx={{ color: "inherit" }} />
-                ) : (
-                  <LockOpenRoundedIcon sx={{ fontSize: 18 }} />
-                )
-              }
-              sx={{
-                bgcolor: "#F0C16E",
-                color: "#0A1A2F",
-                textTransform: "none",
-                fontSize: "0.95rem",
-                fontWeight: 700,
-                borderRadius: 1,
-                py: 1.25,
-                "&:hover": { bgcolor: "#E6B860" },
-                "&.Mui-disabled": {
-                  bgcolor: "rgba(240,193,110,0.4)",
-                  color: "rgba(10,26,47,0.5)",
-                },
-              }}
-            >
-              {busy ? "Opening Stripe…" : "Start membership"}
-            </Button>
-            <Typography
-              sx={{
-                fontSize: "0.7rem",
-                color: "rgba(246,241,231,0.55)",
-                textAlign: "center",
-                lineHeight: 1.5,
-              }}
-            >
-              Secure checkout via Stripe. No card data touches our servers.
-            </Typography>
-            {error && (
-              <Typography sx={{ fontSize: "0.78rem", color: "#FFB6B6", textAlign: "center" }}>
-                {error}
-              </Typography>
-            )}
-          </Stack>
-        </Box>
-      </Stack>
+      <Box sx={{ px: 3, py: 1.5, textAlign: "center", borderTop: `1px solid ${COLORS.line}`, bgcolor: COLORS.surfaceAlt }}>
+        <Typography sx={{ fontSize: "0.78rem", color: COLORS.inkSoft, lineHeight: 1.5 }}>
+          {footnote}
+        </Typography>
+      </Box>
+
+      <Box sx={{ px: 3, py: 2.5 }}>
+        <Button
+          fullWidth
+          variant={tier === "standard" ? "outlined" : "contained"}
+          color={tier === "founding" ? "secondary" : "primary"}
+          disabled={busy || soldOut}
+          onClick={onClick}
+          startIcon={busy ? <CircularProgress size={14} sx={{ color: "inherit" }} /> : null}
+          sx={{
+            borderRadius: 999,
+            py: 1.15,
+            // Stronger disabled state so it's obvious the button is dead
+            // (default MUI disabled is quite faint on a dim-saturate card).
+            "&.Mui-disabled": {
+              bgcolor: "rgba(14,42,61,0.10)",
+              color: "rgba(14,42,61,0.55)",
+              border: "1px solid rgba(14,42,61,0.12)",
+            },
+          }}
+        >
+          {cta}
+        </Button>
+      </Box>
     </Box>
-  );
-}
-
-function PlanPicker({ plan, onChange }: { plan: PlanKey; onChange: (p: PlanKey) => void }) {
-  const options: Array<{ value: PlanKey; label: string; price: string; meta: string }> = [
-    { value: "founding_monthly", label: "Monthly", price: "$49", meta: "/mo · founding" },
-    { value: "founding_annual", label: "Annual", price: "$490", meta: "/yr · save $98" },
-  ];
-  return (
-    <Stack spacing={0.75}>
-      {options.map((o) => {
-        const active = plan === o.value;
-        return (
-          <Box
-            key={o.value}
-            role="button"
-            tabIndex={0}
-            onClick={() => onChange(o.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                onChange(o.value);
-              }
-            }}
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
-              px: 1.5,
-              py: 1.25,
-              borderRadius: 1,
-              bgcolor: active ? "rgba(240,193,110,0.16)" : "rgba(255,255,255,0.04)",
-              border: `1px solid ${active ? "rgba(240,193,110,0.5)" : "rgba(255,255,255,0.08)"}`,
-              cursor: "pointer",
-              transition:
-                "background-color 160ms ease, border-color 160ms ease, transform 160ms ease",
-              "&:hover": { bgcolor: active ? "rgba(240,193,110,0.2)" : "rgba(255,255,255,0.07)" },
-              "&:focus-visible": { outline: "2px solid #F0C16E", outlineOffset: 2 },
-            }}
-          >
-            <Box
-              sx={{
-                width: 16,
-                height: 16,
-                borderRadius: "50%",
-                border: "2px solid",
-                borderColor: active ? "#F0C16E" : "rgba(255,255,255,0.4)",
-                bgcolor: active ? "#F0C16E" : "transparent",
-                flexShrink: 0,
-                transition: "background-color 160ms ease, border-color 160ms ease",
-              }}
-            />
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography
-                sx={{
-                  fontSize: "0.84rem",
-                  fontWeight: 600,
-                  color: active ? "#FFFFFF" : "rgba(246,241,231,0.85)",
-                  lineHeight: 1.2,
-                }}
-              >
-                {o.label}
-              </Typography>
-              <Typography
-                sx={{
-                  fontSize: "0.7rem",
-                  color: "rgba(246,241,231,0.6)",
-                  mt: 0.15,
-                }}
-              >
-                {o.price}
-                <Box component="span" sx={{ ml: 0.4, opacity: 0.7 }}>
-                  {o.meta}
-                </Box>
-              </Typography>
-            </Box>
-          </Box>
-        );
-      })}
-    </Stack>
   );
 }
