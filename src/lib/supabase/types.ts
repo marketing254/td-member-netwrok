@@ -724,6 +724,21 @@ export type ReferralSignupsRow = {
   created_at: string;
 };
 
+// Added in 0032_lead_magnets.sql. One row per email captured by a free
+// download form (PPO Fees kit etc.). contacted_at flipped by admin UI.
+export type LeadMagnetLeadsRow = {
+  id: string;
+  magnet_slug: string;
+  email: string;
+  full_name: string | null;
+  source: string | null;
+  utm: Record<string, unknown> | null;
+  ip_hash: string | null;
+  user_agent: string | null;
+  contacted_at: string | null;
+  created_at: string;
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -759,6 +774,7 @@ export type Database = {
       resource_views: Table<ResourceViewsRow>;
       referral_codes: Table<ReferralCodesRow>;
       referral_signups: Table<ReferralSignupsRow>;
+      lead_magnet_leads: Table<LeadMagnetLeadsRow>;
     };
     Views: {
       waitlist_counts: View<{

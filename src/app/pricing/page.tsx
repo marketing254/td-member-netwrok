@@ -513,21 +513,58 @@ function MemberPlanCard({
   const borderWidth = tier === "founding" ? 2 : 1;
   const isStarTier = tier === "founding" || tier === "early";
 
+  // Border "shine" — the actual border IS the shimmer. Outer Box is the
+  // gradient-filled square; inner Box covers everything except a 2px
+  // strip at the edge, leaving just that strip visible AS the border.
+  // The conic-gradient has one bright comet on a calm base, and rotating
+  // it makes the comet travel cleanly along the perimeter.
+  const borderGradient =
+    tier === "founding"
+      ? `conic-gradient(
+          from 0deg at 50% 50%,
+          ${COLORS.accentDeep} 0deg,
+          ${COLORS.accentDeep} 270deg,
+          ${COLORS.accentBright} 305deg,
+          #FFFFFF 330deg,
+          ${COLORS.accentBright} 355deg,
+          ${COLORS.accentDeep} 360deg
+        )`
+      : tier === "early"
+        ? `conic-gradient(
+            from 0deg at 50% 50%,
+            ${COLORS.primary} 0deg,
+            ${COLORS.primary} 270deg,
+            ${COLORS.accent} 305deg,
+            ${COLORS.accentBright} 330deg,
+            ${COLORS.accent} 355deg,
+            ${COLORS.primary} 360deg
+          )`
+        : `linear-gradient(135deg, ${COLORS.line} 0%, ${COLORS.line} 100%)`;
+  const hoverGlow =
+    tier === "founding"
+      ? "0 32px 80px -28px rgba(217,168,75,0.7), 0 0 0 1px rgba(217,168,75,0.4)"
+      : tier === "early"
+        ? "0 28px 60px -24px rgba(14,42,61,0.55), 0 0 0 1px rgba(14,42,61,0.25)"
+        : "0 16px 40px -22px rgba(14,42,61,0.25)";
+
   return (
     <Box
       sx={{
         position: "relative",
         borderRadius: 2.5,
-        border: `${borderWidth}px solid ${borderColor}`,
-        bgcolor: "#FFFFFF",
+        // The outer Box is the gradient-filled square; the inner Box
+        // covers everything except a 2 px strip at the edge so only that
+        // strip shows AS the border. overflow:hidden keeps the rotating
+        // conic gradient inside the rounded corners.
         overflow: "hidden",
-        display: "flex",
-        flexDirection: "column",
+        background: soldOut ? "transparent" : borderGradient,
+        border: soldOut ? `1px solid ${COLORS.line}` : "none",
         // Sold-out tier stays in the layout but dims so the eye points at
         // the available tiers.
         opacity: soldOut ? 0.7 : 1,
         filter: soldOut ? "saturate(0.7)" : "none",
-        transition: "opacity 200ms ease, filter 200ms ease",
+        transition:
+          "opacity 220ms ease, filter 220ms ease, transform 320ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 320ms cubic-bezier(0.16, 1, 0.3, 1)",
         boxShadow:
           soldOut
             ? "0 8px 20px -16px rgba(14,42,61,0.18)"
@@ -536,8 +573,56 @@ function MemberPlanCard({
               : tier === "early"
                 ? "0 18px 44px -28px rgba(14,42,61,0.4)"
                 : "0 12px 32px -24px rgba(14,42,61,0.18)",
+        // Pseudo-element holds the rotating animation. It IS the gradient
+        // (same one set on the outer Box) but rotates around the centre,
+        // so the bright comet travels along the visible border strip.
+        "&::before": soldOut
+          ? undefined
+          : {
+              content: '""',
+              position: "absolute",
+              inset: 0,
+              borderRadius: "inherit",
+              background: borderGradient,
+              animation:
+                tier === "founding"
+                  ? "tierBorderRun 4s linear infinite"
+                  : "tierBorderRun 5s linear infinite",
+              pointerEvents: "none",
+              zIndex: 0,
+            },
+        "@keyframes tierBorderRun": {
+          "0%": { transform: "rotate(0deg)" },
+          "100%": { transform: "rotate(360deg)" },
+        },
+        "@media (prefers-reduced-motion: reduce)": {
+          "&::before": { animation: "none" },
+        },
+        "&:hover": soldOut
+          ? undefined
+          : {
+              transform: "translateY(-4px)",
+              boxShadow: hoverGlow,
+            },
       }}
     >
+      {/* Inner card body — sits above the rotating gradient with a 2 px
+          margin so the gradient only peeks through at the edges and reads
+          AS the card's border. */}
+      <Box
+        sx={{
+          position: "relative",
+          zIndex: 1,
+          m: soldOut ? 0 : "2px",
+          borderRadius: 2.5,
+          bgcolor: "#FFFFFF",
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+          minHeight: "calc(100% - 4px)",
+          flex: 1,
+        }}
+      >
       {ribbon && (
         <Box
           sx={{
@@ -715,6 +800,7 @@ function MemberPlanCard({
             {ctaLabel}
           </Button>
         )}
+      </Box>
       </Box>
     </Box>
   );

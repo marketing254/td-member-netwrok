@@ -346,6 +346,7 @@ export const poweredBy = [
   { name: "Thriving Dentist Show", logo: "/td-logo.png", host: "Gary Takacs" },
   { name: "Less Insurance Dependence", logo: "/lid-logo.png", host: "Naren Arulrajah" },
   { name: "Insurance Untangled", logo: "/iu-logo.png", host: "Industry panel" },
+  { name: "RIDA Academy", logo: "/rida-logo.png", host: "Clinical & operational training" },
   { name: "Dental Marketing Society", logo: "/dms-logo.png", host: "Community partner" },
   { name: "Dental Growth Network", logo: "/DGN-logo.png", host: "Growth network" },
 ];

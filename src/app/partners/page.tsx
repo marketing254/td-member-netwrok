@@ -249,7 +249,7 @@ export default function PartnersPage() {
           <Box
             sx={{
               display: "grid",
-              gridTemplateColumns: { xs: "1fr 1fr", sm: "repeat(5, 1fr)" },
+              gridTemplateColumns: { xs: "1fr 1fr", sm: "repeat(3, 1fr)", md: "repeat(6, 1fr)" },
               gap: { xs: 2, md: 3 },
               alignItems: "center",
               justifyItems: "center",

@@ -36,6 +36,7 @@ import ChatBubbleOutlineOutlinedIcon from "@mui/icons-material/ChatBubbleOutline
 import StarOutlineRoundedIcon from "@mui/icons-material/StarOutlineRounded";
 import CampaignOutlinedIcon from "@mui/icons-material/CampaignOutlined";
 import LinkRoundedIcon from "@mui/icons-material/LinkRounded";
+import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import KeyboardArrowDownOutlinedIcon from "@mui/icons-material/KeyboardArrowDownOutlined";
@@ -101,9 +102,10 @@ function initials(full: string): string {
 
 type NavItem = { href: string; label: string; icon: React.ElementType<{ sx?: object }>; badgeKey?: keyof QueueCounts };
 
-// Sidebar nav — grouped by job-to-be-done. Tight 3-section structure
-// keeps everything visible on a 13" / 1080p laptop without scrolling;
-// the middle nav box scrolls on shorter screens (see SidebarContent).
+// Sidebar nav — five collapsible groups so the menu fits on any zoom
+// level without forcing a scrollbar. Each group's collapsed state is
+// remembered in localStorage; the group containing the active route is
+// always expanded automatically.
 const navSections: { label: string; items: NavItem[] }[] = [
   {
     label: "PEOPLE",
@@ -119,26 +121,39 @@ const navSections: { label: string; items: NavItem[] }[] = [
     ],
   },
   {
-    label: "CONTENT & ENGAGEMENT",
+    label: "CONTENT",
     items: [
       { href: "/admin/resources", label: "Resources", icon: LibraryBooksOutlinedIcon, badgeKey: "resourcesPending" },
       { href: "/admin/content", label: "Catalog", icon: LibraryBooksOutlinedIcon, badgeKey: "catalogPending" },
       { href: "/admin/offers", label: "Partner offers", icon: LocalOfferOutlinedIcon, badgeKey: "offersPending" },
+    ],
+  },
+  {
+    label: "ENGAGEMENT",
+    items: [
       { href: "/admin/inquiries", label: "Inquiries", icon: ChatBubbleOutlineOutlinedIcon },
       { href: "/admin/feedback", label: "Kit feedback", icon: StarOutlineRoundedIcon },
       { href: "/admin/broadcast", label: "Broadcast", icon: CampaignOutlinedIcon },
-      { href: "/admin/referrals", label: "Referrals", icon: LinkRoundedIcon },
       { href: "/admin/hotline", label: "Hotline triage", icon: SupportAgentOutlinedIcon },
     ],
   },
   {
-    label: "ADMIN",
+    label: "GROWTH",
     items: [
+      { href: "/admin/referrals", label: "Referrals", icon: LinkRoundedIcon },
+      { href: "/admin/lead-magnets", label: "Lead magnets", icon: DownloadOutlinedIcon },
       { href: "/admin/waitlist", label: "Launch waitlist", icon: MarkEmailReadOutlinedIcon },
+    ],
+  },
+  {
+    label: "SYSTEM",
+    items: [
       { href: "/admin/audit-log", label: "Audit log", icon: HistoryOutlinedIcon },
     ],
   },
 ];
+
+const COLLAPSE_STORAGE_KEY = "admin-sidebar-collapsed-groups";
 
 function SidebarContent({
   pathname,
@@ -153,6 +168,40 @@ function SidebarContent({
 }) {
   const displayName = me?.full_name ?? "—";
   const role = me?.role ?? "admin";
+
+  // Collapsed-group state — persisted across page loads. Default: every
+  // group expanded so first-time admins see everything.
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(COLLAPSE_STORAGE_KEY);
+      if (raw) setCollapsedGroups(new Set(JSON.parse(raw) as string[]));
+    } catch {
+      /* ignore — fresh state is fine */
+    }
+  }, []);
+  const toggleGroup = (label: string) => {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(label)) next.delete(label);
+      else next.add(label);
+      try {
+        localStorage.setItem(COLLAPSE_STORAGE_KEY, JSON.stringify(Array.from(next)));
+      } catch {
+        /* private mode etc — collapsed state just doesn't persist */
+      }
+      return next;
+    });
+  };
+
+  // Force-expand any group whose item matches the current pathname, so
+  // the user always sees their location in the nav.
+  const activeGroupLabel = navSections.find((sec) =>
+    sec.items.some((it) =>
+      it.href === "/admin" ? pathname === "/admin" : pathname.startsWith(it.href),
+    ),
+  )?.label;
+
   return (
     <Box
       sx={{
@@ -229,21 +278,74 @@ function SidebarContent({
           },
         }}
       >
-        <Stack spacing={1.25}>
-          {navSections.map((sec) => (
+        <Stack spacing={1}>
+          {navSections.map((sec) => {
+            const isCollapsed = collapsedGroups.has(sec.label) && sec.label !== activeGroupLabel;
+            // Sum of unhandled queue items inside the group so a closed
+            // group still shows pending work at a glance.
+            const groupBadge = sec.items.reduce(
+              (n, it) => n + (it.badgeKey ? counts[it.badgeKey] ?? 0 : 0),
+              0,
+            );
+            return (
             <Box key={sec.label}>
-              <Typography
+              <Box
+                component="button"
+                type="button"
+                onClick={() => toggleGroup(sec.label)}
                 sx={{
-                  color: "rgba(255,255,255,0.4)",
-                  fontSize: "0.62rem",
-                  letterSpacing: "0.18em",
-                  fontWeight: 700,
-                  mb: 0.5,
+                  all: "unset",
+                  display: "flex",
+                  alignItems: "center",
+                  width: "100%",
+                  cursor: "pointer",
                   px: 1,
+                  py: 0.65,
+                  borderRadius: 1,
+                  mb: 0.35,
+                  color: "rgba(255,255,255,0.5)",
+                  transition: "background-color 150ms ease, color 150ms ease",
+                  "&:hover": { bgcolor: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.9)" },
+                  "&:focus-visible": { outline: "2px solid rgba(217,168,75,0.45)", outlineOffset: 1 },
                 }}
               >
-                {sec.label}
-              </Typography>
+                <Typography
+                  sx={{
+                    fontSize: "0.62rem",
+                    letterSpacing: "0.18em",
+                    fontWeight: 700,
+                    color: "inherit",
+                    flex: 1,
+                  }}
+                >
+                  {sec.label}
+                </Typography>
+                {groupBadge > 0 && isCollapsed && (
+                  <Chip
+                    label={groupBadge}
+                    size="small"
+                    sx={{
+                      bgcolor: "rgba(217,168,75,0.2)",
+                      color: "secondary.light",
+                      fontWeight: 700,
+                      fontSize: "0.6rem",
+                      height: 16,
+                      minWidth: 20,
+                      mr: 0.5,
+                      "& .MuiChip-label": { px: 0.65 },
+                    }}
+                  />
+                )}
+                <KeyboardArrowDownOutlinedIcon
+                  sx={{
+                    fontSize: 16,
+                    color: "rgba(255,255,255,0.55)",
+                    transition: "transform 200ms ease",
+                    transform: isCollapsed ? "rotate(-90deg)" : "rotate(0deg)",
+                  }}
+                />
+              </Box>
+              {!isCollapsed && (
               <Stack spacing={0.15}>
                 {sec.items.map((item) => {
                   const Icon = item.icon;
@@ -299,8 +401,10 @@ function SidebarContent({
                   );
                 })}
             </Stack>
-          </Box>
-          ))}
+              )}
+            </Box>
+            );
+          })}
         </Stack>
       </Box>
 
