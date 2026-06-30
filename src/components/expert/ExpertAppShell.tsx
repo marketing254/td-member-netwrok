@@ -505,10 +505,10 @@ export default function ExpertAppShell({ children }: { children: React.ReactNode
                 Workspace · all systems normal
               </Typography>
             </Stack>
-            <Stack direction="row" spacing={2.5} sx={{ alignItems: "center" }}>
+            <Stack direction="row" spacing={2.5} sx={{ alignItems: "center", flexWrap: "wrap", rowGap: 1 }}>
               <Box
                 component="a"
-                href="mailto:partnerships@joindmn.com"
+                href="tel:+18556334707"
                 sx={{
                   fontSize: "0.74rem",
                   color: EXPERT_GREEN_DARK,
@@ -517,7 +517,20 @@ export default function ExpertAppShell({ children }: { children: React.ReactNode
                   "&:hover": { textDecoration: "underline" },
                 }}
               >
-                Get support
+                Hotline: (855) 633-4707
+              </Box>
+              <Box
+                component="a"
+                href="mailto:experts@joindmn.com"
+                sx={{
+                  fontSize: "0.74rem",
+                  color: EXPERT_GREEN_DARK,
+                  textDecoration: "none",
+                  fontWeight: 600,
+                  "&:hover": { textDecoration: "underline" },
+                }}
+              >
+                experts@joindmn.com
               </Box>
               <Typography sx={{ fontSize: "0.72rem", color: INK_MUTED }}>
                 Powered by Thriving Dentist

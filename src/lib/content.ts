@@ -33,7 +33,7 @@ export const hero = {
   subtitle:
     "Built for US dental practice owners who want fast answers, measurable vendor savings, and a peer room full of operators who have already solved the problem in front of you.",
   bottomNote:
-    "No four-figure upsells. No surprise coaching pitches. The membership is the product.",
+    "The membership is the product. No funnels, no “next step” that costs four figures. Just the value you joined for.",
   proofPoints: [
     { value: "247+", label: "Practice owners in the waitlist" },
   ],
@@ -154,13 +154,13 @@ export const faqs = [
       "An Expert Hotline — leave a voicemail with your question, get a written action plan plus the right experts to contact, by text and email, within 2–3 business days.",
       "Exclusive partner discounts averaging $6,000+ per year on supplies, labs, equipment, and services.",
       "An exclusive content library with recorded expert panels, training, and knowledge resources.",
-      "A searchable directory of 500+ practice owners.",
+      "DMN exclusive expert podcasts — full-length conversations with the people running the most profitable practices.",
     ],
     aClose: "Plus proven systems, SOPs, and monthly live AMAs with specialists.",
   },
   {
-    q: "How do the vendor savings work?",
-    a: "We negotiate group rates with suppliers, labs, equipment companies, and service providers on behalf of our members. You get access to the full vendor network as part of your membership, no extra fees, no per-deal commissions. Members save an average of $6,400 in their first year.",
+    q: "How do the partner savings work?",
+    a: "We negotiate group rates with suppliers, labs, equipment companies, and service providers on behalf of our members. You get access to the full partner network as part of your membership, no extra fees, no per-deal commissions. Members save an average of $6,400 in their first year.",
   },
   {
     q: "What is the founding member rate?",
@@ -168,19 +168,19 @@ export const faqs = [
   },
   {
     q: "What if I'm not ready to join yet?",
-    a: "Join the waitlist. You'll get early access, exclusive launch pricing, and priority access to founding spots before they fill. No spam, just launch updates and founding-member opportunities.",
+    a: "Honestly, it's rarely about being “not ready” — it's usually about not yet knowing what's actually waiting for you inside. Founding membership locks in $49/month for life, the Expert Hotline turns your hardest practice problems into written action plans in 2–3 days, and our partner network pays for the membership several times over in the first quarter. Join the waitlist if you want to take a closer look first — you'll get launch updates, founding pricing, and a heads-up before spots fill. But the practices that move first are the ones that stop paying the cost of figuring it out alone.",
   },
   {
     q: "Is this just another dental membership I won't use?",
-    a: "The helpline and vendor savings deliver value whether you open the content library or not. Most members call the helpline within their first week and recoup their membership cost through vendor savings within the first quarter. This is an operating tool, not a course you have to finish.",
+    a: "The helpline and partner savings deliver value whether you open the content library or not. Most members call the helpline within their first week and recoup their membership cost through partner savings within the first quarter. This is an operating tool, not a course you have to finish.",
   },
   {
     q: "What if I'm a solo practitioner?",
-    a: "Solo practitioners often get the most value. The helpline replaces the business partner or consultant you don't have. The vendor network delivers savings regardless of practice size. And the member directory connects you with peers who have solved the exact problems you're facing.",
+    a: "Solo practitioners often get the most value. The helpline replaces the business partner or consultant you don't have. The partner network delivers savings regardless of practice size. And the member directory connects you with experts and partners who have solved the exact problems you're facing.",
   },
   {
-    q: "Can vendors join too?",
-    a: "Yes. We have a vendor membership tier for companies that want to be featured in our vendor directory and gain access to our member network. Vendor partners get preferred placement, warm introductions, and co-branded content opportunities. Contact us to apply.",
+    q: "Can partners join too?",
+    a: "Yes. We have a partner membership tier for companies that want to be featured in our partner directory and gain access to our member network. Partners get preferred placement, warm introductions, and co-branded content opportunities. Contact us to apply.",
   },
   {
     q: "Can I cancel anytime?",
@@ -195,7 +195,7 @@ export const faqs = [
 // FOOTER (Section 15 in doc)
 export const footer = {
   brandDescription:
-    "The Expert Hotline answers every practice problem with a written action plan in 2–3 business days. Plus exclusive partner discounts, a curated resource library, and a community of 500+ practice owners.",
+    "The Expert Hotline answers every practice problem with a written action plan in 2–3 business days. Plus exclusive partner discounts, a curated resource library, and a community of Experts and Partners at your fingertips.",
   primaryCta: "Claim founding spot",
   secondaryCta: "Email founding team",
   supportLabel: "Support",

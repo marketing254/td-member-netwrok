@@ -33,6 +33,9 @@ import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettin
 import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
 import MarkEmailReadOutlinedIcon from "@mui/icons-material/MarkEmailReadOutlined";
 import ChatBubbleOutlineOutlinedIcon from "@mui/icons-material/ChatBubbleOutlineOutlined";
+import StarOutlineRoundedIcon from "@mui/icons-material/StarOutlineRounded";
+import CampaignOutlinedIcon from "@mui/icons-material/CampaignOutlined";
+import LinkRoundedIcon from "@mui/icons-material/LinkRounded";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import KeyboardArrowDownOutlinedIcon from "@mui/icons-material/KeyboardArrowDownOutlined";
@@ -122,6 +125,9 @@ const navSections: { label: string; items: NavItem[] }[] = [
       { href: "/admin/content", label: "Catalog", icon: LibraryBooksOutlinedIcon, badgeKey: "catalogPending" },
       { href: "/admin/offers", label: "Partner offers", icon: LocalOfferOutlinedIcon, badgeKey: "offersPending" },
       { href: "/admin/inquiries", label: "Inquiries", icon: ChatBubbleOutlineOutlinedIcon },
+      { href: "/admin/feedback", label: "Kit feedback", icon: StarOutlineRoundedIcon },
+      { href: "/admin/broadcast", label: "Broadcast", icon: CampaignOutlinedIcon },
+      { href: "/admin/referrals", label: "Referrals", icon: LinkRoundedIcon },
       { href: "/admin/hotline", label: "Hotline triage", icon: SupportAgentOutlinedIcon },
     ],
   },

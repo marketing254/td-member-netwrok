@@ -92,8 +92,10 @@ const LIBRARY: LibraryEntry[] = [
 const NAV_ITEMS: { label: string; icon: LucideIcon; badge: string; active?: boolean }[] = [
   { label: "Helpline", icon: PhoneCall, badge: "2hr" },
   { label: "Library", icon: Play, badge: "Live", active: true },
-  { label: "Vendors", icon: TrendingUp, badge: "$6.4K" },
-  { label: "Directory", icon: Users, badge: "500+" },
+  { label: "Network", icon: Users, badge: "New" },
+  { label: "Partners", icon: TrendingUp, badge: "$6.4K" },
+  { label: "Podcasts", icon: Megaphone, badge: "Soon" },
+  { label: "Account", icon: Calendar, badge: "" },
 ];
 
 export default function MemberLibraryPreview() {
@@ -286,20 +288,22 @@ export default function MemberLibraryPreview() {
                         <Typography sx={{ fontSize: "0.82rem", flex: 1, color: "inherit", fontWeight: "inherit" }}>
                           {item.label}
                         </Typography>
-                        <Box
-                          sx={{
-                            px: 0.65,
-                            py: 0.1,
-                            borderRadius: 0.85,
-                            bgcolor: isActive ? "rgba(217,168,75,0.18)" : "transparent",
-                            color: isActive ? "#F0C16E" : "rgba(255,255,255,0.5)",
-                            fontSize: "0.6rem",
-                            fontWeight: 700,
-                            border: isActive ? "1px solid rgba(217,168,75,0.35)" : "none",
-                          }}
-                        >
-                          {item.badge}
-                        </Box>
+                        {item.badge && (
+                          <Box
+                            sx={{
+                              px: 0.65,
+                              py: 0.1,
+                              borderRadius: 0.85,
+                              bgcolor: isActive ? "rgba(217,168,75,0.18)" : "transparent",
+                              color: isActive ? "#F0C16E" : "rgba(255,255,255,0.5)",
+                              fontSize: "0.6rem",
+                              fontWeight: 700,
+                              border: isActive ? "1px solid rgba(217,168,75,0.35)" : "none",
+                            }}
+                          >
+                            {item.badge}
+                          </Box>
+                        )}
                       </Box>
                     );
                   })}

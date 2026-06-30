@@ -10,16 +10,30 @@ export const dynamic = "force-dynamic";
 /**
  * GET /api/admin/experts
  *
- * Returns up to 500 most-recent expert applications, ordered newest first.
- * Mirrors the shape of /api/admin/vendors so the admin table can reuse the
- * same row component pattern.
+ * Default: returns up to 500 most-recent expert applications, newest first.
+ * ?simple=1: returns active experts (id, full_name, display_name) only —
+ *            used by selectors in admin forms (e.g. "Originating expert"
+ *            on the resource upload page).
  */
-export async function GET() {
+export async function GET(req: Request) {
   const guard = await requireAdmin();
   if (!guard.ok) return guard.response;
 
+  const url = new URL(req.url);
+  const simple = url.searchParams.get("simple") === "1";
+
   try {
     const supabase = getSupabaseAdmin();
+    if (simple) {
+      const { data, error } = await supabase
+        .from("experts")
+        .select("id, full_name, display_name, status")
+        .neq("status", "archived")
+        .neq("status", "suspended")
+        .order("display_name", { ascending: true, nullsFirst: false });
+      if (error) throw error;
+      return NextResponse.json({ experts: data ?? [] });
+    }
     const { data, error } = await supabase
       .from("expert_applications")
       .select(

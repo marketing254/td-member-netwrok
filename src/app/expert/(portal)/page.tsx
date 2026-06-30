@@ -18,6 +18,7 @@ import ManageAccountsOutlinedIcon from "@mui/icons-material/ManageAccountsOutlin
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import type { ExpertsRow } from "@/lib/supabase/types";
+import ReferralCard from "@/components/shared/ReferralCard";
 
 const EXPERT_GREEN = "#2C7A52";
 const EXPERT_GREEN_DARK = "#1F5238";
@@ -111,11 +112,16 @@ export default function ExpertDashboardPage() {
         </Typography>
         <Typography sx={{ color: INK_SOFT, fontSize: { xs: "1rem", md: "1.1rem" }, lineHeight: 1.6, maxWidth: 660 }}>
           {daysSinceJoin === null
-            ? "Your portal is live. Upload your first resource, set up your public profile, and start engaging with members."
+            ? "Your portal is live. Our content team produces and publishes your kits on your behalf — keep an eye on your library and the inquiries inbox."
             : daysSinceJoin === 0
-              ? "Your portal is live today. Take a look around — upload your first resource or finish your profile to get started."
-              : `Day ${daysSinceJoin} on the bench. Keep uploading work and sharing updates; members are starting to engage.`}
+              ? "Your portal is live today. Take a look around — the content team will publish your first kit shortly."
+              : `Day ${daysSinceJoin} on the bench. Members are starting to find your kits — check your inquiries inbox.`}
         </Typography>
+      </Box>
+
+      {/* Referral link — share to bring practice owners in */}
+      <Box sx={{ mb: 3 }}>
+        <ReferralCard endpoint="/api/expert/referral" accent={EXPERT_GREEN} />
       </Box>
 
       {/* Quick stats row */}
@@ -262,10 +268,10 @@ export default function ExpertDashboardPage() {
         >
           <SectionCard
             icon={UploadFileOutlinedIcon}
-            title="Upload resources"
-            body="SOPs, templates, slide decks, recordings, PDFs. We brand them in the DMN style and publish to the member library."
+            title="Your library"
+            body="See every kit the content team has published in your voice. New work shows up automatically — no upload step on your side."
             href="/expert/resources"
-            cta="Add a resource"
+            cta="View your library"
           />
           <SectionCard
             icon={InsightsOutlinedIcon}

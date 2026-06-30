@@ -7,12 +7,24 @@ import type { VendorStatus } from "@/lib/supabase/types";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: Request) {
   const guard = await requireAdmin();
   if (!guard.ok) return guard.response;
 
+  const url = new URL(req.url);
+  const simple = url.searchParams.get("simple") === "1";
+
   try {
     const supabase = getSupabaseAdmin();
+    if (simple) {
+      const { data, error } = await supabase
+        .from("vendors")
+        .select("id, company_name, display_name, status")
+        .eq("status", "approved")
+        .order("display_name", { ascending: true, nullsFirst: false });
+      if (error) throw error;
+      return NextResponse.json({ vendors: data ?? [] });
+    }
     const { data, error } = await supabase
       .from("vendors")
       .select(

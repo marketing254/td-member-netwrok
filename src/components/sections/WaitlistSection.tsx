@@ -243,6 +243,11 @@ export default function WaitlistSection({ lockedRole, sectionId }: WaitlistSecti
         smsConsentText: memberSmsConsent ? SMS_CONSENT_TEXT : null,
         smsConsentAt: memberSmsConsent ? new Date().toISOString() : null,
         source: "landing-join",
+        // ?ref=CODE → attributes the signup to that expert/partner.
+        ref:
+          typeof window !== "undefined"
+            ? new URLSearchParams(window.location.search).get("ref") ?? undefined
+            : undefined,
         utm: {
           role_label: resolveOther(fd.get("roleLabel"), fd.get("roleLabelOther")),
           locations: fd.get("locations"),

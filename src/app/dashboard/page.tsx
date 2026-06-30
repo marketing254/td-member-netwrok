@@ -132,6 +132,17 @@ export default function DashboardHome() {
     .filter((t) => t.lastViewedAt)
     .sort((a, b) => (a.lastViewedAt! < b.lastViewedAt! ? 1 : -1))
     .slice(0, 4);
+  // The single most-recently-touched kit that isn't already finished. This
+  // powers the "Pick up where you left off" hero card so the next click is
+  // never more than one tap away.
+  const continueKit =
+    topics
+      .filter(
+        (t) =>
+          t.lastViewedAt &&
+          !(t.completedCount === t.resourceCount && t.resourceCount > 0),
+      )
+      .sort((a, b) => (a.lastViewedAt! < b.lastViewedAt! ? 1 : -1))[0] ?? null;
 
   if (loading) {
     return (
@@ -182,6 +193,14 @@ export default function DashboardHome() {
           </Button>
         }
       />
+
+      {/* Continue Watching hero — only renders when there's an in-progress
+          kit. Single big card so the next click is immediate. */}
+      {continueKit && (
+        <Box sx={{ mb: 3 }}>
+          <ContinueHero topic={continueKit} />
+        </Box>
+      )}
 
       {/* Metric strip — replaces 4-card grid */}
       <Box sx={{ mb: 3 }}>
@@ -466,14 +485,177 @@ function DashboardKitTile({ topic }: { topic: TopicCard }) {
           portalCardUrl={topic.portalCardUrl}
         />
       </Box>
-      <Typography sx={{ ...editorialText.meta, mt: "auto" }}>
-        {topic.resourceCount} {topic.resourceCount === 1 ? "item" : "items"}
-        {topic.viewedCount > 0
-          ? ` · ${topic.viewedCount} done`
-          : topic.videoCount > 0
-            ? ` · ${topic.videoCount} video${topic.videoCount === 1 ? "" : "s"}`
-            : ""}
-      </Typography>
+      <Box sx={{ mt: "auto" }}>
+        <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center", mb: 0.5 }}>
+          <Typography
+            sx={{
+              fontSize: "0.62rem",
+              fontWeight: 700,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              color: completed ? "var(--leaf, #1F5C40)" : inProgress ? "var(--gold-deep)" : "var(--ink-fade)",
+            }}
+          >
+            {completed ? "Complete" : inProgress ? `${progressPct}% complete` : "Not started"}
+          </Typography>
+          <Typography sx={{ ...editorialText.meta, fontSize: "0.7rem" }}>
+            {topic.viewedCount}/{topic.resourceCount}
+          </Typography>
+        </Stack>
+        <Box sx={{ height: 5, borderRadius: 999, bgcolor: "rgba(14,42,61,0.08)", overflow: "hidden" }}>
+          <Box
+            sx={{
+              height: "100%",
+              width: `${progressPct}%`,
+              borderRadius: 999,
+              bgcolor: completed ? "var(--leaf, #1F5C40)" : "var(--gold-deep, #A07823)",
+              transition: "width 240ms cubic-bezier(0.16, 1, 0.3, 1)",
+            }}
+          />
+        </Box>
+      </Box>
+    </Box>
+  );
+}
+
+function ContinueHero({ topic }: { topic: TopicCard }) {
+  const progressPct =
+    topic.resourceCount > 0
+      ? Math.round((topic.viewedCount / topic.resourceCount) * 100)
+      : 0;
+  return (
+    <Box
+      component={Link}
+      href={`/dashboard/resources/${topic.slug}`}
+      sx={{
+        display: "block",
+        textDecoration: "none",
+        color: "inherit",
+        borderRadius: 2,
+        border: "1px solid var(--paper-rule, rgba(14,42,61,0.08))",
+        bgcolor: "var(--paper, #FBF8F1)",
+        overflow: "hidden",
+        transition: "transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out)",
+        "&:hover": {
+          transform: "translateY(-2px)",
+          boxShadow: "0 16px 40px -28px rgba(14,42,61,0.4)",
+        },
+        "&:focus-visible": {
+          outline: "2px solid var(--gold)",
+          outlineOffset: 3,
+        },
+      }}
+    >
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        spacing={{ xs: 2, sm: 2.5 }}
+        sx={{ p: { xs: 2, sm: 2.5 }, alignItems: { sm: "center" } }}
+      >
+        <Box sx={{ width: { xs: "100%", sm: 130 }, flexShrink: 0 }}>
+          <KitCover
+            slug={topic.slug}
+            title={topic.title}
+            videoCount={topic.videoCount}
+            resourceCount={topic.resourceCount}
+            isFree={topic.isFree}
+            inProgress
+            progressPct={progressPct}
+            portalCardUrl={topic.portalCardUrl}
+            size="sm"
+          />
+        </Box>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Stack
+            direction="row"
+            sx={{ alignItems: "center", justifyContent: "space-between", gap: 1, mb: 0.5 }}
+          >
+            <Typography
+              sx={{
+                fontSize: "0.65rem",
+                fontWeight: 800,
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: "var(--gold-deep, #A07823)",
+                lineHeight: 1,
+              }}
+            >
+              Continue where you left off
+            </Typography>
+            <Typography
+              sx={{
+                fontSize: "0.75rem",
+                fontWeight: 800,
+                color: "var(--gold-deep, #A07823)",
+                lineHeight: 1,
+                whiteSpace: "nowrap",
+                fontVariantNumeric: "tabular-nums",
+              }}
+            >
+              {progressPct}% complete
+            </Typography>
+          </Stack>
+          <Typography
+            sx={{
+              fontFamily: "var(--font-display)",
+              fontSize: { xs: "1.15rem", md: "1.35rem" },
+              fontWeight: 600,
+              color: "var(--ink, #0A1A2F)",
+              lineHeight: 1.2,
+              letterSpacing: "-0.01em",
+              mb: 1,
+              display: "-webkit-box",
+              WebkitLineClamp: 1,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+            }}
+          >
+            {topic.title}
+          </Typography>
+          <Typography
+            sx={{
+              fontSize: "0.74rem",
+              color: "var(--ink-soft, #3B4A55)",
+              fontWeight: 500,
+              mb: 0.6,
+            }}
+          >
+            {topic.viewedCount} of {topic.resourceCount} resources opened
+          </Typography>
+          <Box sx={{ height: 6, borderRadius: 999, bgcolor: "rgba(14,42,61,0.08)", overflow: "hidden" }}>
+            <Box
+              sx={{
+                height: "100%",
+                width: `${progressPct}%`,
+                borderRadius: 999,
+                bgcolor: "var(--gold-deep, #A07823)",
+                transition: "width 240ms cubic-bezier(0.16, 1, 0.3, 1)",
+              }}
+            />
+          </Box>
+        </Box>
+        <Box
+          sx={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 0.5,
+            color: "var(--paper)",
+            bgcolor: "var(--ink, #0A1A2F)",
+            fontSize: "0.85rem",
+            fontWeight: 700,
+            borderRadius: 999,
+            px: 2,
+            alignSelf: { xs: "stretch", sm: "center" },
+            justifyContent: { xs: "center", sm: "flex-start" },
+            py: 1,
+            flexShrink: 0,
+            whiteSpace: "nowrap",
+            transition: "background-color var(--dur-fast) var(--ease-out)",
+            "a:hover &": { bgcolor: "color-mix(in oklch, var(--ink) 88%, white)" },
+          }}
+        >
+          Continue <ArrowForwardIcon sx={{ fontSize: 14 }} />
+        </Box>
+      </Stack>
     </Box>
   );
 }

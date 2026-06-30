@@ -25,19 +25,24 @@ import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import LibraryBooksOutlinedIcon from "@mui/icons-material/LibraryBooksOutlined";
 import HubOutlinedIcon from "@mui/icons-material/HubOutlined";
 import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
+import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import KeyboardArrowDownOutlinedIcon from "@mui/icons-material/KeyboardArrowDownOutlined";
+import PhoneRoundedIcon from "@mui/icons-material/PhoneRounded";
+import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
 import Logo from "@/components/brand/Logo";
 import { useSignOut } from "@/lib/auth/identity";
 import { useCurrentMember } from "@/lib/hooks/useCurrentMember";
 import { MemberAssistant } from "@/components/member/MemberAssistant";
+import ProfileEditDialog from "@/components/shared/ProfileEditDialog";
 
 const SIDEBAR_W = 220;
 
 const navItems = [
   { href: "/dashboard", label: "Overview", icon: DashboardOutlinedIcon },
   { href: "/dashboard/resources", label: "Resource library", icon: LibraryBooksOutlinedIcon },
+  { href: "/dashboard/experts", label: "Experts", icon: SchoolOutlinedIcon },
   { href: "/dashboard/network", label: "Network", icon: HubOutlinedIcon },
   { href: "/dashboard/account", label: "Profile", icon: PersonOutlineOutlinedIcon },
 ];
@@ -52,15 +57,18 @@ function SidebarContent({
   pathname,
   member,
   onClose,
+  onEditProfile,
+  avatarUrl,
 }: {
   pathname: string;
   member: { first_name: string; last_name: string | null; practice_name: string | null } | null;
   onClose?: () => void;
+  onEditProfile: () => void;
+  avatarUrl?: string | null;
 }) {
   const displayName = member
     ? `${member.first_name}${member.last_name ? " " + member.last_name : ""}`
     : "—";
-  const practice = member?.practice_name ?? "";
   const initials = initialsFromName(member?.first_name, member?.last_name);
 
   return (
@@ -93,15 +101,27 @@ function SidebarContent({
 
       <Box sx={{ px: 1.75, pb: 1.5 }}>
         <Box
+          component="button"
+          type="button"
+          onClick={onEditProfile}
           sx={{
+            all: "unset",
+            display: "block",
+            width: "100%",
+            cursor: "pointer",
             p: 1.5,
             borderRadius: 1.5,
             border: "1px solid rgba(255,255,255,0.08)",
             bgcolor: "rgba(255,255,255,0.03)",
+            textAlign: "left",
+            transition: "background-color 160ms ease, border-color 160ms ease",
+            "&:hover": { bgcolor: "rgba(255,255,255,0.07)", borderColor: "rgba(217,168,75,0.32)" },
+            "&:focus-visible": { outline: "2px solid var(--gold, #F0C16E)", outlineOffset: 2 },
           }}
         >
           <Stack direction="row" spacing={1.25} sx={{ alignItems: "center" }}>
             <Avatar
+              src={avatarUrl ?? undefined}
               sx={{
                 bgcolor: "rgba(217,168,75,0.18)",
                 color: "secondary.light",
@@ -122,7 +142,7 @@ function SidebarContent({
                 {displayName}
               </Typography>
               <Typography sx={{ color: "rgba(255,255,255,0.55)", fontSize: "0.66rem" }} noWrap>
-                {practice || "Founding member"}
+                Edit profile →
               </Typography>
             </Box>
           </Stack>
@@ -189,6 +209,85 @@ function SidebarContent({
           })}
         </Stack>
       </Box>
+
+      {/* Support — hotline + email reachable from every dashboard page */}
+      <Box sx={{ px: 1.5, pb: 1.5, flexShrink: 0 }}>
+        <Box sx={{ borderTop: "1px solid rgba(255,255,255,0.06)", pt: 1, mb: 0.75 }}>
+          <Typography
+            sx={{
+              color: "rgba(255,255,255,0.32)",
+              fontSize: "0.58rem",
+              letterSpacing: "0.18em",
+              fontWeight: 700,
+              textTransform: "uppercase",
+              px: 1,
+            }}
+          >
+            Support
+          </Typography>
+        </Box>
+        <Box
+          component="a"
+          href="tel:+18556334707"
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1.25,
+            px: 1.25,
+            py: 0.85,
+            borderRadius: 1.25,
+            color: "rgba(255,255,255,0.62)",
+            textDecoration: "none",
+            "&:hover": { bgcolor: "rgba(255,255,255,0.05)", color: "common.white" },
+          }}
+        >
+          <PhoneRoundedIcon sx={{ fontSize: 16, color: "rgba(255,255,255,0.55)" }} />
+          <Box sx={{ minWidth: 0, flex: 1 }}>
+            <Typography sx={{ fontSize: "0.62rem", color: "rgba(255,255,255,0.42)", lineHeight: 1 }}>
+              Hotline
+            </Typography>
+            <Typography sx={{ fontSize: "0.76rem", fontWeight: 600, color: "inherit", lineHeight: 1.2, mt: 0.2 }}>
+              (855) 633-4707
+            </Typography>
+          </Box>
+        </Box>
+        <Box
+          component="a"
+          href="mailto:hello@joindmn.com"
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1.25,
+            px: 1.25,
+            py: 0.85,
+            borderRadius: 1.25,
+            color: "rgba(255,255,255,0.62)",
+            textDecoration: "none",
+            "&:hover": { bgcolor: "rgba(255,255,255,0.05)", color: "common.white" },
+          }}
+        >
+          <EmailOutlinedIcon sx={{ fontSize: 16, color: "rgba(255,255,255,0.55)" }} />
+          <Box sx={{ minWidth: 0, flex: 1 }}>
+            <Typography sx={{ fontSize: "0.62rem", color: "rgba(255,255,255,0.42)", lineHeight: 1 }}>
+              Email
+            </Typography>
+            <Typography
+              sx={{
+                fontSize: "0.76rem",
+                fontWeight: 600,
+                color: "inherit",
+                lineHeight: 1.2,
+                mt: 0.2,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              hello@joindmn.com
+            </Typography>
+          </Box>
+        </Box>
+      </Box>
     </Box>
   );
 }
@@ -203,12 +302,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const signOut = useSignOut("member");
   const { member } = useCurrentMember();
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
   const displayName = member
     ? `${member.first_name}${member.last_name ? " " + member.last_name : ""}`
     : "—";
   const email = member?.email ?? "";
   const initials = initialsFromName(member?.first_name, member?.last_name);
+  const effectiveAvatar = avatarPreview ?? (member as { avatar_url?: string | null } | null)?.avatar_url ?? null;
 
   const goTo = (href: string) => {
     setUserMenuOpen(false);
@@ -234,7 +336,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             zIndex: theme.zIndex.appBar - 1,
           }}
         >
-          <SidebarContent pathname={pathname} member={member} />
+          <SidebarContent
+            pathname={pathname}
+            member={member}
+            onEditProfile={() => setProfileOpen(true)}
+            avatarUrl={effectiveAvatar}
+          />
         </Box>
       )}
       {!isMd && (
@@ -247,9 +354,32 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             pathname={pathname}
             member={member}
             onClose={() => setDrawerOpen(false)}
+            onEditProfile={() => {
+              setDrawerOpen(false);
+              setProfileOpen(true);
+            }}
+            avatarUrl={effectiveAvatar}
           />
         </Drawer>
       )}
+
+      {/* Profile edit dialog mounted at AppShell root so it overlays all
+          content cleanly. */}
+      <ProfileEditDialog
+        open={profileOpen}
+        endpoint="/api/member/profile"
+        nameField="memberName"
+        initial={{
+          avatarUrl: effectiveAvatar,
+          firstName: member?.first_name ?? "",
+          lastName: member?.last_name ?? "",
+        }}
+        onClose={() => setProfileOpen(false)}
+        onSaved={(next) => {
+          if (next.avatarPreview) setAvatarPreview(next.avatarPreview);
+        }}
+      />
+
 
       <Box
         sx={{

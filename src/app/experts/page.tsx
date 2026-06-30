@@ -17,6 +17,7 @@ import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import MicRoundedIcon from "@mui/icons-material/MicRounded";
 import Header from "@/components/sections/Header";
+import PoweredByStrip from "@/components/sections/PoweredByStrip";
 import WaitlistSection from "@/components/sections/WaitlistSection";
 import { poweredBy } from "@/lib/content";
 import { COLORS } from "@/theme";
@@ -184,6 +185,35 @@ export default function ExpertsPage() {
         </Container>
       </Box>
 
+      {/* Trusted partners marquee — same logo strip as the homepage */}
+      <PoweredByStrip />
+
+      {/* Our Experts — Gary, Naren, etc. sits high on the page so visitors
+          see the actual bench before reading any of the marketing sections. */}
+      <Box sx={{ py: { xs: 6, md: 9 } }}>
+        <Container maxWidth="lg">
+          <Stack spacing={1.25} sx={{ alignItems: "center", textAlign: "center", mb: 4 }}>
+            <SectionHeading title="Our Experts" />
+            <Typography sx={{ color: COLORS.muted, fontSize: "1rem", maxWidth: 620, mt: 1 }}>
+              The first names on the bench. New experts join by application.
+            </Typography>
+          </Stack>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+              gap: 3,
+              maxWidth: 900,
+              mx: "auto",
+            }}
+          >
+            {EXPERTS.map((f) => (
+              <ExpertCard key={f.name} f={f} />
+            ))}
+          </Box>
+        </Container>
+      </Box>
+
       {/* Cream band quote */}
       <Box sx={{ bgcolor: COLORS.surfaceAlt, py: { xs: 4, md: 5 }, borderBottom: `1px solid ${COLORS.line}` }}>
         <Container maxWidth="lg">
@@ -303,34 +333,6 @@ export default function ExpertsPage() {
       <Suspense fallback={null}>
         <WaitlistSection lockedRole="expert" sectionId="apply" />
       </Suspense>
-
-      {/* Our Experts */}
-      <Box sx={{ py: { xs: 6, md: 9 } }}>
-        <Container maxWidth="lg">
-          <Stack spacing={1.25} sx={{ alignItems: "center", textAlign: "center", mb: 4 }}>
-            <SectionHeading title="Our Experts" />
-            <Typography sx={{ color: COLORS.muted, fontSize: "1rem", maxWidth: 620, mt: 1 }}>
-              The first names on the bench. New experts join by application.
-            </Typography>
-          </Stack>
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-              gap: 3,
-              maxWidth: 900,
-              mx: "auto",
-            }}
-          >
-            {EXPERTS.map((f) => (
-              <ExpertCard key={f.name} f={f} />
-            ))}
-          </Box>
-        </Container>
-      </Box>
-
-      {/* Powered by — the connected communities behind DMN */}
-      <PoweredByCarousel />
 
       {/* Closing CTA band */}
       <Box sx={{ bgcolor: COLORS.primary, color: "#FFFFFF", py: { xs: 6, md: 8 }, textAlign: "center" }}>

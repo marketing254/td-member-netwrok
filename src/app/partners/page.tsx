@@ -107,11 +107,13 @@ const FOUNDING_PARTNERS = [
     name: "Thriving Dentist Coaching",
     tag: "Coaching · Practice growth",
     body: "Gary Takacs's coaching program — 30+ years guiding practice owners through KPIs, case acceptance, and team operations.",
+    logo: "/td-logo.png",
   },
   {
     name: "Ekwa Marketing",
     tag: "Marketing · Patient acquisition",
     body: "Full-service dental marketing — SEO, website, ads, and Google ranking systems trusted by hundreds of US practices.",
+    logo: "/ekwa-logo.png",
   },
 ];
 
@@ -822,7 +824,7 @@ function FitColumn({
 function FoundingPartnerCard({
   p,
 }: {
-  p: { name: string; tag: string; body: string };
+  p: { name: string; tag: string; body: string; logo?: string };
 }) {
   return (
     <Box
@@ -851,6 +853,24 @@ function FoundingPartnerCard({
           px: 0.5,
         }}
       />
+      {p.logo && (
+        <Box
+          sx={{
+            position: "relative",
+            width: { xs: 110, md: 130 },
+            height: { xs: 42, md: 50 },
+            mb: 2.25,
+          }}
+        >
+          <Image
+            src={p.logo}
+            alt={`${p.name} logo`}
+            fill
+            sizes="130px"
+            style={{ objectFit: "contain", objectPosition: "left center" }}
+          />
+        </Box>
+      )}
       <Typography
         sx={{
           fontSize: "0.7rem",

@@ -24,9 +24,10 @@ const VALID_KINDS: ReadonlyArray<ExpertResourceKind> = [
 /**
  * GET /api/expert/resources
  *
- * Returns the signed-in expert's own resources, newest first. Includes a
- * fresh signed download URL for each row so the page can show preview
- * links without exposing storage paths.
+ * Returns the published member-library resources where this expert is
+ * the originating author. The expert no longer uploads directly — the
+ * content team publishes on their behalf — so this is a read-only view
+ * of what's live (and what's awaiting publish).
  */
 export async function GET() {
   const guard = await requireExpert();
@@ -34,36 +35,18 @@ export async function GET() {
 
   try {
     const admin = getSupabaseAdmin();
-    const { data: rows, error } = await admin
-      .from("expert_resources")
+    const { data, error } = await admin
+      .from("resources")
       .select(
-        "id, title, description, kind, file_name, file_size, mime_type, status, submitted_at, reviewed_at, review_note, published_at, published_url, storage_path, created_at",
+        "id, topic_slug, topic_title, title, kind, category, position, is_published, submission_status, created_at, thumbnail_url",
       )
-      .eq("expert_id", guard.expertId)
-      .order("created_at", { ascending: false })
-      .limit(200);
-
+      .eq("originating_expert_id", guard.expertId)
+      .order("topic_slug", { ascending: true })
+      .order("position", { ascending: true });
     if (error) throw error;
-
-    // Generate fresh 1-hour signed URLs for each file so the UI can offer
-    // a "Download" link without exposing the storage path or requiring
-    // the browser to be authenticated against Supabase Storage.
-    const withSigned = await Promise.all(
-      (rows ?? []).map(async (r) => {
-        let signedUrl: string | null = null;
-        if (r.storage_path) {
-          const { data: signed } = await admin.storage
-            .from(BUCKET)
-            .createSignedUrl(r.storage_path, 3600);
-          signedUrl = signed?.signedUrl ?? null;
-        }
-        return { ...r, signed_url: signedUrl };
-      }),
-    );
-
-    return NextResponse.json({ rows: withSigned });
+    return NextResponse.json({ resources: data ?? [] });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Failed to list resources.";
+    const message = err instanceof Error ? err.message : "Failed to load resources.";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

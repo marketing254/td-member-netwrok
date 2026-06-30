@@ -67,5 +67,19 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     .upsert(row, { onConflict: "member_id,resource_id" });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+  // Record an explicit view event for the analytics dashboard. Best-effort —
+  // a failed insert here mustn't block the progress update.
+  if (action === "view") {
+    try {
+      await sb.from("resource_views").insert({
+        resource_id: resourceId,
+        member_id: guard.memberId,
+        user_agent: req.headers.get("user-agent")?.slice(0, 256) ?? null,
+      });
+    } catch {
+      /* analytics best-effort */
+    }
+  }
+
   return NextResponse.json({ ok: true });
 }

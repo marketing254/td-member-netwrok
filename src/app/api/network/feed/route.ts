@@ -35,11 +35,27 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
   const before = url.searchParams.get("before");
+  const specialty = url.searchParams.get("specialty");
   const limitRaw = Number(url.searchParams.get("limit") ?? "20");
   const limit = Math.min(50, Math.max(1, Number.isFinite(limitRaw) ? limitRaw : 20));
 
   try {
     const admin = getSupabaseAdmin();
+
+    // If filtering by specialty, resolve the list of expert ids first so
+    // we can narrow the posts query by expert_id IN (...). Keeps the post
+    // filter as a simple eq + .in instead of a server-side join.
+    let specialtyExpertIds: string[] | null = null;
+    if (specialty && specialty !== "all") {
+      const { data: specialtyExperts } = await admin
+        .from("experts")
+        .select("id")
+        .eq("specialty", specialty);
+      specialtyExpertIds = (specialtyExperts ?? []).map((e) => e.id);
+      if (specialtyExpertIds.length === 0) {
+        return NextResponse.json({ posts: [], cursor: null });
+      }
+    }
 
     // 1. Fetch posts (published only).
     let query = admin
@@ -52,6 +68,9 @@ export async function GET(req: Request) {
       .limit(limit);
     if (before) {
       query = query.lt("published_at", before);
+    }
+    if (specialtyExpertIds) {
+      query = query.in("expert_id", specialtyExpertIds);
     }
     const { data: posts, error: postsErr } = await query;
     if (postsErr) throw postsErr;

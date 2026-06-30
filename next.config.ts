@@ -16,6 +16,10 @@ import type { NextConfig } from "next";
  * platform (Vercel logs / your hosting provider) and never reach the
  * end user's browser.
  */
+const supabaseHost = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "")
+  .replace(/^https?:\/\//, "")
+  .replace(/\/$/, "");
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
@@ -24,6 +28,24 @@ const nextConfig: NextConfig = {
       process.env.NODE_ENV === "production"
         ? { exclude: ["error", "warn"] }
         : false,
+  },
+  // next/image needs to know about external image hosts before it'll
+  // optimize them. Adding the Supabase Storage host means every cover,
+  // headshot, infographic, and partner logo gets resized + served as
+  // WebP/AVIF via Vercel's image CDN.
+  images: {
+    remotePatterns: supabaseHost
+      ? [
+          {
+            protocol: "https" as const,
+            hostname: supabaseHost,
+            pathname: "/storage/v1/object/public/**",
+          },
+        ]
+      : [],
+    // Cache optimized variants on the edge for 24 hours. Keeps the
+    // bandwidth bill flat for hot covers + headshots.
+    minimumCacheTTL: 60 * 60 * 24,
   },
 };
 

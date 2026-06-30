@@ -153,4 +153,19 @@ export async function applySubscriptionToMember(
   }
 
   await sb.from("members").update(patch).eq("id", memberId);
+
+  // Referral conversion — when the subscription transitions to a paid
+  // state for the first time, stamp converted_at on the matching
+  // referral_signups row so the admin dashboard counts it. Best-effort.
+  if (status === "active" || status === "trialing") {
+    try {
+      await sb
+        .from("referral_signups")
+        .update({ converted_at: new Date().toISOString() })
+        .eq("member_id", memberId)
+        .is("converted_at", null);
+    } catch {
+      /* analytics best-effort */
+    }
+  }
 }

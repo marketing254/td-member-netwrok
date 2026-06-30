@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { validateWaitlist } from "@/lib/waitlist/validate";
 import { checkRateLimit } from "@/lib/waitlist/rateLimit";
 import { apiError, serverError } from "@/lib/api/errorResponse";
+import { resolveReferralCode } from "@/lib/referral";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -106,6 +107,13 @@ export async function POST(req: Request) {
           ? (payload.utm as Record<string, string>)
           : null;
 
+      // Capture ?ref=CODE if present. Looked up from the payload first
+      // (set client-side by the signup form), then from a `ref` UTM field.
+      const refCandidate =
+        (payload as { ref?: string }).ref ??
+        (utm && typeof utm === "object" ? utm.ref : undefined);
+      const referralCodeId = await resolveReferralCode(refCandidate ?? null);
+
       const { data: inserted, error: insErr } = await sb
         .from("members")
         .insert({
@@ -120,6 +128,7 @@ export async function POST(req: Request) {
           practice_role: utm?.role_label ?? null,
           sms_consent_at: payload.smsConsentAt ?? null,
           sms_consent_text: payload.smsConsentText ?? null,
+          referral_code_id: referralCodeId,
         })
         .select("id")
         .single();
@@ -127,6 +136,17 @@ export async function POST(req: Request) {
         return serverError(insErr, { route, extra: { stage: "members_insert" } });
       }
       memberId = inserted.id;
+
+      // Record the attribution row so the analytics dashboard can count
+      // signups per code without re-joining through members each time.
+      if (referralCodeId) {
+        try {
+          await sb.from("referral_signups").insert({
+            code_id: referralCodeId,
+            member_id: memberId,
+          });
+        } catch { /* best-effort */ }
+      }
     }
 
     // 3. Pre-create the Supabase auth user. shouldCreateUser:false on

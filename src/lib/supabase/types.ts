@@ -171,6 +171,8 @@ export type VendorsRow = {
   agreement_version: string | null;
   sms_consent_at: string | null;
   sms_consent_text: string | null;
+  // Added in 0030_profile_avatars.sql.
+  avatar_url: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -281,6 +283,10 @@ export type MembersRow = {
   early_member_locked: boolean;
   sms_consent_at: string | null;
   sms_consent_text: string | null;
+  // Added in 0030_profile_avatars.sql.
+  avatar_url: string | null;
+  // Added in 0031_referrals.sql — references referral_codes.id, nullable.
+  referral_code_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -346,8 +352,23 @@ export type ResourcesRow = {
   // Added in 0025_resource_originating_vendor.sql — same idea for partner
   // (vendor) published resources. Routes inquiries to /vendor/inquiries.
   originating_vendor_id: string | null;
+  // Added in 0027_book_club_and_analytics.sql. Distinguishes a standard
+  // kit from a Book Club kit (which has its own quotes/chapters payload).
+  kit_type: "standard" | "book_club";
+  book_club_payload: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
+};
+
+// Added in 0027_book_club_and_analytics.sql. One row per member-view of a
+// resource — drives the partner / expert analytics dashboards.
+export type ResourceViewsRow = {
+  id: string;
+  resource_id: string;
+  member_id: string | null;
+  ip_hash: string | null;
+  user_agent: string | null;
+  viewed_at: string;
 };
 
 export type MemberResourceProgressRow = {
@@ -493,6 +514,8 @@ export type ExpertsRow = {
   archived_at: string | null;
   invited_by: string | null;
   notes: string | null;
+  // Added in 0030_profile_avatars.sql.
+  avatar_url: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -533,6 +556,10 @@ export type ExpertPostsRow = {
   hidden_reason: string | null;
   reaction_count: number;
   comment_count: number;
+  // Added in 0028_admin_authored_posts.sql. Set when an admin used the
+  // /admin/broadcast composer to post on behalf of the expert. Null for
+  // self-authored posts.
+  composed_by_admin_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -623,6 +650,17 @@ export type ResourceInquiryRepliesRow = {
   created_at: string;
 };
 
+// Added in 0026_resource_feedback.sql. One row per (member, topic_slug).
+export type ResourceFeedbackRow = {
+  id: string;
+  member_id: string;
+  topic_slug: string;
+  rating: number;
+  comment: string | null;
+  progress_pct: number;
+  created_at: string;
+};
+
 export type EmailEventsRow = {
   id: string;
   template: string;
@@ -665,6 +703,27 @@ type View<TRow> = {
   Relationships: [];
 };
 
+// Added in 0031_referrals.sql. One row per expert / vendor — exactly
+// one of expert_id / vendor_id is set per row.
+export type ReferralCodesRow = {
+  id: string;
+  expert_id: string | null;
+  vendor_id: string | null;
+  code: string;
+  active: boolean;
+  created_at: string;
+};
+
+// Added in 0031_referrals.sql. One row per (code, member) — converted_at
+// stamped by the Stripe webhook when subscription flips to active.
+export type ReferralSignupsRow = {
+  id: string;
+  code_id: string;
+  member_id: string;
+  converted_at: string | null;
+  created_at: string;
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -696,6 +755,10 @@ export type Database = {
       chatbot_messages: Table<ChatbotMessagesRow>;
       resource_inquiries: Table<ResourceInquiriesRow>;
       resource_inquiry_replies: Table<ResourceInquiryRepliesRow>;
+      resource_feedback: Table<ResourceFeedbackRow>;
+      resource_views: Table<ResourceViewsRow>;
+      referral_codes: Table<ReferralCodesRow>;
+      referral_signups: Table<ReferralSignupsRow>;
     };
     Views: {
       waitlist_counts: View<{

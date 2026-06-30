@@ -1,12 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import {
   Box,
-  CircularProgress,
   IconButton,
   Stack,
-  TextField,
   Typography,
   Fade,
   useMediaQuery,
@@ -14,448 +13,229 @@ import {
 import { useTheme } from "@mui/material/styles";
 import ChatBubbleRoundedIcon from "@mui/icons-material/ChatBubbleRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
-import SendRoundedIcon from "@mui/icons-material/SendRounded";
+import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
+import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
+import {
+  CONCIERGE_NODES,
+  CONCIERGE_ROOT,
+  type ConciergeOption,
+} from "@/lib/conciergeScript";
 
-type ChatMessage = {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  pending?: boolean;
-};
-
-const SUGGESTIONS = [
-  "Where do I find the free resources?",
-  "How do I update my phone number?",
-  "How do I book a coaching session?",
-  "Where's the refund policy?",
-];
+type Turn =
+  | { kind: "bot"; text: string; options: ConciergeOption[] }
+  | { kind: "user"; text: string };
 
 /**
- * MemberAssistant — floating bottom-right chat widget for the member
- * portal. Concierge bot that answers portal-usage questions, points
- * members at the right page, and remembers conversations across visits.
+ * MemberAssistant — guided Concierge for the member portal.
  *
- *  - Loads history on first open via GET /api/member/assistant/messages
- *  - Posts new messages to POST /api/member/assistant/messages and
- *    streams the assistant reply token-by-token into the panel.
- *  - Sticks to the bottom-right corner; collapses to a small gold pill
- *    when closed. Full-screen on mobile.
+ * It's a button-driven option tree (no LLM, no backend) defined in
+ * lib/conciergeScript.ts. Each turn the bot shows a message + a row of
+ * buttons; tapping one either branches to another node OR opens a deep
+ * link (kit page, hotline tel:, mailto:, etc.).
+ *
+ * Float bottom-right on every signed-in page (mounted from AppShell).
  */
 export function MemberAssistant() {
   const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [input, setInput] = useState("");
-  const [sending, setSending] = useState(false);
-  const [historyLoaded, setHistoryLoaded] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [history, setHistory] = useState<Turn[]>([
+    { kind: "bot", text: CONCIERGE_ROOT.reply, options: CONCIERGE_ROOT.options },
+  ]);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  // Load conversation on first open. Subsequent opens use the in-memory
-  // state so the panel stays fast.
+  // Keep the latest turn in view as new ones append.
   useEffect(() => {
-    if (!open || historyLoaded) return;
-    let active = true;
-    (async () => {
-      try {
-        const res = await fetch("/api/member/assistant/messages", { cache: "no-store" });
-        if (!res.ok) {
-          if (active) setHistoryLoaded(true);
-          return;
-        }
-        const body = (await res.json()) as {
-          messages: { id: string; role: "user" | "assistant"; content: string }[];
-        };
-        if (!active) return;
-        setMessages(body.messages.map((m) => ({ id: m.id, role: m.role, content: m.content })));
-        setHistoryLoaded(true);
-      } catch {
-        if (active) setHistoryLoaded(true);
-      }
-    })();
-    return () => {
-      active = false;
-    };
-  }, [open, historyLoaded]);
+    if (!open) return;
+    requestAnimationFrame(() => {
+      const el = scrollerRef.current;
+      if (el) el.scrollTop = el.scrollHeight;
+    });
+  }, [history, open]);
 
-  // Keep the latest message in view as text streams in.
-  useEffect(() => {
-    if (!scrollerRef.current) return;
-    scrollerRef.current.scrollTo({ top: scrollerRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages, open]);
-
-  const send = useCallback(async () => {
-    const text = input.trim();
-    if (!text || sending) return;
-    setSending(true);
-    setError(null);
-
-    // Optimistic insert
-    const userId = `local-user-${Date.now()}`;
-    const assistantId = `local-assistant-${Date.now()}`;
-    setMessages((prev) => [
-      ...prev,
-      { id: userId, role: "user", content: text },
-      { id: assistantId, role: "assistant", content: "", pending: true },
-    ]);
-    setInput("");
-
-    try {
-      const res = await fetch("/api/member/assistant/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: text }),
-      });
-
-      if (!res.ok) {
-        const errBody = (await res.json().catch(() => ({}))) as { error?: string };
-        const msg = errBody.error ?? `Request failed (${res.status})`;
-        setError(msg);
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === assistantId
-              ? { ...m, content: `Sorry — ${msg}`, pending: false }
-              : m,
-          ),
-        );
-        return;
-      }
-
-      // Stream chunks into the assistant message
-      const reader = res.body?.getReader();
-      if (!reader) {
-        setError("Streaming not supported.");
-        return;
-      }
-      const decoder = new TextDecoder();
-      let acc = "";
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        acc += decoder.decode(value, { stream: true });
-        setMessages((prev) =>
-          prev.map((m) => (m.id === assistantId ? { ...m, content: acc } : m)),
-        );
-      }
-      setMessages((prev) =>
-        prev.map((m) => (m.id === assistantId ? { ...m, pending: false } : m)),
-      );
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Network error";
-      setError(msg);
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === assistantId
-            ? { ...m, content: `Sorry — ${msg}`, pending: false }
-            : m,
-        ),
-      );
-    } finally {
-      setSending(false);
+  const choose = (opt: ConciergeOption) => {
+    // Record the choice as a "user" line so the thread reads naturally.
+    setHistory((prev) => [...prev, { kind: "user", text: opt.label }]);
+    if (opt.next) {
+      const next = CONCIERGE_NODES[opt.next] ?? CONCIERGE_ROOT;
+      // Tiny pause so the typing rhythm doesn't feel instant.
+      window.setTimeout(() => {
+        setHistory((prev) => [
+          ...prev,
+          { kind: "bot", text: next.reply, options: next.options },
+        ]);
+      }, 220);
     }
-  }, [input, sending]);
+    // For `href` options the Link handles navigation; nothing more to do.
+  };
 
-  const empty = messages.length === 0;
-
-  // Suggestion chips render only when the chat is empty.
-  const onSuggestion = useCallback((s: string) => setInput(s), []);
-
-  const panelStyles = useMemo(
-    () =>
-      isMobile
-        ? {
-            position: "fixed" as const,
-            inset: 0,
-            borderRadius: 0,
-            width: "100%",
-            height: "100%",
-          }
-        : {
-            position: "fixed" as const,
-            right: 20,
-            bottom: 88,
-            width: 380,
-            height: "min(620px, 80vh)",
-            borderRadius: 2.5,
-          },
-    [isMobile],
-  );
+  const reset = () => {
+    setHistory([
+      { kind: "bot", text: CONCIERGE_ROOT.reply, options: CONCIERGE_ROOT.options },
+    ]);
+  };
 
   return (
     <>
-      {/* Floating launcher — only show when panel is closed. */}
-      <Fade in={!open}>
+      {/* Floating launcher */}
+      {!open && (
         <Box
           component="button"
           type="button"
           onClick={() => setOpen(true)}
-          aria-label="Open member assistant"
           sx={{
+            all: "unset",
             position: "fixed",
-            right: { xs: 16, md: 20 },
-            bottom: { xs: 16, md: 20 },
-            zIndex: 1300,
+            right: { xs: 16, md: 24 },
+            bottom: { xs: 16, md: 24 },
+            zIndex: 1200,
             display: "inline-flex",
             alignItems: "center",
             gap: 1,
-            height: 52,
-            pl: 1.5,
-            pr: 2.25,
-            bgcolor: "#0A1A2F",
-            color: "#F0C16E",
-            border: "1px solid rgba(217,168,75,0.4)",
+            px: 1.75,
+            py: 1.1,
             borderRadius: 999,
-            fontFamily: "inherit",
+            bgcolor: "#0A1A2F",
+            color: "#FFFFFF",
+            cursor: "pointer",
             fontSize: "0.86rem",
             fontWeight: 700,
-            cursor: "pointer",
-            boxShadow: "0 16px 32px -12px rgba(14,42,61,0.45), 0 4px 14px -4px rgba(217,168,75,0.4)",
-            transition: "transform 200ms ease, box-shadow 200ms ease, background-color 200ms ease",
-            "&:hover": {
-              bgcolor: "#0F2540",
-              transform: "translateY(-2px)",
-              boxShadow:
-                "0 20px 40px -12px rgba(14,42,61,0.5), 0 6px 18px -4px rgba(217,168,75,0.5)",
-            },
-            "&:focus-visible": { outline: "2px solid #F0C16E", outlineOffset: 3 },
+            boxShadow: "0 12px 32px -12px rgba(14,42,61,0.55)",
+            transition: "transform 200ms ease, background-color 200ms ease",
+            "&:hover": { bgcolor: "#0F2540", transform: "translateY(-2px)" },
+            "&:focus-visible": { outline: "2px solid var(--gold, #F0C16E)", outlineOffset: 3 },
           }}
         >
-          <Box
-            sx={{
-              width: 32,
-              height: 32,
-              borderRadius: "50%",
-              bgcolor: "rgba(217,168,75,0.18)",
-              border: "1px solid rgba(217,168,75,0.4)",
-              display: "grid",
-              placeItems: "center",
-            }}
-          >
-            <AutoAwesomeRoundedIcon sx={{ fontSize: 16 }} />
-          </Box>
-          <Box component="span">Ask the concierge</Box>
+          <AutoAwesomeRoundedIcon sx={{ fontSize: 16, color: "#F0C16E" }} />
+          Concierge
         </Box>
-      </Fade>
+      )}
 
-      {/* Chat panel */}
+      {/* Panel */}
       <Fade in={open} unmountOnExit>
         <Box
-          role="dialog"
-          aria-modal="false"
-          aria-label="Member assistant"
           sx={{
-            ...panelStyles,
+            position: "fixed",
+            right: { xs: 0, md: 24 },
+            bottom: { xs: 0, md: 24 },
             zIndex: 1300,
-            bgcolor: "#FFFFFF",
-            border: "1px solid rgba(14,42,61,0.08)",
-            boxShadow: "0 32px 64px -24px rgba(14,42,61,0.4)",
+            width: { xs: "100vw", md: 420 },
+            height: { xs: "100dvh", md: 580 },
             display: "flex",
             flexDirection: "column",
+            bgcolor: "#FFFFFF",
+            borderRadius: { xs: 0, md: 3 },
+            border: { md: "1px solid rgba(14,42,61,0.08)" },
+            boxShadow: "0 32px 64px -24px rgba(14,42,61,0.4)",
             overflow: "hidden",
           }}
         >
           {/* Header */}
-          <Box
+          <Stack
+            direction="row"
             sx={{
-              display: "flex",
               alignItems: "center",
-              gap: 1.25,
+              gap: 1,
               px: 2,
               py: 1.5,
-              borderBottom: "1px solid rgba(14,42,61,0.08)",
               bgcolor: "#0A1A2F",
-              color: "#F6F1E7",
+              color: "#FFFFFF",
               flexShrink: 0,
             }}
           >
             <Box
               sx={{
-                width: 32,
-                height: 32,
+                width: 30,
+                height: 30,
                 borderRadius: "50%",
                 bgcolor: "rgba(217,168,75,0.18)",
                 color: "#F0C16E",
-                border: "1px solid rgba(217,168,75,0.4)",
                 display: "grid",
                 placeItems: "center",
-                flexShrink: 0,
               }}
             >
               <AutoAwesomeRoundedIcon sx={{ fontSize: 16 }} />
             </Box>
             <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography
-                sx={{
-                  fontSize: "0.6rem",
-                  fontWeight: 800,
-                  letterSpacing: "0.16em",
-                  color: "rgba(240,193,110,0.85)",
-                  textTransform: "uppercase",
-                  lineHeight: 1,
-                }}
-              >
+              <Typography sx={{ fontSize: "0.88rem", fontWeight: 700, lineHeight: 1 }}>
                 Concierge
               </Typography>
-              <Typography sx={{ fontSize: "0.92rem", fontWeight: 600, mt: 0.25, lineHeight: 1.2 }}>
-                Ask me about the portal
+              <Typography sx={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.6)", mt: 0.25 }}>
+                Pick an option — I'll point you there
               </Typography>
             </Box>
             <IconButton
-              onClick={() => setOpen(false)}
-              aria-label="Close assistant"
+              aria-label="Start over"
+              onClick={reset}
               size="small"
               sx={{
-                color: "rgba(246,241,231,0.7)",
+                color: "rgba(255,255,255,0.7)",
+                "&:hover": { color: "#FFFFFF", bgcolor: "rgba(255,255,255,0.06)" },
+              }}
+            >
+              <RefreshRoundedIcon sx={{ fontSize: 18 }} />
+            </IconButton>
+            <IconButton
+              aria-label="Close"
+              onClick={() => setOpen(false)}
+              size="small"
+              sx={{
+                color: "rgba(255,255,255,0.7)",
                 "&:hover": { color: "#FFFFFF", bgcolor: "rgba(255,255,255,0.06)" },
               }}
             >
               <CloseRoundedIcon sx={{ fontSize: 18 }} />
             </IconButton>
-          </Box>
+          </Stack>
 
-          {/* Messages */}
+          {/* Conversation scroller */}
           <Box
             ref={scrollerRef}
             sx={{
               flex: 1,
               minHeight: 0,
               overflowY: "auto",
-              px: 1.75,
-              py: 2,
               bgcolor: "#FBF8F1",
+              px: 2,
+              py: 2,
             }}
           >
-            {!historyLoaded && (
-              <Stack sx={{ alignItems: "center", py: 4 }}>
-                <CircularProgress size={18} sx={{ color: "#A07823" }} />
-              </Stack>
-            )}
-
-            {historyLoaded && empty && (
-              <Stack spacing={2} sx={{ pt: 1 }}>
-                <Box>
-                  <Typography
-                    sx={{
-                      fontFamily: "var(--font-display)",
-                      fontSize: "1rem",
-                      fontWeight: 500,
-                      color: "#0A1A2F",
-                      lineHeight: 1.3,
-                      mb: 0.5,
-                    }}
-                  >
-                    Hi — I&apos;m the concierge.
-                  </Typography>
-                  <Typography sx={{ fontSize: "0.82rem", color: "#3B4A55", lineHeight: 1.55 }}>
-                    I can help you find resources, update your profile, book a coaching session, or
-                    explain how anything in the portal works.
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography
-                    sx={{
-                      fontSize: "0.6rem",
-                      fontWeight: 700,
-                      letterSpacing: "0.16em",
-                      color: "#7A8590",
-                      textTransform: "uppercase",
-                      mb: 0.75,
-                    }}
-                  >
-                    Try asking
-                  </Typography>
-                  <Stack spacing={0.75}>
-                    {SUGGESTIONS.map((s) => (
-                      <SuggestionChip key={s} label={s} onClick={() => onSuggestion(s)} />
-                    ))}
-                  </Stack>
-                </Box>
-              </Stack>
-            )}
-
-            {historyLoaded && !empty && (
-              <Stack spacing={1.25}>
-                {messages.map((m) => (
-                  <Bubble key={m.id} message={m} />
-                ))}
-              </Stack>
-            )}
+            <Stack spacing={1.5}>
+              {history.map((turn, i) => (turn.kind === "bot" ? (
+                <BotTurn
+                  key={i}
+                  text={turn.text}
+                  options={turn.options}
+                  onChoose={choose}
+                  isLatest={i === history.length - 1}
+                />
+              ) : (
+                <UserTurn key={i} text={turn.text} />
+              )))}
+            </Stack>
           </Box>
 
-          {/* Composer */}
+          {/* Footer hint */}
           <Box
             sx={{
-              p: 1.5,
-              borderTop: "1px solid rgba(14,42,61,0.08)",
+              px: 2,
+              py: 1.25,
+              borderTop: "1px solid rgba(14,42,61,0.06)",
               bgcolor: "#FFFFFF",
               flexShrink: 0,
             }}
           >
-            <Stack direction="row" spacing={1} sx={{ alignItems: "flex-end" }}>
-              <TextField
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    void send();
-                  }
-                }}
-                placeholder="Ask the concierge…"
-                multiline
-                maxRows={4}
-                fullWidth
-                size="small"
-                disabled={sending}
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    fontSize: "0.86rem",
-                    borderRadius: 1.5,
-                    bgcolor: "#FBF8F1",
-                  },
-                }}
-              />
-              <IconButton
-                onClick={() => void send()}
-                disabled={sending || !input.trim()}
-                aria-label="Send"
-                sx={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: 1.25,
-                  bgcolor: "#0A1A2F",
-                  color: "#F0C16E",
-                  "&:hover": { bgcolor: "#0F2540" },
-                  "&.Mui-disabled": { bgcolor: "rgba(14,42,61,0.12)", color: "rgba(14,42,61,0.3)" },
-                  alignSelf: "flex-end",
-                }}
-              >
-                {sending ? (
-                  <CircularProgress size={16} sx={{ color: "inherit" }} />
-                ) : (
-                  <SendRoundedIcon sx={{ fontSize: 16 }} />
-                )}
-              </IconButton>
-            </Stack>
-            {error && (
-              <Typography sx={{ fontSize: "0.7rem", color: "#8C1D1D", mt: 0.75 }}>
-                {error}
-              </Typography>
-            )}
-            <Typography
-              sx={{
-                fontSize: "0.62rem",
-                color: "#7A8590",
-                mt: 0.75,
-                display: "flex",
-                alignItems: "center",
-                gap: 0.4,
-              }}
-            >
-              <ChatBubbleRoundedIcon sx={{ fontSize: 10 }} /> Powered by Claude · For account
-              issues, email members@joindmn.com
+            <Typography sx={{ fontSize: "0.72rem", color: "#7A8590", lineHeight: 1.4 }}>
+              Need a human?{" "}
+              <Box component="a" href="tel:+18556334707" sx={{ color: "#A07823", fontWeight: 700, textDecoration: "none" }}>
+                (855) 633-4707
+              </Box>
+              {" "}or{" "}
+              <Box component="a" href="mailto:hello@joindmn.com" sx={{ color: "#A07823", fontWeight: 700, textDecoration: "none" }}>
+                hello@joindmn.com
+              </Box>
+              .
             </Typography>
           </Box>
         </Box>
@@ -464,102 +244,160 @@ export function MemberAssistant() {
   );
 }
 
-function Bubble({ message }: { message: ChatMessage }) {
-  const isUser = message.role === "user";
+function BotTurn({
+  text,
+  options,
+  onChoose,
+  isLatest,
+}: {
+  text: string;
+  options: ConciergeOption[];
+  onChoose: (o: ConciergeOption) => void;
+  isLatest: boolean;
+}) {
   return (
-    <Stack
-      direction="row"
-      sx={{
-        justifyContent: isUser ? "flex-end" : "flex-start",
-        width: "100%",
-      }}
-    >
+    <Stack direction="row" spacing={1.25} sx={{ alignItems: "flex-start" }}>
       <Box
         sx={{
-          maxWidth: "82%",
-          px: 1.5,
-          py: 1,
-          borderRadius: 2,
-          bgcolor: isUser ? "#0A1A2F" : "#FFFFFF",
-          color: isUser ? "#F6F1E7" : "#0A1A2F",
-          border: isUser ? "none" : "1px solid rgba(14,42,61,0.08)",
-          fontSize: "0.84rem",
-          lineHeight: 1.55,
-          whiteSpace: "pre-wrap",
-          wordBreak: "break-word",
-          boxShadow: isUser ? "none" : "0 1px 0 rgba(14,42,61,0.02)",
+          width: 28,
+          height: 28,
+          borderRadius: "50%",
+          bgcolor: "rgba(217,168,75,0.18)",
+          color: "#A07823",
+          display: "grid",
+          placeItems: "center",
+          flexShrink: 0,
+          mt: 0.25,
         }}
       >
-        {message.content || (message.pending && !message.content ? <TypingDots /> : null)}
+        <AutoAwesomeRoundedIcon sx={{ fontSize: 14 }} />
+      </Box>
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Box
+          sx={{
+            bgcolor: "#FFFFFF",
+            border: "1px solid rgba(14,42,61,0.08)",
+            borderRadius: 2,
+            px: 1.5,
+            py: 1.25,
+            boxShadow: "0 1px 0 rgba(14,42,61,0.02)",
+          }}
+        >
+          <Typography sx={{ fontSize: "0.88rem", color: "#0A1A2F", lineHeight: 1.55 }}>
+            {text}
+          </Typography>
+        </Box>
+        {isLatest && options.length > 0 && (
+          <Stack direction="column" spacing={0.75} sx={{ mt: 1.25 }}>
+            {options.map((opt, idx) => (
+              <OptionButton key={`${opt.label}-${idx}`} option={opt} onChoose={onChoose} />
+            ))}
+          </Stack>
+        )}
       </Box>
     </Stack>
   );
 }
 
-function TypingDots() {
+function UserTurn({ text }: { text: string }) {
   return (
-    <Box
-      component="span"
-      sx={{
-        display: "inline-flex",
-        gap: 0.5,
-        alignItems: "center",
-        "& > span": {
-          width: 5,
-          height: 5,
-          borderRadius: "50%",
-          bgcolor: "#A07823",
-          animation: "dotPulse 1.2s ease-in-out infinite",
-        },
-        "& > span:nth-of-type(2)": { animationDelay: "0.15s" },
-        "& > span:nth-of-type(3)": { animationDelay: "0.3s" },
-        "@keyframes dotPulse": {
-          "0%, 80%, 100%": { opacity: 0.3, transform: "scale(0.8)" },
-          "40%": { opacity: 1, transform: "scale(1)" },
-        },
-      }}
-    >
-      <span />
-      <span />
-      <span />
-    </Box>
+    <Stack direction="row" sx={{ justifyContent: "flex-end" }}>
+      <Box
+        sx={{
+          bgcolor: "#0A1A2F",
+          color: "#FFFFFF",
+          borderRadius: 2,
+          px: 1.5,
+          py: 1,
+          maxWidth: "78%",
+        }}
+      >
+        <Typography sx={{ fontSize: "0.85rem", lineHeight: 1.4 }}>{text}</Typography>
+      </Box>
+    </Stack>
   );
 }
 
-function SuggestionChip({ label, onClick }: { label: string; onClick: () => void }) {
+function OptionButton({
+  option,
+  onChoose,
+}: {
+  option: ConciergeOption;
+  onChoose: (o: ConciergeOption) => void;
+}) {
+  const primary = option.tone === "primary";
+  const isExternal =
+    !!option.href && (option.href.startsWith("http") || option.href.startsWith("tel:") || option.href.startsWith("mailto:"));
+
+  const inner = (
+    <Stack
+      direction="row"
+      sx={{
+        alignItems: "center",
+        justifyContent: "space-between",
+        bgcolor: primary ? "#0A1A2F" : "#FFFFFF",
+        color: primary ? "#FFFFFF" : "#0A1A2F",
+        border: `1px solid ${primary ? "#0A1A2F" : "rgba(14,42,61,0.14)"}`,
+        borderRadius: 1.5,
+        px: 1.5,
+        py: 1,
+        cursor: "pointer",
+        transition: "background-color 160ms ease, border-color 160ms ease, transform 160ms ease",
+        "&:hover": {
+          bgcolor: primary ? "#0F2540" : "rgba(217,168,75,0.08)",
+          borderColor: primary ? "#0F2540" : "#A07823",
+          transform: "translateY(-1px)",
+        },
+      }}
+    >
+      <Typography sx={{ fontSize: "0.86rem", fontWeight: 600, color: "inherit" }}>
+        {option.label}
+      </Typography>
+      <ArrowForwardRoundedIcon sx={{ fontSize: 14, color: primary ? "#F0C16E" : "#A07823" }} />
+    </Stack>
+  );
+
+  if (option.href) {
+    if (isExternal) {
+      return (
+        <Box
+          component="a"
+          href={option.href}
+          onClick={() => onChoose(option)}
+          sx={{ textDecoration: "none" }}
+        >
+          {inner}
+        </Box>
+      );
+    }
+    return (
+      <Box
+        component={Link}
+        href={option.href}
+        onClick={() => onChoose(option)}
+        sx={{ textDecoration: "none" }}
+      >
+        {inner}
+      </Box>
+    );
+  }
   return (
     <Box
       role="button"
       tabIndex={0}
-      onClick={onClick}
+      onClick={() => onChoose(option)}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          onClick();
+          onChoose(option);
         }
       }}
-      sx={{
-        display: "block",
-        width: "100%",
-        textAlign: "left",
-        px: 1.25,
-        py: 1,
-        borderRadius: 1.25,
-        bgcolor: "#FFFFFF",
-        border: "1px solid rgba(14,42,61,0.08)",
-        color: "#3B4A55",
-        fontSize: "0.82rem",
-        cursor: "pointer",
-        transition: "border-color 160ms ease, background-color 160ms ease, color 160ms ease",
-        "&:hover": {
-          borderColor: "#A07823",
-          bgcolor: "rgba(217,168,75,0.06)",
-          color: "#0A1A2F",
-        },
-        "&:focus-visible": { outline: "2px solid #A07823", outlineOffset: 2 },
-      }}
     >
-      {label}
+      {inner}
     </Box>
   );
 }
+
+// Keep the empty-state launcher icon import alive even if we ever drop the
+// launcher floating button — also used by other portals.
+export { ChatBubbleRoundedIcon as ConciergeIcon };

@@ -30,8 +30,8 @@ const FEATURES = [
   },
   {
     Icon: Users,
-    title: "A community of owners",
-    body: "A searchable network of fellow practice owners who've solved what you're facing.",
+    title: "A community of Experts and Partners",
+    body: "A searchable network of experts and partners who are at your fingertips, ready to solve your challenges.",
   },
   {
     Icon: Ticket,
@@ -85,7 +85,7 @@ export default function Features() {
             The membership is the product.
           </Typography>
           <Typography sx={{ color: "#52525B", fontSize: { xs: "0.95rem", md: "1.02rem" } }}>
-            No four-figure upsells. No surprise coaching pitches.
+            No funnels, no &ldquo;next step&rdquo; that costs four figures. Just the value you joined for.
           </Typography>
         </Stack>
 

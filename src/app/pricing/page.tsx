@@ -22,6 +22,7 @@ const UNIVERSAL_PERKS = [
   "Expert Hotline — written action plan in 2–3 days",
   "Full video course library",
   "New resources every week",
+  "Exclusive DMN expert podcasts",
   "Live webinars, events & roundtables (CE)",
   "Templates & worksheets",
   "Community access",

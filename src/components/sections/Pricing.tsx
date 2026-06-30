@@ -18,6 +18,7 @@ const VALUE_STACK = [
   { label: "24/7 expert helpline", value: "$2,400/yr" },
   { label: "Vendor savings access", value: "$6,000+/yr" },
   { label: "Content & kit library", value: "$1,200/yr" },
+  { label: "DMN exclusive expert podcasts", value: "$1,500/yr" },
   { label: "Monthly live AMAs", value: "$1,800/yr" },
   { label: "Systems, SOPs & templates", value: "$900/yr" },
 ];

@@ -605,7 +605,7 @@ function PublicKitCard({ kit, onClick }: { kit: Kit; onClick: () => void }) {
               }}
             />
 
-            {kit.isFree && (
+            {kit.category && (
               <Box
                 sx={{
                   position: "absolute",
@@ -617,14 +617,15 @@ function PublicKitCard({ kit, onClick }: { kit: Kit; onClick: () => void }) {
                   px: 0.85,
                   borderRadius: 0.5,
                   bgcolor: "rgba(255,255,255,0.96)",
-                  color: "#1F5C40",
+                  color: "#7A5B17",
                   fontSize: "0.6rem",
                   fontWeight: 800,
                   letterSpacing: "0.12em",
+                  textTransform: "uppercase",
                   zIndex: 2,
                 }}
               >
-                FREE
+                {kit.category}
               </Box>
             )}
 

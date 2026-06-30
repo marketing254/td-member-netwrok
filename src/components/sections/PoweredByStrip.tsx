@@ -14,9 +14,14 @@ type PoweredByItem = {
 const POWERED_BY: PoweredByItem[] = [
   { name: "Thriving Dentist", logo: "/td-logo.png" },
   { name: "Less Insurance Dependence", logo: "/lid-logo.png" },
-  { name: "RIDA Academy", logo: null },
+  { name: "Insurance Untangled", logo: "/iu-logo.png" },
+  { name: "RIDA Academy", logo: "/rida-logo.png" },
   { name: "Dental Marketing Society", logo: "/dms-logo.png" },
 ];
+
+// We render the list twice back-to-back so the marquee can loop seamlessly
+// without a visible "snap" when the first copy slides off the screen.
+const MARQUEE_TRACK = [...POWERED_BY, ...POWERED_BY];
 
 export default function PoweredByStrip() {
   return (
@@ -30,14 +35,7 @@ export default function PoweredByStrip() {
       }}
     >
       <Container maxWidth="lg">
-        <Stack
-          spacing={{ xs: 2.5, md: 0 }}
-          direction={{ xs: "column", md: "row" }}
-          sx={{
-            alignItems: "center",
-            justifyContent: { md: "space-between" },
-          }}
-        >
+        <Stack spacing={2.25} sx={{ alignItems: "center" }}>
           <Typography
             sx={{
               fontSize: "0.7rem",
@@ -45,27 +43,50 @@ export default function PoweredByStrip() {
               textTransform: "uppercase",
               fontWeight: 700,
               color: COLORS.accentDeep,
-              flexShrink: 0,
-              textAlign: { xs: "center", md: "left" },
+              textAlign: "center",
             }}
           >
             Proudly powered by
           </Typography>
 
+          {/* Marquee — endless horizontal scroll. We mask the edges so
+              logos fade in/out instead of popping at the viewport edge. */}
           <Box
             sx={{
-              display: "flex",
-              flexWrap: "wrap",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: { xs: 2.5, sm: 4, md: 5 },
-              flex: { md: 1 },
-              ml: { md: 4 },
+              width: "100%",
+              overflow: "hidden",
+              WebkitMaskImage:
+                "linear-gradient(90deg, transparent 0%, #000 12%, #000 88%, transparent 100%)",
+              maskImage:
+                "linear-gradient(90deg, transparent 0%, #000 12%, #000 88%, transparent 100%)",
             }}
           >
-            {POWERED_BY.map((p) => (
-              <PoweredByMark key={p.name} item={p} />
-            ))}
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: { xs: 4, md: 6 },
+                width: "max-content",
+                animation: "poweredByMarquee 38s linear infinite",
+                "@keyframes poweredByMarquee": {
+                  from: { transform: "translateX(0)" },
+                  // We translate by 50% because the track contains two
+                  // copies of the list — so the second copy lines up with
+                  // where the first started.
+                  to: { transform: "translateX(-50%)" },
+                },
+                "@media (prefers-reduced-motion: reduce)": {
+                  animation: "none",
+                  flexWrap: "wrap",
+                  justifyContent: "center",
+                  width: "100%",
+                },
+              }}
+            >
+              {MARQUEE_TRACK.map((p, idx) => (
+                <PoweredByMark key={`${p.name}-${idx}`} item={p} />
+              ))}
+            </Box>
           </Box>
         </Stack>
       </Container>
@@ -109,6 +130,7 @@ function PoweredByMark({ item }: { item: PoweredByItem }) {
         letterSpacing: "-0.005em",
         whiteSpace: "nowrap",
         opacity: 0.85,
+        flexShrink: 0,
         transition: "opacity 220ms ease, color 220ms ease",
         "&:hover": { opacity: 1, color: COLORS.ink },
       }}

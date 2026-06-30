@@ -60,6 +60,21 @@ const CONTENT_FIELDS: FileField[] = [
   { field: "wall_poster", label: "Wall Poster", accept: "application/pdf", description: "PDF — printable wall tool." },
 ];
 
+/**
+ * Book Club kit slots — shown only when "Book Club" is picked as the kit
+ * type. The kinds map 1:1 to the `resource_kind` enum values added in
+ * migration 0029.
+ */
+const BOOK_CLUB_CONTENT_FIELDS: FileField[] = [
+  { field: "book_study_guide", label: "Book Study Guide", accept: "application/pdf", description: "PDF — full study guide for the book." },
+  { field: "discussion_questions", label: "Discussion Questions", accept: "application/pdf", description: "PDF — questions for discussion." },
+  { field: "infographic_pdf", label: "Infographic (PDF)", accept: "application/pdf", description: "PDF — one-page visual summary." },
+  { field: "infographic_image", label: "Infographic (PNG)", accept: "image/png", description: "PNG — same content rendered as image." },
+  { field: "short_1", label: "Principle 1 — Short (9×16)", accept: "video/mp4", description: "MP4 — vertical short for the first key principle." },
+  { field: "short_2", label: "Principle 2 — Short (9×16)", accept: "video/mp4", description: "MP4 — vertical short for the second key principle." },
+  { field: "short_3", label: "Principle 3 — Short (9×16)", accept: "video/mp4", description: "MP4 — vertical short for the third key principle." },
+];
+
 const CATEGORIES = [
   "Practice Management",
   "Front Desk",
@@ -85,11 +100,67 @@ export default function NewKitPage() {
   const [slugDirty, setSlugDirty] = useState(false);
   const [category, setCategory] = useState("");
   const [summary, setSummary] = useState("");
+  const [kitType, setKitType] = useState<"standard" | "book_club">("standard");
+  // Book Club principle titles map 1:1 to the 3 shorts. Defaults are
+  // generic so the admin can keep them or rename — these become the row
+  // titles for the video_short kind.
+  const [principleTitles, setPrincipleTitles] = useState<string[]>([
+    "Principle 1",
+    "Principle 2",
+    "Principle 3",
+  ]);
+  const setPrincipleTitle = (idx: number, value: string) => {
+    setPrincipleTitles((prev) => {
+      const next = [...prev];
+      next[idx] = value;
+      return next;
+    });
+  };
   const [approveOnSubmit, setApproveOnSubmit] = useState(false);
   const [files, setFiles] = useState<Record<string, File | null>>({});
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  // Originating-author selectors — admin can attribute the kit to an expert
+  // or partner so member inquiries route to that portal's inbox + the
+  // expert/partner sees it on their own resources view.
+  const [originatingExpertId, setOriginatingExpertId] = useState<string>("");
+  const [originatingVendorId, setOriginatingVendorId] = useState<string>("");
+  const [expertOptions, setExpertOptions] = useState<{ id: string; name: string }[]>([]);
+  const [vendorOptions, setVendorOptions] = useState<{ id: string; name: string }[]>([]);
+
+  // Load the picker options once.
+  useMemo(() => {
+    (async () => {
+      try {
+        const [eRes, vRes] = await Promise.all([
+          fetch("/api/admin/experts?simple=1", { cache: "no-store" }),
+          fetch("/api/admin/vendors?simple=1", { cache: "no-store" }),
+        ]);
+        if (eRes.ok) {
+          const body = (await eRes.json()) as { experts?: { id: string; full_name?: string; display_name?: string }[] };
+          setExpertOptions(
+            (body.experts ?? []).map((e) => ({
+              id: e.id,
+              name: e.display_name || e.full_name || "(unnamed expert)",
+            })),
+          );
+        }
+        if (vRes.ok) {
+          const body = (await vRes.json()) as { vendors?: { id: string; display_name?: string; company_name?: string }[] };
+          setVendorOptions(
+            (body.vendors ?? []).map((v) => ({
+              id: v.id,
+              name: v.display_name || v.company_name || "(unnamed partner)",
+            })),
+          );
+        }
+      } catch {
+        // best-effort — the selectors just stay empty
+      }
+    })();
+  }, []);
 
   const derivedSlug = useMemo(() => slugify(title), [title]);
   const effectiveSlug = slugDirty ? slug : derivedSlug;
@@ -98,7 +169,16 @@ export default function NewKitPage() {
     setFiles((prev) => ({ ...prev, [field]: f }));
   };
 
-  const contentFileCount = CONTENT_FIELDS.filter((c) => files[c.field]).length;
+  // Active content fields swap between standard and Book Club based on
+  // kit type. Standard shows only the standard slots; Book Club shows the
+  // shared slots (training video, key takeaways, slide deck, etc.) plus
+  // the Book Club specific ones.
+  const activeContentFields =
+    kitType === "book_club"
+      ? [...CONTENT_FIELDS.filter((f) => f.field !== "action_guide" && f.field !== "checklist"), ...BOOK_CLUB_CONTENT_FIELDS]
+      : CONTENT_FIELDS;
+
+  const contentFileCount = activeContentFields.filter((c) => files[c.field]).length;
   const canSubmit =
     title.trim().length > 0 &&
     effectiveSlug.length > 0 &&
@@ -203,7 +283,7 @@ export default function NewKitPage() {
         sizeBytes: number;
       }> = [];
 
-      for (const c of CONTENT_FIELDS) {
+      for (const c of activeContentFields) {
         const file = files[c.field];
         if (!file) continue;
         setProgressLabel(`Uploading ${c.label}…`);
@@ -227,6 +307,10 @@ export default function NewKitPage() {
           portalCardUrl,
           resourceCardUrl,
           files: uploaded,
+          originatingExpertId: originatingExpertId || null,
+          originatingVendorId: originatingVendorId || null,
+          kitType,
+          principleTitles: kitType === "book_club" ? principleTitles : null,
         }),
       });
       const body = await res.json().catch(() => ({}));
@@ -315,25 +399,86 @@ export default function NewKitPage() {
                 slotProps={{ inputLabel: { sx: { fontSize: "0.84rem" } }, formHelperText: { sx: { fontSize: "0.7rem", ml: 0.25 } } }}
                 sx={{ "& .MuiOutlinedInput-root": { fontSize: "0.88rem", borderRadius: 1.25 } }}
               />
-              <TextField
-                label="Category"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                select
-                size="small"
-                fullWidth
-                slotProps={{ inputLabel: { sx: { fontSize: "0.84rem" } } }}
-                sx={{ "& .MuiOutlinedInput-root": { fontSize: "0.88rem", borderRadius: 1.25 } }}
-              >
-                <MenuItem value="">
-                  <em>None</em>
-                </MenuItem>
-                {CATEGORIES.map((c) => (
-                  <MenuItem key={c} value={c} sx={{ fontSize: "0.86rem" }}>
-                    {c}
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25}>
+                <TextField
+                  label="Kit type"
+                  value={kitType}
+                  onChange={(e) => setKitType(e.target.value as "standard" | "book_club")}
+                  select
+                  size="small"
+                  fullWidth
+                  helperText="Book Club kits get a different shape — shorts + study guide + discussion questions."
+                  slotProps={{ inputLabel: { sx: { fontSize: "0.84rem" } }, formHelperText: { sx: { fontSize: "0.7rem", ml: 0.25 } } }}
+                  sx={{ "& .MuiOutlinedInput-root": { fontSize: "0.88rem", borderRadius: 1.25 } }}
+                >
+                  <MenuItem value="standard" sx={{ fontSize: "0.86rem" }}>Standard kit</MenuItem>
+                  <MenuItem value="book_club" sx={{ fontSize: "0.86rem" }}>Book Club kit</MenuItem>
+                </TextField>
+                <TextField
+                  label="Category"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  select
+                  size="small"
+                  fullWidth
+                  slotProps={{ inputLabel: { sx: { fontSize: "0.84rem" } } }}
+                  sx={{ "& .MuiOutlinedInput-root": { fontSize: "0.88rem", borderRadius: 1.25 } }}
+                >
+                  <MenuItem value="">
+                    <em>None</em>
                   </MenuItem>
-                ))}
-              </TextField>
+                  {CATEGORIES.map((c) => (
+                    <MenuItem key={c} value={c} sx={{ fontSize: "0.86rem" }}>
+                      {c}
+                    </MenuItem>
+                  ))}
+                  {kitType === "book_club" && (
+                    <MenuItem value="Book Club" sx={{ fontSize: "0.86rem" }}>Book Club</MenuItem>
+                  )}
+                </TextField>
+              </Stack>
+
+              {kitType === "book_club" && (
+                <Box
+                  sx={{
+                    p: 2,
+                    borderRadius: 1.25,
+                    bgcolor: "rgba(110,51,70,0.05)",
+                    border: "1px solid rgba(110,51,70,0.18)",
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontSize: "0.62rem",
+                      fontWeight: 800,
+                      letterSpacing: "0.16em",
+                      textTransform: "uppercase",
+                      color: "#6E3346",
+                      mb: 1,
+                    }}
+                  >
+                    Book Club key principles
+                  </Typography>
+                  <Stack spacing={1}>
+                    {principleTitles.map((p, i) => (
+                      <TextField
+                        key={i}
+                        label={`Principle ${i + 1} title`}
+                        value={p}
+                        onChange={(e) => setPrincipleTitle(i, e.target.value)}
+                        placeholder={i === 0 ? "Make It Obvious" : i === 1 ? "Make It Easy" : "Make It Satisfying"}
+                        size="small"
+                        fullWidth
+                        slotProps={{ inputLabel: { sx: { fontSize: "0.84rem" } } }}
+                        sx={{ "& .MuiOutlinedInput-root": { fontSize: "0.88rem", borderRadius: 1.25, bgcolor: "#FFFFFF" } }}
+                      />
+                    ))}
+                  </Stack>
+                  <Typography sx={{ fontSize: "0.7rem", color: "#7A8590", mt: 1, lineHeight: 1.5 }}>
+                    These titles label the 3 short videos in the member portal&apos;s &ldquo;Key principles&rdquo; reel. Match the principle each short covers.
+                  </Typography>
+                </Box>
+              )}
               <TextField
                 label="Summary"
                 value={summary}
@@ -346,6 +491,41 @@ export default function NewKitPage() {
                 slotProps={{ inputLabel: { sx: { fontSize: "0.84rem" } } }}
                 sx={{ "& .MuiOutlinedInput-root": { fontSize: "0.88rem", borderRadius: 1.25 } }}
               />
+
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25}>
+                <TextField
+                  label="Originating expert (optional)"
+                  value={originatingExpertId}
+                  onChange={(e) => setOriginatingExpertId(e.target.value)}
+                  select
+                  size="small"
+                  fullWidth
+                  helperText="Attributes the kit to an expert. Their portal will show it + inquiries route to them."
+                  slotProps={{ inputLabel: { sx: { fontSize: "0.84rem" } }, formHelperText: { sx: { fontSize: "0.7rem", ml: 0.25 } } }}
+                  sx={{ "& .MuiOutlinedInput-root": { fontSize: "0.88rem", borderRadius: 1.25 } }}
+                >
+                  <MenuItem value=""><em>None</em></MenuItem>
+                  {expertOptions.map((e) => (
+                    <MenuItem key={e.id} value={e.id} sx={{ fontSize: "0.86rem" }}>{e.name}</MenuItem>
+                  ))}
+                </TextField>
+                <TextField
+                  label="Originating partner (optional)"
+                  value={originatingVendorId}
+                  onChange={(e) => setOriginatingVendorId(e.target.value)}
+                  select
+                  size="small"
+                  fullWidth
+                  helperText="Attributes to a partner. Same routing as the expert option."
+                  slotProps={{ inputLabel: { sx: { fontSize: "0.84rem" } }, formHelperText: { sx: { fontSize: "0.7rem", ml: 0.25 } } }}
+                  sx={{ "& .MuiOutlinedInput-root": { fontSize: "0.88rem", borderRadius: 1.25 } }}
+                >
+                  <MenuItem value=""><em>None</em></MenuItem>
+                  {vendorOptions.map((v) => (
+                    <MenuItem key={v.id} value={v.id} sx={{ fontSize: "0.86rem" }}>{v.name}</MenuItem>
+                  ))}
+                </TextField>
+              </Stack>
             </Stack>
           </SectionCard>
 
@@ -374,7 +554,7 @@ export default function NewKitPage() {
               subtitle="Pick the files you have ready. Each one becomes a row in the kit's curriculum. At least one required."
             >
               <Stack spacing={1.25}>
-                {CONTENT_FIELDS.map((f) => (
+                {activeContentFields.map((f) => (
                   <FilePicker
                     key={f.field}
                     field={f}

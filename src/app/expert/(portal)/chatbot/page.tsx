@@ -110,10 +110,10 @@ export default function ExpertChatbotPage() {
           <SmartToyOutlinedIcon sx={{ color: "#8B5A00", fontSize: 22, mt: 0.25 }} />
           <Box>
             <Typography sx={{ fontWeight: 700, color: "#8B5A00", fontSize: "0.88rem", mb: 0.5 }}>
-              Preview build
+              Coming soon
             </Typography>
             <Typography sx={{ fontSize: "0.82rem", color: INK_SOFT, lineHeight: 1.55 }}>
-              The bot currently returns a placeholder reply so we can test the conversation flow end-to-end. Real LLM grounded in your published resources ships in the next round — Claude or OpenAI, team chooses provider.
+              Your AI helper is being trained on your published resources. Members will soon be able to ask questions and get answers in your voice — we&apos;ll let you know when it&apos;s ready.
             </Typography>
           </Box>
         </Stack>
