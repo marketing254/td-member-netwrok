@@ -46,6 +46,8 @@ import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { fetchCurrentVendor } from "@/lib/supabase/vendorQueries";
 import type { VendorsRow } from "@/lib/supabase/types";
 import ProfileEditDialog from "@/components/shared/ProfileEditDialog";
+import { checkBillingAccess } from "@/lib/stripe";
+import BillingGate from "@/components/shared/BillingGate";
 
 function useCurrentVendorRow(): { vendor: VendorsRow | null; loading: boolean } {
   const [vendor, setVendor] = useState<VendorsRow | null>(null);
@@ -711,7 +713,35 @@ export default function VendorAppShell({ children }: { children: React.ReactNode
         </AppBar>
 
         <Box component="main" sx={{ py: { xs: 2.5, md: 3 }, flex: 1 }}>
-          <Container maxWidth="xl">{children}</Container>
+          <Container maxWidth="xl">
+            {(() => {
+              // Billing gate — locks portal access once the founding
+              // waiver runs out and the partner has no healthy
+              // subscription. Allow-lists /vendor/account so the partner
+              // can always get to billing to update their card or
+              // re-sync from Stripe.
+              const access = currentVendor
+                ? checkBillingAccess({
+                    monthsInProgram: currentVendor.months_in_program ?? 0,
+                    subscriptionStatus: currentVendor.subscription_status ?? null,
+                  })
+                : { allowed: true as const };
+              const onAccountPage = pathname.startsWith("/vendor/account");
+              if (!access.allowed && !onAccountPage) {
+                return (
+                  <BillingGate
+                    access={access}
+                    portalEndpoint="/api/vendor/billing/portal"
+                    billingHref="/vendor/account"
+                    accent="gold"
+                  >
+                    {children}
+                  </BillingGate>
+                );
+              }
+              return children;
+            })()}
+          </Container>
         </Box>
 
         <Divider />

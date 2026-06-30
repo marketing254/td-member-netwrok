@@ -50,15 +50,49 @@ All prices in USD. Cancel anytime — no contracts, no retention call.
   remaining count.
 - **Rate lock**: Locked for life while membership stays active
 
-## Partner Tiers
+## Vendor Partner Pricing — 3-Phase Ladder
 
-Companies serving US dental practices apply via
-https://dentalmembernetwork.com/vendor/signup. Tier pricing depends on
-category and exclusivity — see https://dentalmembernetwork.com/partners/pricing
-for current rate cards. Quick reference:
+Companies serving US + Canadian dental practices apply via
+https://dentalmembernetwork.com/vendor/signup. Full details at
+https://dentalmembernetwork.com/pricing (Partners section). Same
+Featured Partner benefits at every phase.
 
-- **Founding Partner**: First-mover pricing, limited per category
-- **Standard Partner**: Open enrollment after founding category fills
+- **Phase 1 — Launch (months 1-6)**: $0/month, founding cohort waiver
+- **Phase 2 — Growth (months 7-12)**: $49/month, locked launch rate
+- **Phase 3 — Standard (month 13+)**: $199/month OR $1,990/year
+  (annual pre-pay = 2 months free, unlocks after month 6)
+- **Refer & earn**: $50 per converted member referred via your unique
+  partner link. No cap on referrals. Credited to next invoice (or
+  Stripe Connect payout once balances exceed $200).
+- **Includes (every phase)**: enhanced directory listing, priority
+  category placement, quarterly newsletter mentions, 1 dedicated email
+  to members per year, podcast/webinar eligibility, full lead
+  dashboard, Verified Partner badge, private partner hotline access.
+- **5 commitments**: best-deal pledge, hotline participation, working
+  calendar link, evolve-with-the-network clause, fee schedule.
+
+## Expert Bench Pricing — 3-Phase Ladder
+
+Coaches, consultants, and educators serving US + Canadian dentistry
+apply at https://dentalmembernetwork.com/experts. Full details at
+https://dentalmembernetwork.com/pricing (Experts section). Same
+Featured Expert benefits at every phase.
+
+- **Phase 1 — Launch (months 1-6)**: $0/month, founding cohort waiver
+- **Phase 2 — Growth (months 7-12)**: $49/month, locked launch rate
+- **Phase 3 — Standard (month 13+)**: $199/month OR $1,990/year
+  (annual pre-pay = 2 months free, unlocks after month 6)
+- **Course revenue split**: Experts keep **90%** of net course revenue,
+  DMN keeps 10%. DMN runs the platform (checkout, hosting, refund
+  handling, CE accreditation when applicable). Paid out monthly via
+  Stripe Connect.
+- **Includes (every phase)**: done-for-you content library produced
+  from one recording, featured profile in the expert directory, warm
+  member leads, Hotline referrals when a member fits your expertise,
+  co-marketing across Thriving Dentist podcast/webinars/social, sell
+  your own paid courses.
+- **5 commitments**: bring your best teaching, hotline participation,
+  working calendar link, evolve-with-the-bench clause, fee schedule.
 
 ## Free / Open
 

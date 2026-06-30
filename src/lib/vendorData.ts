@@ -15,33 +15,39 @@ export type VendorPlan = {
   badge?: string;
 };
 
+// Plan IDs are stable DB identifiers (stored on vendors.plan_id). The
+// new launch/growth/standard naming is exposed in the UI; "founding" is
+// kept as the id for the launch+growth phases since both belong to the
+// founding cohort. "annual" stays as the id for the pre-pay variant of
+// standard.
 export const vendorPlans: VendorPlan[] = [
   {
     id: "founding",
-    name: "Founding Partner",
+    name: "Launch",
     priceLabel: "$0",
-    cadenceLabel: "for 6 months · then $49/mo for months 7–12",
+    cadenceLabel: "/mo · waived for months 1-6",
     blurb:
-      "Limited to a fixed number of vendors per category. Six months free, six months at $49, then standard $199. Founding badge in the directory launch announcement.",
+      "Six months free as part of the founding cohort. Auto-rolls to $49/mo for months 7-12, then $199 standard from month 13. Founding badge in the directory launch announcement.",
     features: [
-      "Months 1–6: $0 waiver",
-      "Months 7–12: $49/mo locked",
+      "Months 1-6: $0 waiver",
+      "Months 7-12: $49/mo locked",
       "Month 13+: $199/mo standard rate",
-      "Priority placement in launch announcement",
+      "Founding Partner badge in launch announcement",
       "Featured Partner benefits (Schedule A)",
       "Verified Partner badge",
+      "Refer & earn — $50 per converted member",
     ],
     highlight: true,
-    ctaLabel: "Apply for Founding",
+    ctaLabel: "Apply to the cohort",
     badge: "LIMITED · LAUNCH PROGRAM",
   },
   {
     id: "standard",
-    name: "Featured Partner",
+    name: "Standard",
     priceLabel: "$199",
     cadenceLabel: "/month, billed monthly",
     blurb:
-      "Full Featured Partner tier with enhanced directory listing, priority category placement, quarterly newsletter mentions, dedicated email, and lead dashboard access.",
+      "Open enrollment from month 13. Full Featured Partner tier — enhanced directory listing, priority placement, quarterly newsletter mentions, dedicated email, lead dashboard.",
     features: [
       "Enhanced directory listing",
       "Priority placement within category",
@@ -50,23 +56,24 @@ export const vendorPlans: VendorPlan[] = [
       "Eligible for podcast / webinar features",
       "Full lead dashboard access",
       "Verified Partner badge",
+      "Refer & earn — $50 per converted member",
     ],
     highlight: false,
     ctaLabel: "Become a Partner",
   },
   {
     id: "annual",
-    name: "Annual Pre-Pay",
+    name: "Standard Annual",
     priceLabel: "$1,990",
     cadenceLabel: "/year · 12 months for the price of 10",
     blurb:
-      "Pre-pay 12 months upfront, get 2 months free (≈17% savings). Same Featured Partner benefits, locked-in for 12 months.",
+      "Pre-pay 12 months upfront, get 2 months free (~17% savings). Same Featured Partner benefits, locked for 12 months. Available from month 7 onward.",
     features: [
       "All Featured Partner benefits",
       "$1,990 / year ($165.83 effective monthly)",
       "Save ~$398 vs monthly",
       "Locked rate for 12 months",
-      "Annual renewal terms apply",
+      "Refer & earn — $50 per converted member",
     ],
     highlight: false,
     ctaLabel: "Save with Annual",

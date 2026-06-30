@@ -2,6 +2,7 @@ import "server-only";
 import { NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server-ssr";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
+import { checkBillingAccess } from "@/lib/stripe";
 
 /**
  * Auth guards for Route Handlers. Each returns either { ok, ...context }
@@ -228,6 +229,48 @@ export async function requireVerifiedVendor(): Promise<VendorContext | Failure> 
 }
 
 /**
+ * requirePaidVendor
+ *
+ * Same shape as requirePaidExpert. Use on any /api/vendor/* endpoint
+ * that publishes content visible to members (offer/catalog publishes,
+ * profile changes, lead replies, etc.). /api/vendor/billing/* stays on
+ * plain requireVendor so a blocked partner can always update their
+ * card or re-sync from Stripe.
+ */
+export async function requirePaidVendor(): Promise<VendorContext | Failure> {
+  const guard = await requireVendor();
+  if (!guard.ok) return guard;
+
+  const admin = getSupabaseAdmin();
+  const { data: billing } = await admin
+    .from("vendors")
+    .select("months_in_program, subscription_status")
+    .eq("id", guard.vendorId)
+    .maybeSingle();
+
+  const access = checkBillingAccess({
+    monthsInProgram: billing?.months_in_program ?? 0,
+    subscriptionStatus: billing?.subscription_status ?? null,
+  });
+
+  if (!access.allowed) {
+    return {
+      ok: false,
+      response: NextResponse.json(
+        {
+          error: access.title,
+          reason: access.reason,
+          message: access.message,
+          cta: access.cta,
+        },
+        { status: 402 },
+      ),
+    };
+  }
+  return guard;
+}
+
+/**
  * requireExpert
  *
  * Returns the experts row for the signed-in user. Allows `invited` (in case
@@ -284,6 +327,52 @@ export async function requireExpert(): Promise<ExpertContext | Failure> {
     fullName: row.full_name,
     status: row.status as ExpertContext["status"],
   };
+}
+
+/**
+ * requirePaidExpert
+ *
+ * Stricter variant of requireExpert. Use on any /api/expert/* endpoint
+ * that grants real-world value (publishing kits, accepting bookings,
+ * earning course revenue). Allows experts whose founding waiver is
+ * still active OR whose subscription is healthy; rejects everyone else
+ * with a 402 Payment Required + a structured reason so the client UI
+ * can surface the same paywall as the in-portal BillingGate.
+ *
+ * /api/expert/billing/* endpoints should stay on plain requireExpert —
+ * we always want a blocked expert to be able to update their card.
+ */
+export async function requirePaidExpert(): Promise<ExpertContext | Failure> {
+  const guard = await requireExpert();
+  if (!guard.ok) return guard;
+
+  const admin = getSupabaseAdmin();
+  const { data: billing } = await admin
+    .from("experts")
+    .select("months_in_program, subscription_status")
+    .eq("id", guard.expertId)
+    .maybeSingle();
+
+  const access = checkBillingAccess({
+    monthsInProgram: billing?.months_in_program ?? 0,
+    subscriptionStatus: billing?.subscription_status ?? null,
+  });
+
+  if (!access.allowed) {
+    return {
+      ok: false,
+      response: NextResponse.json(
+        {
+          error: access.title,
+          reason: access.reason,
+          message: access.message,
+          cta: access.cta,
+        },
+        { status: 402 },
+      ),
+    };
+  }
+  return guard;
 }
 
 /**
