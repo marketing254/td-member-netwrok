@@ -222,7 +222,7 @@ export const footerLinks = {
     { label: "Partner Agreement", href: "/agreement/vendor" },
   ],
   Legal: [
-    { label: "Cancellation Policy", href: "/legal/cancellation" },
+    { label: "Cancellation Policy", href: "/legal/refund" },
     { label: "Privacy Policy", href: "/legal/privacy" },
   ],
 };

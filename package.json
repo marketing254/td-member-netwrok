@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "import-resources": "node scripts/import-resources.mjs"
+    "import-resources": "node scripts/import-resources.mjs",
+    "indexnow": "node scripts/indexnow.mjs"
   },
   "dependencies": {
     "@emotion/cache": "^11.14.0",

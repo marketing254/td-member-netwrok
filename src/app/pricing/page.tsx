@@ -15,8 +15,69 @@ import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import Header from "@/components/sections/Header";
+import JsonLd from "@/components/seo/JsonLd";
 import { vendorPlans } from "@/lib/vendorData";
 import { COLORS } from "@/theme";
+
+// Product + Offer JSON-LD — exposes the 3 member tiers as structured
+// offers so Google Merchant + AI assistants can extract pricing without
+// rendering the page.
+const PRICING_JSONLD = {
+  "@context": "https://schema.org",
+  "@type": "Product",
+  name: "Dental Member Network — Founding Membership",
+  description:
+    "Membership for US dental practice owners. 24/7 expert hotline returning a written action plan in 2–3 business days, partner-network discounts averaging $6,400/year, and a curated kit library.",
+  brand: { "@type": "Brand", name: "Dental Member Network" },
+  image: "https://dentalmembernetwork.com/td-logo-horizontal-dark.svg",
+  url: "https://dentalmembernetwork.com/pricing",
+  offers: [
+    {
+      "@type": "Offer",
+      name: "Founding Member · Monthly",
+      price: "49.00",
+      priceCurrency: "USD",
+      url: "https://dentalmembernetwork.com/join?intent=founding&interval=monthly",
+      availability: "https://schema.org/LimitedAvailability",
+      eligibleQuantity: { "@type": "QuantitativeValue", maxValue: 100 },
+      priceSpecification: {
+        "@type": "UnitPriceSpecification",
+        price: "49.00",
+        priceCurrency: "USD",
+        billingIncrement: 1,
+        unitText: "MON",
+      },
+    },
+    {
+      "@type": "Offer",
+      name: "Founding Member · Annual",
+      price: "490.00",
+      priceCurrency: "USD",
+      url: "https://dentalmembernetwork.com/join?intent=founding&interval=annual",
+      availability: "https://schema.org/LimitedAvailability",
+      priceSpecification: {
+        "@type": "UnitPriceSpecification",
+        price: "490.00",
+        priceCurrency: "USD",
+        unitText: "ANN",
+      },
+    },
+    {
+      "@type": "Offer",
+      name: "Standard Member · Monthly",
+      price: "199.00",
+      priceCurrency: "USD",
+      url: "https://dentalmembernetwork.com/join?intent=standard&interval=monthly",
+      availability: "https://schema.org/InStock",
+      priceSpecification: {
+        "@type": "UnitPriceSpecification",
+        price: "199.00",
+        priceCurrency: "USD",
+        unitText: "MON",
+      },
+    },
+  ],
+};
 
 const UNIVERSAL_PERKS = [
   "Expert Hotline — written action plan in 2–3 days",
@@ -96,6 +157,7 @@ export default function PricingPage() {
 
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: COLORS.surface }}>
+      <JsonLd data={PRICING_JSONLD} />
       <Header />
 
       {/* MEMBERS — dark navy hero. All text needs explicit light color. */}
