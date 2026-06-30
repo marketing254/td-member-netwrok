@@ -14,6 +14,30 @@ import FreeKitMagnet from "@/components/sections/FreeKitMagnet";
 import FAQ from "@/components/sections/FAQ";
 import Footer from "@/components/sections/Footer";
 import ScrollProgressBar from "@/components/effects/ScrollProgressBar";
+import JsonLd from "@/components/seo/JsonLd";
+import { faqs } from "@/lib/content";
+
+// FAQPage JSON-LD — Google extracts these for "People also ask" boxes,
+// and AI assistants use them verbatim for answering "what does DMN do",
+// "how does the helpline work", "what's the price", etc.
+const FAQ_JSONLD = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqs.map((f) => ({
+    "@type": "Question",
+    name: f.q,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: [
+        f.a,
+        ...((f as { items?: string[] }).items ?? []),
+        (f as { aClose?: string }).aClose,
+      ]
+        .filter(Boolean)
+        .join(" "),
+    },
+  })),
+};
 
 type HomeSearchParams = Promise<{
   code?: string | string[];
@@ -54,6 +78,7 @@ export default async function HomePage({ searchParams }: { searchParams: HomeSea
 
   return (
     <>
+      <JsonLd data={FAQ_JSONLD} />
       <ScrollProgressBar />
       <Header />
       <main>
