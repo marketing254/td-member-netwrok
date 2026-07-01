@@ -251,6 +251,12 @@ export async function middleware(req: NextRequest) {
   // ─────────────────────────────────────────────────────────────────
   // MEMBER PORTAL  (/dashboard/*)  — requires paid subscription
   // /upgrade — requires member session but blocks if already paid
+  //
+  // Admin bypass: an active admin_users row lets the same auth user hit
+  // /dashboard without needing a members row or an active subscription.
+  // This is a read-only preview for the team — the dashboard pages
+  // handle a missing member row by rendering a lightweight admin
+  // banner instead of crashing on `.first_name` etc.
   // ─────────────────────────────────────────────────────────────────
   if (isMember || isUpgrade) {
     try {
@@ -261,6 +267,18 @@ export async function middleware(req: NextRequest) {
         target.pathname = "/member/login";
         target.search = `?redirect=${encodeURIComponent(pathname + search)}`;
         return applySecurityHeaders(NextResponse.redirect(target));
+      }
+
+      // Admin bypass — checked before the member-row lookup so admins
+      // whose auth account is NOT also linked to a members row still
+      // pass through. Cheap query (single indexed lookup).
+      const { data: adminRow } = await supabase
+        .from("admin_users")
+        .select("id, active")
+        .eq("auth_user_id", userData.user.id)
+        .maybeSingle();
+      if (adminRow?.active) {
+        return applySecurityHeaders(res);
       }
 
       // Confirm the user has an active members row + read their billing status.

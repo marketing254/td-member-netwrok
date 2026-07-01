@@ -1,12 +1,70 @@
 import { NextResponse } from "next/server";
+import { createServerSupabase } from "@/lib/supabase/server-ssr";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { requireMember } from "@/lib/auth/guards";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-/** GET /api/member/me — current member row, plus a few aggregates. */
+/**
+ * GET /api/member/me — current member row, plus a few aggregates.
+ *
+ * Admin bypass: if the caller is signed in as an active admin (no
+ * corresponding members row required), we return a synthetic member
+ * record so the dashboard renders normally in "admin preview" mode.
+ * Real member API writes still use requireMember and reject admins —
+ * this shim is read-only.
+ */
 export async function GET() {
+  // Admin preview path — checked first. When an admin visits /dashboard
+  // through the middleware bypass, they don't have a members row; the
+  // normal requireMember() below would 403 and the dashboard would
+  // render as an empty shell. Return a synthetic identity instead.
+  const cookieClient = await createServerSupabase();
+  const { data: userData } = await cookieClient.auth.getUser();
+  if (userData?.user) {
+    const email = userData.user.email?.toLowerCase();
+    if (email) {
+      const sbAdmin = getSupabaseAdmin();
+      const { data: adminRow } = await sbAdmin
+        .from("admin_users")
+        .select("id, full_name, email, active")
+        .eq("auth_user_id", userData.user.id)
+        .maybeSingle();
+      if (adminRow?.active) {
+        const firstName = (adminRow.full_name ?? "Admin").split(/\s+/)[0] ?? "Admin";
+        return NextResponse.json({
+          member: {
+            id: `admin:${adminRow.id}`,
+            first_name: firstName,
+            last_name: null,
+            credential: null,
+            email: adminRow.email ?? email,
+            phone: null,
+            practice_name: null,
+            practice_role: "Admin (preview)",
+            city: null,
+            tier: null,
+            status: "active",
+            joined_at: null,
+            activated_at: null,
+            stripe_customer_id: null,
+            stripe_subscription_id: null,
+            subscription_status: "active",
+            subscription_interval: null,
+            current_period_end: null,
+            cancel_at_period_end: null,
+            card_brand: null,
+            card_last4: null,
+            founding_member_locked: false,
+          },
+          viewedCount: 0,
+          isAdminPreview: true,
+        });
+      }
+    }
+  }
+
   const guard = await requireMember();
   if (!guard.ok) return guard.response;
 
