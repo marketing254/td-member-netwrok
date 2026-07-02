@@ -17,8 +17,8 @@ import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import MicRoundedIcon from "@mui/icons-material/MicRounded";
 import Header from "@/components/sections/Header";
-import PoweredByStrip from "@/components/sections/PoweredByStrip";
 import WaitlistSection from "@/components/sections/WaitlistSection";
+import PoweredByStrip from "@/components/sections/PoweredByStrip";
 import { poweredBy } from "@/lib/content";
 import { COLORS } from "@/theme";
 
@@ -386,7 +386,8 @@ export default function ExpertsPage() {
       {/* Expert application form — same form, fields and submission flow
           as the home page, locked to the expert role. Writes to the
           expert_applications table and triggers the expert confirmation
-          email via /api/expert/signup.
+          email via /api/expert/signup. Card capture happens later inside
+          the expert portal (TrialStartCard) once the team activates them.
           Suspense boundary required because WaitlistSection reads
           useSearchParams() (Next.js needs it to know prerender can defer). */}
       <Suspense fallback={null}>

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { requireMember } from "@/lib/auth/guards";
+import { requireMemberOrAdminPreview } from "@/lib/auth/guards";
 import { serverError } from "@/lib/api/errorResponse";
 
 export const runtime = "nodejs";
@@ -13,9 +13,12 @@ export const dynamic = "force-dynamic";
  * attributed to them. Powers the member-portal "Experts" page where
  * members browse experts as discovery cards and pick "View kits" to
  * filter the resources list by that expert.
+ *
+ * Admin preview passes through — the response is identical either way
+ * (no per-member personalisation on this endpoint).
  */
 export async function GET() {
-  const guard = await requireMember();
+  const guard = await requireMemberOrAdminPreview();
   if (!guard.ok) return guard.response;
 
   try {

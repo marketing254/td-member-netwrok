@@ -185,6 +185,10 @@ export type VendorsRow = {
   card_brand: string | null;
   card_last4: string | null;
   founding_partner_locked: boolean;
+  // Added in 0034_agreement_esign.sql.
+  agreement_ip_hash: string | null;
+  agreement_user_agent: string | null;
+  agreement_pdf_path: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -541,6 +545,12 @@ export type ExpertsRow = {
   card_last4: string | null;
   months_in_program: number;
   founding_expert_locked: boolean;
+  // Added in 0034_agreement_esign.sql.
+  agreement_signed_at: string | null;
+  agreement_version: string | null;
+  agreement_ip_hash: string | null;
+  agreement_user_agent: string | null;
+  agreement_pdf_path: string | null;
   created_at: string;
   updated_at: string;
 };

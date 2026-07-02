@@ -42,6 +42,27 @@ export type MemberContext = {
   status: "waitlist" | "invited" | "active" | "paused" | "churned";
 };
 
+/**
+ * MemberOrAdminContext — what read-only member endpoints see when the
+ * caller is either a real member OR an active admin using the /dashboard
+ * preview bypass. `isAdminPreview: true` means memberId is a synthetic
+ * "admin:<id>" string — routes MUST NOT use it in DB queries against
+ * `members.id` or `member_resource_progress.member_id`. Instead they
+ * should short-circuit progress/personalisation lookups and return the
+ * public/global data only.
+ */
+export type MemberOrAdminContext =
+  | (MemberContext & { isAdminPreview: false })
+  | {
+      ok: true;
+      isAdminPreview: true;
+      userId: string;
+      email: string;
+      memberId: string;
+      firstName: string;
+      status: "active";
+    };
+
 export type ExpertContext = {
   ok: true;
   userId: string;
@@ -244,13 +265,14 @@ export async function requirePaidVendor(): Promise<VendorContext | Failure> {
   const admin = getSupabaseAdmin();
   const { data: billing } = await admin
     .from("vendors")
-    .select("months_in_program, subscription_status")
+    .select("months_in_program, subscription_status, stripe_subscription_id")
     .eq("id", guard.vendorId)
     .maybeSingle();
 
   const access = checkBillingAccess({
     monthsInProgram: billing?.months_in_program ?? 0,
     subscriptionStatus: billing?.subscription_status ?? null,
+    hasSubscription: !!billing?.stripe_subscription_id,
   });
 
   if (!access.allowed) {
@@ -349,13 +371,14 @@ export async function requirePaidExpert(): Promise<ExpertContext | Failure> {
   const admin = getSupabaseAdmin();
   const { data: billing } = await admin
     .from("experts")
-    .select("months_in_program, subscription_status")
+    .select("months_in_program, subscription_status, stripe_subscription_id")
     .eq("id", guard.expertId)
     .maybeSingle();
 
   const access = checkBillingAccess({
     monthsInProgram: billing?.months_in_program ?? 0,
     subscriptionStatus: billing?.subscription_status ?? null,
+    hasSubscription: !!billing?.stripe_subscription_id,
   });
 
   if (!access.allowed) {
@@ -430,5 +453,95 @@ export async function requireMember(): Promise<MemberContext | Failure> {
     memberId: row.id,
     firstName: row.first_name,
     status: row.status as MemberContext["status"],
+  };
+}
+
+/**
+ * requireMemberOrAdminPreview
+ *
+ * Read-only variant of requireMember. Real members pass through with a
+ * full context (isAdminPreview: false). Active admins pass through with
+ * a synthetic context (isAdminPreview: true) so they can browse
+ * /api/member/resources, /api/member/experts, etc. for QA without
+ * subscribing.
+ *
+ * DO NOT USE ON WRITE ENDPOINTS. Any route that inserts/updates member
+ * data (progress, feedback, profile edits, checkout) must stay on
+ * requireMember so admin previews can't accidentally write to member
+ * tables with a synthetic memberId.
+ */
+export async function requireMemberOrAdminPreview(): Promise<MemberOrAdminContext | Failure> {
+  const cookieClient = await createServerSupabase();
+  const { data: userData, error: userErr } = await cookieClient.auth.getUser();
+  if (userErr || !userData?.user) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: "Not signed in." }, { status: 401 }),
+    };
+  }
+  const email = userData.user.email?.toLowerCase();
+  if (!email) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: "Account is missing an email." }, { status: 403 }),
+    };
+  }
+
+  const sb = getSupabaseAdmin();
+
+  // Admin preview first — same case-insensitive match the /member/login
+  // and /verify-otp bypasses use. If the admin row is active, return a
+  // synthetic context so routes serve the global data without needing a
+  // real memberId.
+  const { data: adminRow } = await sb
+    .from("admin_users")
+    .select("id, active, full_name")
+    .eq("auth_user_id", userData.user.id)
+    .maybeSingle();
+  if (adminRow?.active) {
+    const firstName = (adminRow.full_name ?? "Admin").split(/\s+/)[0] ?? "Admin";
+    return {
+      ok: true,
+      isAdminPreview: true,
+      userId: userData.user.id,
+      email,
+      memberId: `admin:${adminRow.id}`,
+      firstName,
+      status: "active",
+    };
+  }
+
+  // Fall through to normal member gate.
+  const { data: memberRow } = await sb
+    .from("members")
+    .select("id, status, first_name, auth_user_id")
+    .eq("email", email)
+    .maybeSingle();
+  if (!memberRow) {
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { error: "No member profile linked to this account." },
+        { status: 403 },
+      ),
+    };
+  }
+  if (memberRow.status !== "active") {
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { error: "Your member portal isn't active yet." },
+        { status: 403 },
+      ),
+    };
+  }
+  return {
+    ok: true,
+    isAdminPreview: false,
+    userId: userData.user.id,
+    email,
+    memberId: memberRow.id,
+    firstName: memberRow.first_name,
+    status: memberRow.status as MemberContext["status"],
   };
 }

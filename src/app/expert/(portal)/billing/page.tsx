@@ -13,54 +13,10 @@ import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
 import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
 import CreditCardRoundedIcon from "@mui/icons-material/CreditCardRounded";
 import WorkspacePremiumRoundedIcon from "@mui/icons-material/WorkspacePremiumRounded";
-import SyncRoundedIcon from "@mui/icons-material/SyncRounded";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import type { ExpertsRow } from "@/lib/supabase/types";
 import { phaseForMonth, priceLabelForPhase } from "@/lib/stripe";
-import UpgradePlanChoice, { type UpgradePlan } from "@/components/shared/UpgradePlanChoice";
-
-const EXPERT_UPGRADE_PLANS: UpgradePlan[] = [
-  {
-    key: "expert_growth_monthly",
-    cap: "Months 7–12",
-    price: "$49",
-    per: "/mo",
-    highlight: "LOCK LAUNCH RATE",
-    body: "Locked launch rate while your pipeline builds.",
-    features: [
-      "Auto-rolls to $199 at month 13",
-      "All Featured Expert benefits",
-      "Cancel anytime",
-    ],
-    ctaLabel: "Start at $49/mo",
-  },
-  {
-    key: "expert_standard_monthly",
-    cap: "Month 13+",
-    price: "$199",
-    per: "/mo",
-    body: "Standard Featured Expert rate.",
-    features: [
-      "All Featured Expert benefits",
-      "Monthly billing",
-      "Cancel anytime",
-    ],
-    ctaLabel: "Start at $199/mo",
-  },
-  {
-    key: "expert_standard_annual",
-    cap: "Annual pre-pay",
-    price: "$1,990",
-    per: "/yr",
-    body: "12 months for the price of 10 — save 2 months.",
-    features: [
-      "All Featured Expert benefits",
-      "Save $398 vs. monthly",
-      "Rate locked for 12 months",
-    ],
-    ctaLabel: "Save with annual",
-  },
-];
+import TrialStartCard from "@/components/shared/TrialStartCard";
 
 const EXPERT_GREEN = "#2C7A52";
 const EXPERT_GREEN_DARK = "#1F5238";
@@ -91,8 +47,6 @@ export default function ExpertBillingPage() {
   const [invoices, setInvoices] = useState<Invoice[] | null>(null);
   const [portalBusy, setPortalBusy] = useState(false);
   const [portalError, setPortalError] = useState<string | null>(null);
-  const [syncBusy, setSyncBusy] = useState(false);
-  const [syncMessage, setSyncMessage] = useState<{ tone: "ok" | "err"; text: string } | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -160,46 +114,11 @@ export default function ExpertBillingPage() {
     }
   };
 
-  const syncFromStripe = async () => {
-    setSyncBusy(true);
-    setSyncMessage(null);
-    try {
-      const res = await fetch("/api/expert/billing/sync", { method: "POST" });
-      const body = (await res.json().catch(() => ({}))) as {
-        synced?: boolean;
-        reason?: string;
-        status?: string;
-      };
-      if (res.ok && body.synced) {
-        setSyncMessage({
-          tone: "ok",
-          text: `Synced — subscription is "${body.status ?? "active"}". Reload to see the updated plan.`,
-        });
-        setTimeout(() => window.location.reload(), 1500);
-      } else {
-        setSyncMessage({
-          tone: "err",
-          text: body.reason ?? `Sync failed (${res.status})`,
-        });
-      }
-    } catch (err) {
-      setSyncMessage({
-        tone: "err",
-        text: err instanceof Error ? err.message : "Sync failed.",
-      });
-    } finally {
-      setSyncBusy(false);
-    }
-  };
-
   const monthsInProgram = expert?.months_in_program ?? 0;
   const phase = phaseForMonth(monthsInProgram);
   const currentPrice = priceLabelForPhase(phase);
   const monthsLeftInWaiver = Math.max(0, 6 - monthsInProgram);
   const hasSubscription = !!expert?.stripe_subscription_id;
-  const needsManualSync =
-    !!expert?.stripe_customer_id &&
-    (!hasSubscription || (hasSubscription && (!expert?.card_brand || !expert?.card_last4)));
 
   const planLabel = useMemo(() => {
     const intervalLabel = expert?.subscription_interval === "year" ? "Annual" : "Monthly";
@@ -360,70 +279,6 @@ export default function ExpertBillingPage() {
             </Typography>
           )}
 
-          {needsManualSync && (
-            <Box
-              sx={{
-                mt: 2,
-                p: 1.5,
-                borderRadius: 1.25,
-                bgcolor: "rgba(217,168,75,0.08)",
-                border: "1px solid rgba(217,168,75,0.3)",
-              }}
-            >
-              <Stack
-                direction={{ xs: "column", sm: "row" }}
-                spacing={1.5}
-                sx={{ alignItems: { sm: "center" } }}
-              >
-                <Box sx={{ flex: 1 }}>
-                  <Typography sx={{ fontSize: "0.86rem", fontWeight: 600, color: "#7A5B17" }}>
-                    Plan looks out of date?
-                  </Typography>
-                  <Typography sx={{ fontSize: "0.76rem", color: "#5C6770", lineHeight: 1.55, mt: 0.25 }}>
-                    If Stripe charged your card but this page still says &ldquo;not subscribed&rdquo;,
-                    the webhook didn&apos;t reach us. Pull your state directly from Stripe.
-                  </Typography>
-                </Box>
-                <Button
-                  onClick={syncFromStripe}
-                  disabled={syncBusy}
-                  variant="contained"
-                  size="small"
-                  disableElevation
-                  startIcon={
-                    syncBusy ? (
-                      <CircularProgress size={12} sx={{ color: "inherit" }} />
-                    ) : (
-                      <SyncRoundedIcon sx={{ fontSize: 14 }} />
-                    )
-                  }
-                  sx={{
-                    bgcolor: "#A07823",
-                    color: "#FFFFFF",
-                    textTransform: "none",
-                    fontSize: "0.78rem",
-                    fontWeight: 600,
-                    borderRadius: 0.75,
-                    "&:hover": { bgcolor: "#7A5B17" },
-                  }}
-                >
-                  {syncBusy ? "Syncing…" : "Re-sync from Stripe"}
-                </Button>
-              </Stack>
-              {syncMessage && (
-                <Typography
-                  sx={{
-                    mt: 1,
-                    fontSize: "0.74rem",
-                    color: syncMessage.tone === "ok" ? "#1F5C40" : "#8C1D1D",
-                    fontWeight: 500,
-                  }}
-                >
-                  {syncMessage.text}
-                </Typography>
-              )}
-            </Box>
-          )}
         </Box>
       </Box>
 
@@ -474,22 +329,18 @@ export default function ExpertBillingPage() {
         </Box>
       </Box>
 
-      {/* ---- Upgrade plan choice ----
-          Shown when the expert has no active subscription yet. During
-          the founding waiver (months 1-6) we frame it as "lock the
-          launch rate early" — past the waiver, it's the recovery path
-          since the BillingGate will lock other pages without one. */}
+      {/* ---- Add card to start trial ----
+          On first login after the team approves, the expert has no
+          subscription yet. TrialStartCard collects the card inline
+          (Stripe PaymentElement + SetupIntent) and the backend spins
+          up a subscription with trial_period_days: 180. Once trialing
+          or active, this card hides and the normal plan/card/invoice
+          UI takes over. */}
       {!hasSubscription && (
-        <UpgradePlanChoice
-          endpoint="/api/expert/billing/checkout"
-          plans={EXPERT_UPGRADE_PLANS}
+        <TrialStartCard
+          prepareEndpoint="/api/expert/billing/trial/prepare"
+          startEndpoint="/api/expert/billing/trial/start"
           audience="green"
-          title={monthsLeftInWaiver > 0 ? "Upgrade early — keep portal access past the waiver" : "Choose a plan to keep your portal active"}
-          subtitle={
-            monthsLeftInWaiver > 0
-              ? `Your free launch period lasts ${monthsLeftInWaiver} more month${monthsLeftInWaiver === 1 ? "" : "s"}. Lock the launch rate now or go straight to annual.`
-              : "Your founding waiver has ended. Pick a plan to keep your portal and listing active."
-          }
         />
       )}
 

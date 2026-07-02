@@ -279,16 +279,43 @@ export type BillingBlockReason =
 export function checkBillingAccess(opts: {
   monthsInProgram: number;
   subscriptionStatus: string | null;
+  /**
+   * True if the user has any Stripe subscription on file (even one
+   * that's `canceled` or `past_due`). Newly-approved users who haven't
+   * hit TrialStartCard yet arrive here with `false`, and we block
+   * portal access until they add a card and start the trial.
+   */
+  hasSubscription: boolean;
 }): BillingAccess {
-  const { monthsInProgram, subscriptionStatus } = opts;
+  const { monthsInProgram, subscriptionStatus, hasSubscription } = opts;
 
-  // Phase 1 (months 1-6): waiver active, no card needed.
-  if (monthsInProgram <= 6) return { allowed: true };
+  // No subscription at all — regardless of where they are in the
+  // program timeline, they need to add a card first. Fresh signups
+  // land here on their first portal login; the BillingGate's "Go to
+  // billing page" button routes them to /vendor/account or
+  // /expert/billing, where TrialStartCard captures the card and spins
+  // up the trial subscription.
+  if (!hasSubscription) {
+    return {
+      allowed: false,
+      reason: "subscription_required",
+      title: "One more step — add your card",
+      message:
+        "You're approved. Add a card to activate your 6-month free trial. Nothing is charged today; the first $49 charge fires on day 181.",
+      cta: "Add card & start trial",
+    };
+  }
 
   // Healthy subscriptions always pass.
   if (subscriptionStatus === "active" || subscriptionStatus === "trialing") {
     return { allowed: true };
   }
+
+  // Waiver-era grandfather clause — if someone signed up under the old
+  // no-subscription flow (months_in_program still ≤ 6 with a NULL
+  // status), let them through. The `hasSubscription` short-circuit
+  // above catches new-flow users; this block only matches legacy rows.
+  if (monthsInProgram <= 6 && !subscriptionStatus) return { allowed: true };
 
   if (subscriptionStatus === "past_due") {
     return {

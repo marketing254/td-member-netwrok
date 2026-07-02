@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
-import { getStripe } from "@/lib/stripe";
+import { getStripe, appOrigin } from "@/lib/stripe";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { applySubscriptionToMember, memberIdForCustomer } from "@/lib/billing";
 import { notifyTeam } from "@/lib/email/teamNotify";
+import { sendTrialEndingReminder } from "@/lib/email/trialEndingReminder";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -27,6 +28,7 @@ const RELEVANT_EVENTS = new Set([
   "customer.subscription.created",
   "customer.subscription.updated",
   "customer.subscription.deleted",
+  "customer.subscription.trial_will_end",
   "invoice.paid",
   "invoice.payment_failed",
 ]);
@@ -207,6 +209,68 @@ async function handleEvent(event: Stripe.Event, stripe: Stripe): Promise<string 
 
     await applySubscriptionToMember(sb, memberId, hydrated, stripe);
     return memberId;
+  }
+
+  // ---- customer.subscription.trial_will_end -------------------------
+  // Fires ~3 days before a trial ends (Stripe's fixed default). Routes
+  // the ping to the founding partner or expert, prompting them to
+  // update their card if the on-file one has expired. For the 7-day
+  // reminder in the product spec, add a daily cron that queries
+  // vendors/experts where trial_end is 7 days away and calls
+  // sendTrialEndingReminder directly.
+  if (event.type === "customer.subscription.trial_will_end") {
+    const sub = event.data.object as Stripe.Subscription;
+    const customerId =
+      typeof sub.customer === "string" ? sub.customer : sub.customer.id;
+    const audience = (sub.metadata?.audience ?? "") as string;
+
+    const trialEnd = sub.trial_end
+      ? new Date(sub.trial_end * 1000)
+      : sub.items.data[0]?.current_period_end
+        ? new Date(sub.items.data[0].current_period_end * 1000)
+        : new Date();
+    const daysLeft = Math.max(
+      1,
+      Math.ceil((trialEnd.getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
+    );
+
+    if (audience === "vendor") {
+      const { data: vendor } = await sb
+        .from("vendors")
+        .select("id, contact_name, contact_email, billing_email")
+        .eq("stripe_customer_id", customerId)
+        .maybeSingle();
+      if (vendor) {
+        void sendTrialEndingReminder({
+          role: "partner",
+          to: vendor.billing_email ?? vendor.contact_email,
+          contactName: vendor.contact_name ?? "there",
+          daysLeft,
+          trialEndDate: trialEnd,
+          portalUrl: `${appOrigin()}/vendor/account`,
+        });
+      }
+      return null;
+    }
+    if (audience === "expert") {
+      const { data: expert } = await sb
+        .from("experts")
+        .select("id, full_name, email")
+        .eq("stripe_customer_id", customerId)
+        .maybeSingle();
+      if (expert) {
+        void sendTrialEndingReminder({
+          role: "expert",
+          to: expert.email,
+          contactName: expert.full_name ?? "there",
+          daysLeft,
+          trialEndDate: trialEnd,
+          portalUrl: `${appOrigin()}/expert/billing`,
+        });
+      }
+      return null;
+    }
+    return null;
   }
 
   // ---- invoice.paid / invoice.payment_failed ------------------------

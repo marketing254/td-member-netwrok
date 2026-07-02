@@ -90,8 +90,45 @@ export async function POST(req: Request) {
       return apiError.validation(GENERIC_FAIL);
     }
 
-    // Look up the member to decide where to land them.
+    // Admin bypass — mirrors /api/member/login. An active admin_users
+    // row for this email is enough to complete verification and land on
+    // /dashboard in preview mode, with no members row required. Link
+    // auth_user_id back onto the admin row while we're here so future
+    // middleware checks (which query by auth_user_id) don't re-hit the
+    // email lookup path.
     const admin = getSupabaseAdmin();
+    const { data: adminBypassRow } = await admin
+      .from("admin_users")
+      .select("id, active, auth_user_id")
+      .ilike("email", email)
+      .maybeSingle();
+    if (adminBypassRow?.active) {
+      if (adminBypassRow.auth_user_id !== data.user.id) {
+        await admin
+          .from("admin_users")
+          .update({ auth_user_id: data.user.id, last_active_at: new Date().toISOString() })
+          .eq("id", adminBypassRow.id);
+      } else {
+        await admin
+          .from("admin_users")
+          .update({ last_active_at: new Date().toISOString() })
+          .eq("id", adminBypassRow.id);
+      }
+      try {
+        await admin.from("auth_audit").insert({
+          event: "otp_verify_success",
+          email,
+          user_id: data.user.id,
+          user_type: "member",
+          metadata: { admin_preview: true, admin_id: adminBypassRow.id },
+        });
+      } catch {
+        /* audit best-effort */
+      }
+      return NextResponse.json({ ok: true, next: "/dashboard" });
+    }
+
+    // Look up the member to decide where to land them.
     const { data: memberRow } = await admin
       .from("members")
       .select("id, status, subscription_status, auth_user_id")

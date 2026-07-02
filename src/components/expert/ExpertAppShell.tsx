@@ -57,6 +57,7 @@ type CurrentExpert = Pick<
   | "headshot_url"
   | "months_in_program"
   | "subscription_status"
+  | "stripe_subscription_id"
 >;
 
 function useCurrentExpert(): { expert: CurrentExpert | null; loading: boolean } {
@@ -76,7 +77,7 @@ function useCurrentExpert(): { expert: CurrentExpert | null; loading: boolean } 
       const { data } = await supabase
         .from("experts")
         .select(
-          "id, email, full_name, display_name, specialty, status, headshot_url, months_in_program, subscription_status",
+          "id, email, full_name, display_name, specialty, status, headshot_url, months_in_program, subscription_status, stripe_subscription_id",
         )
         .eq("email", email)
         .maybeSingle();
@@ -497,9 +498,10 @@ export default function ExpertAppShell({ children }: { children: React.ReactNode
               ? checkBillingAccess({
                   monthsInProgram: expert.months_in_program ?? 0,
                   subscriptionStatus: expert.subscription_status ?? null,
+                  hasSubscription: !!expert.stripe_subscription_id,
                 })
               : { allowed: true as const };
-            // Always let the billing page render so the user can update
+            // Always let the billing page render so the user can add
             // their card / re-sync from Stripe even when blocked.
             const onBillingPage = pathname.startsWith("/expert/billing");
             if (!access.allowed && !onBillingPage) {

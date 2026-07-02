@@ -724,6 +724,7 @@ export default function VendorAppShell({ children }: { children: React.ReactNode
                 ? checkBillingAccess({
                     monthsInProgram: currentVendor.months_in_program ?? 0,
                     subscriptionStatus: currentVendor.subscription_status ?? null,
+                    hasSubscription: !!currentVendor.stripe_subscription_id,
                   })
                 : { allowed: true as const };
               const onAccountPage = pathname.startsWith("/vendor/account");

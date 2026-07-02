@@ -528,11 +528,11 @@ export default function PartnersPage() {
         </Container>
       </Box>
 
-      {/* Partner application form — single in-page form. Writes to the
-          vendor_applications table via /api/vendor/signup. The standalone
-          5-step /vendor/signup wizard has been removed; applicants
-          submit here, the team reviews, and an admin activates them
-          from the admin portal.
+      {/* Partner application form — same form, fields and submission flow
+          as the home page, locked to the partner role. Writes to the
+          vendor_applications table via /api/vendor/signup. Card capture
+          happens later inside the partner portal (TrialStartCard) once
+          the team activates them.
           Suspense boundary required because WaitlistSection reads
           useSearchParams() (Next.js needs it to know prerender can defer). */}
       <Suspense fallback={null}>
