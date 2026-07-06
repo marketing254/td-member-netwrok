@@ -17,7 +17,10 @@ export const TEAM_DISTRIBUTION_LIST = [
   "rushdha@ekwa.com",
   "rushdhaakbar82@gmail.com",
   "reshani@ekwa.com",
-];
+  // Two more seats reserved for production — uncomment + fill on launch:
+  // "",
+  // "",
+].filter(Boolean);
 
 function fromAddress(): string {
   return (
@@ -278,3 +281,103 @@ const LEAD_MAGNETS = {
 } as const;
 
 export type LeadMagnetSlug = keyof typeof LEAD_MAGNETS;
+
+// =====================================================================
+// New-signup team alert
+// =====================================================================
+
+export type SignupRole = "member" | "expert" | "partner";
+
+/**
+ * A single labelled fact rendered as one row in the alert email.
+ * `value` may be null/empty — the row is skipped when it is.
+ */
+export type SignupField = { label: string; value: string | null | undefined };
+
+/**
+ * Fire a standardized "new signup" alert to the whole team the moment a
+ * member, expert, or partner submits their form. Every field the person
+ * provided is rendered in a clean two-column table so the team can act
+ * without opening the admin panel. Best-effort — never throws, never
+ * blocks the signup response (call it with `void`).
+ */
+export async function notifySignup(opts: {
+  role: SignupRole;
+  name: string;
+  email: string;
+  fields: SignupField[];
+  adminLink?: string; // deep-link into the admin panel for this record
+  submittedAt?: string; // ISO; defaults to now
+}): Promise<boolean> {
+  const roleLabel =
+    opts.role === "member" ? "Member" : opts.role === "expert" ? "Expert" : "Partner";
+  const submitted = opts.submittedAt ?? new Date().toISOString();
+  const submittedNice = formatTimestamp(submitted);
+
+  const rows = opts.fields
+    .filter((f) => f.value != null && String(f.value).trim() !== "")
+    .map((f) => ({ label: f.label, value: String(f.value).trim() }));
+
+  const subject = `New ${roleLabel} signup: ${opts.name}`;
+
+  const rowsHtml = rows
+    .map(
+      (r) => `
+        <tr>
+          <td style="padding:8px 14px;border-bottom:1px solid #EDE7DA;color:#5C6770;font-size:13px;white-space:nowrap;vertical-align:top;font-weight:600;">${escapeHtml(r.label)}</td>
+          <td style="padding:8px 14px;border-bottom:1px solid #EDE7DA;color:#0A1A2F;font-size:13px;">${escapeHtml(r.value)}</td>
+        </tr>`,
+    )
+    .join("");
+
+  const html = `<!doctype html><html><body style="margin:0;background:#F7F5F0;padding:24px;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;">
+  <div style="max-width:600px;margin:0 auto;background:#FFFFFF;border:1px solid #E0DACE;border-radius:12px;overflow:hidden;">
+    <div style="background:#0E2A3D;padding:18px 22px;">
+      <div style="font-weight:800;letter-spacing:5px;color:#FFFFFF;font-size:16px;">DMN</div>
+      <div style="color:#F0C16E;font-size:11px;letter-spacing:1.5px;margin-top:3px;font-weight:700;">NEW ${roleLabel.toUpperCase()} SIGNUP</div>
+    </div>
+    <div style="padding:20px 22px;">
+      <div style="font-size:18px;font-weight:700;color:#0A1A2F;margin-bottom:2px;">${escapeHtml(opts.name)}</div>
+      <div style="font-size:13px;color:#5C6770;margin-bottom:16px;">${escapeHtml(opts.email)} · ${escapeHtml(submittedNice)}</div>
+      <table style="width:100%;border-collapse:collapse;border-top:1px solid #EDE7DA;">${rowsHtml}</table>
+      ${
+        opts.adminLink
+          ? `<div style="margin-top:20px;"><a href="${opts.adminLink}" style="display:inline-block;background:#0E2A3D;color:#FFFFFF;text-decoration:none;font-weight:600;font-size:13px;padding:10px 18px;border-radius:999px;">Open in admin panel →</a></div>`
+          : ""
+      }
+    </div>
+  </div>
+</body></html>`;
+
+  const text = [
+    `NEW ${roleLabel.toUpperCase()} SIGNUP`,
+    "",
+    `${opts.name}`,
+    `${opts.email} · ${submittedNice}`,
+    "",
+    ...rows.map((r) => `${r.label}: ${r.value}`),
+    ...(opts.adminLink ? ["", `Admin: ${opts.adminLink}`] : []),
+  ].join("\n");
+
+  return notifyTeam({ subject, html, text, tag: `signup-${opts.role}` });
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function formatTimestamp(iso: string): string {
+  try {
+    return new Intl.DateTimeFormat("en-US", {
+      dateStyle: "medium",
+      timeStyle: "short",
+      timeZone: "America/Toronto",
+    }).format(new Date(iso));
+  } catch {
+    return iso;
+  }
+}

@@ -75,5 +75,18 @@ export async function POST() {
       { status: 500 },
     );
   }
-  return NextResponse.json({ clientSecret: setupIntent.client_secret });
+
+  // Serve the right agreement: if this same email is ALSO an expert
+  // (an experts row exists), they get the combined Expert + Partner
+  // agreement — one fee covers both roles. Otherwise the Partner one.
+  const { data: alsoExpert } = await sb
+    .from("experts")
+    .select("id")
+    .eq("email", (vendor.contact_email ?? "").toLowerCase())
+    .maybeSingle();
+  const agreementHref = alsoExpert
+    ? "/agreements/dmn-expert-partner-agreement.pdf"
+    : "/agreements/dmn-partner-agreement.pdf";
+
+  return NextResponse.json({ clientSecret: setupIntent.client_secret, agreementHref });
 }

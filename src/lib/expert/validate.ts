@@ -7,16 +7,21 @@ export type ExpertApplicationPayload = {
   email: string;
   phone?: string;
   companyName?: string;
+  // Cross-role: expert who also wants their company listed as a partner.
+  alsoPartner?: boolean;
+  companyOffer?: string;
   specialty: string;
   topics?: string;
   website?: string;
   bookingLink?: string;
   source?: string;
   utm?: Record<string, string>;
-  // Required acknowledgement — applicant ticked the
-  // "consider me as a Founding Expert" checkbox.
+  // Required acknowledgement — applicant ticked the binding
+  // "I agree to the Expert Agreement" checkbox.
   agreementAccepted: boolean;
   agreementAcceptedAt?: string | null;
+  // Optional consent to be reviewed as a Founding Expert.
+  consideredFounding?: boolean;
   // Optional SMS opt-in. When checked, store text + timestamp verbatim
   // as TCPA / CASL evidence (matches the home form's pattern).
   smsConsent?: boolean;
@@ -112,12 +117,16 @@ export function validateExpertApplication(body: unknown): ValidationResult {
   if (!agreementAccepted) {
     return {
       ok: false,
-      error: "Please confirm you'd like to be considered as a Founding Expert.",
+      error: "Please read and agree to the Expert Agreement.",
       field: "agreementAccepted",
     };
   }
   const agreementAcceptedAt =
     asString(b.agreementAcceptedAt) || new Date().toISOString();
+
+  const alsoPartner = b.alsoPartner === true;
+  const companyOffer = asString(b.companyOffer) || undefined;
+  const consideredFounding = b.consideredFounding === true;
 
   const smsConsent = b.smsConsent === true;
   const smsConsentText = smsConsent ? asString(b.smsConsentText) || null : null;
@@ -132,6 +141,8 @@ export function validateExpertApplication(body: unknown): ValidationResult {
       email,
       phone,
       companyName,
+      alsoPartner,
+      companyOffer,
       specialty,
       topics,
       website,
@@ -140,6 +151,7 @@ export function validateExpertApplication(body: unknown): ValidationResult {
       utm,
       agreementAccepted,
       agreementAcceptedAt,
+      consideredFounding,
       smsConsent,
       smsConsentText,
       smsConsentAt,

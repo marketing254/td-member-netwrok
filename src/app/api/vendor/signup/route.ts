@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { createServerSupabase } from "@/lib/supabase/server-ssr";
 import { checkRateLimit } from "@/lib/waitlist/rateLimit";
+import { notifySignup } from "@/lib/email/teamNotify";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,6 +31,7 @@ type ApplicationPayload = {
   category?: string;
   website?: string;
   description?: string;
+  memberOffer?: string;
   contactName: string;
   contactEmail: string;
   contactPhone?: string;
@@ -39,6 +41,7 @@ type ApplicationPayload = {
   signatureTitle?: string;
   agreedToTerms: boolean;
   confirmedAuthority: boolean;
+  alsoExpert?: boolean;
   smsConsent?: boolean;
   smsConsentText?: string | null;
   smsConsentAt?: string | null;
@@ -120,6 +123,8 @@ function validate(body: unknown): { ok: true; data: ApplicationPayload } | { ok:
       category: asString(b.category, 120),
       website: asString(b.website, 500),
       description: asString(b.description, 2000),
+      memberOffer: asString(b.memberOffer, 500),
+      alsoExpert: b.alsoExpert === true,
       contactName,
       contactEmail,
       contactPhone: asString(b.contactPhone, 32),
@@ -348,13 +353,42 @@ export async function POST(req: Request) {
       admin_id: null,
       kind: "new_vendor_application",
       title: `New vendor application: ${data.companyName}`,
-      body: `${data.contactName} (${data.contactEmail}) just applied. Review when ready.`,
+      body: `${data.contactName} (${data.contactEmail}) just applied.${data.memberOffer ? ` Member offer: "${data.memberOffer}".` : ""}${data.alsoExpert ? " Also an individual expert." : ""} Review when ready.`,
       link: "/admin/vendors?filter=pending_review",
       metadata: { vendor_id: vendorId, application_id: applicationId },
     });
   } catch (err) {
     console.error("[vendor:signup] audit/email log failed:", err);
   }
+
+  // Email the team the full application detail — no admin-panel trip needed.
+  void notifySignup({
+    role: "partner",
+    name: data.contactName,
+    email: data.contactEmail,
+    adminLink: "https://dentalmembernetwork.com/admin/vendors?filter=pending_review",
+    fields: [
+      { label: "Company", value: data.companyName },
+      { label: "Category", value: data.category },
+      { label: "Website", value: data.website },
+      { label: "What they do", value: data.description },
+      { label: "Exclusive member offer", value: data.memberOffer },
+      { label: "Contact name", value: data.contactName },
+      { label: "Contact email", value: data.contactEmail },
+      { label: "Contact phone", value: data.contactPhone },
+      { label: "Secondary email", value: data.secondaryEmail },
+      { label: "Secondary phone", value: data.secondaryPhone },
+      { label: "Signer", value: data.signatureName },
+      { label: "Signer title", value: data.signatureTitle },
+      { label: "Also an individual expert?", value: data.alsoExpert ? "Yes" : "No" },
+      { label: "Booking / calendar link", value: data.calendarLink },
+      { label: "Agreed to terms", value: data.agreedToTerms ? "Yes" : "No" },
+      { label: "Authorized to commit company", value: data.confirmedAuthority ? "Yes" : "No" },
+      { label: "SMS consent", value: data.smsConsent ? "Yes" : "No" },
+      { label: "Plan", value: data.planId },
+      { label: "Source", value: data.source },
+    ],
+  });
 
   return NextResponse.json({
     success: true,

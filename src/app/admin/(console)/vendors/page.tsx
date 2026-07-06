@@ -7,18 +7,27 @@ import {
   Button,
   Chip,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Grid,
   IconButton,
+  MenuItem,
   Snackbar,
   Stack,
   Tab,
   Tabs,
+  TextField,
   Tooltip,
   Typography,
 } from "@mui/material";
+import { vendorCategories } from "@/lib/vendorData";
 import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
 import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
 import PauseCircleOutlinedIcon from "@mui/icons-material/PauseCircleOutlined";
 import PlayCircleOutlinedIcon from "@mui/icons-material/PlayCircleOutlined";
+import PersonAddAlt1OutlinedIcon from "@mui/icons-material/PersonAddAlt1Outlined";
 
 type VendorRow = {
   id: string;
@@ -53,6 +62,7 @@ function Inner() {
   const [actingId, setActingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -126,19 +136,34 @@ function Inner() {
 
   return (
     <Stack spacing={4}>
-      <Box>
-        <Typography variant="overline" sx={{ color: "text.secondary", display: "block" }}>
-          PARTNERS
-        </Typography>
-        <Typography variant="h2" sx={{ mt: 0.5, mb: 1, fontSize: { xs: "1.85rem", md: "2.5rem" } }}>
-          All partners
-        </Typography>
-        <Typography sx={{ color: "text.secondary", maxWidth: 620 }}>
-          Approve new applications, manage active partners. Approving a
-          partner sets their account to verified and sends them a confirmation
-          email so they can publish in the directory.
-        </Typography>
-      </Box>
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        spacing={2}
+        sx={{ justifyContent: "space-between", alignItems: { sm: "flex-start" } }}
+      >
+        <Box>
+          <Typography variant="overline" sx={{ color: "text.secondary", display: "block" }}>
+            PARTNERS
+          </Typography>
+          <Typography variant="h2" sx={{ mt: 0.5, mb: 1, fontSize: { xs: "1.85rem", md: "2.5rem" } }}>
+            All partners
+          </Typography>
+          <Typography sx={{ color: "text.secondary", maxWidth: 620 }}>
+            Approve new applications and manage active partners. Use{" "}
+            <strong>Send founding invite</strong> to email a hand-picked partner or
+            expert a private link with their personalized agreement — they accept
+            and pay through it, no public form needed.
+          </Typography>
+        </Box>
+        <Button
+          variant="contained"
+          startIcon={<PersonAddAlt1OutlinedIcon />}
+          onClick={() => setInviteOpen(true)}
+          sx={{ flexShrink: 0, whiteSpace: "nowrap" }}
+        >
+          Send founding invite
+        </Button>
+      </Stack>
 
       {error && <Alert severity="error">{error}</Alert>}
 
@@ -380,7 +405,370 @@ function Inner() {
         message={toast ?? ""}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       />
+
+      <InvitePartnerDialog
+        open={inviteOpen}
+        onClose={() => setInviteOpen(false)}
+        onInvited={(name) => {
+          setInviteOpen(false);
+          setToast(`Founding invite link emailed to ${name}.`);
+          void load();
+        }}
+        onError={(msg) => setError(msg)}
+      />
     </Stack>
+  );
+}
+
+function InvitePartnerDialog({
+  open,
+  onClose,
+  onInvited,
+  onError,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onInvited: (name: string) => void;
+  onError: (msg: string) => void;
+}) {
+  const [role, setRole] = useState<"partner" | "expert" | "both">("partner");
+  const [companyName, setCompanyName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [secondaryEmail, setSecondaryEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [secondaryPhone, setSecondaryPhone] = useState("");
+  const [signatureName, setSignatureName] = useState("");
+  const [signatureTitle, setSignatureTitle] = useState("");
+  const [category, setCategory] = useState("");
+  const [website, setWebsite] = useState("");
+  const [description, setDescription] = useState("");
+  const [memberOffer, setMemberOffer] = useState("");
+  const [calendarLink, setCalendarLink] = useState("");
+  const [notes, setNotes] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const needsCompany = role === "partner" || role === "both";
+
+  const reset = () => {
+    setRole("partner");
+    setCompanyName("");
+    setFirstName("");
+    setLastName("");
+    setEmail("");
+    setSecondaryEmail("");
+    setPhone("");
+    setSecondaryPhone("");
+    setSignatureName("");
+    setSignatureTitle("");
+    setCategory("");
+    setWebsite("");
+    setDescription("");
+    setMemberOffer("");
+    setCalendarLink("");
+    setNotes("");
+    setFormError(null);
+  };
+
+  const submit = async () => {
+    setFormError(null);
+    const contactName = [firstName.trim(), lastName.trim()].filter(Boolean).join(" ");
+    if (!contactName || !email.trim()) {
+      setFormError("Contact name and email are required.");
+      return;
+    }
+    if (needsCompany && !companyName.trim()) {
+      setFormError("Company name is required for partner / both invites.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      // Fold the extra contact/signer detail into notes so nothing is
+      // lost — the founding invite record keeps the core fields as
+      // columns and the rest here for the team's reference.
+      const extras = [
+        website.trim() && `Website: ${website.trim()}`,
+        category.trim() && `Category: ${category.trim()}`,
+        description.trim() && `Does: ${description.trim()}`,
+        secondaryEmail.trim() && `2nd email: ${secondaryEmail.trim()}`,
+        secondaryPhone.trim() && `2nd phone: ${secondaryPhone.trim()}`,
+        signatureName.trim() && `Signer: ${signatureName.trim()}${signatureTitle.trim() ? ` (${signatureTitle.trim()})` : ""}`,
+        calendarLink.trim() && `Calendar: ${calendarLink.trim()}`,
+        notes.trim(),
+      ]
+        .filter(Boolean)
+        .join(" · ");
+
+      const res = await fetch("/api/admin/founding-invite", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          role,
+          full_name: contactName,
+          email: email.trim(),
+          company_name: companyName.trim() || undefined,
+          member_offer: memberOffer.trim() || undefined,
+          phone: phone.trim() || undefined,
+          notes: extras || undefined,
+        }),
+      });
+      const body = (await res.json()) as { ok?: boolean; error?: string };
+      if (!res.ok || body.error) {
+        setFormError(body.error ?? `Failed (${res.status}).`);
+        return;
+      }
+      reset();
+      onInvited(contactName);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to invite partner.";
+      setFormError(msg);
+      onError(msg);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onClose={() => {
+        if (!submitting) {
+          reset();
+          onClose();
+        }
+      }}
+      fullWidth
+      maxWidth="sm"
+      slotProps={{ paper: { sx: { borderRadius: 3 } } }}
+    >
+      <DialogTitle sx={{ fontWeight: 700 }}>Send founding invite</DialogTitle>
+      <DialogContent>
+        <Typography sx={{ color: "text.secondary", mb: 2, fontSize: "0.88rem" }}>
+          Emails a private link to a hand-picked partner / expert. Their
+          personalized agreement (name, company, offer) is generated and attached.
+          They open the link, agree, and complete agree-and-pay — no public form,
+          no login needed to accept.
+        </Typography>
+        {formError && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {formError}
+          </Alert>
+        )}
+        <Grid container spacing={2}>
+          {/* Role */}
+          <Grid size={{ xs: 12 }}>
+            <TextField
+              label="Invite as"
+              value={role}
+              onChange={(e) => setRole(e.target.value as "partner" | "expert" | "both")}
+              fullWidth
+              select
+            >
+              <MenuItem value="partner">Partner (company)</MenuItem>
+              <MenuItem value="expert">Expert (individual)</MenuItem>
+              <MenuItem value="both">Both — Expert + Partner (one fee covers both)</MenuItem>
+            </TextField>
+          </Grid>
+
+          {/* 01 Company */}
+          <Grid size={{ xs: 12 }}>
+            <DialogSectionLabel>
+              01 · Company{needsCompany ? "" : " (optional for expert-only)"}
+            </DialogSectionLabel>
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <TextField
+              label="Company name"
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+              fullWidth
+              required={needsCompany}
+              placeholder="Acme Dental Supply"
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <TextField
+              label="Website"
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
+              fullWidth
+              placeholder="https://acmedental.com"
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <TextField
+              label="Category"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              fullWidth
+              select
+            >
+              <MenuItem value="" disabled>
+                Choose a category
+              </MenuItem>
+              {vendorCategories.map((c) => (
+                <MenuItem key={c} value={c}>
+                  {c}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <TextField
+              label="Booking / calendar link"
+              value={calendarLink}
+              onChange={(e) => setCalendarLink(e.target.value)}
+              fullWidth
+              placeholder="https://cal.com/acme/intro"
+            />
+          </Grid>
+          <Grid size={{ xs: 12 }}>
+            <TextField
+              label="What does your company do, in one sentence?"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              fullWidth
+              multiline
+              minRows={2}
+            />
+          </Grid>
+          <Grid size={{ xs: 12 }}>
+            <TextField
+              label="Exclusive member offer"
+              value={memberOffer}
+              onChange={(e) => setMemberOffer(e.target.value)}
+              fullWidth
+              multiline
+              minRows={2}
+              placeholder="e.g. 15% off your first year, or a free consultation"
+            />
+          </Grid>
+
+          {/* 02 Contact */}
+          <Grid size={{ xs: 12 }}>
+            <DialogSectionLabel>02 · Contact</DialogSectionLabel>
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <TextField
+              label="First name"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              fullWidth
+              required
+              placeholder="Taylor"
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <TextField
+              label="Last name"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              fullWidth
+              required
+              placeholder="Morgan"
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <TextField
+              label="Primary work email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              fullWidth
+              required
+              placeholder="taylor@acme.com"
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <TextField
+              label="Secondary email (optional)"
+              type="email"
+              value={secondaryEmail}
+              onChange={(e) => setSecondaryEmail(e.target.value)}
+              fullWidth
+              placeholder="partnerships@acme.com"
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <TextField
+              label="Primary phone"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              fullWidth
+              placeholder="+1 (555) 010-1234"
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <TextField
+              label="Secondary phone (optional)"
+              value={secondaryPhone}
+              onChange={(e) => setSecondaryPhone(e.target.value)}
+              fullWidth
+              placeholder="+1 (555) 010-5678"
+            />
+          </Grid>
+
+          {/* 03 Signer */}
+          <Grid size={{ xs: 12 }}>
+            <DialogSectionLabel>03 · Signs on behalf of the company</DialogSectionLabel>
+          </Grid>
+          <Grid size={{ xs: 12, sm: 7 }}>
+            <TextField
+              label="Signer full name"
+              value={signatureName}
+              onChange={(e) => setSignatureName(e.target.value)}
+              fullWidth
+              placeholder="Taylor Morgan"
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 5 }}>
+            <TextField
+              label="Signer title"
+              value={signatureTitle}
+              onChange={(e) => setSignatureTitle(e.target.value)}
+              fullWidth
+              placeholder="VP of Partnerships"
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12 }}>
+            <TextField
+              label="Internal notes (optional)"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              fullWidth
+              multiline
+              minRows={2}
+            />
+          </Grid>
+        </Grid>
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 2.5 }}>
+        <Button
+          onClick={() => {
+            if (!submitting) {
+              reset();
+              onClose();
+            }
+          }}
+          disabled={submitting}
+          sx={{ textTransform: "none" }}
+        >
+          Cancel
+        </Button>
+        <Button
+          variant="contained"
+          onClick={submit}
+          disabled={submitting}
+          startIcon={submitting ? <CircularProgress size={15} sx={{ color: "inherit" }} /> : null}
+          sx={{ textTransform: "none" }}
+        >
+          {submitting ? "Sending…" : "Send founding invite link"}
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 }
 
@@ -425,5 +813,22 @@ function StatusChip({ status }: { status: string }) {
   const s = map[status] ?? map.pending_review;
   return (
     <Chip label={s.label} size="small" sx={{ bgcolor: s.bg, color: s.color, fontWeight: 700, fontSize: "0.68rem", height: 22 }} />
+  );
+}
+
+function DialogSectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <Typography
+      sx={{
+        fontSize: "0.7rem",
+        fontWeight: 700,
+        letterSpacing: "0.08em",
+        textTransform: "uppercase",
+        color: "text.secondary",
+        mt: 0.5,
+      }}
+    >
+      {children}
+    </Typography>
   );
 }

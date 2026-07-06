@@ -81,8 +81,14 @@ export default function WaitlistSection({ lockedRole, sectionId }: WaitlistSecti
   const [authorized, setAuthorized] = useState(false);
   // Member agreement acceptance (only checkbox in member mode).
   const [memberAgreed, setMemberAgreed] = useState(false);
-  // Expert agreement acceptance (only checkbox in expert mode).
-  const [expertAgreed, setExpertAgreed] = useState(false);
+  // Expert Agreement acceptance — the legally-binding checkbox (Fix 1).
+  const [expertAgreementAccepted, setExpertAgreementAccepted] = useState(false);
+  // Expert "consider me as a Founding Expert" consent (separate from above).
+  const [expertConsidered, setExpertConsidered] = useState(false);
+  // Cross-role (Fix 3): expert who also wants their company listed as a partner.
+  const [expertAlsoPartner, setExpertAlsoPartner] = useState(false);
+  // Cross-role (Fix 3): partner who is also an individual expert.
+  const [vendorAlsoExpert, setVendorAlsoExpert] = useState(false);
   // SMS consent — required for the Hotline reply flow + announcements.
   // The exact text below is persisted server-side as evidence (TCPA/CASL).
   const [memberSmsConsent, setMemberSmsConsent] = useState(false);
@@ -121,8 +127,8 @@ export default function WaitlistSection({ lockedRole, sectionId }: WaitlistSecti
       setError("Please confirm both boxes before applying as a partner.");
       return;
     }
-    if (isExpert && !expertAgreed) {
-      setError("Please confirm you'd like to be considered as a Founding Expert.");
+    if (isExpert && !expertAgreementAccepted) {
+      setError("Please read and agree to the Expert Agreement before applying.");
       return;
     }
     if (!isVendor && !isExpert && !memberAgreed) {
@@ -156,6 +162,7 @@ export default function WaitlistSection({ lockedRole, sectionId }: WaitlistSecti
           category: resolveOther(fd.get("category"), fd.get("categoryOther")),
           website: fd.get("website"),
           description: fd.get("description") ?? "",
+          memberOffer: String(fd.get("memberOffer") ?? "").trim(),
           contactName: fullName,
           contactEmail: fd.get("email"),
           contactPhone: fd.get("contactPhone"),
@@ -165,6 +172,7 @@ export default function WaitlistSection({ lockedRole, sectionId }: WaitlistSecti
           signatureTitle: fd.get("signatureTitle"),
           agreedToTerms: agreed,
           confirmedAuthority: authorized,
+          alsoExpert: vendorAlsoExpert,
           smsConsent: vendorSmsConsent,
           smsConsentText: vendorSmsConsent ? SMS_CONSENT_TEXT : null,
           smsConsentAt: vendorSmsConsent ? new Date().toISOString() : null,
@@ -198,7 +206,14 @@ export default function WaitlistSection({ lockedRole, sectionId }: WaitlistSecti
           fullName,
           email: fd.get("email"),
           phone: fd.get("phone") ?? undefined,
-          companyName: fd.get("companyName") ?? undefined,
+          // Company only carries meaning when they also want a partner listing.
+          companyName: expertAlsoPartner
+            ? String(fd.get("expertCompanyName") ?? "").trim() || undefined
+            : undefined,
+          companyOffer: expertAlsoPartner
+            ? String(fd.get("expertCompanyOffer") ?? "").trim() || undefined
+            : undefined,
+          alsoPartner: expertAlsoPartner,
           specialty: String(fd.get("expertSpecialty") ?? "").trim(),
           topics: String(fd.get("expertTopics") ?? "").trim() || undefined,
           website: String(fd.get("expertWebsite") ?? "").trim() || undefined,
@@ -207,7 +222,8 @@ export default function WaitlistSection({ lockedRole, sectionId }: WaitlistSecti
           utm: {
             role_label: "expert",
           },
-          agreementAccepted: expertAgreed,
+          agreementAccepted: expertAgreementAccepted,
+          consideredFounding: expertConsidered,
           agreementAcceptedAt: nowIso,
           smsConsent: expertSmsConsent,
           smsConsentText: expertSmsConsent ? SMS_CONSENT_TEXT : null,
@@ -382,7 +398,10 @@ export default function WaitlistSection({ lockedRole, sectionId }: WaitlistSecti
                         setAgreed(false);
                         setAuthorized(false);
                         setMemberAgreed(false);
-                        setExpertAgreed(false);
+                        setExpertAgreementAccepted(false);
+                        setExpertConsidered(false);
+                        setExpertAlsoPartner(false);
+                        setVendorAlsoExpert(false);
                         setVendorCategory("");
                         setMemberRoleValue("");
                         setMemberChallenge("");
@@ -469,6 +488,17 @@ export default function WaitlistSection({ lockedRole, sectionId }: WaitlistSecti
                             required
                           />
                         </Grid>
+                        {/* Fix 2 — the member offer the page header promises. */}
+                        <Grid size={{ xs: 12 }}>
+                          <CompactField
+                            name="memberOffer"
+                            label="Your exclusive member offer"
+                            placeholder="e.g. 15% off your first year, or a free consultation — you can refine this with us later."
+                            multiline
+                            minRows={2}
+                            required
+                          />
+                        </Grid>
                       </Grid>
 
                       {/* 02 CONTACT — primary + secondary email and phone */}
@@ -505,6 +535,29 @@ export default function WaitlistSection({ lockedRole, sectionId }: WaitlistSecti
                         </Grid>
                       </Grid>
 
+                      {/* Cross-role (Fix 3) — partner who's also an individual expert */}
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={vendorAlsoExpert}
+                            onChange={(e) => setVendorAlsoExpert(e.target.checked)}
+                            size="small"
+                            sx={{
+                              color: "#A8A29E",
+                              "&.Mui-checked": { color: "#9B7B3A" },
+                              p: 0.5,
+                              mr: 0.5,
+                            }}
+                          />
+                        }
+                        label={
+                          <Typography sx={{ fontSize: "0.8rem", color: "#52525B", lineHeight: 1.5 }}>
+                            I&apos;m also an individual expert who&apos;d like to contribute content.
+                          </Typography>
+                        }
+                        sx={{ alignItems: "flex-start", m: 0, mt: 1 }}
+                      />
+
                       {/* Dual checkboxes */}
                       <Stack spacing={1.25} sx={{ mt: 1 }}>
                         <FormControlLabel
@@ -526,7 +579,7 @@ export default function WaitlistSection({ lockedRole, sectionId }: WaitlistSecti
                               I have read and agree to the{" "}
                               <Box
                                 component={Link}
-                                href="/agreement/vendor"
+                                href="/agreements/dmn-partner-agreement.pdf"
                                 target="_blank"
                                 rel="noopener"
                                 sx={{
@@ -614,11 +667,8 @@ export default function WaitlistSection({ lockedRole, sectionId }: WaitlistSecti
                         <Grid size={{ xs: 12 }}>
                           <CompactField name="email" type="email" label="Work email" placeholder="taylor@coachingco.com" autoComplete="email" required />
                         </Grid>
-                        <Grid size={{ xs: 12, sm: 6 }}>
+                        <Grid size={{ xs: 12 }}>
                           <CompactField name="phone" type="tel" label="Phone (optional)" placeholder="(555) 000-0000" autoComplete="tel" />
-                        </Grid>
-                        <Grid size={{ xs: 12, sm: 6 }}>
-                          <CompactField name="companyName" label="Company / brand (optional)" placeholder="Takacs Learning Center" autoComplete="organization" />
                         </Grid>
                       </Grid>
 
@@ -650,11 +700,12 @@ export default function WaitlistSection({ lockedRole, sectionId }: WaitlistSecti
                       </Grid>
                     </Stack>
 
+                    {/* Cross-role (Fix 3) — expert who also lists their company */}
                     <FormControlLabel
                       control={
                         <Checkbox
-                          checked={expertAgreed}
-                          onChange={(e) => setExpertAgreed(e.target.checked)}
+                          checked={expertAlsoPartner}
+                          onChange={(e) => setExpertAlsoPartner(e.target.checked)}
                           size="small"
                           sx={{
                             color: "#A8A29E",
@@ -666,11 +717,96 @@ export default function WaitlistSection({ lockedRole, sectionId }: WaitlistSecti
                       }
                       label={
                         <Typography sx={{ fontSize: "0.8rem", color: "#52525B", lineHeight: 1.5 }}>
-                          I'd like to be considered as a Founding Expert and consent
-                          to the team reviewing my materials.
+                          I&apos;d also like to list my company as a partner.
                         </Typography>
                       }
                       sx={{ alignItems: "flex-start", m: 0, mt: 1.5 }}
+                    />
+                    {expertAlsoPartner && (
+                      <Grid container spacing={1.25} sx={{ mt: 0.25, pl: 3.5 }}>
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <CompactField
+                            name="expertCompanyName"
+                            label="Company name"
+                            placeholder="Takacs Learning Center"
+                            autoComplete="organization"
+                            required
+                          />
+                        </Grid>
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <CompactField
+                            name="expertCompanyOffer"
+                            label="What does it offer practices?"
+                            placeholder="e.g. 10% off practice-management software"
+                          />
+                        </Grid>
+                      </Grid>
+                    )}
+
+                    {/* Expert Agreement — the binding checkbox (Fix 1) */}
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={expertAgreementAccepted}
+                          onChange={(e) => setExpertAgreementAccepted(e.target.checked)}
+                          size="small"
+                          sx={{
+                            color: "#A8A29E",
+                            "&.Mui-checked": { color: "#9B7B3A" },
+                            p: 0.5,
+                            mr: 0.5,
+                          }}
+                        />
+                      }
+                      label={
+                        <Typography sx={{ fontSize: "0.8rem", color: "#52525B", lineHeight: 1.5 }}>
+                          I have read and agree to the{" "}
+                          <Box
+                            component={Link}
+                            href="/agreements/dmn-expert-agreement.pdf"
+                            target="_blank"
+                            rel="noopener"
+                            sx={{
+                              color: "#9B7B3A",
+                              fontWeight: 700,
+                              textDecoration: "underline",
+                              textDecorationColor: "rgba(155,123,58,0.4)",
+                              textUnderlineOffset: 3,
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 0.4,
+                            }}
+                          >
+                            Expert Agreement
+                            <ExternalLink size={11} />
+                          </Box>
+                          .
+                        </Typography>
+                      }
+                      sx={{ alignItems: "flex-start", m: 0, mt: 1.5 }}
+                    />
+
+                    {/* Founding-Expert consideration consent (kept, optional) */}
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={expertConsidered}
+                          onChange={(e) => setExpertConsidered(e.target.checked)}
+                          size="small"
+                          sx={{
+                            color: "#A8A29E",
+                            "&.Mui-checked": { color: "#9B7B3A" },
+                            p: 0.5,
+                            mr: 0.5,
+                          }}
+                        />
+                      }
+                      label={
+                        <Typography sx={{ fontSize: "0.8rem", color: "#52525B", lineHeight: 1.5 }}>
+                          Consider me as a Founding Expert (review my materials).
+                        </Typography>
+                      }
+                      sx={{ alignItems: "flex-start", m: 0, mt: 1 }}
                     />
 
                     <FormControlLabel
@@ -738,7 +874,7 @@ export default function WaitlistSection({ lockedRole, sectionId }: WaitlistSecti
                         </Grid>
                       )}
                       <Grid size={{ xs: 12 }}>
-                        <CompactField name="practiceName" label="Practice name (optional)" placeholder="Morgan Dental Group" autoComplete="organization" />
+                        <CompactField name="practiceName" label="Practice name" placeholder="Morgan Dental Group" autoComplete="organization" required />
                       </Grid>
                       <Grid size={{ xs: 12, sm: 6 }}>
                         <CompactField name="locations" label="Number of locations" select defaultValue="">
@@ -799,7 +935,7 @@ export default function WaitlistSection({ lockedRole, sectionId }: WaitlistSecti
                           I agree to the{" "}
                           <Box
                             component={Link}
-                            href="/agreement/member"
+                            href="/agreements/dmn-member-agreement.pdf"
                             target="_blank"
                             rel="noopener"
                             sx={{
@@ -873,7 +1009,7 @@ export default function WaitlistSection({ lockedRole, sectionId }: WaitlistSecti
                   (isVendor
                     ? !agreed || !authorized
                     : isExpert
-                      ? !expertAgreed
+                      ? !expertAgreementAccepted
                       : !memberAgreed)
                 }
                 fullWidth

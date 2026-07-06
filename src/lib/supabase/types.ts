@@ -774,6 +774,36 @@ export type LeadMagnetLeadsRow = {
   created_at: string;
 };
 
+export type FoundingInviteStatus = "sent" | "viewed" | "accepted" | "revoked";
+export type FoundingInviteRole = "expert" | "partner" | "both";
+
+export type FoundingInvitesRow = {
+  id: string;
+  code: string;
+  role: FoundingInviteRole;
+  full_name: string;
+  email: string;
+  company_name: string | null;
+  member_offer: string | null;
+  phone: string | null;
+  notes: string | null;
+  agreement_version: string;
+  agreement_pdf_path: string | null;
+  status: FoundingInviteStatus;
+  viewed_at: string | null;
+  accepted_at: string | null;
+  accepted_ip_hash: string | null;
+  accepted_user_agent: string | null;
+  expires_at: string;
+  expert_id: string | null;
+  vendor_id: string | null;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -810,6 +840,7 @@ export type Database = {
       referral_codes: Table<ReferralCodesRow>;
       referral_signups: Table<ReferralSignupsRow>;
       lead_magnet_leads: Table<LeadMagnetLeadsRow>;
+      founding_invites: Table<FoundingInvitesRow>;
     };
     Views: {
       waitlist_counts: View<{

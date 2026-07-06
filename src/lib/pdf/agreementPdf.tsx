@@ -246,20 +246,35 @@ const EXPERT_COMMITMENTS = [
 ];
 
 export type AgreementPdfInput = {
-  role: "partner" | "expert";
+  role: "partner" | "expert" | "both";
   agreementVersion: string;
   signer: {
     name: string;
     email: string;
     companyName?: string | null;
   };
+  // Personalized member offer (shown for partners / both). Founding
+  // invites merge Lester's noted offer here so the person reads their
+  // own terms, not a blank.
+  memberOffer?: string | null;
   signedAt: Date;
   ipHashLast6: string;
+  // false → render as the personalized-but-unaccepted copy shown on the
+  // invite page (signature block reads "Awaiting acceptance"). true →
+  // the accepted receipt with the filled acceptance record.
+  accepted?: boolean;
 };
 
 function AgreementDoc({ input }: { input: AgreementPdfInput }) {
-  const commitments = input.role === "partner" ? PARTNER_COMMITMENTS : EXPERT_COMMITMENTS;
-  const roleLabel = input.role === "partner" ? "Founding Partner" : "Founding Expert";
+  const accepted = input.accepted !== false;
+  const commitments =
+    input.role === "expert" ? EXPERT_COMMITMENTS : PARTNER_COMMITMENTS;
+  const roleLabel =
+    input.role === "both"
+      ? "Founding Expert + Partner"
+      : input.role === "partner"
+        ? "Founding Partner"
+        : "Founding Expert";
   const signedDate = input.signedAt.toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
@@ -354,6 +369,17 @@ function AgreementDoc({ input }: { input: AgreementPdfInput }) {
           </Text>
         </View>
 
+        {/* Member offer — personalized. Shown for partner / both. */}
+        {input.memberOffer && input.role !== "expert" ? (
+          <>
+            <Text style={styles.sectionTitle}>3a. Your member offer</Text>
+            <Text style={styles.paragraph}>
+              {input.signer.companyName ?? input.signer.name} commits the following
+              exclusive benefit to DMN members: {input.memberOffer}
+            </Text>
+          </>
+        ) : null}
+
         {/* Cancellation */}
         <Text style={styles.sectionTitle}>4. Cancellation</Text>
         <Text style={styles.paragraph}>
@@ -370,16 +396,19 @@ function AgreementDoc({ input }: { input: AgreementPdfInput }) {
           the federal laws of Canada applicable therein. The five commitments above are
           the operative terms; a complete, human-readable version of the standing
           agreement (including confidentiality, indemnification, and limits of liability)
-          is available at dentalmembernetwork.com/agreement/{input.role === "partner" ? "vendor" : "expert"}{" "}
+          is available at dentalmembernetwork.com/agreement/{input.role === "expert" ? "expert" : "vendor"}{" "}
           and is incorporated by reference. If a change materially reduces Signer's
           benefits, Signer may terminate with no penalty before the change takes effect.
         </Text>
 
-        {/* Signature block */}
+        {/* Signature block — "Acceptance record" once accepted, otherwise
+            a personalized-but-pending prepared-for block on the invite copy. */}
         <View style={styles.signatureBlock}>
-          <Text style={styles.signatureTitle}>Acceptance record</Text>
+          <Text style={styles.signatureTitle}>
+            {accepted ? "Acceptance record" : "Prepared for"}
+          </Text>
           <View style={styles.signatureField}>
-            <Text style={styles.signatureLabel}>Accepted by:</Text>
+            <Text style={styles.signatureLabel}>{accepted ? "Accepted by:" : "Name:"}</Text>
             <Text style={styles.signatureValue}>{input.signer.name}</Text>
           </View>
           <View style={styles.signatureField}>
@@ -393,17 +422,32 @@ function AgreementDoc({ input }: { input: AgreementPdfInput }) {
             </View>
           ) : null}
           <View style={styles.signatureField}>
-            <Text style={styles.signatureLabel}>Accepted at:</Text>
-            <Text style={styles.signatureValue}>{signedDate} UTC</Text>
+            <Text style={styles.signatureLabel}>Role:</Text>
+            <Text style={styles.signatureValue}>{roleLabel}</Text>
           </View>
-          <View style={styles.signatureField}>
-            <Text style={styles.signatureLabel}>Version:</Text>
-            <Text style={styles.signatureValue}>{input.agreementVersion}</Text>
-          </View>
-          <View style={styles.signatureField}>
-            <Text style={styles.signatureLabel}>IP fingerprint:</Text>
-            <Text style={styles.signatureValue}>SHA-256 · {input.ipHashLast6}</Text>
-          </View>
+          {accepted ? (
+            <>
+              <View style={styles.signatureField}>
+                <Text style={styles.signatureLabel}>Accepted at:</Text>
+                <Text style={styles.signatureValue}>{signedDate} UTC</Text>
+              </View>
+              <View style={styles.signatureField}>
+                <Text style={styles.signatureLabel}>Version:</Text>
+                <Text style={styles.signatureValue}>{input.agreementVersion}</Text>
+              </View>
+              <View style={styles.signatureField}>
+                <Text style={styles.signatureLabel}>IP fingerprint:</Text>
+                <Text style={styles.signatureValue}>SHA-256 · {input.ipHashLast6}</Text>
+              </View>
+            </>
+          ) : (
+            <View style={styles.signatureField}>
+              <Text style={styles.signatureLabel}>Status:</Text>
+              <Text style={styles.signatureValue}>
+                Awaiting electronic acceptance via your private invite link
+              </Text>
+            </View>
+          )}
         </View>
 
         <Text style={styles.footer} fixed>

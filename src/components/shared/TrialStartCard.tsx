@@ -8,7 +8,6 @@ import {
   Button,
   Checkbox,
   CircularProgress,
-  FormControlLabel,
   Skeleton,
   Stack,
   Typography,
@@ -60,9 +59,16 @@ export default function TrialStartCard({
   const accentColor = audience === "gold" ? "#A07823" : "#2C7A52";
   const accentDeep = audience === "gold" ? "#7A5B17" : "#1F5238";
   const accentTint = audience === "gold" ? "rgba(217,168,75,0.08)" : "rgba(44,122,82,0.08)";
-  const agreementLink = audience === "gold" ? "/agreement/vendor" : "/experts";
+  // Default agreement link by audience (gold = Partner, green = Expert).
+  // The prepare endpoint may override this with the combined
+  // Expert + Partner agreement when the same email holds both roles.
+  const defaultAgreementLink =
+    audience === "gold"
+      ? "/agreements/dmn-partner-agreement.pdf"
+      : "/agreements/dmn-expert-agreement.pdf";
 
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [agreementLink, setAgreementLink] = useState<string>(defaultAgreementLink);
   const [prepareError, setPrepareError] = useState<string | null>(null);
 
   // Prepare the SetupIntent immediately on mount — by the time the user
@@ -79,6 +85,7 @@ export default function TrialStartCard({
         const res = await fetch(prepareEndpoint, { method: "POST" });
         const body = (await res.json().catch(() => ({}))) as {
           clientSecret?: string;
+          agreementHref?: string;
           error?: string;
         };
         if (cancelled) return;
@@ -86,6 +93,7 @@ export default function TrialStartCard({
           setPrepareError(body.error ?? "Payment setup is unavailable right now. Refresh to retry.");
           return;
         }
+        if (body.agreementHref) setAgreementLink(body.agreementHref);
         setClientSecret(body.clientSecret);
       } catch {
         if (!cancelled) {
@@ -185,8 +193,8 @@ export default function TrialStartCard({
       >
         <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", justifyContent: "center" }}>
           <LockRoundedIcon sx={{ fontSize: 13, color: "#7A8590" }} />
-          <Typography sx={{ fontSize: "0.74rem", color: "#7A8590", textAlign: "center" }}>
-            Card saved securely with Stripe · billing starts month 7 · a copy of your agreement is emailed to you
+          <Typography sx={{ fontSize: "0.74rem", color: "#7A8590", textAlign: "center", lineHeight: 1.5 }}>
+            Secured by Stripe. Billing starts at month 7. A copy of your agreement is emailed to you.
           </Typography>
         </Stack>
       </Box>
@@ -287,38 +295,45 @@ function CheckoutInner({
     <Box component="form" onSubmit={submit}>
       <PaymentElement options={{ layout: "tabs" }} />
 
-      {/* Agreement — one compact line between the card fields and the
-          button, like a standard checkout's terms row. */}
-      <FormControlLabel
-        sx={{ mt: 1.5, mr: 0, alignItems: "flex-start" }}
-        control={
-          <Checkbox
-            checked={agreed}
-            onChange={(e) => setAgreed(e.target.checked)}
-            size="small"
-            sx={{
-              color: accentColor,
-              pt: 0.25,
-              "&.Mui-checked": { color: accentColor },
-            }}
-          />
-        }
-        label={
-          <Typography sx={{ fontSize: "0.84rem", color: "#3B4A55", lineHeight: 1.5 }}>
-            I agree to the{" "}
-            <Box
-              component={Link}
-              href={agreementLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              sx={{ color: accentColor, fontWeight: 700, textDecoration: "underline", textUnderlineOffset: 2 }}
-            >
-              DMN Founding Agreement ({AGREEMENT_VERSION})
-            </Box>
-            .
-          </Typography>
-        }
-      />
+      {/* Agreement — one compact terms row between the card fields and
+          the button, like a standard checkout. Checkbox top-aligns to
+          the first line of text; the agreement name is the direct link
+          to the PDF. */}
+      <Box
+        sx={{
+          mt: 2,
+          display: "flex",
+          alignItems: "flex-start",
+          gap: 1,
+        }}
+      >
+        <Checkbox
+          checked={agreed}
+          onChange={(e) => setAgreed(e.target.checked)}
+          size="small"
+          disableRipple
+          sx={{
+            p: 0,
+            mt: "1px",
+            color: accentColor,
+            "&.Mui-checked": { color: accentColor },
+          }}
+          slotProps={{ input: { "aria-label": "Agree to the DMN Founding Agreement" } }}
+        />
+        <Typography sx={{ fontSize: "0.84rem", color: "#3B4A55", lineHeight: 1.55 }}>
+          I agree to the{" "}
+          <Box
+            component={Link}
+            href={agreementLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            sx={{ color: accentColor, fontWeight: 700, textDecoration: "underline", textUnderlineOffset: 2 }}
+          >
+            DMN Founding Agreement ({AGREEMENT_VERSION})
+          </Box>
+          .
+        </Typography>
+      </Box>
 
       <Button
         type="submit"
