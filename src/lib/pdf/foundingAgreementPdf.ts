@@ -18,6 +18,39 @@ import type { Browser } from "puppeteer-core";
 
 const IS_SERVERLESS = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
 
+// Fonts are embedded as base64 data URIs rather than fetched from Google
+// Fonts at render time. The serverless Chromium starts with almost no
+// fonts and has to fetch them fresh on every cold start; if that fetch is
+// slow or fails, text falls back to a different font with different
+// metrics — shifting pagination and page breaks versus what renders
+// locally. Embedding removes that network dependency entirely so the PDF
+// is byte-identical regardless of environment. Both files are variable
+// fonts, so one file each covers every weight used (600/700 for
+// Fraunces, 400/500/600/700 for Inter).
+let FONT_FACE_CSS: string | null = null;
+async function getFontFaceCss(): Promise<string> {
+  if (FONT_FACE_CSS) return FONT_FACE_CSS;
+  const [fraunces, inter] = await Promise.all([
+    readFile(new URL("./fonts/fraunces-latin.woff2", import.meta.url)),
+    readFile(new URL("./fonts/inter-latin.woff2", import.meta.url)),
+  ]);
+  const frauncesUrl = `data:font/woff2;base64,${fraunces.toString("base64")}`;
+  const interUrl = `data:font/woff2;base64,${inter.toString("base64")}`;
+  FONT_FACE_CSS = [600, 700]
+    .map(
+      (w) =>
+        `@font-face{font-family:'Fraunces';font-style:normal;font-weight:${w};src:url(${frauncesUrl}) format('woff2');}`,
+    )
+    .concat(
+      [400, 500, 600, 700].map(
+        (w) =>
+          `@font-face{font-family:'Inter';font-style:normal;font-weight:${w};src:url(${interUrl}) format('woff2');}`,
+      ),
+    )
+    .join("");
+  return FONT_FACE_CSS;
+}
+
 function loadTemplate(role: FoundingAgreementPdfInput["role"]): Promise<string> {
   switch (role) {
     case "expert":
@@ -71,7 +104,7 @@ function memberOfferFor(input: FoundingAgreementPdfInput): string {
 }
 
 async function renderAgreementHtml(input: FoundingAgreementPdfInput): Promise<string> {
-  const template = await loadTemplate(input.role);
+  const [template, fontFaceCss] = await Promise.all([loadTemplate(input.role), getFontFaceCss()]);
   const accepted = input.accepted !== false;
   const tokens: Record<string, string> = {
     SIGNER_NAME: input.signer.name,
@@ -84,9 +117,10 @@ async function renderAgreementHtml(input: FoundingAgreementPdfInput): Promise<st
       : "Awaiting electronic acceptance via your private invite link",
   };
 
+  const withFonts = template.replace("{{FONT_FACE_CSS}}", fontFaceCss);
   return Object.entries(tokens).reduce(
     (html, [token, value]) => html.replaceAll(`{{${token}}}`, escapeHtml(value)),
-    template,
+    withFonts,
   );
 }
 

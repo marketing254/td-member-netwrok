@@ -164,6 +164,11 @@ export default function FoundingAcceptV4(props: FoundingAcceptProps) {
             <Alert severity="error" sx={{ fontSize: "0.84rem", mb: 2 }}>
               {prepareError}
             </Alert>
+          ) : !stripeInstance ? (
+            <Alert severity="error" sx={{ fontSize: "0.84rem", mb: 2 }}>
+              Payment couldn&apos;t load. Please refresh the page — if this keeps happening,
+              contact support so we can save your card another way.
+            </Alert>
           ) : clientSecret ? (
             <Elements
               stripe={stripeInstance}
@@ -340,7 +345,7 @@ function AgreementCheckbox({
       <Typography sx={{ fontSize: "0.84rem", color: "#3B4A55", lineHeight: 1.55 }}>
         I,&nbsp;{displayName}, agree to the{" "}
         <Box component="span" sx={{ fontWeight: 700, color: "#A07823" }}>
-          DMN Founding {roleLabel} Agreement ({agreementVersion})
+          DMN {roleLabel} Agreement ({agreementVersion})
         </Box>
         .
       </Typography>
