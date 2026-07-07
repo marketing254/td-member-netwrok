@@ -1,7 +1,7 @@
 import { Box, Container, Typography } from "@mui/material";
 import Header from "@/components/sections/Header";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import FoundingAccept from "@/components/founding/FoundingAccept";
+import FoundingAccept from "@/components/founding/FoundingAcceptV4";
 import { COLORS } from "@/theme";
 
 export const runtime = "nodejs";
@@ -22,14 +22,24 @@ export default async function FoundingInvitePage({
   const { data: invite } = await sb
     .from("founding_invites")
     .select(
-      "code, role, full_name, email, company_name, member_offer, status, expires_at, agreement_version, agreement_pdf_path",
+      "code, role, full_name, email, company_name, member_offer, signer_name, status, expires_at, agreement_version, agreement_pdf_path",
     )
     .eq("code", code)
     .maybeSingle();
 
   const expired = invite ? new Date(invite.expires_at).getTime() < Date.now() : false;
   const invalid =
-    !invite || invite.status === "revoked" || (invite.status !== "accepted" && expired);
+    !invite ||
+    invite.status === "revoked" ||
+    invite.status === "draft" || // not sent yet — link isn't active
+    (invite.status !== "accepted" && expired);
+
+  if (invite?.status === "sent" && !invalid) {
+    await sb
+      .from("founding_invites")
+      .update({ status: "viewed", viewed_at: new Date().toISOString() } as never)
+      .eq("code", code);
+  }
 
   // Signed URL for the personalized agreement PDF (15 min).
   let agreementUrl: string | null = null;
@@ -57,6 +67,7 @@ export default async function FoundingInvitePage({
         <FoundingAccept
           code={invite!.code}
           fullName={invite!.full_name}
+          signerName={invite!.signer_name}
           role={invite!.role}
           companyName={invite!.company_name}
           memberOffer={invite!.member_offer}

@@ -13,6 +13,10 @@ function fromAddress(): string {
   return process.env.WAITLIST_EMAIL_FROM ?? DEFAULT_FROM;
 }
 
+function hasPartnerRole(role: FoundingInviteEmailInput["role"]): boolean {
+  return role === "partner" || role === "both";
+}
+
 export type FoundingInviteEmailInput = {
   to: string;
   fullName: string;
@@ -33,7 +37,7 @@ export async function sendFoundingInviteEmail(
         ? "Founding Partner"
         : "Founding Expert";
   const firstName = input.fullName.split(/\s+/)[0] || "there";
-  const subject = `Your DMN ${roleLabel} invitation`;
+  const subject = `Dental Member Network agreement for review`;
 
   const html = buildHtml({ ...input, roleLabel, firstName });
   const text = buildText({ ...input, roleLabel, firstName });
@@ -106,6 +110,10 @@ export async function sendFoundingInviteEmail(
 }
 
 function buildHtml(o: FoundingInviteEmailInput & { roleLabel: string; firstName: string }): string {
+  const partnerRole = hasPartnerRole(o.role);
+  const paymentLine = partnerRole
+    ? "If you proceed, the acceptance page will securely collect a payment method for the partner billing schedule. No payment is due today."
+    : "No payment is due at this step. After acceptance, the portal will guide you through any remaining account setup required for access.";
   return `<!doctype html><html><body style="margin:0;background:#F7F5F0;padding:24px;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#0A1A2F;">
   <div style="max-width:560px;margin:0 auto;background:#FFFFFF;border:1px solid #E0DACE;border-radius:12px;padding:32px;">
     <div style="text-align:center;margin-bottom:22px;">
@@ -113,43 +121,52 @@ function buildHtml(o: FoundingInviteEmailInput & { roleLabel: string; firstName:
       <div style="font-size:9px;letter-spacing:2px;color:#5C6770;margin-top:4px;">DENTAL MEMBER NETWORK</div>
     </div>
     <h1 style="font-family:Georgia,serif;font-size:23px;font-weight:500;margin:0 0 10px 0;color:#0A1A2F;">
-      You're invited, ${o.firstName}.
+      Agreement ready for review
     </h1>
     <p style="color:#3B4A55;line-height:1.6;font-size:15px;margin:0 0 16px 0;">
-      Lester has personally invited you to join the Dental Member Network as a
-      <strong>${o.roleLabel}</strong>. We've prepared your agreement — your name, company,
-      and offer are already filled in. A copy is attached to this email.
+      Hello ${o.firstName},
     </p>
     <p style="color:#3B4A55;line-height:1.6;font-size:15px;margin:0 0 20px 0;">
-      Open your private link below to review it, tick "I agree," and start your
-      6-month free trial. Nothing is charged today.
+      Your Dental Member Network <strong>${o.roleLabel}</strong> agreement is ready
+      for review. A PDF copy is attached for your reference.
+    </p>
+    <p style="color:#3B4A55;line-height:1.6;font-size:15px;margin:0 0 20px 0;">
+      Please use the secure link below to review the agreement online and complete
+      electronic acceptance. ${paymentLine} After acceptance, you will receive a signed
+      copy by email along with portal access instructions.
     </p>
     <div style="text-align:center;margin:26px 0;">
       <a href="${o.inviteUrl}" style="display:inline-block;background:#0E2A3D;color:#FFFFFF;text-decoration:none;font-weight:600;font-size:15px;padding:13px 26px;border-radius:999px;">
-        Review &amp; accept your agreement →
+        Review agreement
       </a>
     </div>
     <p style="color:#7A8590;font-size:12px;line-height:1.6;margin:20px 0 0 0;text-align:center;">
       This link is private to you and expires in 30 days. Please don't forward it.<br/>
-      Questions? Reply to this email — hello@joindmn.com.
+      Questions? Reply to this email: hello@joindmn.com.
     </p>
   </div>
 </body></html>`;
 }
 
 function buildText(o: FoundingInviteEmailInput & { roleLabel: string; firstName: string }): string {
-  return `You're invited, ${o.firstName}.
+  const partnerRole = hasPartnerRole(o.role);
+  const paymentLine = partnerRole
+    ? "If you proceed, the acceptance page will securely collect a payment method for the partner billing schedule. No payment is due today."
+    : "No payment is due at this step. After acceptance, the portal will guide you through any remaining account setup required for access.";
+  return `Agreement ready for review
 
-Lester has personally invited you to join the Dental Member Network as a
-${o.roleLabel}. We've prepared your agreement — your name, company, and offer
-are already filled in (a copy is attached).
+Hello ${o.firstName},
 
-Open your private link to review it, tick "I agree," and start your 6-month
-free trial. Nothing is charged today.
+Your Dental Member Network ${o.roleLabel} agreement is ready for review.
+A PDF copy is attached for your reference.
 
-Review & accept: ${o.inviteUrl}
+Please use the secure link below to review the agreement online and complete
+electronic acceptance. ${paymentLine} After acceptance, you will receive a
+signed copy by email along with portal access instructions.
+
+Review agreement: ${o.inviteUrl}
 
 This link is private to you and expires in 30 days. Please don't forward it.
-Questions? Reply to this email — hello@joindmn.com.
+Questions? Reply to this email: hello@joindmn.com.
 `;
 }

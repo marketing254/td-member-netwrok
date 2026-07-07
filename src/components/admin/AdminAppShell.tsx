@@ -30,6 +30,7 @@ import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import SupportAgentOutlinedIcon from "@mui/icons-material/SupportAgentOutlined";
 import LibraryBooksOutlinedIcon from "@mui/icons-material/LibraryBooksOutlined";
 import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
+import WorkspacePremiumOutlinedIcon from "@mui/icons-material/WorkspacePremiumOutlined";
 import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
 import MarkEmailReadOutlinedIcon from "@mui/icons-material/MarkEmailReadOutlined";
 import ChatBubbleOutlineOutlinedIcon from "@mui/icons-material/ChatBubbleOutlineOutlined";
@@ -117,6 +118,7 @@ const navSections: { label: string; items: NavItem[] }[] = [
       // vendors DB table don't have to migrate. Label is "Partners"
       // everywhere in the UI.
       { href: "/admin/vendors", label: "Partners", icon: StoreOutlinedIcon, badgeKey: "vendorsPending" },
+      { href: "/admin/founding", label: "Founding invites", icon: WorkspacePremiumOutlinedIcon },
       { href: "/admin/admins", label: "Admin team", icon: AdminPanelSettingsOutlinedIcon },
     ],
   },

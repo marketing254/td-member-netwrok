@@ -131,6 +131,9 @@ export type VendorApplicationsRow = {
   agreement_version: string | null;
   agreed_to_terms: boolean;
   confirmed_authority: boolean;
+  // Added in 0038_application_extra_fields.sql.
+  member_offer: string | null;
+  also_expert: boolean;
   plan_id: string | null;
   source: string | null;
   hotline_email: string | null;
@@ -500,6 +503,10 @@ export type ExpertApplicationsRow = {
   user_agent: string | null;
   agreement_accepted: boolean;
   agreement_accepted_at: string | null;
+  // Added in 0038_application_extra_fields.sql.
+  also_partner: boolean;
+  company_offer: string | null;
+  considered_founding: boolean;
   sms_consent: boolean;
   sms_consent_text: string | null;
   sms_consent_at: string | null;
@@ -774,7 +781,7 @@ export type LeadMagnetLeadsRow = {
   created_at: string;
 };
 
-export type FoundingInviteStatus = "sent" | "viewed" | "accepted" | "revoked";
+export type FoundingInviteStatus = "draft" | "sent" | "viewed" | "accepted" | "revoked";
 export type FoundingInviteRole = "expert" | "partner" | "both";
 
 export type FoundingInvitesRow = {
@@ -787,6 +794,15 @@ export type FoundingInvitesRow = {
   member_offer: string | null;
   phone: string | null;
   notes: string | null;
+  // Added in 0037_founding_invites_draft.sql — full intake detail.
+  website: string | null;
+  category: string | null;
+  calendar_link: string | null;
+  description: string | null;
+  secondary_email: string | null;
+  secondary_phone: string | null;
+  signer_name: string | null;
+  signer_title: string | null;
   agreement_version: string;
   agreement_pdf_path: string | null;
   status: FoundingInviteStatus;

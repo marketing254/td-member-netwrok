@@ -66,15 +66,21 @@ export default function OtpLoginForm({ config }: { config: OtpLoginConfig }) {
   const params = useSearchParams();
   const initialError = params?.get("error") ?? null;
   const prefilledEmail = (params?.get("email") ?? "").toLowerCase();
+  const prefillOnlyEmail = (params?.get("prefill") ?? "").toLowerCase();
+  const isWelcome = params?.get("welcome") === "1";
 
   type Step = "email" | "code";
   const [step, setStep] = useState<Step>(prefilledEmail ? "code" : "email");
-  const [email, setEmail] = useState(prefilledEmail);
+  const [email, setEmail] = useState(prefilledEmail || prefillOnlyEmail);
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(initialError);
   const [info, setInfo] = useState<string | null>(
-    prefilledEmail ? `We sent a 6-digit code to ${prefilledEmail}.` : null,
+    prefilledEmail
+      ? `We sent a 6-digit code to ${prefilledEmail}.`
+      : isWelcome
+        ? "Payment confirmed. Check your inbox for your confirmation email, then enter your email below and we'll send you a 6-digit sign-in code."
+        : null,
   );
 
   const codeInputRef = useRef<HTMLInputElement | null>(null);

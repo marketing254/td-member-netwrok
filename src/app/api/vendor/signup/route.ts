@@ -241,6 +241,8 @@ export async function POST(req: Request) {
         agreement_version: "v1.0",
         agreed_to_terms: data.agreedToTerms,
         confirmed_authority: data.confirmedAuthority,
+        member_offer: data.memberOffer ?? null,
+        also_expert: data.alsoExpert ?? false,
         sms_consent_at: data.smsConsentAt ?? null,
         sms_consent_text: data.smsConsentText ?? null,
         plan_id: data.planId,

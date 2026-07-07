@@ -2,24 +2,24 @@ import { NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/guards";
-import { renderAgreementPdf } from "@/lib/pdf/agreementPdf";
-import { sendFoundingInviteEmail } from "@/lib/email/foundingInvite";
 import { appOrigin } from "@/lib/stripe";
 import type { FoundingInviteRole } from "@/lib/supabase/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const AGREEMENT_VERSION = "v3";
+const AGREEMENT_VERSION = "v4";
 
 /**
- * POST /api/admin/founding-invite
+ * /api/admin/founding-invite
  *
- * Creates a private, invitation-only onboarding for a hand-picked
- * expert / partner (or both). Mints an unguessable code, renders their
- * PERSONALIZED agreement (name / company / offer merged in), stores it,
- * and emails the /founding/<code> link. No expert/vendor row is created
- * yet — that happens at acceptance (/api/founding/[code]/accept).
+ * GET  — list all founding invites for the admin management page.
+ * POST — create a DRAFT invite for a hand-picked expert / partner (or
+ *        both). This ONLY writes a row to the database. It does NOT
+ *        render a PDF, does NOT email anyone, and does NOT approve or
+ *        provision anything. These are real people — sending is a
+ *        separate, explicit admin action
+ *        (POST /api/admin/founding-invite/[id] { action: "send" }).
  */
 type Body = {
   role?: FoundingInviteRole;
@@ -29,11 +29,47 @@ type Body = {
   member_offer?: string;
   phone?: string;
   notes?: string;
+  website?: string;
+  category?: string;
+  calendar_link?: string;
+  description?: string;
+  secondary_email?: string;
+  secondary_phone?: string;
+  signer_name?: string;
+  signer_title?: string;
 };
+
+function clean(v: string | undefined): string | null {
+  const t = (v ?? "").trim();
+  return t || null;
+}
 
 function genCode(): string {
   // 18 bytes → 24-char base64url. ~144 bits of entropy — unguessable.
   return crypto.randomBytes(18).toString("base64url");
+}
+
+export async function GET() {
+  const guard = await requireAdmin();
+  if (!guard.ok) return guard.response;
+
+  const sb = getSupabaseAdmin();
+  const { data, error } = await sb
+    .from("founding_invites")
+    .select(
+      "id, code, role, full_name, email, company_name, member_offer, phone, notes, website, category, calendar_link, description, secondary_email, secondary_phone, signer_name, signer_title, status, agreement_pdf_path, viewed_at, accepted_at, expires_at, created_at",
+    )
+    .order("created_at", { ascending: false });
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  const origin = appOrigin();
+  const rows = (data ?? []).map((r) => ({
+    ...r,
+    invite_url: `${origin}/founding/${r.code}`,
+  }));
+  return NextResponse.json({ rows });
 }
 
 export async function POST(req: Request) {
@@ -59,8 +95,11 @@ export async function POST(req: Request) {
   if (!fullName || fullName.length < 2) {
     return NextResponse.json({ error: "Full name is required." }, { status: 400 });
   }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 320) {
-    return NextResponse.json({ error: "Valid email is required." }, { status: 400 });
+  // A draft may be saved with a placeholder email (details still TBD) —
+  // we only require a plausible address shape here. The send step
+  // enforces a real, deliverable address before anything is emailed.
+  if (!email || email.length > 320) {
+    return NextResponse.json({ error: "Email is required (a placeholder is fine for a draft)." }, { status: 400 });
   }
   if ((role === "partner" || role === "both") && !companyName) {
     return NextResponse.json(
@@ -72,32 +111,6 @@ export async function POST(req: Request) {
   const sb = getSupabaseAdmin();
   const code = genCode();
 
-  // Render the personalized agreement (unaccepted copy) + upload it.
-  let pdfBuffer: Buffer | null = null;
-  let pdfPath: string | null = null;
-  try {
-    pdfBuffer = await renderAgreementPdf({
-      role,
-      agreementVersion: AGREEMENT_VERSION,
-      signer: { name: fullName, email, companyName },
-      memberOffer,
-      signedAt: new Date(),
-      ipHashLast6: "pending",
-      accepted: false,
-    });
-    pdfPath = `founding/${code}.pdf`;
-    const { error: upErr } = await sb.storage
-      .from("agreements")
-      .upload(pdfPath, pdfBuffer, { contentType: "application/pdf", upsert: true });
-    if (upErr) {
-      console.error("[admin:founding-invite] PDF upload failed", upErr);
-      pdfPath = null;
-    }
-  } catch (err) {
-    console.error("[admin:founding-invite] PDF render failed", err);
-    pdfBuffer = null;
-  }
-
   const { data: inserted, error: insErr } = await sb
     .from("founding_invites")
     .insert({
@@ -107,45 +120,40 @@ export async function POST(req: Request) {
       email,
       company_name: companyName,
       member_offer: memberOffer,
-      phone: body.phone?.trim() || null,
-      notes: body.notes?.trim() || null,
+      phone: clean(body.phone),
+      notes: clean(body.notes),
+      website: clean(body.website),
+      category: clean(body.category),
+      calendar_link: clean(body.calendar_link),
+      description: clean(body.description),
+      secondary_email: clean(body.secondary_email)?.toLowerCase() ?? null,
+      secondary_phone: clean(body.secondary_phone),
+      signer_name: clean(body.signer_name),
+      signer_title: clean(body.signer_title),
       agreement_version: AGREEMENT_VERSION,
-      agreement_pdf_path: pdfPath,
-      status: "sent",
+      agreement_pdf_path: null,
+      status: "draft",
       created_by: guard.adminId,
     } as never)
     .select("id")
     .single();
   if (insErr || !inserted) {
     return NextResponse.json(
-      { error: insErr?.message ?? "Couldn't create the invite." },
+      { error: insErr?.message ?? "Couldn't save the invite." },
       { status: 500 },
     );
   }
 
-  const inviteUrl = `${appOrigin()}/founding/${code}`;
-
-  // Email the private link + the personalized PDF.
-  void sendFoundingInviteEmail({
-    to: email,
-    fullName,
-    role,
-    inviteUrl,
-    pdfBuffer,
-    pdfFilename: `DMN-Founding-Agreement-${AGREEMENT_VERSION}.pdf`,
-    agreementVersion: AGREEMENT_VERSION,
-  });
-
-  // Admin notification.
+  // Internal admin notification only — no email to the invitee.
   await sb.from("notifications").insert({
     audience: "admin",
     admin_id: null,
-    kind: "founding_invite_sent",
-    title: `Founding invite sent: ${fullName}`,
-    body: `${role} invite emailed to ${email}.${memberOffer ? ` Offer: "${memberOffer}".` : ""}`,
-    link: "/admin/vendors?filter=approved",
+    kind: "founding_invite_drafted",
+    title: `Founding invite drafted: ${fullName}`,
+    body: `${role} draft saved. No email sent yet — review it and click "Send invite" when ready.`,
+    link: "/admin/founding",
     metadata: { invite_id: inserted.id, role },
   });
 
-  return NextResponse.json({ ok: true, code, inviteUrl });
+  return NextResponse.json({ ok: true, id: inserted.id, code, status: "draft" });
 }

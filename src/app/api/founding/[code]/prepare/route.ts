@@ -20,11 +20,15 @@ export async function POST(_req: Request, ctx: { params: Promise<{ code: string 
   const sb = getSupabaseAdmin();
   const { data: invite } = await sb
     .from("founding_invites")
-    .select("id, email, full_name, company_name, status, expires_at, stripe_customer_id")
+    .select("id, role, email, full_name, company_name, status, expires_at, stripe_customer_id")
     .eq("code", code)
     .maybeSingle();
 
   if (!invite) {
+    return NextResponse.json({ error: "This invite link is not valid." }, { status: 404 });
+  }
+  if (invite.status === "draft") {
+    // Draft invites haven't been sent — the link isn't active yet.
     return NextResponse.json({ error: "This invite link is not valid." }, { status: 404 });
   }
   if (invite.status === "accepted") {
@@ -43,6 +47,9 @@ export async function POST(_req: Request, ctx: { params: Promise<{ code: string 
       .from("founding_invites")
       .update({ status: "viewed", viewed_at: new Date().toISOString() } as never)
       .eq("id", invite.id);
+  }
+  if (invite.role === "expert") {
+    return NextResponse.json({ requiresPayment: false });
   }
 
   let stripe;

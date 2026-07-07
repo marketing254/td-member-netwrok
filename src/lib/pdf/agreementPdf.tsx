@@ -1,10 +1,13 @@
 import "server-only";
 import React from "react";
+import fs from "node:fs";
+import path from "node:path";
 import {
   Document,
   Page,
   Text,
   View,
+  Image,
   StyleSheet,
   renderToBuffer,
   Font,
@@ -39,6 +42,23 @@ const COLORS = {
   line: "#D8D2C1",
 } as const;
 
+// DMN brand mark, embedded as a data URI so the PDF has zero external
+// asset dependency (works in email attachments + offline legal review).
+// Read once per server process from /public. Falls back to the text
+// wordmark if the file is missing so PDF generation never hard-fails.
+let LOGO_DATA_URL: string | null | undefined;
+function getLogoDataUrl(): string | null {
+  if (LOGO_DATA_URL !== undefined) return LOGO_DATA_URL;
+  try {
+    const file = path.join(process.cwd(), "public", "DGN-logo.png");
+    const b64 = fs.readFileSync(file).toString("base64");
+    LOGO_DATA_URL = `data:image/png;base64,${b64}`;
+  } catch {
+    LOGO_DATA_URL = null;
+  }
+  return LOGO_DATA_URL;
+}
+
 const styles = StyleSheet.create({
   page: {
     fontFamily: "Helvetica",
@@ -52,6 +72,16 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     borderBottom: `2 solid ${COLORS.gold}`,
     paddingBottom: 12,
+  },
+  headerTop: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  logo: {
+    width: 34,
+    height: 34,
+    marginRight: 10,
+    objectFit: "contain",
   },
   wordmark: {
     fontSize: 20,
@@ -267,6 +297,7 @@ export type AgreementPdfInput = {
 
 function AgreementDoc({ input }: { input: AgreementPdfInput }) {
   const accepted = input.accepted !== false;
+  const logoDataUrl = getLogoDataUrl();
   const commitments =
     input.role === "expert" ? EXPERT_COMMITMENTS : PARTNER_COMMITMENTS;
   const roleLabel =
@@ -294,8 +325,16 @@ function AgreementDoc({ input }: { input: AgreementPdfInput }) {
       <Page size="LETTER" style={styles.page} wrap>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.wordmark}>DMN</Text>
-          <Text style={styles.wordmarkSub}>DENTAL MEMBER NETWORK</Text>
+          <View style={styles.headerTop}>
+            {logoDataUrl ? (
+              // eslint-disable-next-line jsx-a11y/alt-text
+              <Image src={logoDataUrl} style={styles.logo} />
+            ) : null}
+            <View>
+              <Text style={styles.wordmark}>DMN</Text>
+              <Text style={styles.wordmarkSub}>DENTAL MEMBER NETWORK</Text>
+            </View>
+          </View>
           <Text style={styles.titleEyebrow}>{roleLabel.toUpperCase()} · AGREEMENT</Text>
           <Text style={styles.title}>DMN Founding Agreement ({input.agreementVersion})</Text>
         </View>
