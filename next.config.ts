@@ -23,6 +23,19 @@ const supabaseHost = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "")
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
+  // @sparticuz/chromium ships a compressed binary that must be resolved
+  // from node_modules at runtime, not bundled/tree-shaken by Next — same
+  // for puppeteer-core's native bits. Without this, PDF generation can
+  // fail on Vercel even when `next build` succeeds locally.
+  serverExternalPackages: ["@sparticuz/chromium", "puppeteer-core"],
+  // Next's file tracer can't see that @sparticuz/chromium reaches into
+  // its own bin/ folder for the actual browser binary at runtime, so it
+  // silently drops those files from the deployed function unless we
+  // include them explicitly here.
+  outputFileTracingIncludes: {
+    "/api/admin/founding-invite/\\[id\\]": ["./node_modules/@sparticuz/chromium/bin/**"],
+    "/api/founding/\\[code\\]/accept": ["./node_modules/@sparticuz/chromium/bin/**"],
+  },
   compiler: {
     removeConsole:
       process.env.NODE_ENV === "production"
