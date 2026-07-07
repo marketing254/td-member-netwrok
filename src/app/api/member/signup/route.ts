@@ -3,6 +3,7 @@ import { createServerSupabase } from "@/lib/supabase/server-ssr";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { validateWaitlist } from "@/lib/waitlist/validate";
 import { checkRateLimit } from "@/lib/waitlist/rateLimit";
+import { notifySignup } from "@/lib/email/teamNotify";
 import { apiError, serverError } from "@/lib/api/errorResponse";
 import { resolveReferralCode } from "@/lib/referral";
 
@@ -202,6 +203,33 @@ export async function POST(req: Request) {
       status: "queued",
       subject: "Your DMN sign-in code",
     });
+
+    // Alert the team on brand-new members only — a resend/re-login
+    // (alreadyExisted) shouldn't re-notify everyone.
+    if (!alreadyExisted) {
+      const utm =
+        payload.utm && typeof payload.utm === "object"
+          ? (payload.utm as Record<string, string>)
+          : null;
+      void notifySignup({
+        role: "member",
+        name: payload.fullName,
+        email,
+        adminLink: "https://dentalmembernetwork.com/admin/members?filter=new",
+        fields: [
+          { label: "Full name", value: payload.fullName },
+          { label: "Email", value: email },
+          { label: "Phone", value: payload.phone },
+          { label: "Practice name", value: payload.practiceName },
+          { label: "Role", value: utm?.role_label },
+          { label: "Number of locations", value: utm?.locations },
+          { label: "City / state", value: payload.cityState },
+          { label: "Biggest challenge", value: utm?.challenge },
+          { label: "SMS consent", value: payload.smsConsent ? "Yes" : "No" },
+          { label: "Source", value: payload.source ?? null },
+        ],
+      });
+    }
 
     return NextResponse.json({
       ok: true,

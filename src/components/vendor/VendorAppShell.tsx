@@ -7,6 +7,7 @@ import {
   AppBar,
   Avatar,
   Box,
+  Button,
   Chip,
   Container,
   Divider,
@@ -40,10 +41,13 @@ import KeyboardArrowDownOutlinedIcon from "@mui/icons-material/KeyboardArrowDown
 import VerifiedUserOutlinedIcon from "@mui/icons-material/VerifiedUserOutlined";
 import KeyboardDoubleArrowLeftRoundedIcon from "@mui/icons-material/KeyboardDoubleArrowLeftRounded";
 import KeyboardDoubleArrowRightRoundedIcon from "@mui/icons-material/KeyboardDoubleArrowRightRounded";
+import SwapHorizRoundedIcon from "@mui/icons-material/SwapHorizRounded";
+import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
 import Logo from "@/components/brand/Logo";
 import NotificationsBell from "@/components/shared/NotificationsBell";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { fetchCurrentVendor } from "@/lib/supabase/vendorQueries";
+import { useAlsoHasRole } from "@/lib/auth/useRoles";
 import type { VendorsRow } from "@/lib/supabase/types";
 import ProfileEditDialog from "@/components/shared/ProfileEditDialog";
 import { checkBillingAccess } from "@/lib/stripe";
@@ -477,6 +481,7 @@ export default function VendorAppShell({ children }: { children: React.ReactNode
   // Live vendor row — replaces the old mock import. Used by both the sidebar
   // identity card and the top-right user menu so they always agree.
   const { vendor: currentVendor } = useCurrentVendorRow();
+  const alsoExpert = useAlsoHasRole("expert");
   const topbarDisplayName = currentVendor?.display_name ?? currentVendor?.company_name ?? "—";
   const topbarEmail = currentVendor?.contact_email ?? "";
   const topbarInitials = initialsFromName(topbarDisplayName);
@@ -604,6 +609,24 @@ export default function VendorAppShell({ children }: { children: React.ReactNode
 
             <Box sx={{ flex: 1 }} />
 
+            {alsoExpert && (
+              <Button
+                onClick={() => router.push("/expert")}
+                size="small"
+                variant="outlined"
+                startIcon={<SwapHorizRoundedIcon sx={{ fontSize: 16 }} />}
+                sx={{
+                  display: { xs: "none", sm: "inline-flex" },
+                  textTransform: "none",
+                  borderRadius: 999,
+                  fontWeight: 600,
+                  fontSize: "0.8rem",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                View as expert
+              </Button>
+            )}
             <Tooltip title="Help">
               <IconButton size="small" sx={{ color: "text.secondary" }}>
                 <HelpOutlineOutlinedIcon sx={{ fontSize: 18 }} />
@@ -684,6 +707,19 @@ export default function VendorAppShell({ children }: { children: React.ReactNode
                 </Typography>
               </Box>
               <Divider />
+              {alsoExpert && (
+                <MenuItem onClick={() => goTo("/expert")} sx={{ py: 0.75 }}>
+                  <ListItemIcon sx={{ minWidth: 32 }}><SchoolOutlinedIcon sx={{ fontSize: 18 }} /></ListItemIcon>
+                  <ListItemText
+                    primary="View as expert"
+                    secondary="Switch to your expert portal"
+                    slotProps={{
+                      primary: { sx: { fontSize: "0.82rem", fontWeight: 500 } },
+                      secondary: { sx: { fontSize: "0.68rem" } },
+                    }}
+                  />
+                </MenuItem>
+              )}
               <MenuItem onClick={() => goTo("/vendor/profile")} sx={{ py: 0.75 }}>
                 <ListItemIcon sx={{ minWidth: 32 }}><StoreOutlinedIcon sx={{ fontSize: 18 }} /></ListItemIcon>
                 <ListItemText
@@ -724,6 +760,7 @@ export default function VendorAppShell({ children }: { children: React.ReactNode
                 ? checkBillingAccess({
                     monthsInProgram: currentVendor.months_in_program ?? 0,
                     subscriptionStatus: currentVendor.subscription_status ?? null,
+                    hasSubscription: !!currentVendor.stripe_subscription_id,
                   })
                 : { allowed: true as const };
               const onAccountPage = pathname.startsWith("/vendor/account");

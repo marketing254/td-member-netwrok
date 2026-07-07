@@ -131,6 +131,9 @@ export type VendorApplicationsRow = {
   agreement_version: string | null;
   agreed_to_terms: boolean;
   confirmed_authority: boolean;
+  // Added in 0038_application_extra_fields.sql.
+  member_offer: string | null;
+  also_expert: boolean;
   plan_id: string | null;
   source: string | null;
   hotline_email: string | null;
@@ -185,6 +188,10 @@ export type VendorsRow = {
   card_brand: string | null;
   card_last4: string | null;
   founding_partner_locked: boolean;
+  // Added in 0034_agreement_esign.sql.
+  agreement_ip_hash: string | null;
+  agreement_user_agent: string | null;
+  agreement_pdf_path: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -496,6 +503,10 @@ export type ExpertApplicationsRow = {
   user_agent: string | null;
   agreement_accepted: boolean;
   agreement_accepted_at: string | null;
+  // Added in 0038_application_extra_fields.sql.
+  also_partner: boolean;
+  company_offer: string | null;
+  considered_founding: boolean;
   sms_consent: boolean;
   sms_consent_text: string | null;
   sms_consent_at: string | null;
@@ -541,6 +552,12 @@ export type ExpertsRow = {
   card_last4: string | null;
   months_in_program: number;
   founding_expert_locked: boolean;
+  // Added in 0034_agreement_esign.sql.
+  agreement_signed_at: string | null;
+  agreement_version: string | null;
+  agreement_ip_hash: string | null;
+  agreement_user_agent: string | null;
+  agreement_pdf_path: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -764,6 +781,45 @@ export type LeadMagnetLeadsRow = {
   created_at: string;
 };
 
+export type FoundingInviteStatus = "draft" | "sent" | "viewed" | "accepted" | "revoked";
+export type FoundingInviteRole = "expert" | "partner" | "both";
+
+export type FoundingInvitesRow = {
+  id: string;
+  code: string;
+  role: FoundingInviteRole;
+  full_name: string;
+  email: string;
+  company_name: string | null;
+  member_offer: string | null;
+  phone: string | null;
+  notes: string | null;
+  // Added in 0037_founding_invites_draft.sql — full intake detail.
+  website: string | null;
+  category: string | null;
+  calendar_link: string | null;
+  description: string | null;
+  secondary_email: string | null;
+  secondary_phone: string | null;
+  signer_name: string | null;
+  signer_title: string | null;
+  agreement_version: string;
+  agreement_pdf_path: string | null;
+  status: FoundingInviteStatus;
+  viewed_at: string | null;
+  accepted_at: string | null;
+  accepted_ip_hash: string | null;
+  accepted_user_agent: string | null;
+  expires_at: string;
+  expert_id: string | null;
+  vendor_id: string | null;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -800,6 +856,7 @@ export type Database = {
       referral_codes: Table<ReferralCodesRow>;
       referral_signups: Table<ReferralSignupsRow>;
       lead_magnet_leads: Table<LeadMagnetLeadsRow>;
+      founding_invites: Table<FoundingInvitesRow>;
     };
     Views: {
       waitlist_counts: View<{

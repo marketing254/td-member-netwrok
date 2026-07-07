@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { validateExpertApplication } from "@/lib/expert/validate";
 import { checkRateLimit } from "@/lib/waitlist/rateLimit";
 import { sendExpertConfirmationEmail } from "@/lib/waitlist/confirmationEmail";
+import { notifySignup } from "@/lib/email/teamNotify";
 import type { ExpertApplicationPayload } from "@/lib/expert/validate";
 
 export const runtime = "nodejs";
@@ -114,6 +115,9 @@ export async function POST(req: Request) {
     user_agent: req.headers.get("user-agent")?.slice(0, 500) ?? null,
     agreement_accepted: result.data.agreementAccepted,
     agreement_accepted_at: result.data.agreementAcceptedAt ?? null,
+    also_partner: result.data.alsoPartner ?? false,
+    company_offer: result.data.companyOffer ?? null,
+    considered_founding: result.data.consideredFounding ?? false,
     sms_consent: result.data.smsConsent ?? false,
     sms_consent_text: result.data.smsConsentText ?? null,
     sms_consent_at: result.data.smsConsentAt ?? null,
@@ -151,6 +155,31 @@ export async function POST(req: Request) {
   }
 
   await sendConfirmation(result.data, data.id, data.created_at);
+
+  // Alert the team — full applicant detail, no admin-panel trip needed.
+  void notifySignup({
+    role: "expert",
+    name: result.data.fullName,
+    email: result.data.email,
+    submittedAt: data.created_at,
+    adminLink: "https://dentalmembernetwork.com/admin/experts?filter=new",
+    fields: [
+      { label: "Full name", value: result.data.fullName },
+      { label: "Email", value: result.data.email },
+      { label: "Phone", value: result.data.phone },
+      { label: "Teaches / coaches on", value: result.data.specialty },
+      { label: "Topics they'd record", value: result.data.topics },
+      { label: "Website", value: result.data.website },
+      { label: "Booking link", value: result.data.bookingLink },
+      { label: "Also list company as partner?", value: result.data.alsoPartner ? "Yes" : "No" },
+      { label: "Company name", value: result.data.companyName },
+      { label: "Company offer to practices", value: result.data.companyOffer },
+      { label: "Expert Agreement accepted", value: result.data.agreementAccepted ? "Yes" : "No" },
+      { label: "Consider as Founding Expert", value: result.data.consideredFounding ? "Yes" : "No" },
+      { label: "SMS consent", value: result.data.smsConsent ? "Yes" : "No" },
+      { label: "Source", value: result.data.source ?? "landing" },
+    ],
+  });
 
   return NextResponse.json({ ok: true, id: data.id, createdAt: data.created_at });
 }

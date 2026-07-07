@@ -16,56 +16,12 @@ import {
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
 import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
-import SyncRoundedIcon from "@mui/icons-material/SyncRounded";
 import VolunteerActivismOutlinedIcon from "@mui/icons-material/VolunteerActivismOutlined";
 import { PageHeader, SectionCard, StatCard, TagPill, portalText } from "@/components/vendor/PortalUI";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { fetchCurrentVendor } from "@/lib/supabase/vendorQueries";
 import type { VendorsRow } from "@/lib/supabase/types";
-import UpgradePlanChoice, { type UpgradePlan } from "@/components/shared/UpgradePlanChoice";
-
-const PARTNER_UPGRADE_PLANS: UpgradePlan[] = [
-  {
-    key: "partner_growth_monthly",
-    cap: "Months 7–12",
-    price: "$49",
-    per: "/mo",
-    highlight: "LOCK LAUNCH RATE",
-    body: "Locked launch rate — a fraction of standard.",
-    features: [
-      "Auto-rolls to $199 at month 13",
-      "All Featured Partner benefits",
-      "Cancel anytime",
-    ],
-    ctaLabel: "Start at $49/mo",
-  },
-  {
-    key: "partner_standard_monthly",
-    cap: "Month 13+",
-    price: "$199",
-    per: "/mo",
-    body: "Featured Partner rate — billed monthly.",
-    features: [
-      "All Featured Partner benefits",
-      "Refer & earn $50 per member",
-      "Cancel anytime",
-    ],
-    ctaLabel: "Start at $199/mo",
-  },
-  {
-    key: "partner_standard_annual",
-    cap: "Annual pre-pay",
-    price: "$1,990",
-    per: "/yr",
-    body: "12 months for the price of 10 — save 2 months (~17%).",
-    features: [
-      "All Featured Partner benefits",
-      "Save ~$398 vs. monthly",
-      "Rate locked for 12 months",
-    ],
-    ctaLabel: "Save with annual",
-  },
-];
+import TrialStartCard from "@/components/shared/TrialStartCard";
 
 type Invoice = {
   id: string;
@@ -91,8 +47,6 @@ export default function VendorAccountPage() {
   const [invoices, setInvoices] = useState<Invoice[] | null>(null);
   const [portalBusy, setPortalBusy] = useState(false);
   const [portalError, setPortalError] = useState<string | null>(null);
-  const [syncBusy, setSyncBusy] = useState(false);
-  const [syncMessage, setSyncMessage] = useState<{ tone: "ok" | "err"; text: string } | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -150,38 +104,6 @@ export default function VendorAccountPage() {
       setPortalError(err instanceof Error ? err.message : "Could not open portal.");
     } finally {
       setPortalBusy(false);
-    }
-  };
-
-  const syncFromStripe = async () => {
-    setSyncBusy(true);
-    setSyncMessage(null);
-    try {
-      const res = await fetch("/api/vendor/billing/sync", { method: "POST" });
-      const body = (await res.json().catch(() => ({}))) as {
-        synced?: boolean;
-        reason?: string;
-        status?: string;
-      };
-      if (res.ok && body.synced) {
-        setSyncMessage({
-          tone: "ok",
-          text: `Synced — subscription is "${body.status ?? "active"}". Reload to see the updated plan.`,
-        });
-        setTimeout(() => window.location.reload(), 1500);
-      } else {
-        setSyncMessage({
-          tone: "err",
-          text: body.reason ?? `Sync failed (${res.status})`,
-        });
-      }
-    } catch (err) {
-      setSyncMessage({
-        tone: "err",
-        text: err instanceof Error ? err.message : "Sync failed.",
-      });
-    } finally {
-      setSyncBusy(false);
     }
   };
 
@@ -462,70 +384,19 @@ export default function VendorAccountPage() {
               </Button>
             </SectionCard>
 
-            {/* Re-sync escape hatch — appears only when state looks stale */}
-            {vendor.stripe_customer_id && (!vendor.stripe_subscription_id || (vendor.stripe_subscription_id && (!vendor.card_brand || !vendor.card_last4))) && (
-              <SectionCard title="Plan looks out of date?" padding="default">
-                <Typography sx={portalText.body}>
-                  If Stripe charged your card but this page still shows the waiver, the webhook didn&apos;t reach us. Pull the latest state directly from Stripe.
-                </Typography>
-                <Button
-                  onClick={syncFromStripe}
-                  disabled={syncBusy}
-                  size="small"
-                  variant="contained"
-                  startIcon={
-                    syncBusy ? (
-                      <CircularProgress size={12} sx={{ color: "inherit" }} />
-                    ) : (
-                      <SyncRoundedIcon sx={{ fontSize: 14 }} />
-                    )
-                  }
-                  sx={{
-                    mt: 1.5,
-                    bgcolor: "#A07823",
-                    color: "#FFFFFF",
-                    textTransform: "none",
-                    fontSize: "0.78rem",
-                    fontWeight: 600,
-                    borderRadius: 0.75,
-                    "&:hover": { bgcolor: "#7A5B17" },
-                  }}
-                >
-                  {syncBusy ? "Syncing…" : "Re-sync from Stripe"}
-                </Button>
-                {syncMessage && (
-                  <Typography
-                    sx={{
-                      mt: 1,
-                      fontSize: "0.74rem",
-                      color: syncMessage.tone === "ok" ? "#1F5C40" : "#8C1D1D",
-                      fontWeight: 500,
-                    }}
-                  >
-                    {syncMessage.text}
-                  </Typography>
-                )}
-              </SectionCard>
-            )}
           </Stack>
         </Grid>
       </Grid>
 
-      {/* Upgrade plan choice — shown when there's no active subscription.
-          During the founding waiver (months 1-6) we frame it as locking
-          the launch rate early. Past the waiver, this is the recovery
-          path; the BillingGate already blocks other portal pages. */}
+      {/* Trial-start card — shown on first login after approval. Captures
+          the card via SetupIntent + <PaymentElement>, then creates a
+          Stripe subscription with 180-day trial. Once trialing/active,
+          this card hides and normal billing UI takes over. */}
       {!vendor.stripe_subscription_id && (
-        <UpgradePlanChoice
-          endpoint="/api/vendor/billing/checkout"
-          plans={PARTNER_UPGRADE_PLANS}
+        <TrialStartCard
+          prepareEndpoint="/api/vendor/billing/trial/prepare"
+          startEndpoint="/api/vendor/billing/trial/start"
           audience="gold"
-          title={monthsLeftInWaiver > 0 ? "Upgrade early — keep portal access past the waiver" : "Choose a plan to keep your portal active"}
-          subtitle={
-            monthsLeftInWaiver > 0
-              ? `Your founding waiver lasts ${monthsLeftInWaiver} more month${monthsLeftInWaiver === 1 ? "" : "s"}. Lock the launch rate now or go straight to annual.`
-              : "Your founding waiver has ended. Pick a plan to keep your portal and listing active."
-          }
         />
       )}
 

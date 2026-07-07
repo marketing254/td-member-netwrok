@@ -110,6 +110,10 @@ const PDF_KINDS = new Set([
   "key_takeaways",
   "worksheet",
   "email_sequence",
+  // Book Club PDF kinds — so they preview inline even if mime_type is unset.
+  "book_study_guide",
+  "discussion_questions",
+  "infographic",
 ]);
 
 /**
@@ -118,6 +122,14 @@ const PDF_KINDS = new Set([
  */
 function isPdf(r: { kind: string; mime_type: string | null }): boolean {
   return PDF_KINDS.has(r.kind) || r.mime_type === "application/pdf";
+}
+
+/**
+ * Image resources (e.g. the Book Club infographic PNG) preview inline as
+ * a plain <img>, so they don't fall through to the "can't preview" panel.
+ */
+function isImage(r: { kind: string; mime_type: string | null }): boolean {
+  return r.kind === "infographic_image" || (r.mime_type?.startsWith("image/") ?? false);
 }
 
 /**
@@ -134,7 +146,7 @@ function isOffice(_r: { kind: string; mime_type: string | null }): boolean {
  * Anything we can show inline in the player canvas (with the right iframe).
  */
 function isPreviewable(r: { kind: string; mime_type: string | null }): boolean {
-  return isPdf(r) || isOffice(r);
+  return isPdf(r) || isOffice(r) || isImage(r);
 }
 
 /**
@@ -227,17 +239,26 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
 
   const orderedResources = useMemo(() => {
     const order = [
+      // Main training first — same as a standard kit.
       "video_intro",
       "video_full",
       "video_explainer",
       "video_trailer",
       "audio",
+      // Visual summaries / slides.
+      "infographic",
+      "infographic_image",
+      "slide_deck",
+      // Guides & written resources.
+      "book_study_guide",
       "action_guide",
       "checklist",
       "key_takeaways",
+      "discussion_questions",
       "worksheet",
-      "slide_deck",
       "email_sequence",
+      // Short-form clips last so they never lead the kit.
+      "video_short",
       "other",
     ];
     return [...resources].sort((a, b) => {
@@ -421,159 +442,6 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
         </Stack>
       </Box>
 
-      {/* Book Club only — Key Principles reel. Each short represents one
-          named principle from the book; clicking plays it in the player. */}
-      {isBookClub && shortResources.length > 0 && (
-        <Box sx={{ mb: 3.5 }}>
-          <Stack
-            direction="row"
-            sx={{ alignItems: "baseline", justifyContent: "space-between", mb: 1.5 }}
-          >
-            <Box>
-              <Typography sx={{ ...editorialText.eyebrow, color: "#6E3346" }}>
-                Key principles
-              </Typography>
-              <Typography
-                sx={{
-                  fontFamily: "var(--font-display)",
-                  fontSize: { xs: "1.2rem", md: "1.4rem" },
-                  fontWeight: 500,
-                  color: "var(--ink)",
-                  letterSpacing: "-0.01em",
-                  mt: 0.25,
-                }}
-              >
-                The {shortResources.length} ideas from the book
-              </Typography>
-            </Box>
-          </Stack>
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "1fr",
-                sm: "repeat(2, 1fr)",
-                md: `repeat(${Math.min(shortResources.length, 3)}, 1fr)`,
-              },
-              gap: 2,
-            }}
-          >
-            {shortResources.map((s, i) => (
-              <Box
-                key={s.id}
-                role="button"
-                tabIndex={0}
-                onClick={() => playLesson(s)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    playLesson(s);
-                  }
-                }}
-                sx={{
-                  cursor: "pointer",
-                  borderRadius: 1.5,
-                  border: "1px solid var(--paper-rule)",
-                  bgcolor: "var(--paper, #FBF8F1)",
-                  overflow: "hidden",
-                  transition: "transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease",
-                  "&:hover": {
-                    transform: "translateY(-2px)",
-                    borderColor: "#6E3346",
-                    boxShadow: "0 16px 32px -16px rgba(110,51,70,0.25)",
-                  },
-                  "&:focus-visible": {
-                    outline: "2px solid var(--gold)",
-                    outlineOffset: 2,
-                  },
-                }}
-              >
-                <Box
-                  sx={{
-                    position: "relative",
-                    aspectRatio: "9 / 16",
-                    bgcolor: "#0A1A2F",
-                    backgroundImage:
-                      "linear-gradient(160deg, #14334A 0%, #0A2236 100%)",
-                    display: "grid",
-                    placeItems: "center",
-                  }}
-                >
-                  <Box
-                    sx={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: "50%",
-                      bgcolor: "rgba(217,168,75,0.85)",
-                      color: "#0A1A2F",
-                      display: "grid",
-                      placeItems: "center",
-                      boxShadow: "0 8px 22px -8px rgba(217,168,75,0.5)",
-                    }}
-                  >
-                    <PlayArrowRoundedIcon sx={{ fontSize: 28 }} />
-                  </Box>
-                  <Typography
-                    sx={{
-                      position: "absolute",
-                      top: 10,
-                      left: 10,
-                      fontSize: "0.62rem",
-                      fontWeight: 800,
-                      letterSpacing: "0.14em",
-                      color: "#F0C16E",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    Principle {i + 1}
-                  </Typography>
-                  {s.progress?.completed_at && (
-                    <Box
-                      sx={{
-                        position: "absolute",
-                        top: 10,
-                        right: 10,
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 0.4,
-                        height: 18,
-                        px: 0.75,
-                        borderRadius: 0.5,
-                        bgcolor: "rgba(34,108,78,0.85)",
-                        color: "#FFFFFF",
-                        fontSize: "0.58rem",
-                        fontWeight: 800,
-                        letterSpacing: "0.12em",
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      Done
-                    </Box>
-                  )}
-                </Box>
-                <Box sx={{ p: 1.5 }}>
-                  <Typography
-                    sx={{
-                      fontFamily: "var(--font-display)",
-                      fontSize: "1rem",
-                      fontWeight: 600,
-                      color: "var(--ink)",
-                      letterSpacing: "-0.005em",
-                      lineHeight: 1.25,
-                    }}
-                  >
-                    {s.title}
-                  </Typography>
-                  <Typography sx={{ ...editorialText.meta, fontSize: "0.72rem", mt: 0.4 }}>
-                    9×16 short · Tap to play
-                  </Typography>
-                </Box>
-              </Box>
-            ))}
-          </Box>
-        </Box>
-      )}
-
       {/* PLAYER + CURRICULUM — Udemy-style balanced split */}
       <Grid container spacing={{ xs: 3, lg: 4 }}>
         {/* Player column */}
@@ -608,6 +476,20 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
                   onPlay={() => void markProgress(activeResource.id, "view")}
                   onEnded={() => void markProgress(activeResource.id, "complete")}
                   style={{ width: "100%", height: "100%", display: "block", background: "#000" }}
+                />
+              ) : activeResource && isImage(activeResource) && activeResource.external_url ? (
+                <Box
+                  component="img"
+                  src={activeResource.external_url}
+                  alt={activeResource.title}
+                  onLoad={() => void markProgress(activeResource.id, "view")}
+                  sx={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "contain",
+                    display: "block",
+                    bgcolor: "#FFFFFF",
+                  }}
                 />
               ) : activeResource &&
                 isPreviewable(activeResource) &&
@@ -815,6 +697,159 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
           </Box>
         </Grid>
       </Grid>
+
+      {/* Book Club only — Key Principles reel. Each short represents one
+          named principle from the book; clicking plays it in the player. */}
+      {isBookClub && shortResources.length > 0 && (
+        <Box sx={{ mb: 3.5 }}>
+          <Stack
+            direction="row"
+            sx={{ alignItems: "baseline", justifyContent: "space-between", mb: 1.5 }}
+          >
+            <Box>
+              <Typography sx={{ ...editorialText.eyebrow, color: "#6E3346" }}>
+                Key principles
+              </Typography>
+              <Typography
+                sx={{
+                  fontFamily: "var(--font-display)",
+                  fontSize: { xs: "1.2rem", md: "1.4rem" },
+                  fontWeight: 500,
+                  color: "var(--ink)",
+                  letterSpacing: "-0.01em",
+                  mt: 0.25,
+                }}
+              >
+                The {shortResources.length} ideas from the book
+              </Typography>
+            </Box>
+          </Stack>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                sm: "repeat(2, 1fr)",
+                md: `repeat(${Math.min(shortResources.length, 3)}, 1fr)`,
+              },
+              gap: 2,
+            }}
+          >
+            {shortResources.map((s, i) => (
+              <Box
+                key={s.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => playLesson(s)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    playLesson(s);
+                  }
+                }}
+                sx={{
+                  cursor: "pointer",
+                  borderRadius: 1.5,
+                  border: "1px solid var(--paper-rule)",
+                  bgcolor: "var(--paper, #FBF8F1)",
+                  overflow: "hidden",
+                  transition: "transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease",
+                  "&:hover": {
+                    transform: "translateY(-2px)",
+                    borderColor: "#6E3346",
+                    boxShadow: "0 16px 32px -16px rgba(110,51,70,0.25)",
+                  },
+                  "&:focus-visible": {
+                    outline: "2px solid var(--gold)",
+                    outlineOffset: 2,
+                  },
+                }}
+              >
+                <Box
+                  sx={{
+                    position: "relative",
+                    aspectRatio: "9 / 16",
+                    bgcolor: "#0A1A2F",
+                    backgroundImage:
+                      "linear-gradient(160deg, #14334A 0%, #0A2236 100%)",
+                    display: "grid",
+                    placeItems: "center",
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: "50%",
+                      bgcolor: "rgba(217,168,75,0.85)",
+                      color: "#0A1A2F",
+                      display: "grid",
+                      placeItems: "center",
+                      boxShadow: "0 8px 22px -8px rgba(217,168,75,0.5)",
+                    }}
+                  >
+                    <PlayArrowRoundedIcon sx={{ fontSize: 28 }} />
+                  </Box>
+                  <Typography
+                    sx={{
+                      position: "absolute",
+                      top: 10,
+                      left: 10,
+                      fontSize: "0.62rem",
+                      fontWeight: 800,
+                      letterSpacing: "0.14em",
+                      color: "#F0C16E",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    Principle {i + 1}
+                  </Typography>
+                  {s.progress?.completed_at && (
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        top: 10,
+                        right: 10,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 0.4,
+                        height: 18,
+                        px: 0.75,
+                        borderRadius: 0.5,
+                        bgcolor: "rgba(34,108,78,0.85)",
+                        color: "#FFFFFF",
+                        fontSize: "0.58rem",
+                        fontWeight: 800,
+                        letterSpacing: "0.12em",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      Done
+                    </Box>
+                  )}
+                </Box>
+                <Box sx={{ p: 1.5 }}>
+                  <Typography
+                    sx={{
+                      fontFamily: "var(--font-display)",
+                      fontSize: "1rem",
+                      fontWeight: 600,
+                      color: "var(--ink)",
+                      letterSpacing: "-0.005em",
+                      lineHeight: 1.25,
+                    }}
+                  >
+                    {s.title}
+                  </Typography>
+                  <Typography sx={{ ...editorialText.meta, fontSize: "0.72rem", mt: 0.4 }}>
+                    9×16 short · Tap to play
+                  </Typography>
+                </Box>
+              </Box>
+            ))}
+          </Box>
+        </Box>
+      )}
 
       {/* Discussion thread — collapsed by default. Anchored to the kit's
           primary (first) resource so all questions about this kit roll

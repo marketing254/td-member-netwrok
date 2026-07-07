@@ -40,22 +40,27 @@ function buildCsp(): string {
     // doesn't expand the attack surface for real users.
     // YCBM (YouCanBookMe) embed.ycb.me + youcanbook.me — the coaching-session
     // booking widget on member kit detail pages.
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://www.googletagmanager.com https://vercel.live https://embed.ycb.me https://*.ycb.me https://*.youcanbook.me",
+    // Stripe.js — js.stripe.com hosts the script; m.stripe.network is the
+    // 3D-Secure / risk-check iframe host used by PaymentElement.
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://www.googletagmanager.com https://vercel.live https://embed.ycb.me https://*.ycb.me https://*.youcanbook.me https://js.stripe.com https://*.js.stripe.com",
     "worker-src 'self' blob:",
     "child-src 'self' blob:",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://vercel.live https://*.ycb.me https://*.youcanbook.me",
     "font-src 'self' https://fonts.gstatic.com https://vercel.live https://assets.vercel.com https://*.ycb.me https://*.youcanbook.me data:",
-    `img-src 'self' data: blob: ${supabaseHttps} https://www.google-analytics.com https://www.googletagmanager.com https://vercel.live https://vercel.com https://*.ycb.me https://*.youcanbook.me`,
+    `img-src 'self' data: blob: ${supabaseHttps} https://www.google-analytics.com https://www.googletagmanager.com https://vercel.live https://vercel.com https://*.ycb.me https://*.youcanbook.me https://*.stripe.com`,
     // media-src controls <video> and <audio> sources. Without this, videos
     // from Supabase Storage are blocked because default-src 'self' falls back.
     `media-src 'self' blob: ${supabaseHttps}`,
-    `connect-src 'self' ${supabaseHttps} ${supabaseWss} https://cdn.jsdelivr.net https://fonts.gstatic.com https://www.google-analytics.com https://www.googletagmanager.com https://analytics.google.com https://vercel.live https://*.pusher.com wss://*.pusher.com https://*.ycb.me https://*.youcanbook.me`,
+    // Stripe XHR: api.stripe.com for tokenization + subscription lookups,
+    // js.stripe.com + m.stripe.network for risk-check calls the SDK makes.
+    `connect-src 'self' ${supabaseHttps} ${supabaseWss} https://cdn.jsdelivr.net https://fonts.gstatic.com https://www.google-analytics.com https://www.googletagmanager.com https://analytics.google.com https://vercel.live https://*.pusher.com wss://*.pusher.com https://*.ycb.me https://*.youcanbook.me https://api.stripe.com https://js.stripe.com https://m.stripe.network https://maps.googleapis.com`,
     // frame-src controls <iframe> sources. Supabase is needed so the resource
     // viewer can render PDFs inline; Microsoft Office Online viewer is needed
     // for slide decks (.pptx). YCBM domains let the booking widget render
     // the calendar iframe. Spline (my.spline.design + prod.spline.design)
-    // hosts the 3D hero scene iframe.
-    `frame-src 'self' ${supabaseHttps} https://view.officeapps.live.com https://vercel.live https://*.ycb.me https://*.youcanbook.me https://my.spline.design https://*.spline.design`,
+    // hosts the 3D hero scene iframe. Stripe: js.stripe.com hosts the
+    // PaymentElement iframe; hooks.stripe.com hosts 3-D Secure challenges.
+    `frame-src 'self' ${supabaseHttps} https://view.officeapps.live.com https://vercel.live https://*.ycb.me https://*.youcanbook.me https://my.spline.design https://*.spline.design https://js.stripe.com https://hooks.stripe.com https://*.js.stripe.com`,
     "frame-ancestors 'none'",
     "form-action 'self'",
     "base-uri 'self'",
@@ -96,7 +101,8 @@ function isPublicVendorPath(pathname: string) {
 function isPublicExpertPath(pathname: string) {
   return (
     pathname === "/expert/login" ||
-    pathname.startsWith("/expert/login/")
+    pathname.startsWith("/expert/login/") ||
+    pathname === "/expert/applied"
   );
 }
 
@@ -251,6 +257,12 @@ export async function middleware(req: NextRequest) {
   // ─────────────────────────────────────────────────────────────────
   // MEMBER PORTAL  (/dashboard/*)  — requires paid subscription
   // /upgrade — requires member session but blocks if already paid
+  //
+  // Admin bypass: an active admin_users row lets the same auth user hit
+  // /dashboard without needing a members row or an active subscription.
+  // This is a read-only preview for the team — the dashboard pages
+  // handle a missing member row by rendering a lightweight admin
+  // banner instead of crashing on `.first_name` etc.
   // ─────────────────────────────────────────────────────────────────
   if (isMember || isUpgrade) {
     try {
@@ -261,6 +273,18 @@ export async function middleware(req: NextRequest) {
         target.pathname = "/member/login";
         target.search = `?redirect=${encodeURIComponent(pathname + search)}`;
         return applySecurityHeaders(NextResponse.redirect(target));
+      }
+
+      // Admin bypass — checked before the member-row lookup so admins
+      // whose auth account is NOT also linked to a members row still
+      // pass through. Cheap query (single indexed lookup).
+      const { data: adminRow } = await supabase
+        .from("admin_users")
+        .select("id, active")
+        .eq("auth_user_id", userData.user.id)
+        .maybeSingle();
+      if (adminRow?.active) {
+        return applySecurityHeaders(res);
       }
 
       // Confirm the user has an active members row + read their billing status.

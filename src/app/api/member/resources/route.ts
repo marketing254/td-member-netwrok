@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { requireMember } from "@/lib/auth/guards";
+import { requireMemberOrAdminPreview } from "@/lib/auth/guards";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,9 +11,12 @@ export const dynamic = "force-dynamic";
  * Returns published resources joined with the signed-in member's progress.
  * If `topic_slug` is provided, narrows to that topic; otherwise returns
  * all published resources for the topics list page.
+ *
+ * Admin preview: admins see the same resource list but with `progress:
+ * null` on every row (no member_id to key personal progress by).
  */
 export async function GET(req: Request) {
-  const guard = await requireMember();
+  const guard = await requireMemberOrAdminPreview();
   if (!guard.ok) return guard.response;
 
   const url = new URL(req.url);
@@ -37,10 +40,11 @@ export async function GET(req: Request) {
   const { data: resources, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  // Pull the member's progress rows for these resources.
+  // Pull progress only for real members — admin previews have no
+  // memberId to key personal progress by.
   const ids = (resources ?? []).map((r) => r.id);
   let progress: { resource_id: string; last_viewed_at: string | null; completed_at: string | null; watch_seconds: number }[] = [];
-  if (ids.length > 0) {
+  if (!guard.isAdminPreview && ids.length > 0) {
     const { data: progressRows } = await sb
       .from("member_resource_progress")
       .select("resource_id, last_viewed_at, completed_at, watch_seconds")

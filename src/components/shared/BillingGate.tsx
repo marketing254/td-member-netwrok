@@ -134,48 +134,78 @@ export default function BillingGate({
             {access.message}
           </Typography>
           <Stack spacing={1.25}>
-            <Button
-              onClick={openPortal}
-              disabled={busy}
-              fullWidth
-              variant="contained"
-              startIcon={
-                busy ? (
-                  <CircularProgress size={14} sx={{ color: "inherit" }} />
-                ) : (
-                  <OpenInNewRoundedIcon sx={{ fontSize: 16 }} />
-                )
-              }
-              sx={{
-                borderRadius: 999,
-                py: 1.25,
-                bgcolor: accentColor,
-                color: "#FFFFFF",
-                textTransform: "none",
-                fontWeight: 600,
-                "&:hover": {
-                  bgcolor: accent === "gold" ? "#7A5B17" : "#163E2B",
-                },
-              }}
-            >
-              {busy ? "Opening Stripe…" : access.cta}
-            </Button>
-            <Button
-              component={Link}
-              href={billingHref}
-              fullWidth
-              variant="outlined"
-              sx={{
-                borderRadius: 999,
-                py: 1.25,
-                borderColor: "rgba(14,42,61,0.2)",
-                color: "#0A1A2F",
-                textTransform: "none",
-                fontWeight: 600,
-              }}
-            >
-              Go to billing page
-            </Button>
+            {/* New signups (reason=subscription_required) don't have a
+                Stripe customer yet, so the "Open Stripe portal" button
+                would just 404. In that case the primary CTA is an
+                in-app link straight to the billing page where the
+                TrialStartCard lives. */}
+            {access.reason === "subscription_required" ? (
+              <Button
+                component={Link}
+                href={billingHref}
+                fullWidth
+                variant="contained"
+                endIcon={<OpenInNewRoundedIcon sx={{ fontSize: 16 }} />}
+                sx={{
+                  borderRadius: 999,
+                  py: 1.25,
+                  bgcolor: accentColor,
+                  color: "#FFFFFF",
+                  textTransform: "none",
+                  fontWeight: 600,
+                  "&:hover": {
+                    bgcolor: accent === "gold" ? "#7A5B17" : "#163E2B",
+                  },
+                }}
+              >
+                {access.cta}
+              </Button>
+            ) : (
+              <>
+                <Button
+                  onClick={openPortal}
+                  disabled={busy}
+                  fullWidth
+                  variant="contained"
+                  startIcon={
+                    busy ? (
+                      <CircularProgress size={14} sx={{ color: "inherit" }} />
+                    ) : (
+                      <OpenInNewRoundedIcon sx={{ fontSize: 16 }} />
+                    )
+                  }
+                  sx={{
+                    borderRadius: 999,
+                    py: 1.25,
+                    bgcolor: accentColor,
+                    color: "#FFFFFF",
+                    textTransform: "none",
+                    fontWeight: 600,
+                    "&:hover": {
+                      bgcolor: accent === "gold" ? "#7A5B17" : "#163E2B",
+                    },
+                  }}
+                >
+                  {busy ? "Opening Stripe…" : access.cta}
+                </Button>
+                <Button
+                  component={Link}
+                  href={billingHref}
+                  fullWidth
+                  variant="outlined"
+                  sx={{
+                    borderRadius: 999,
+                    py: 1.25,
+                    borderColor: "rgba(14,42,61,0.2)",
+                    color: "#0A1A2F",
+                    textTransform: "none",
+                    fontWeight: 600,
+                  }}
+                >
+                  Go to billing page
+                </Button>
+              </>
+            )}
           </Stack>
           {error && (
             <Typography sx={{ mt: 1.5, fontSize: "0.82rem", color: "#8C1D1D" }}>

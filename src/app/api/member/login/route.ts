@@ -55,8 +55,44 @@ export async function POST(req: Request) {
   // another role (e.g. signed up as an expert), block sending a member
   // code unless there's also a members row for them. Prevents cross-role
   // OTPs (a partner's auth user can't sign in via /member/login).
+  //
+  // Admin bypass: an active admin_users row lets the same email through
+  // this pre-check so the team can hit /dashboard in "admin preview"
+  // mode. See middleware.ts and /api/member/me for the matching
+  // downstream bypasses.
   try {
     const adminCheck = getSupabaseAdmin();
+    // Case-insensitive match — admins may have their row stored with
+    // Original.Case @ Ekwa.com while the login form lowercases before
+    // comparing. ilike with no wildcards behaves like a case-insensitive
+    // equality check.
+    const { data: adminBypassRow } = await adminCheck
+      .from("admin_users")
+      .select("id, active")
+      .ilike("email", email)
+      .maybeSingle();
+    if (process.env.NODE_ENV !== "production") {
+      // eslint-disable-next-line no-console
+      console.info(
+        `[member:login] admin bypass check: email="${email}", found=${!!adminBypassRow}, active=${adminBypassRow?.active ?? "n/a"}`,
+      );
+    }
+    if (adminBypassRow?.active) {
+      // Skip the members-row requirement and go straight to sending the OTP.
+      const supabase = await createServerSupabase();
+      const { error: otpErr } = await supabase.auth.signInWithOtp({
+        email,
+        options: { shouldCreateUser: false },
+      });
+      if (otpErr) {
+        return NextResponse.json(
+          { error: "Couldn't send your sign-in code. Please try again." },
+          { status: 500 },
+        );
+      }
+      return NextResponse.json({ ok: true });
+    }
+
     const { data: memberRow } = await adminCheck
       .from("members")
       .select("id, status")

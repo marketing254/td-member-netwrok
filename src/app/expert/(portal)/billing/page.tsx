@@ -5,7 +5,6 @@ import {
   Box,
   Button,
   CircularProgress,
-  Divider,
   Stack,
   Typography,
 } from "@mui/material";
@@ -13,54 +12,10 @@ import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
 import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
 import CreditCardRoundedIcon from "@mui/icons-material/CreditCardRounded";
 import WorkspacePremiumRoundedIcon from "@mui/icons-material/WorkspacePremiumRounded";
-import SyncRoundedIcon from "@mui/icons-material/SyncRounded";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import type { ExpertsRow } from "@/lib/supabase/types";
 import { phaseForMonth, priceLabelForPhase } from "@/lib/stripe";
-import UpgradePlanChoice, { type UpgradePlan } from "@/components/shared/UpgradePlanChoice";
-
-const EXPERT_UPGRADE_PLANS: UpgradePlan[] = [
-  {
-    key: "expert_growth_monthly",
-    cap: "Months 7–12",
-    price: "$49",
-    per: "/mo",
-    highlight: "LOCK LAUNCH RATE",
-    body: "Locked launch rate while your pipeline builds.",
-    features: [
-      "Auto-rolls to $199 at month 13",
-      "All Featured Expert benefits",
-      "Cancel anytime",
-    ],
-    ctaLabel: "Start at $49/mo",
-  },
-  {
-    key: "expert_standard_monthly",
-    cap: "Month 13+",
-    price: "$199",
-    per: "/mo",
-    body: "Standard Featured Expert rate.",
-    features: [
-      "All Featured Expert benefits",
-      "Monthly billing",
-      "Cancel anytime",
-    ],
-    ctaLabel: "Start at $199/mo",
-  },
-  {
-    key: "expert_standard_annual",
-    cap: "Annual pre-pay",
-    price: "$1,990",
-    per: "/yr",
-    body: "12 months for the price of 10 — save 2 months.",
-    features: [
-      "All Featured Expert benefits",
-      "Save $398 vs. monthly",
-      "Rate locked for 12 months",
-    ],
-    ctaLabel: "Save with annual",
-  },
-];
+import TrialStartCard from "@/components/shared/TrialStartCard";
 
 const EXPERT_GREEN = "#2C7A52";
 const EXPERT_GREEN_DARK = "#1F5238";
@@ -91,8 +46,6 @@ export default function ExpertBillingPage() {
   const [invoices, setInvoices] = useState<Invoice[] | null>(null);
   const [portalBusy, setPortalBusy] = useState(false);
   const [portalError, setPortalError] = useState<string | null>(null);
-  const [syncBusy, setSyncBusy] = useState(false);
-  const [syncMessage, setSyncMessage] = useState<{ tone: "ok" | "err"; text: string } | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -160,52 +113,32 @@ export default function ExpertBillingPage() {
     }
   };
 
-  const syncFromStripe = async () => {
-    setSyncBusy(true);
-    setSyncMessage(null);
-    try {
-      const res = await fetch("/api/expert/billing/sync", { method: "POST" });
-      const body = (await res.json().catch(() => ({}))) as {
-        synced?: boolean;
-        reason?: string;
-        status?: string;
-      };
-      if (res.ok && body.synced) {
-        setSyncMessage({
-          tone: "ok",
-          text: `Synced — subscription is "${body.status ?? "active"}". Reload to see the updated plan.`,
-        });
-        setTimeout(() => window.location.reload(), 1500);
-      } else {
-        setSyncMessage({
-          tone: "err",
-          text: body.reason ?? `Sync failed (${res.status})`,
-        });
-      }
-    } catch (err) {
-      setSyncMessage({
-        tone: "err",
-        text: err instanceof Error ? err.message : "Sync failed.",
-      });
-    } finally {
-      setSyncBusy(false);
-    }
-  };
-
   const monthsInProgram = expert?.months_in_program ?? 0;
   const phase = phaseForMonth(monthsInProgram);
   const currentPrice = priceLabelForPhase(phase);
   const monthsLeftInWaiver = Math.max(0, 6 - monthsInProgram);
   const hasSubscription = !!expert?.stripe_subscription_id;
-  const needsManualSync =
-    !!expert?.stripe_customer_id &&
-    (!hasSubscription || (hasSubscription && (!expert?.card_brand || !expert?.card_last4)));
 
   const planLabel = useMemo(() => {
-    const intervalLabel = expert?.subscription_interval === "year" ? "Annual" : "Monthly";
-    const phaseLabel = phase === "launch" ? "Launch (months 1-6)" : phase === "growth" ? "Growth (months 7-12)" : "Standard";
-    return `Expert · ${phaseLabel} · ${intervalLabel}`;
-  }, [expert?.subscription_interval, phase]);
+    const phaseLabel = phase === "launch" ? "Launch" : phase === "growth" ? "Growth" : "Standard";
+    return `Featured Expert · ${phaseLabel}`;
+  }, [phase]);
+
+  const status = useMemo(() => {
+    const s = expert?.subscription_status;
+    if (s === "trialing") return { label: "Trialing", tone: "leaf" as const };
+    if (s === "active") return { label: "Active", tone: "leaf" as const };
+    if (s === "past_due" || s === "unpaid") return { label: "Payment due", tone: "gold" as const };
+    if (s === "canceled" || s === "incomplete_expired") return { label: "Canceled", tone: "red" as const };
+    if (hasSubscription) return { label: "Active", tone: "leaf" as const };
+    return { label: "Not started", tone: "grey" as const };
+  }, [expert?.subscription_status, hasSubscription]);
+
+  const renewalLabel = useMemo(() => {
+    if (!expert?.current_period_end) return null;
+    const d = formatDate(expert.current_period_end);
+    return expert.cancel_at_period_end ? `Ends ${d}` : `Renews ${d}`;
+  }, [expert?.current_period_end, expert?.cancel_at_period_end]);
 
   if (loading) {
     return (
@@ -226,70 +159,64 @@ export default function ExpertBillingPage() {
   }
 
   return (
-    <Stack spacing={2.5} sx={{ maxWidth: 960, mx: "auto" }}>
+    <Stack spacing={3} sx={{ maxWidth: 880, mx: "auto" }}>
+      {/* Page header */}
       <Box>
         <Typography
           sx={{
-            fontSize: "0.7rem",
+            fontSize: "0.68rem",
             fontWeight: 700,
-            letterSpacing: "0.22em",
+            letterSpacing: "0.2em",
             color: EXPERT_GREEN_DARK,
             textTransform: "uppercase",
-            mb: 1.25,
+            mb: 1,
           }}
         >
-          Account & billing
+          Account &amp; billing
         </Typography>
         <Typography
           component="h1"
           sx={{
             fontFamily: "var(--font-display)",
-            fontSize: { xs: "1.7rem", md: "2.2rem" },
+            fontSize: { xs: "1.6rem", md: "2rem" },
             fontWeight: 500,
             color: "#0A1A2F",
-            lineHeight: 1.1,
+            lineHeight: 1.15,
             letterSpacing: "-0.01em",
-            mb: 1,
           }}
         >
-          Plan, payment method & invoices
+          Plan &amp; billing
         </Typography>
-        <Typography sx={{ color: "#3B4A55", fontSize: "0.95rem", lineHeight: 1.55, maxWidth: 620 }}>
-          Your founding rate ladder is locked through month 12. Manage your card and download
-          past invoices from the Stripe portal.
+        <Typography sx={{ color: "#5C6770", fontSize: "0.92rem", lineHeight: 1.55, mt: 0.5, maxWidth: 560 }}>
+          Manage your subscription, payment method, and invoices. Everything is handled
+          securely through Stripe.
         </Typography>
       </Box>
 
-      {/* ---- Current plan card ---- */}
-      <Box
-        sx={{
-          borderRadius: 2,
-          bgcolor: "#FBF8F1",
-          border: "1px solid rgba(14,42,61,0.08)",
-          boxShadow: "0 1px 0 rgba(14,42,61,0.02)",
-        }}
-      >
-        <Box sx={{ px: 2.5, py: 1.5, borderBottom: "1px solid rgba(14,42,61,0.06)" }}>
-          <Typography sx={{ fontSize: "0.92rem", fontWeight: 600, color: "#0A1A2F" }}>
-            Current plan
-          </Typography>
-          <Typography sx={{ fontSize: "0.76rem", color: "#5C6770", mt: 0.25 }}>
-            Managed by Stripe. Changes take effect at the next renewal.
-          </Typography>
-        </Box>
-        <Box sx={{ px: 2.5, py: 2.25 }}>
-          <Stack
-            direction={{ xs: "column", sm: "row" }}
-            spacing={{ xs: 2, sm: 3 }}
-            sx={{ alignItems: { sm: "center" }, justifyContent: "space-between" }}
-          >
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 0.5 }}>
+      {/* ---- Trial-start (no subscription yet) ---- */}
+      {!hasSubscription && (
+        <TrialStartCard
+          prepareEndpoint="/api/expert/billing/trial/prepare"
+          startEndpoint="/api/expert/billing/trial/start"
+          audience="green"
+        />
+      )}
+
+      {/* ---- Current plan ---- */}
+      {hasSubscription && (
+        <SectionCard title="Current plan" subtitle="Managed by Stripe. Changes take effect at the next renewal.">
+          <Box sx={{ p: { xs: 2, md: 2.5 } }}>
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={2}
+              sx={{ alignItems: { sm: "center" }, justifyContent: "space-between" }}
+            >
+              <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", minWidth: 0 }}>
                 <Box
                   sx={{
-                    width: 30,
-                    height: 30,
-                    borderRadius: 0.75,
+                    width: 40,
+                    height: 40,
+                    borderRadius: 1.25,
                     bgcolor: EXPERT_GREEN_TINT,
                     color: EXPERT_GREEN_DARK,
                     display: "grid",
@@ -297,250 +224,111 @@ export default function ExpertBillingPage() {
                     flexShrink: 0,
                   }}
                 >
-                  <WorkspacePremiumRoundedIcon sx={{ fontSize: 16 }} />
+                  <WorkspacePremiumRoundedIcon sx={{ fontSize: 20 }} />
                 </Box>
-                <Typography
-                  sx={{
-                    fontFamily: "var(--font-display)",
-                    fontSize: { xs: "1.2rem", md: "1.35rem" },
-                    fontWeight: 500,
-                    color: "#0A1A2F",
-                  }}
-                >
-                  {planLabel}
-                </Typography>
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography
+                    sx={{
+                      fontFamily: "var(--font-display)",
+                      fontSize: "1.25rem",
+                      fontWeight: 500,
+                      color: "#0A1A2F",
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    {planLabel}
+                  </Typography>
+                  <Typography sx={{ fontSize: "0.88rem", color: "#5C6770", mt: 0.25 }}>
+                    {currentPrice}
+                  </Typography>
+                </Box>
               </Stack>
-              <Typography sx={{ fontSize: "0.92rem", color: "#3B4A55", ml: 4.75 }}>
-                {currentPrice}
-              </Typography>
-            </Box>
-            <Box sx={{ flexShrink: 0, alignSelf: { xs: "stretch", sm: "center" } }}>
-              {hasSubscription ? (
-                <Button
-                  onClick={openPortal}
-                  disabled={portalBusy}
-                  variant="contained"
-                  disableElevation
-                  startIcon={
-                    portalBusy ? (
-                      <CircularProgress size={14} sx={{ color: "inherit" }} />
-                    ) : (
-                      <OpenInNewRoundedIcon sx={{ fontSize: 16 }} />
-                    )
-                  }
-                  sx={{
-                    bgcolor: EXPERT_GREEN,
+              <Button
+                onClick={openPortal}
+                disabled={portalBusy}
+                variant="contained"
+                disableElevation
+                startIcon={
+                  portalBusy ? (
+                    <CircularProgress size={14} sx={{ color: "inherit" }} />
+                  ) : (
+                    <OpenInNewRoundedIcon sx={{ fontSize: 16 }} />
+                  )
+                }
+                sx={{
+                  bgcolor: EXPERT_GREEN,
+                  backgroundImage: `linear-gradient(180deg, ${EXPERT_GREEN} 0%, ${EXPERT_GREEN_DARK} 100%)`,
+                  color: "#FFFFFF",
+                  textTransform: "none",
+                  fontSize: "0.85rem",
+                  fontWeight: 600,
+                  borderRadius: 1,
+                  px: 2,
+                  py: 0.9,
+                  flexShrink: 0,
+                  width: { xs: "100%", sm: "auto" },
+                  "&:hover": {
                     backgroundImage: `linear-gradient(180deg, ${EXPERT_GREEN} 0%, ${EXPERT_GREEN_DARK} 100%)`,
-                    color: "#FFFFFF",
-                    textTransform: "none",
-                    fontSize: "0.85rem",
-                    fontWeight: 600,
-                    borderRadius: 0.75,
-                    px: 2,
-                    py: 1,
-                    width: { xs: "100%", sm: "auto" },
-                    "&:hover": {
-                      bgcolor: EXPERT_GREEN_DARK,
-                      backgroundImage: `linear-gradient(180deg, ${EXPERT_GREEN} 0%, ${EXPERT_GREEN_DARK} 100%)`,
-                    },
-                  }}
-                >
-                  Manage subscription
-                </Button>
-              ) : (
-                <Typography sx={{ fontSize: "0.82rem", color: "#7A8590" }}>
-                  Founding waiver — no card needed yet
-                </Typography>
-              )}
-            </Box>
-          </Stack>
-          {portalError && (
-            <Typography sx={{ fontSize: "0.74rem", color: "#8C1D1D", mt: 1 }}>
-              {portalError}
-            </Typography>
-          )}
-
-          {needsManualSync && (
-            <Box
-              sx={{
-                mt: 2,
-                p: 1.5,
-                borderRadius: 1.25,
-                bgcolor: "rgba(217,168,75,0.08)",
-                border: "1px solid rgba(217,168,75,0.3)",
-              }}
-            >
-              <Stack
-                direction={{ xs: "column", sm: "row" }}
-                spacing={1.5}
-                sx={{ alignItems: { sm: "center" } }}
+                  },
+                }}
               >
-                <Box sx={{ flex: 1 }}>
-                  <Typography sx={{ fontSize: "0.86rem", fontWeight: 600, color: "#7A5B17" }}>
-                    Plan looks out of date?
-                  </Typography>
-                  <Typography sx={{ fontSize: "0.76rem", color: "#5C6770", lineHeight: 1.55, mt: 0.25 }}>
-                    If Stripe charged your card but this page still says &ldquo;not subscribed&rdquo;,
-                    the webhook didn&apos;t reach us. Pull your state directly from Stripe.
-                  </Typography>
-                </Box>
-                <Button
-                  onClick={syncFromStripe}
-                  disabled={syncBusy}
-                  variant="contained"
-                  size="small"
-                  disableElevation
-                  startIcon={
-                    syncBusy ? (
-                      <CircularProgress size={12} sx={{ color: "inherit" }} />
-                    ) : (
-                      <SyncRoundedIcon sx={{ fontSize: 14 }} />
-                    )
-                  }
-                  sx={{
-                    bgcolor: "#A07823",
-                    color: "#FFFFFF",
-                    textTransform: "none",
-                    fontSize: "0.78rem",
-                    fontWeight: 600,
-                    borderRadius: 0.75,
-                    "&:hover": { bgcolor: "#7A5B17" },
-                  }}
-                >
-                  {syncBusy ? "Syncing…" : "Re-sync from Stripe"}
-                </Button>
-              </Stack>
-              {syncMessage && (
-                <Typography
-                  sx={{
-                    mt: 1,
-                    fontSize: "0.74rem",
-                    color: syncMessage.tone === "ok" ? "#1F5C40" : "#8C1D1D",
-                    fontWeight: 500,
-                  }}
-                >
-                  {syncMessage.text}
-                </Typography>
-              )}
-            </Box>
-          )}
-        </Box>
-      </Box>
+                Manage subscription
+              </Button>
+            </Stack>
 
-      {/* ---- Phase ladder ---- */}
-      <Box
-        sx={{
-          borderRadius: 2,
-          bgcolor: "#FFFFFF",
-          border: "1px solid rgba(14,42,61,0.08)",
-        }}
-      >
-        <Box sx={{ px: 2.5, py: 1.5, borderBottom: "1px solid rgba(14,42,61,0.06)" }}>
-          <Typography sx={{ fontSize: "0.92rem", fontWeight: 600, color: "#0A1A2F" }}>
-            Pricing ladder
-          </Typography>
-          <Typography sx={{ fontSize: "0.76rem", color: "#5C6770", mt: 0.25 }}>
-            {monthsLeftInWaiver > 0
-              ? `${monthsLeftInWaiver} month${monthsLeftInWaiver === 1 ? "" : "s"} left at $0`
-              : "Founding waiver complete"}
-          </Typography>
-        </Box>
-        <Stack spacing={0} sx={{ px: 2, py: 2 }}>
-          <LadderRow
-            period="Months 1-6"
-            price="$0/mo"
-            note="Founding waiver"
-            current={phase === "launch"}
-          />
-          <LadderRow
-            period="Months 7-12"
-            price="$49/mo"
-            note="Locked launch rate"
-            current={phase === "growth"}
-          />
-          <LadderRow
-            period="Month 13+"
-            price="$199/mo"
-            note="Standard rate · or annual pre-pay $1,990"
-            current={phase === "standard"}
-          />
-        </Stack>
-        <Divider />
-        <Box sx={{ px: 2, py: 1.5 }}>
-          <Typography sx={{ fontSize: "0.78rem", color: "#5C6770", lineHeight: 1.55 }}>
-            ★ <strong>Course revenue split</strong> — when you sell paid courses through DMN,
-            you keep 90% (DMN keeps 10%). Paid out monthly to your Stripe Connect account.
-          </Typography>
-        </Box>
-      </Box>
+            {/* Meta row — status + renewal, aligned key/value pills */}
+            <Stack direction="row" spacing={3} sx={{ mt: 2.5, pt: 2, borderTop: "1px solid rgba(14,42,61,0.06)", flexWrap: "wrap", rowGap: 1.5 }}>
+              <MetaItem label="Status">
+                <StatusPill label={status.label} tone={status.tone} />
+              </MetaItem>
+              {renewalLabel && <MetaItem label="Billing">{renewalLabel}</MetaItem>}
+              <MetaItem label="Course revenue">You keep 90%</MetaItem>
+            </Stack>
 
-      {/* ---- Upgrade plan choice ----
-          Shown when the expert has no active subscription yet. During
-          the founding waiver (months 1-6) we frame it as "lock the
-          launch rate early" — past the waiver, it's the recovery path
-          since the BillingGate will lock other pages without one. */}
-      {!hasSubscription && (
-        <UpgradePlanChoice
-          endpoint="/api/expert/billing/checkout"
-          plans={EXPERT_UPGRADE_PLANS}
-          audience="green"
-          title={monthsLeftInWaiver > 0 ? "Upgrade early — keep portal access past the waiver" : "Choose a plan to keep your portal active"}
-          subtitle={
-            monthsLeftInWaiver > 0
-              ? `Your free launch period lasts ${monthsLeftInWaiver} more month${monthsLeftInWaiver === 1 ? "" : "s"}. Lock the launch rate now or go straight to annual.`
-              : "Your founding waiver has ended. Pick a plan to keep your portal and listing active."
-          }
-        />
+            {portalError && (
+              <Typography sx={{ fontSize: "0.76rem", color: "#8C1D1D", mt: 1.5 }}>
+                {portalError}
+              </Typography>
+            )}
+          </Box>
+        </SectionCard>
       )}
 
       {/* ---- Payment method ---- */}
       {hasSubscription && (
-        <Box
-          sx={{
-            borderRadius: 2,
-            bgcolor: "#FFFFFF",
-            border: "1px solid rgba(14,42,61,0.08)",
-          }}
-        >
-          <Box sx={{ px: 2.5, py: 1.5, borderBottom: "1px solid rgba(14,42,61,0.06)" }}>
-            <Typography sx={{ fontSize: "0.92rem", fontWeight: 600, color: "#0A1A2F" }}>
-              Payment method
-            </Typography>
-            <Typography sx={{ fontSize: "0.76rem", color: "#5C6770", mt: 0.25 }}>
-              Update or replace your card in the Stripe portal.
-            </Typography>
-          </Box>
+        <SectionCard title="Payment method" subtitle="Update or replace your card in the Stripe portal.">
           <Stack
             direction={{ xs: "column", sm: "row" }}
             spacing={2}
-            sx={{ px: 2.5, py: 2, alignItems: { sm: "center" }, justifyContent: "space-between" }}
+            sx={{ p: { xs: 2, md: 2.5 }, alignItems: { sm: "center" }, justifyContent: "space-between" }}
           >
             <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
               <Box
                 sx={{
-                  width: 42,
-                  height: 30,
-                  borderRadius: 0.75,
+                  width: 46,
+                  height: 32,
+                  borderRadius: 1,
                   bgcolor: "#0A1A2F",
                   color: "#F0C16E",
                   display: "grid",
                   placeItems: "center",
+                  flexShrink: 0,
                 }}
               >
-                <CreditCardRoundedIcon sx={{ fontSize: 16 }} />
+                <CreditCardRoundedIcon sx={{ fontSize: 17 }} />
               </Box>
               {expert.card_brand && expert.card_last4 ? (
                 <Box>
                   <Typography sx={{ fontSize: "0.92rem", fontWeight: 600, color: "#0A1A2F" }}>
                     {capitalise(expert.card_brand)} ending {expert.card_last4}
                   </Typography>
-                  <Typography sx={{ fontSize: "0.74rem", color: "#7A8590" }}>
+                  <Typography sx={{ fontSize: "0.76rem", color: "#7A8590" }}>
                     Default for future charges
                   </Typography>
                 </Box>
               ) : (
-                <Typography sx={{ fontSize: "0.86rem", color: "#5C6770" }}>
-                  No card details available yet.
+                <Typography sx={{ fontSize: "0.88rem", color: "#5C6770" }}>
+                  No card on file yet.
                 </Typography>
               )}
             </Stack>
@@ -553,41 +341,52 @@ export default function ExpertBillingPage() {
                 borderColor: "rgba(14,42,61,0.18)",
                 color: "#0A1A2F",
                 textTransform: "none",
-                fontSize: "0.78rem",
+                fontSize: "0.8rem",
                 fontWeight: 600,
-                borderRadius: 0.75,
+                borderRadius: 1,
+                px: 1.75,
+                flexShrink: 0,
+                width: { xs: "100%", sm: "auto" },
+                "&:hover": { borderColor: EXPERT_GREEN, bgcolor: EXPERT_GREEN_TINT },
               }}
             >
               Update card
             </Button>
           </Stack>
-        </Box>
+        </SectionCard>
       )}
 
-      {/* ---- Invoices ---- */}
-      <Box
-        sx={{
-          borderRadius: 2,
-          bgcolor: "#FFFFFF",
-          border: "1px solid rgba(14,42,61,0.08)",
-          overflow: "hidden",
-        }}
+      {/* ---- Pricing ladder ---- */}
+      <SectionCard
+        title="Pricing ladder"
+        subtitle={
+          monthsLeftInWaiver > 0
+            ? `${monthsLeftInWaiver} month${monthsLeftInWaiver === 1 ? "" : "s"} left at $0`
+            : "Founding waiver complete"
+        }
       >
-        <Box sx={{ px: 2.5, py: 1.5, borderBottom: "1px solid rgba(14,42,61,0.06)" }}>
-          <Typography sx={{ fontSize: "0.92rem", fontWeight: 600, color: "#0A1A2F" }}>
-            Invoices
-          </Typography>
-          <Typography sx={{ fontSize: "0.76rem", color: "#5C6770", mt: 0.25 }}>
-            Receipts for every charge. Download for your records.
+        <Stack spacing={0.75} sx={{ p: { xs: 1.5, md: 2 } }}>
+          <LadderRow period="Months 1–6" price="$0/mo" note="Founding waiver" current={phase === "launch"} />
+          <LadderRow period="Months 7–12" price="$49/mo" note="Locked launch rate" current={phase === "growth"} />
+          <LadderRow period="Month 13+" price="$199/mo" note="Standard · or $1,990/yr annual" current={phase === "standard"} />
+        </Stack>
+        <Box sx={{ px: 2.5, py: 1.75, borderTop: "1px solid rgba(14,42,61,0.06)", bgcolor: "#FBFAF6" }}>
+          <Typography sx={{ fontSize: "0.8rem", color: "#5C6770", lineHeight: 1.55 }}>
+            <Box component="strong" sx={{ color: "#0A1A2F" }}>Course revenue split</Box> — sell paid
+            courses through DMN and keep 90% (DMN keeps 10%), paid out monthly via Stripe Connect.
           </Typography>
         </Box>
+      </SectionCard>
+
+      {/* ---- Invoices ---- */}
+      <SectionCard title="Invoices" subtitle="Receipts for every charge. Download for your records.">
         {effectiveInvoices === null ? (
           <Stack sx={{ alignItems: "center", py: 4 }}>
             <CircularProgress size={18} sx={{ color: EXPERT_GREEN }} />
           </Stack>
         ) : effectiveInvoices.length === 0 ? (
-          <Box sx={{ px: 2.5, py: 3, textAlign: "center" }}>
-            <Typography sx={{ fontSize: "0.86rem", color: "#5C6770" }}>
+          <Box sx={{ px: 2.5, py: 4, textAlign: "center" }}>
+            <Typography sx={{ fontSize: "0.86rem", color: "#7A8590" }}>
               No invoices yet. They&apos;ll appear here after your first charge.
             </Typography>
           </Box>
@@ -596,11 +395,11 @@ export default function ExpertBillingPage() {
             <Box
               sx={{
                 display: { xs: "none", sm: "grid" },
-                gridTemplateColumns: "1.4fr 2fr 1fr 0.9fr 0.7fr",
+                gridTemplateColumns: "1.3fr 2fr 1fr 0.9fr 0.6fr",
                 gap: 1,
                 px: 2.5,
-                py: 1,
-                bgcolor: "rgba(14,42,61,0.02)",
+                py: 1.25,
+                bgcolor: "#FBFAF6",
                 borderBottom: "1px solid rgba(14,42,61,0.06)",
               }}
             >
@@ -615,8 +414,99 @@ export default function ExpertBillingPage() {
             ))}
           </Box>
         )}
-      </Box>
+      </SectionCard>
     </Stack>
+  );
+}
+
+/**
+ * SectionCard — the single card primitive every billing section uses so
+ * they all share the exact same border, radius, header strip, and body
+ * padding. This is what makes the page read as one aligned, professional
+ * surface instead of a stack of mismatched boxes.
+ */
+function SectionCard({
+  title,
+  subtitle,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Box
+      sx={{
+        borderRadius: 2.5,
+        bgcolor: "#FFFFFF",
+        border: "1px solid rgba(14,42,61,0.09)",
+        boxShadow: "0 1px 2px rgba(14,42,61,0.03)",
+        overflow: "hidden",
+      }}
+    >
+      <Box sx={{ px: 2.5, py: 1.75, borderBottom: "1px solid rgba(14,42,61,0.07)" }}>
+        <Typography sx={{ fontSize: "0.92rem", fontWeight: 600, color: "#0A1A2F" }}>
+          {title}
+        </Typography>
+        {subtitle && (
+          <Typography sx={{ fontSize: "0.78rem", color: "#7A8590", mt: 0.25 }}>
+            {subtitle}
+          </Typography>
+        )}
+      </Box>
+      {children}
+    </Box>
+  );
+}
+
+function MetaItem({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <Box>
+      <Typography
+        sx={{
+          fontSize: "0.64rem",
+          fontWeight: 700,
+          letterSpacing: "0.12em",
+          textTransform: "uppercase",
+          color: "#9CA3AB",
+          mb: 0.5,
+        }}
+      >
+        {label}
+      </Typography>
+      <Box sx={{ fontSize: "0.86rem", fontWeight: 600, color: "#0A1A2F" }}>{children}</Box>
+    </Box>
+  );
+}
+
+function StatusPill({ label, tone }: { label: string; tone: "leaf" | "gold" | "red" | "grey" }) {
+  const p =
+    tone === "leaf"
+      ? { bg: "rgba(34,108,78,0.1)", fg: "#1F5C40" }
+      : tone === "gold"
+        ? { bg: "rgba(217,168,75,0.16)", fg: "#7A5B17" }
+        : tone === "red"
+          ? { bg: "rgba(140,29,29,0.08)", fg: "#8C1D1D" }
+          : { bg: "rgba(14,42,61,0.05)", fg: "#5C6770" };
+  return (
+    <Box
+      component="span"
+      sx={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 0.6,
+        px: 0.9,
+        py: 0.35,
+        borderRadius: 0.75,
+        bgcolor: p.bg,
+        color: p.fg,
+        fontSize: "0.72rem",
+        fontWeight: 700,
+      }}
+    >
+      <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: p.fg }} />
+      {label}
+    </Box>
   );
 }
 

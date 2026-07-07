@@ -1,6 +1,7 @@
 "use client";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import {
   Alert,
   Box,
@@ -19,6 +20,7 @@ import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
 import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
 import PauseCircleOutlinedIcon from "@mui/icons-material/PauseCircleOutlined";
 import PlayCircleOutlinedIcon from "@mui/icons-material/PlayCircleOutlined";
+import PersonAddAlt1OutlinedIcon from "@mui/icons-material/PersonAddAlt1Outlined";
 
 type VendorRow = {
   id: string;
@@ -126,19 +128,35 @@ function Inner() {
 
   return (
     <Stack spacing={4}>
-      <Box>
-        <Typography variant="overline" sx={{ color: "text.secondary", display: "block" }}>
-          PARTNERS
-        </Typography>
-        <Typography variant="h2" sx={{ mt: 0.5, mb: 1, fontSize: { xs: "1.85rem", md: "2.5rem" } }}>
-          All partners
-        </Typography>
-        <Typography sx={{ color: "text.secondary", maxWidth: 620 }}>
-          Approve new applications, manage active partners. Approving a
-          partner sets their account to verified and sends them a confirmation
-          email so they can publish in the directory.
-        </Typography>
-      </Box>
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        spacing={2}
+        sx={{ justifyContent: "space-between", alignItems: { sm: "flex-start" } }}
+      >
+        <Box>
+          <Typography variant="overline" sx={{ color: "text.secondary", display: "block" }}>
+            PARTNERS
+          </Typography>
+          <Typography variant="h2" sx={{ mt: 0.5, mb: 1, fontSize: { xs: "1.85rem", md: "2.5rem" } }}>
+            All partners
+          </Typography>
+          <Typography sx={{ color: "text.secondary", maxWidth: 620 }}>
+            Approve new applications and manage active partners. To onboard a
+            hand-picked partner or expert privately, use{" "}
+            <strong>Founding invites</strong> — it saves a draft, then you send
+            their personalized agreement link when ready.
+          </Typography>
+        </Box>
+        <Button
+          component={Link}
+          href="/admin/founding"
+          variant="contained"
+          startIcon={<PersonAddAlt1OutlinedIcon />}
+          sx={{ flexShrink: 0, whiteSpace: "nowrap" }}
+        >
+          Founding invites
+        </Button>
+      </Stack>
 
       {error && <Alert severity="error">{error}</Alert>}
 
@@ -380,10 +398,10 @@ function Inner() {
         message={toast ?? ""}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       />
+
     </Stack>
   );
 }
-
 function labelForFilter(k: FilterKey): string {
   if (k === "pending_review") return "Pending";
   if (k === "approved") return "Approved";

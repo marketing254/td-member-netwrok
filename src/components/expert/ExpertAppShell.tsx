@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   Avatar,
   Box,
+  Button,
   Chip,
   Container,
   Divider,
@@ -31,7 +32,10 @@ import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import KeyboardArrowDownOutlinedIcon from "@mui/icons-material/KeyboardArrowDownOutlined";
 import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
+import SwapHorizRoundedIcon from "@mui/icons-material/SwapHorizRounded";
+import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
+import { useAlsoHasRole } from "@/lib/auth/useRoles";
 import type { ExpertsRow } from "@/lib/supabase/types";
 import { checkBillingAccess } from "@/lib/stripe";
 import BillingGate from "@/components/shared/BillingGate";
@@ -57,6 +61,7 @@ type CurrentExpert = Pick<
   | "headshot_url"
   | "months_in_program"
   | "subscription_status"
+  | "stripe_subscription_id"
 >;
 
 function useCurrentExpert(): { expert: CurrentExpert | null; loading: boolean } {
@@ -76,7 +81,7 @@ function useCurrentExpert(): { expert: CurrentExpert | null; loading: boolean } 
       const { data } = await supabase
         .from("experts")
         .select(
-          "id, email, full_name, display_name, specialty, status, headshot_url, months_in_program, subscription_status",
+          "id, email, full_name, display_name, specialty, status, headshot_url, months_in_program, subscription_status, stripe_subscription_id",
         )
         .eq("email", email)
         .maybeSingle();
@@ -210,9 +215,14 @@ function NavTabs({
   return (
     <Stack
       direction={expanded ? "column" : "row"}
-      spacing={expanded ? 0.5 : 0.5}
+      spacing={expanded ? 0.5 : 0.25}
       sx={{
         alignItems: expanded ? "stretch" : "center",
+        minWidth: 0,
+        flexWrap: expanded ? "nowrap" : "nowrap",
+        overflowX: expanded ? "visible" : "auto",
+        scrollbarWidth: "none",
+        "&::-webkit-scrollbar": { display: "none" },
       }}
     >
       {navItems.map((item) => {
@@ -228,7 +238,7 @@ function NavTabs({
               display: "flex",
               alignItems: "center",
               gap: 1,
-              px: expanded ? 2 : 1.75,
+              px: expanded ? 2 : 1.25,
               py: expanded ? 1.5 : 1,
               borderRadius: expanded ? 2 : "999px",
               textDecoration: "none",
@@ -238,6 +248,8 @@ function NavTabs({
               bgcolor: active ? (expanded ? EXPERT_GREEN_TINT : "transparent") : "transparent",
               borderBottom: !expanded ? "2px solid" : "none",
               borderColor: active ? EXPERT_GREEN : "transparent",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
               transition: "color 180ms ease, background-color 180ms ease, border-color 180ms ease",
               "&:hover": {
                 color: INK,
@@ -257,12 +269,13 @@ function NavTabs({
 export default function ExpertAppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const theme = useTheme();
-  const isMd = useMediaQuery(theme.breakpoints.up("md"));
+  const showDesktopNav = useMediaQuery(theme.breakpoints.up("lg"));
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuAnchor = useRef<HTMLButtonElement | null>(null);
   const router = useRouter();
   const { expert } = useCurrentExpert();
+  const alsoVendor = useAlsoHasRole("vendor");
 
   const handleSignOut = async () => {
     setUserMenuOpen(false);
@@ -312,8 +325,8 @@ export default function ExpertAppShell({ children }: { children: React.ReactNode
             }}
           >
             {/* LEFT — standalone workspace mark (no DMN logo) */}
-            <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", minWidth: 0 }}>
-              {!isMd && (
+            <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", minWidth: 0, flexShrink: 0 }}>
+              {!showDesktopNav && (
                 <IconButton
                   onClick={() => setDrawerOpen(true)}
                   edge="start"
@@ -327,14 +340,34 @@ export default function ExpertAppShell({ children }: { children: React.ReactNode
             </Stack>
 
             {/* CENTER — desktop nav */}
-            {isMd && (
-              <Box sx={{ flex: 1, display: "flex", justifyContent: "center" }}>
+            {showDesktopNav && (
+              <Box sx={{ flex: 1, minWidth: 0, display: "flex", justifyContent: "center", overflow: "hidden" }}>
                 <NavTabs pathname={pathname} />
               </Box>
             )}
 
             {/* RIGHT — public profile + user menu */}
-            <Stack direction="row" spacing={1.25} sx={{ alignItems: "center" }}>
+            <Stack direction="row" spacing={1.25} sx={{ alignItems: "center", flexShrink: 0 }}>
+              {alsoVendor && (
+                <Button
+                  onClick={() => router.push("/vendor")}
+                  size="small"
+                  variant="outlined"
+                  startIcon={<SwapHorizRoundedIcon sx={{ fontSize: 16 }} />}
+                  sx={{
+                    display: { xs: "none", sm: "inline-flex" },
+                    textTransform: "none",
+                    borderRadius: 999,
+                    borderColor: LINE,
+                    color: INK,
+                    fontWeight: 600,
+                    fontSize: "0.8rem",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  View as partner
+                </Button>
+              )}
               <Box
                 ref={userMenuAnchor}
                 component="button"
@@ -411,6 +444,26 @@ export default function ExpertAppShell({ children }: { children: React.ReactNode
                 </Typography>
               </Box>
               <Divider />
+              {alsoVendor && (
+                <MenuItem
+                  onClick={() => {
+                    setUserMenuOpen(false);
+                    router.push("/vendor");
+                  }}
+                >
+                  <ListItemIcon>
+                    <StorefrontOutlinedIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="View as partner"
+                    secondary="Switch to your partner portal"
+                    slotProps={{
+                      primary: { sx: { fontSize: "0.9rem", fontWeight: 600 } },
+                      secondary: { sx: { fontSize: "0.72rem" } },
+                    }}
+                  />
+                </MenuItem>
+              )}
               <MenuItem
                 onClick={() => {
                   setUserMenuOpen(false);
@@ -497,9 +550,10 @@ export default function ExpertAppShell({ children }: { children: React.ReactNode
               ? checkBillingAccess({
                   monthsInProgram: expert.months_in_program ?? 0,
                   subscriptionStatus: expert.subscription_status ?? null,
+                  hasSubscription: !!expert.stripe_subscription_id,
                 })
               : { allowed: true as const };
-            // Always let the billing page render so the user can update
+            // Always let the billing page render so the user can add
             // their card / re-sync from Stripe even when blocked.
             const onBillingPage = pathname.startsWith("/expert/billing");
             if (!access.allowed && !onBillingPage) {
