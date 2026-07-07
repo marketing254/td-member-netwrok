@@ -1,11 +1,7 @@
 import "server-only";
-import { execFile } from "node:child_process";
-import { existsSync } from "node:fs";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import os from "node:os";
-import path from "node:path";
-import { pathToFileURL } from "node:url";
-import { promisify } from "node:util";
+import { readFile } from "node:fs/promises";
+import puppeteer from "puppeteer-core";
+import type { Browser } from "puppeteer-core";
 
 /**
  * Personalized founding agreement renderer.
@@ -13,15 +9,25 @@ import { promisify } from "node:util";
  * The approved v4 documents are HTML templates. We substitute only the
  * documented tokens, then print the result through headless Chrome at
  * Letter size so the attached/signed PDF matches the legal source.
+ *
+ * Chrome itself differs by environment: on Vercel (or any Lambda-style
+ * host) there's no system browser, so we launch the bundled serverless
+ * Chromium from @sparticuz/chromium. Locally we drive whatever Chrome/
+ * Edge is already installed — no extra setup for developers.
  */
 
-const execFileAsync = promisify(execFile);
+const IS_SERVERLESS = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
 
-const TEMPLATE_BY_ROLE = {
-  expert: new URL("./templates/agreement_expert.html", import.meta.url),
-  partner: new URL("./templates/agreement_partner.html", import.meta.url),
-  both: new URL("./templates/agreement_expert_partner.html", import.meta.url),
-} as const;
+function loadTemplate(role: FoundingAgreementPdfInput["role"]): Promise<string> {
+  switch (role) {
+    case "expert":
+      return readFile(new URL("./templates/agreement_expert.html", import.meta.url), "utf8");
+    case "partner":
+      return readFile(new URL("./templates/agreement_partner.html", import.meta.url), "utf8");
+    case "both":
+      return readFile(new URL("./templates/agreement_expert_partner.html", import.meta.url), "utf8");
+  }
+}
 
 export type FoundingAgreementPdfInput = {
   role: "partner" | "expert" | "both";
@@ -65,7 +71,7 @@ function memberOfferFor(input: FoundingAgreementPdfInput): string {
 }
 
 async function renderAgreementHtml(input: FoundingAgreementPdfInput): Promise<string> {
-  const template = await readFile(TEMPLATE_BY_ROLE[input.role], "utf8");
+  const template = await loadTemplate(input.role);
   const accepted = input.accepted !== false;
   const tokens: Record<string, string> = {
     SIGNER_NAME: input.signer.name,
@@ -84,61 +90,43 @@ async function renderAgreementHtml(input: FoundingAgreementPdfInput): Promise<st
   );
 }
 
-function resolveChromeExecutable(): string {
-  const configured =
-    process.env.CHROME_PATH ??
-    process.env.CHROMIUM_PATH ??
-    process.env.PUPPETEER_EXECUTABLE_PATH ??
-    null;
-  if (configured && existsSync(configured)) return configured;
-
-  const commonPaths = [
-    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-    "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
-    "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
-    "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
-    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-    "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
-    "/usr/bin/google-chrome-stable",
-    "/usr/bin/google-chrome",
-    "/usr/bin/chromium",
-    "/usr/bin/chromium-browser",
-  ];
-  const found = commonPaths.find((candidate) => existsSync(candidate));
-  if (found) return found;
-
-  throw new Error(
-    "Headless Chrome was not found. Set CHROME_PATH, CHROMIUM_PATH, or PUPPETEER_EXECUTABLE_PATH so founding agreement PDFs can be rendered.",
-  );
+async function launchBrowser(): Promise<Browser> {
+  if (IS_SERVERLESS) {
+    const chromium = (await import("@sparticuz/chromium")).default;
+    return puppeteer.launch({
+      executablePath: await chromium.executablePath(),
+      args: chromium.args,
+      headless: true,
+    });
+  }
+  const { resolveLocalChromeExecutable } = await import("./resolveLocalChrome");
+  return puppeteer.launch({
+    executablePath: resolveLocalChromeExecutable(),
+    headless: true,
+    args: ["--no-sandbox", "--disable-dev-shm-usage"],
+  });
 }
 
 async function printHtmlToPdf(html: string): Promise<Buffer> {
-  const tmpDir = await mkdtemp(path.join(os.tmpdir(), "dmn-agreement-"));
-  const htmlPath = path.join(tmpDir, "agreement.html");
-  const pdfPath = path.join(tmpDir, "agreement.pdf");
-
+  const browser = await launchBrowser();
   try {
-    await writeFile(htmlPath, html, "utf8");
-    await execFileAsync(
-      resolveChromeExecutable(),
-      [
-        "--headless=new",
-        "--disable-gpu",
-        "--disable-dev-shm-usage",
-        "--no-sandbox",
-        "--allow-file-access-from-files",
-        "--run-all-compositor-stages-before-draw",
-        "--virtual-time-budget=5000",
-        "--no-pdf-header-footer",
-        "--print-to-pdf-no-header",
-        `--print-to-pdf=${pdfPath}`,
-        pathToFileURL(htmlPath).href,
-      ],
-      { timeout: 30_000, windowsHide: true },
-    );
-    return await readFile(pdfPath);
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: "load", timeout: 30_000 });
+    // Templates pull Google Fonts via a <link>, which doesn't block the
+    // load event — wait for the actual font files so the PDF doesn't
+    // print with the fallback font.
+    await Promise.race([
+      page.evaluate(() => document.fonts.ready),
+      new Promise((resolve) => setTimeout(resolve, 4000)),
+    ]);
+    const pdf = await page.pdf({
+      format: "letter",
+      printBackground: true,
+      timeout: 30_000,
+    });
+    return Buffer.from(pdf);
   } finally {
-    await rm(tmpDir, { recursive: true, force: true }).catch(() => undefined);
+    await browser.close();
   }
 }
 
