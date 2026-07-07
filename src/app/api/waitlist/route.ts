@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { validateWaitlist } from "@/lib/waitlist/validate";
 import { checkRateLimit } from "@/lib/waitlist/rateLimit";
 import { sendWaitlistConfirmationEmail } from "@/lib/waitlist/confirmationEmail";
+import { forwardWaitlistToKit } from "@/lib/kit";
 import type { WaitlistPayload } from "@/lib/waitlist/validate";
 
 export const runtime = "nodejs";
@@ -64,6 +65,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: result.error, field: result.field }, { status: 400 });
   }
 
+  // Pull the form's extra context out of utm so we can forward it to Kit.
+  // The waitlist UI bundles locations + challenge into utm to keep the
+  // validate schema lean. "other" free-text wins when present.
+  const utm = result.data.utm ?? {};
+  const numberOfLocations = utm.locations ?? null;
+  const biggestChallenge =
+    (utm.biggest_challenge_other && utm.biggest_challenge_other.trim()) ||
+    utm.biggest_challenge ||
+    null;
+
   const ip = clientIp(req);
   const rl = checkRateLimit(`${ip}:${result.data.email}`);
   if (!rl.allowed) {
@@ -89,6 +100,16 @@ export async function POST(req: Request) {
     mockCounts.last_24h += 1;
     mockCounts.members += 1;
     await sendConfirmation(result.data, id, createdAt);
+    forwardWaitlistToKit({
+      email: result.data.email,
+      fullName: result.data.fullName,
+      practiceName: result.data.practiceName,
+      phone: result.data.phone,
+      numberOfLocations,
+      biggestChallenge,
+      source: result.data.source,
+      pageUrl: req.headers.get("referer"),
+    });
     return NextResponse.json({
       ok: true,
       id,
@@ -150,6 +171,17 @@ export async function POST(req: Request) {
   }
 
   await sendConfirmation(result.data, data.id, data.created_at);
+
+  forwardWaitlistToKit({
+    email: result.data.email,
+    fullName: result.data.fullName,
+    practiceName: result.data.practiceName,
+    phone: result.data.phone,
+    numberOfLocations,
+    biggestChallenge,
+    source: result.data.source,
+    pageUrl: req.headers.get("referer"),
+  });
 
   return NextResponse.json({ ok: true, id: data.id, role: data.role, createdAt: data.created_at });
 }

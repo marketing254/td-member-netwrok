@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { createServerSupabase } from "@/lib/supabase/server-ssr";
 import { checkRateLimit } from "@/lib/waitlist/rateLimit";
 import { notifySignup } from "@/lib/email/teamNotify";
+import { forwardVendorToKit } from "@/lib/kit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -390,6 +391,17 @@ export async function POST(req: Request) {
       { label: "Plan", value: data.planId },
       { label: "Source", value: data.source },
     ],
+  });
+
+  forwardVendorToKit({
+    contactEmail: data.contactEmail,
+    contactName: data.contactName,
+    companyName: data.companyName,
+    category: data.category,
+    website: data.website,
+    contactPhone: data.contactPhone,
+    source: data.source,
+    pageUrl: req.headers.get("referer"),
   });
 
   return NextResponse.json({
