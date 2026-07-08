@@ -150,6 +150,90 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     return NextResponse.json({ ok: true, status: "revoked" });
   }
 
+  // ---- Notify team (manually fire the team alert) -------------------
+  // For people onboarded before the alerts existed, or any time the team
+  // needs the email re-sent. Uses the invite's current status to pick the
+  // right message: accepted → "accepted", sent/viewed → "invite sent".
+  if (action === "notify_team") {
+    if (invite.status === "draft" || invite.status === "revoked") {
+      return NextResponse.json(
+        { error: "Nothing to notify — this invite hasn't been sent yet." },
+        { status: 400 },
+      );
+    }
+
+    if (invite.status === "accepted") {
+      // Pull live billing detail from the provisioned partner / expert row.
+      let subscriptionStatus: string | null = null;
+      let periodEnd: string | null = null;
+      let cardOnFile = false;
+      if (invite.vendor_id) {
+        const { data: v } = await sb
+          .from("vendors")
+          .select("subscription_status, current_period_end, card_last4")
+          .eq("id", invite.vendor_id)
+          .maybeSingle();
+        subscriptionStatus = v?.subscription_status ?? null;
+        periodEnd = v?.current_period_end ?? null;
+        cardOnFile = !!v?.card_last4;
+      } else if (invite.expert_id) {
+        const { data: e } = await sb
+          .from("experts")
+          .select("subscription_status, current_period_end, card_last4")
+          .eq("id", invite.expert_id)
+          .maybeSingle();
+        subscriptionStatus = e?.subscription_status ?? null;
+        periodEnd = e?.current_period_end ?? null;
+        cardOnFile = !!e?.card_last4;
+      }
+      const cardCaptured = invite.role === "partner" || invite.role === "both" || cardOnFile;
+      const trialEndsNice = periodEnd
+        ? new Date(periodEnd).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
+        : null;
+      const acceptedNice = invite.accepted_at
+        ? new Date(invite.accepted_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
+        : null;
+      const emailed = await notifyTeamEvent({
+        kind: "invite_accepted",
+        role: invite.role,
+        name: invite.signer_name || invite.full_name,
+        email: invite.email,
+        adminLink: "https://dentalmembernetwork.com/admin/founding",
+        highlight: cardCaptured
+          ? "Card on file — they're ready to sign in."
+          : "Accepted — they're ready to sign in.",
+        fields: [
+          { label: "Role", value: invite.role === "both" ? "Expert + Partner" : invite.role },
+          { label: "Company", value: invite.company_name },
+          { label: "Payment method", value: cardCaptured ? "On file" : null },
+          { label: "Subscription", value: subscriptionStatus },
+          { label: "Free trial ends", value: trialEndsNice },
+          { label: "Accepted on", value: acceptedNice },
+          { label: "Member offer", value: invite.member_offer },
+        ],
+      });
+      return NextResponse.json({ ok: true, emailed, kind: "invite_accepted" });
+    }
+
+    // status sent / viewed → re-fire the "invite sent" alert.
+    const inviteUrl = `${appOrigin()}/founding/${invite.code}`;
+    const emailed = await notifyTeamEvent({
+      kind: "invite_sent",
+      role: invite.role,
+      name: invite.full_name,
+      email: invite.email,
+      adminLink: "https://dentalmembernetwork.com/admin/founding",
+      highlight: "Private invite link was emailed with their personalized agreement.",
+      fields: [
+        { label: "Role", value: invite.role === "both" ? "Expert + Partner" : invite.role },
+        { label: "Company", value: invite.company_name },
+        { label: "Member offer", value: invite.member_offer },
+        { label: "Invite link", value: inviteUrl },
+      ],
+    });
+    return NextResponse.json({ ok: true, emailed, kind: "invite_sent" });
+  }
+
   // ---- Send (or re-send) --------------------------------------------
   if (action === "send") {
     if (invite.status === "accepted") {
