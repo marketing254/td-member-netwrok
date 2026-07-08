@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { createServerSupabase } from "@/lib/supabase/server-ssr";
 import { requireAdmin } from "@/lib/auth/guards";
 import { sendVendorApprovalEmail } from "@/lib/waitlist/confirmationEmail";
+import { notifyTeamEvent } from "@/lib/email/teamNotify";
 import type { VendorStatus } from "@/lib/supabase/types";
 
 export const runtime = "nodejs";
@@ -352,6 +353,27 @@ export async function POST(req: Request) {
       body: `${contactName} (${email}) can now sign in and complete agree-and-pay.${body.member_offer ? ` Offer: "${body.member_offer}".` : ""}`,
       link: "/admin/vendors?filter=approved",
       metadata: { vendor_id: vendorId, invited: true },
+    });
+
+    // Email the whole team.
+    void notifyTeamEvent({
+      kind: "admin_added",
+      role: "partner",
+      name: contactName,
+      email,
+      adminLink: "https://dentalmembernetwork.com/admin/vendors?filter=approved",
+      highlight: magicLinkSent
+        ? "Sign-in link emailed — they'll complete agree-and-pay in the portal."
+        : "Added — the sign-in email didn't confirm; they can request a link at /vendor/login.",
+      fields: [
+        { label: "Company", value: companyName },
+        { label: "Contact", value: contactName },
+        { label: "Category", value: category },
+        { label: "Website", value: website },
+        { label: "Member offer", value: body.member_offer },
+        { label: "Signer", value: signatureName },
+        { label: "Notes", value: body.notes },
+      ],
     });
 
     return NextResponse.json({ ok: true, vendor_id: vendorId, magicLinkSent });

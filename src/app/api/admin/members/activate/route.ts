@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/guards";
 import { sendMemberWelcomeEmail } from "@/lib/waitlist/confirmationEmail";
+import { notifyTeamEvent } from "@/lib/email/teamNotify";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -232,6 +233,25 @@ export async function POST(req: Request) {
     action: "activate",
     note: null,
     admin_id: guard.adminId,
+  });
+
+  // Email the whole team that a member was added / activated by admin.
+  void notifyTeamEvent({
+    kind: "admin_added",
+    role: "member",
+    name: firstName,
+    email,
+    adminLink: "https://dentalmembernetwork.com/admin/members",
+    highlight: emailSent
+      ? "Welcome email sent — member can sign in."
+      : "Activated — the welcome email didn't confirm; they can request a link at /member/login.",
+    fields: [
+      { label: "Name", value: firstName },
+      { label: "Email", value: email },
+      { label: "Practice", value: body.practice_name },
+      { label: "City", value: body.city },
+      { label: "Phone", value: body.phone },
+    ],
   });
 
   return NextResponse.json({

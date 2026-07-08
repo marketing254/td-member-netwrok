@@ -8,6 +8,7 @@ import {
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { renderFoundingAgreementPdf } from "@/lib/pdf/foundingAgreementPdf";
 import { sendJoinConfirmationEmail } from "@/lib/email/joinConfirmation";
+import { notifyTeamEvent } from "@/lib/email/teamNotify";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -330,6 +331,31 @@ export async function POST(req: Request, ctx: { params: Promise<{ code: string }
       cardCaptured: invite.role === "partner" || invite.role === "both",
     });
   }
+
+  // Alert the whole team that the invitee accepted + saved their card so
+  // they know this person is ready to sign in.
+  const cardCaptured = invite.role === "partner" || invite.role === "both";
+  const trialEndsNice = periodEnd
+    ? new Date(periodEnd).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
+    : null;
+  void notifyTeamEvent({
+    kind: "invite_accepted",
+    role: invite.role,
+    name: signerName,
+    email,
+    adminLink: "https://dentalmembernetwork.com/admin/founding",
+    highlight: cardCaptured
+      ? "Card on file — they're ready to sign in."
+      : "Accepted — they're ready to sign in.",
+    fields: [
+      { label: "Role", value: invite.role === "both" ? "Expert + Partner" : invite.role },
+      { label: "Company", value: invite.company_name },
+      { label: "Payment method", value: cardCaptured ? "On file" : null },
+      { label: "Subscription", value: subscriptionStatus },
+      { label: "Free trial ends", value: trialEndsNice },
+      { label: "Member offer", value: invite.member_offer },
+    ],
+  });
 
   const loginPath = wantsExpert ? "/expert/login" : "/vendor/login";
   const next = `${loginPath}?welcome=1&prefill=${encodeURIComponent(email)}`;

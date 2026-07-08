@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/guards";
 import { sendExpertApprovalEmail } from "@/lib/waitlist/confirmationEmail";
+import { notifyTeamEvent } from "@/lib/email/teamNotify";
 import type { ExpertApplicationStatus } from "@/lib/supabase/types";
 
 export const runtime = "nodejs";
@@ -249,6 +250,26 @@ export async function POST(req: Request) {
       body: body.notes ?? null,
       link: `/admin/experts?filter=onboarded`,
       metadata: { expert_application_id: applicationId },
+    });
+
+    // Email the whole team.
+    void notifyTeamEvent({
+      kind: "admin_added",
+      role: "expert",
+      name: fullName,
+      email,
+      adminLink: "https://dentalmembernetwork.com/admin/experts?filter=onboarded",
+      highlight: provisioning?.email?.sent
+        ? "Portal access provisioned — welcome email sent."
+        : "Portal access provisioned.",
+      fields: [
+        { label: "Teaches / coaches on", value: specialty },
+        { label: "Company", value: body.company_name },
+        { label: "Phone", value: body.phone },
+        { label: "Website", value: body.website },
+        { label: "Booking link", value: body.booking_link },
+        { label: "Notes", value: body.notes },
+      ],
     });
 
     return NextResponse.json({

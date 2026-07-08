@@ -17,9 +17,8 @@ export const TEAM_DISTRIBUTION_LIST = [
   "rushdha@ekwa.com",
   "rushdhaakbar82@gmail.com",
   "reshani@ekwa.com",
-  // Two more seats reserved for production — uncomment + fill on launch:
-  // "",
-  // "",
+  "kavithanaren1@gmail.com",
+  "narenbizymoms@gmail.com",
 ].filter(Boolean);
 
 function fromAddress(): string {
@@ -287,6 +286,7 @@ export type LeadMagnetSlug = keyof typeof LEAD_MAGNETS;
 // =====================================================================
 
 export type SignupRole = "member" | "expert" | "partner";
+export type NotifyRole = SignupRole | "both";
 
 /**
  * A single labelled fact rendered as one row in the alert email.
@@ -295,30 +295,69 @@ export type SignupRole = "member" | "expert" | "partner";
 export type SignupField = { label: string; value: string | null | undefined };
 
 /**
- * Fire a standardized "new signup" alert to the whole team the moment a
- * member, expert, or partner submits their form. Every field the person
- * provided is rendered in a clean two-column table so the team can act
- * without opening the admin panel. Best-effort — never throws, never
- * blocks the signup response (call it with `void`).
+ * The lifecycle moment this alert marks. Drives the banner label, subject
+ * line, and accent colour so every team email reads the same but the team
+ * can tell at a glance what happened.
  */
-export async function notifySignup(opts: {
-  role: SignupRole;
+export type TeamEventKind = "signup" | "admin_added" | "invite_sent" | "invite_accepted";
+
+function roleLabelFor(role: NotifyRole): string {
+  if (role === "member") return "Member";
+  if (role === "expert") return "Expert";
+  if (role === "partner") return "Partner";
+  return "Expert + Partner";
+}
+
+const EVENT_META: Record<TeamEventKind, { banner: string; accent: string; subject: (r: string, n: string) => string }> = {
+  signup: {
+    banner: "NEW %ROLE% SIGNUP",
+    accent: "#F0C16E",
+    subject: (r, n) => `New ${r} signup: ${n}`,
+  },
+  admin_added: {
+    banner: "%ROLE% ADDED BY ADMIN",
+    accent: "#F0C16E",
+    subject: (r, n) => `${r} added by admin: ${n}`,
+  },
+  invite_sent: {
+    banner: "FOUNDING INVITE SENT · %ROLE%",
+    accent: "#F0C16E",
+    subject: (r, n) => `Founding invite sent: ${n} (${r})`,
+  },
+  invite_accepted: {
+    banner: "INVITE ACCEPTED · %ROLE%",
+    accent: "#7BD59A",
+    subject: (r, n) => `✅ ${n} accepted — ${r} card on file`,
+  },
+};
+
+/**
+ * Fire a standardized, professional alert to the whole team for a person
+ * lifecycle event — a public signup, an admin-added expert/partner/member,
+ * a founding invite being sent, or an invitee accepting (card saved, ready
+ * to sign in). Every field provided renders in a clean two-column table so
+ * the team can act without opening the admin panel. Best-effort — never
+ * throws, never blocks the response (call it with `void`).
+ */
+export async function notifyTeamEvent(opts: {
+  kind: TeamEventKind;
+  role: NotifyRole;
   name: string;
   email: string;
   fields: SignupField[];
   adminLink?: string; // deep-link into the admin panel for this record
-  submittedAt?: string; // ISO; defaults to now
+  at?: string; // ISO; defaults to now
+  highlight?: string; // optional callout banner, e.g. "Card on file — ready to sign in"
 }): Promise<boolean> {
-  const roleLabel =
-    opts.role === "member" ? "Member" : opts.role === "expert" ? "Expert" : "Partner";
-  const submitted = opts.submittedAt ?? new Date().toISOString();
-  const submittedNice = formatTimestamp(submitted);
+  const roleLabel = roleLabelFor(opts.role);
+  const meta = EVENT_META[opts.kind];
+  const when = formatTimestamp(opts.at ?? new Date().toISOString());
+  const banner = meta.banner.replace("%ROLE%", roleLabel.toUpperCase());
+  const subject = meta.subject(roleLabel, opts.name);
 
   const rows = opts.fields
     .filter((f) => f.value != null && String(f.value).trim() !== "")
     .map((f) => ({ label: f.label, value: String(f.value).trim() }));
-
-  const subject = `New ${roleLabel} signup: ${opts.name}`;
 
   const rowsHtml = rows
     .map(
@@ -330,15 +369,20 @@ export async function notifySignup(opts: {
     )
     .join("");
 
+  const highlightHtml = opts.highlight
+    ? `<div style="margin:0 0 16px 0;padding:10px 14px;background:#EAF7EF;border:1px solid #BFE6CE;border-radius:8px;color:#1F6B45;font-size:13px;font-weight:600;">✓ ${escapeHtml(opts.highlight)}</div>`
+    : "";
+
   const html = `<!doctype html><html><body style="margin:0;background:#F7F5F0;padding:24px;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;">
   <div style="max-width:600px;margin:0 auto;background:#FFFFFF;border:1px solid #E0DACE;border-radius:12px;overflow:hidden;">
     <div style="background:#0E2A3D;padding:18px 22px;">
       <div style="font-weight:800;letter-spacing:5px;color:#FFFFFF;font-size:16px;">DMN</div>
-      <div style="color:#F0C16E;font-size:11px;letter-spacing:1.5px;margin-top:3px;font-weight:700;">NEW ${roleLabel.toUpperCase()} SIGNUP</div>
+      <div style="color:${meta.accent};font-size:11px;letter-spacing:1.5px;margin-top:3px;font-weight:700;">${escapeHtml(banner)}</div>
     </div>
     <div style="padding:20px 22px;">
       <div style="font-size:18px;font-weight:700;color:#0A1A2F;margin-bottom:2px;">${escapeHtml(opts.name)}</div>
-      <div style="font-size:13px;color:#5C6770;margin-bottom:16px;">${escapeHtml(opts.email)} · ${escapeHtml(submittedNice)}</div>
+      <div style="font-size:13px;color:#5C6770;margin-bottom:16px;">${escapeHtml(opts.email)} · ${escapeHtml(when)}</div>
+      ${highlightHtml}
       <table style="width:100%;border-collapse:collapse;border-top:1px solid #EDE7DA;">${rowsHtml}</table>
       ${
         opts.adminLink
@@ -346,20 +390,46 @@ export async function notifySignup(opts: {
           : ""
       }
     </div>
+    <div style="padding:12px 22px;border-top:1px solid #EDE7DA;color:#9AA1A8;font-size:11px;">
+      Automated notification · Dental Member Network
+    </div>
   </div>
 </body></html>`;
 
   const text = [
-    `NEW ${roleLabel.toUpperCase()} SIGNUP`,
+    banner,
     "",
-    `${opts.name}`,
-    `${opts.email} · ${submittedNice}`,
+    opts.name,
+    `${opts.email} · ${when}`,
+    ...(opts.highlight ? ["", `✓ ${opts.highlight}`] : []),
     "",
     ...rows.map((r) => `${r.label}: ${r.value}`),
     ...(opts.adminLink ? ["", `Admin: ${opts.adminLink}`] : []),
   ].join("\n");
 
-  return notifyTeam({ subject, html, text, tag: `signup-${opts.role}` });
+  return notifyTeam({ subject, html, text, tag: `${opts.kind}-${opts.role}` });
+}
+
+/**
+ * Back-compat wrapper for the public signup forms.
+ */
+export async function notifySignup(opts: {
+  role: SignupRole;
+  name: string;
+  email: string;
+  fields: SignupField[];
+  adminLink?: string;
+  submittedAt?: string;
+}): Promise<boolean> {
+  return notifyTeamEvent({
+    kind: "signup",
+    role: opts.role,
+    name: opts.name,
+    email: opts.email,
+    fields: opts.fields,
+    adminLink: opts.adminLink,
+    at: opts.submittedAt,
+  });
 }
 
 function escapeHtml(s: string): string {
