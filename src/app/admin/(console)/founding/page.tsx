@@ -22,6 +22,7 @@ import SendOutlinedIcon from "@mui/icons-material/SendOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import LinkRoundedIcon from "@mui/icons-material/LinkRounded";
 import BlockOutlinedIcon from "@mui/icons-material/BlockOutlined";
+import ForwardToInboxOutlinedIcon from "@mui/icons-material/ForwardToInboxOutlined";
 import FoundingInviteDialog, {
   type FoundingInviteFormValues,
   type FoundingInviteRoleValue,
@@ -196,6 +197,28 @@ export default function AdminFoundingPage() {
     }
   };
 
+  const doNotify = async (r: InviteRow) => {
+    setBusyId(r.id);
+    try {
+      const res = await fetch(`/api/admin/founding-invite/${r.id}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "notify_team" }),
+      });
+      const body = (await res.json()) as { ok?: boolean; error?: string; emailed?: boolean; kind?: string };
+      if (!res.ok || body.error) {
+        setToast(body.error ?? `Notify failed (${res.status})`);
+        return;
+      }
+      const what = body.kind === "invite_accepted" ? "acceptance" : "invite";
+      setToast(body.emailed ? `Team emailed about ${r.full_name}'s ${what}.` : "Sent — but the email transport didn't confirm.");
+    } catch (err) {
+      setToast(err instanceof Error ? err.message : "Notify failed.");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   return (
     <Stack spacing={4}>
       <Stack
@@ -265,6 +288,7 @@ export default function AdminFoundingPage() {
               onSend={() => setSendTarget(r)}
               onEdit={() => openEdit(r)}
               onCopy={() => copyLink(r)}
+              onNotify={() => doNotify(r)}
               onRevoke={() => setRevokeTarget(r)}
             />
           ))}
@@ -350,6 +374,7 @@ function InviteCard({
   onSend,
   onEdit,
   onCopy,
+  onNotify,
   onRevoke,
 }: {
   row: InviteRow;
@@ -357,9 +382,13 @@ function InviteCard({
   onSend: () => void;
   onEdit: () => void;
   onCopy: () => void;
+  onNotify: () => void;
   onRevoke: () => void;
 }) {
   const terminal = row.status === "accepted" || row.status === "revoked";
+  // The team alert can be re-fired once an invite has actually gone out
+  // (sent / viewed / accepted) — not for drafts or revoked invites.
+  const canNotify = row.status === "sent" || row.status === "viewed" || row.status === "accepted";
   return (
     <Box
       sx={{
@@ -416,6 +445,18 @@ function InviteCard({
         {row.status !== "draft" && (
           <Button size="small" variant="text" onClick={onCopy} startIcon={<LinkRoundedIcon sx={{ fontSize: 16 }} />} sx={{ textTransform: "none" }}>
             Copy link
+          </Button>
+        )}
+        {canNotify && (
+          <Button
+            size="small"
+            variant="text"
+            onClick={onNotify}
+            disabled={busy}
+            startIcon={<ForwardToInboxOutlinedIcon sx={{ fontSize: 16 }} />}
+            sx={{ textTransform: "none" }}
+          >
+            {row.status === "accepted" ? "Notify team of acceptance" : "Notify team"}
           </Button>
         )}
         {!terminal && (
