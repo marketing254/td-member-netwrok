@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/guards";
 import { renderFoundingAgreementPdf } from "@/lib/pdf/foundingAgreementPdf";
 import { sendFoundingInviteEmail } from "@/lib/email/foundingInvite";
+import { notifyTeamEvent } from "@/lib/email/teamNotify";
 import { appOrigin } from "@/lib/stripe";
 import type { FoundingInviteRole } from "@/lib/supabase/types";
 
@@ -234,6 +235,24 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       body: `${invite.role} invite emailed to ${invite.email}.`,
       link: "/admin/founding",
       metadata: { invite_id: invite.id, role: invite.role },
+    });
+
+    // Email the whole team that the invite went out.
+    void notifyTeamEvent({
+      kind: "invite_sent",
+      role: invite.role,
+      name: invite.full_name,
+      email: invite.email,
+      adminLink: "https://dentalmembernetwork.com/admin/founding",
+      highlight: sent
+        ? "Private invite link emailed with their personalized agreement."
+        : "Marked sent, but the email transport didn't confirm — copy the link and send manually.",
+      fields: [
+        { label: "Role", value: invite.role === "both" ? "Expert + Partner" : invite.role },
+        { label: "Company", value: invite.company_name },
+        { label: "Member offer", value: invite.member_offer },
+        { label: "Invite link", value: inviteUrl },
+      ],
     });
 
     if (!sent) {
