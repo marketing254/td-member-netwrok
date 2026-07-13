@@ -91,11 +91,34 @@ export type JoinConfirmationInput = {
   signedAt?: Date;
   /** Member offer text, partner roles only. Omit the whole section if empty. */
   memberOffer?: string | null;
+  /** Multi-company agreements: every company on the agreement with its own
+   * offer. When 2+ entries exist the email lists offers per company instead
+   * of the single memberOffer line. */
+  companies?: { name: string; category?: string | null; member_offer?: string | null }[] | null;
   /** ISO date the trial ends / first $49 charge lands. Partner roles only. */
   trialEndsAt?: string | null;
   /** Whether a card was actually saved to Stripe as part of this signup (founding invite accept). Public join/apply flows don't capture a card here, so default false. */
   cardCaptured?: boolean;
 };
+
+/** Normalize the companies list; folds the invite-level offer into the
+ * primary company so the per-company list is complete. */
+function companiesWithOffers(opts: {
+  companies?: JoinConfirmationInput["companies"];
+  memberOffer?: string | null;
+}): { name: string; category: string | null; member_offer: string | null }[] {
+  const list = (opts.companies ?? [])
+    .map((c) => ({
+      name: (c.name ?? "").trim(),
+      category: c.category?.trim() || null,
+      member_offer: c.member_offer?.trim() || null,
+    }))
+    .filter((c) => c.name);
+  if (list.length > 0 && !list[0].member_offer && opts.memberOffer?.trim()) {
+    list[0].member_offer = opts.memberOffer.trim();
+  }
+  return list;
+}
 
 export async function sendJoinConfirmationEmail(
   input: JoinConfirmationInput,
@@ -297,8 +320,34 @@ function buildHtml(opts: BuiltOpts): string {
   }
 
   let memberOfferHtml = "";
+  const emailCompanies = companiesWithOffers(opts);
   const offer = opts.memberOffer?.trim();
-  if (partnerRole && offer) {
+  if (partnerRole && emailCompanies.length > 1) {
+    // Multi-company agreement — one block listing each company's own offer.
+    const rows = emailCompanies
+      .map(
+        (c) => `
+      <div style="margin-bottom:10px;">
+        <div style="font-size:13.5px;font-weight:700;color:#0A1A2F;">${escapeHtml(c.name)}${
+          c.category ? ` <span style="font-weight:400;color:#7A8590;">&middot; ${escapeHtml(c.category)}</span>` : ""
+        }</div>
+        <div style="font-size:13.5px;color:#3B4A55;line-height:1.5;">${
+          c.member_offer ? escapeHtml(c.member_offer) : "Offer to be confirmed before this listing goes live."
+        }</div>
+      </div>`,
+      )
+      .join("");
+    memberOfferHtml = `
+  <div style="background:#F7EED9;border:1px solid #D9A84B;border-radius:8px;padding:16px;margin:20px 0;">
+    <div style="font-size:11px;font-weight:800;letter-spacing:2px;color:#A07823;margin-bottom:10px;">
+      YOUR COMPANIES &amp; MEMBER OFFERS ON FILE
+    </div>
+    ${rows}
+    <p style="margin:6px 0 0;font-size:13px;color:#5C6770;line-height:1.5;">
+      One founding fee covers all of the above. This is what members will see — reply if anything needs correcting before it goes live.
+    </p>
+  </div>`;
+  } else if (partnerRole && offer) {
     memberOfferHtml = `
   <div style="background:#F7EED9;border:1px solid #D9A84B;border-radius:8px;padding:16px;margin:20px 0;">
     <div style="font-size:11px;font-weight:800;letter-spacing:2px;color:#A07823;margin-bottom:8px;">
@@ -398,8 +447,23 @@ Your billing, in plain dates:
   }
 
   let memberOfferText = "";
+  const emailCompanies = companiesWithOffers(opts);
   const offer = opts.memberOffer?.trim();
-  if (partnerRole && offer) {
+  if (partnerRole && emailCompanies.length > 1) {
+    const rows = emailCompanies
+      .map(
+        (c) =>
+          `  - ${c.name}${c.category ? ` (${c.category})` : ""}: ${
+            c.member_offer ?? "offer to be confirmed before this listing goes live"
+          }`,
+      )
+      .join("\n");
+    memberOfferText = `
+Your companies & member offers on file (one founding fee covers all):
+${rows}
+This is what members will see. Reply if anything needs correcting before it goes live.
+`;
+  } else if (partnerRole && offer) {
     memberOfferText = `
 Your member offer on file:
 ${offer}. This is what members will see. Reply if anything needs correcting before it goes live.

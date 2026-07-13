@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import {
   Alert,
+  Box,
   Button,
   CircularProgress,
   Dialog,
@@ -16,6 +17,14 @@ import {
 import { vendorCategories } from "@/lib/vendorData";
 
 export type FoundingInviteRoleValue = "partner" | "expert" | "both";
+
+// An extra company beyond the primary one (multi-company partners/experts).
+export type AdditionalCompany = {
+  name: string;
+  category: string;
+  member_offer: string;
+  contact_email: string;
+};
 
 export type FoundingInviteFormValues = {
   id?: string;
@@ -34,6 +43,9 @@ export type FoundingInviteFormValues = {
   signer_name: string;
   signer_title: string;
   notes: string;
+  // Extra companies (the primary is the fields above). All go on one
+  // agreement + one fee; extras become covered listings at acceptance.
+  additionalCompanies: AdditionalCompany[];
 };
 
 const EMPTY: FoundingInviteFormValues = {
@@ -52,6 +64,7 @@ const EMPTY: FoundingInviteFormValues = {
   signer_name: "",
   signer_title: "",
   notes: "",
+  additionalCompanies: [],
 };
 
 /**
@@ -87,6 +100,19 @@ export default function FoundingInviteDialog({
 
   const needsCompany = v.role === "partner" || v.role === "both";
 
+  const addCompany = () =>
+    setV((p) => ({
+      ...p,
+      additionalCompanies: [...p.additionalCompanies, { name: "", category: "", member_offer: "", contact_email: "" }],
+    }));
+  const removeCompany = (i: number) =>
+    setV((p) => ({ ...p, additionalCompanies: p.additionalCompanies.filter((_, idx) => idx !== i) }));
+  const updateCompany = (i: number, k: keyof AdditionalCompany, val: string) =>
+    setV((p) => ({
+      ...p,
+      additionalCompanies: p.additionalCompanies.map((c, idx) => (idx === i ? { ...c, [k]: val } : c)),
+    }));
+
   const submit = async () => {
     setFormError(null);
     if (!v.full_name.trim() || !v.email.trim()) {
@@ -99,6 +125,32 @@ export default function FoundingInviteDialog({
     }
     setSubmitting(true);
     try {
+      // Build the companies list: the primary company (fields above) is
+      // companies[0]; each additional row follows. Sent only for
+      // partner/both invites.
+      const companies = needsCompany
+        ? [
+            {
+              name: v.company_name.trim(),
+              category: v.category.trim() || null,
+              website: v.website.trim() || null,
+              description: v.description.trim() || null,
+              member_offer: v.member_offer.trim() || null,
+              contact_name: v.full_name.trim() || null,
+              contact_email: v.email.trim().toLowerCase() || null,
+              calendar_link: v.calendar_link.trim() || null,
+            },
+            ...v.additionalCompanies
+              .filter((c) => c.name.trim())
+              .map((c) => ({
+                name: c.name.trim(),
+                category: c.category.trim() || null,
+                member_offer: c.member_offer.trim() || null,
+                contact_email: c.contact_email.trim().toLowerCase() || null,
+              })),
+          ]
+        : [];
+
       const payload = {
         role: v.role,
         full_name: v.full_name.trim(),
@@ -115,6 +167,7 @@ export default function FoundingInviteDialog({
         signer_name: v.signer_name.trim(),
         signer_title: v.signer_title.trim(),
         notes: v.notes.trim(),
+        companies: companies.length ? companies : undefined,
       };
       const url =
         mode === "edit" && initial?.id
@@ -227,6 +280,82 @@ export default function FoundingInviteDialog({
               placeholder="e.g. 15% off your first year, or a free consultation"
             />
           </Grid>
+
+          {needsCompany && (
+            <>
+              <Grid size={{ xs: 12 }}>
+                <SectionLabel>Additional companies (optional) — one fee &amp; one agreement covers all</SectionLabel>
+              </Grid>
+              {v.additionalCompanies.map((c, i) => (
+                <Grid size={{ xs: 12 }} key={i}>
+                  <Box sx={{ border: "1px dashed", borderColor: "divider", borderRadius: 2, p: 1.5 }}>
+                    <Grid container spacing={1.5}>
+                      <Grid size={{ xs: 12, sm: 6 }}>
+                        <TextField
+                          label={`Company ${i + 2} name`}
+                          value={c.name}
+                          onChange={(e) => updateCompany(i, "name", e.target.value)}
+                          fullWidth
+                          size="small"
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 6 }}>
+                        <TextField
+                          label="Category"
+                          value={c.category}
+                          onChange={(e) => updateCompany(i, "category", e.target.value)}
+                          fullWidth
+                          size="small"
+                          select
+                        >
+                          <MenuItem value="">— none —</MenuItem>
+                          {vendorCategories.map((cat) => (
+                            <MenuItem key={cat} value={cat}>
+                              {cat}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 6 }}>
+                        <TextField
+                          label="Contact email (distinct)"
+                          type="email"
+                          value={c.contact_email}
+                          onChange={(e) => updateCompany(i, "contact_email", e.target.value)}
+                          fullWidth
+                          size="small"
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 6 }}>
+                        <TextField
+                          label="Member offer"
+                          value={c.member_offer}
+                          onChange={(e) => updateCompany(i, "member_offer", e.target.value)}
+                          fullWidth
+                          size="small"
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 12 }}>
+                        <Button
+                          size="small"
+                          color="error"
+                          onClick={() => removeCompany(i)}
+                          sx={{ textTransform: "none" }}
+                        >
+                          Remove
+                        </Button>
+                      </Grid>
+                    </Grid>
+                  </Box>
+                </Grid>
+              ))}
+              <Grid size={{ xs: 12 }}>
+                <Button size="small" onClick={addCompany} sx={{ textTransform: "none" }}>
+                  + Add another company
+                </Button>
+              </Grid>
+            </>
+          )}
 
           <Grid size={{ xs: 12 }}>
             <SectionLabel>02 · Contact</SectionLabel>

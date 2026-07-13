@@ -52,6 +52,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
     secondary_phone: string;
     signer_name: string;
     signer_title: string;
+    companies: unknown[];
   }>;
   try {
     body = await req.json();
@@ -101,6 +102,22 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
   if (typeof body.secondary_phone === "string") patch.secondary_phone = body.secondary_phone.trim() || null;
   if (typeof body.signer_name === "string") patch.signer_name = body.signer_name.trim() || null;
   if (typeof body.signer_title === "string") patch.signer_title = body.signer_title.trim() || null;
+  if (Array.isArray(body.companies)) {
+    const cleaned = body.companies
+      .filter((c): c is Record<string, unknown> => !!c && typeof c === "object")
+      .map((c) => ({
+        name: String((c as { name?: unknown }).name ?? "").trim(),
+        category: ((c as { category?: string }).category ?? "")?.trim() || null,
+        website: ((c as { website?: string }).website ?? "")?.trim() || null,
+        description: ((c as { description?: string }).description ?? "")?.trim() || null,
+        member_offer: ((c as { member_offer?: string }).member_offer ?? "")?.trim() || null,
+        contact_name: ((c as { contact_name?: string }).contact_name ?? "")?.trim() || null,
+        contact_email: ((c as { contact_email?: string }).contact_email ?? "")?.trim().toLowerCase() || null,
+        calendar_link: ((c as { calendar_link?: string }).calendar_link ?? "")?.trim() || null,
+      }))
+      .filter((c) => c.name);
+    patch.companies = cleaned.length ? cleaned : null;
+  }
 
   const { error } = await sb.from("founding_invites").update(patch as never).eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -267,6 +284,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       pdfBuffer = await renderFoundingAgreementPdf({
         role: invite.role,
         signer: { name: signerName, email: invite.email, companyName: invite.company_name },
+        companies: invite.companies ?? undefined,
         memberOffer: invite.member_offer,
         signedAt: new Date(),
         ipHashLast6: "pending",

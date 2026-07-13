@@ -17,6 +17,7 @@ import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import Header from "@/components/sections/Header";
 import WaitlistSection from "@/components/sections/WaitlistSection";
+import FoundingDirectory from "@/components/directory/FoundingDirectory";
 import { poweredBy } from "@/lib/content";
 import { COLORS } from "@/theme";
 
@@ -342,6 +343,11 @@ export default function PartnersPage() {
           </Box>
         </Container>
       </Box>
+
+      {/* Founding partners directory — DB-driven, paginated. Shows every
+          ACCEPTED partner company (logo, category, one-liner) linking to
+          their public profile page. Hidden until at least one is live. */}
+      <FoundingDirectory kind="partners" />
 
       {/* How it works */}
       <Box id="how" sx={{ py: { xs: 6, md: 9 } }}>

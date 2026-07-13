@@ -21,16 +21,36 @@ import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
  * BookCoachingCard — coaching CTA shown at the bottom of every kit detail
  * page in the member portal.
  *
- * Pattern: compact intro card + Book button → MUI Dialog with the YCBM
- * booking page rendered inline as an iframe. Lazy-loaded so the calendar
- * widget only fetches when a member actually wants to book.
+ * Default: Gary Takacs + the YCBM booking dialog (inline iframe).
+ * Attributed kits: pass `expert` and the card features the kit's OWN
+ * expert — their face, name, company, and their scheduler. Their booking
+ * link opens in a new tab (external schedulers often refuse iframes).
  */
 const YCBM_BOOKING_URL = "https://thriving-practice-strategy-meeting.youcanbook.me/";
 
-export function BookCoachingCard({ topicTitle }: { topicTitle?: string }) {
+export type KitExpert = {
+  name: string;
+  headshot_url: string | null;
+  booking_link: string | null;
+  specialty?: string | null;
+  company_name?: string | null;
+};
+
+export function BookCoachingCard({ topicTitle, expert }: { topicTitle?: string; expert?: KitExpert | null }) {
   const [open, setOpen] = useState(false);
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
+
+  const featured = expert ?? null;
+  const displayName = featured?.name ?? "Gary Takacs";
+  const firstName = displayName.split(/\s+/)[0] ?? displayName;
+  const avatarSrc = featured ? (featured.headshot_url ?? undefined) : "/team/gary-takacs.jpg";
+  const initials = displayName
+    .split(/\s+/)
+    .map((p) => p[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   return (
     <>
@@ -62,8 +82,8 @@ export function BookCoachingCard({ topicTitle }: { topicTitle?: string }) {
             sx={{ alignItems: { sm: "center" }, flex: 1, minWidth: 0 }}
           >
             <Avatar
-              alt="Gary Takacs"
-              src="/team/gary-takacs.jpg"
+              alt={displayName}
+              src={avatarSrc}
               sx={{
                 width: { xs: 60, md: 68 },
                 height: { xs: 60, md: 68 },
@@ -82,7 +102,7 @@ export function BookCoachingCard({ topicTitle }: { topicTitle?: string }) {
                 },
               }}
             >
-              GT
+              {initials}
             </Avatar>
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", mb: 0.4 }}>
@@ -95,7 +115,7 @@ export function BookCoachingCard({ topicTitle }: { topicTitle?: string }) {
                     textTransform: "uppercase",
                   }}
                 >
-                  1-on-1 coaching
+                  {featured ? "Meet your expert" : "1-on-1 coaching"}
                 </Typography>
                 <VerifiedRoundedIcon
                   sx={{ fontSize: 13, color: "var(--gold, #F0C16E)" }}
@@ -112,7 +132,7 @@ export function BookCoachingCard({ topicTitle }: { topicTitle?: string }) {
                   mb: 0.4,
                 }}
               >
-                Go deeper with Gary Takacs
+                Go deeper with {displayName}
               </Typography>
               <Typography
                 sx={{
@@ -122,54 +142,72 @@ export function BookCoachingCard({ topicTitle }: { topicTitle?: string }) {
                   maxWidth: 540,
                 }}
               >
-                {topicTitle
-                  ? `Bring your questions about ${topicTitle} — or anything else running your practice — to a focused 30-minute strategy call.`
-                  : "Bring your hardest practice question to a focused 30-minute strategy call."}{" "}
-                Free with founding membership.
+                {featured
+                  ? topicTitle
+                    ? `${firstName} built this kit. Bring your questions about ${topicTitle} straight to ${firstName}${featured.booking_link ? " — book a session below" : " in the discussion below"}.`
+                    : `${firstName} built this kit — bring your questions straight to the source.`
+                  : topicTitle
+                    ? `Bring your questions about ${topicTitle} — or anything else running your practice — to a focused 30-minute strategy call. Free with founding membership.`
+                    : "Bring your hardest practice question to a focused 30-minute strategy call. Free with founding membership."}
               </Typography>
               <Stack
                 direction="row"
                 spacing={2}
                 sx={{ mt: 1, flexWrap: "wrap", rowGap: 0.5 }}
               >
-                <MiniMeta label="Founder" value="Thriving Dentist" />
-                <MiniMeta label="Coached" value="2,200+ practices" />
-                <MiniMeta label="Format" value="30 min · Zoom" />
+                {featured ? (
+                  <>
+                    {featured.specialty && <MiniMeta label="Expertise" value={featured.specialty} />}
+                    {featured.company_name && <MiniMeta label="Company" value={featured.company_name} />}
+                    <MiniMeta label="Status" value="Founding Expert" />
+                  </>
+                ) : (
+                  <>
+                    <MiniMeta label="Founder" value="Thriving Dentist" />
+                    <MiniMeta label="Coached" value="2,200+ practices" />
+                    <MiniMeta label="Format" value="30 min · Zoom" />
+                  </>
+                )}
               </Stack>
             </Box>
           </Stack>
 
-          {/* Right — CTA */}
+          {/* Right — CTA. Expert schedulers open in a new tab (external
+              booking pages often refuse to render inside an iframe). */}
           <Box sx={{ flexShrink: 0, width: { xs: "100%", md: "auto" } }}>
-            <Button
-              onClick={() => setOpen(true)}
-              variant="contained"
-              size="large"
-              disableElevation
-              startIcon={<CalendarMonthRoundedIcon sx={{ fontSize: 18 }} />}
-              sx={{
-                bgcolor: "var(--ink, #0A1A2F)",
-                color: "#FFFFFF",
-                textTransform: "none",
-                fontSize: "0.9rem",
-                fontWeight: 700,
-                borderRadius: 1,
-                px: 2.5,
-                py: 1.25,
-                width: { xs: "100%", md: "auto" },
-                boxShadow: "0 8px 22px -10px rgba(14,42,61,0.4)",
-                "&:hover": {
-                  bgcolor: "var(--gold-deep, #A07823)",
-                  boxShadow: "0 10px 26px -10px rgba(217,168,75,0.55)",
-                },
-                "&:focus-visible": {
-                  outline: "2px solid var(--gold, #F0C16E)",
-                  outlineOffset: 3,
-                },
-              }}
-            >
-              Book a 30-min session
-            </Button>
+            {featured && !featured.booking_link ? null : (
+              <Button
+                {...(featured && featured.booking_link
+                  ? { component: "a" as const, href: featured.booking_link, target: "_blank", rel: "noopener noreferrer" }
+                  : { onClick: () => setOpen(true) })}
+                variant="contained"
+                size="large"
+                disableElevation
+                startIcon={<CalendarMonthRoundedIcon sx={{ fontSize: 18 }} />}
+                sx={{
+                  bgcolor: "var(--ink, #0A1A2F)",
+                  color: "#FFFFFF",
+                  textTransform: "none",
+                  fontSize: "0.9rem",
+                  fontWeight: 700,
+                  borderRadius: 1,
+                  px: 2.5,
+                  py: 1.25,
+                  width: { xs: "100%", md: "auto" },
+                  boxShadow: "0 8px 22px -10px rgba(14,42,61,0.4)",
+                  "&:hover": {
+                    bgcolor: "var(--gold-deep, #A07823)",
+                    boxShadow: "0 10px 26px -10px rgba(217,168,75,0.55)",
+                  },
+                  "&:focus-visible": {
+                    outline: "2px solid var(--gold, #F0C16E)",
+                    outlineOffset: 3,
+                  },
+                }}
+              >
+                {featured ? `Book with ${firstName}` : "Book a 30-min session"}
+              </Button>
+            )}
           </Box>
         </Stack>
 

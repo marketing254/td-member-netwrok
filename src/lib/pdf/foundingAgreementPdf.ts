@@ -69,11 +69,21 @@ export type FoundingAgreementPdfInput = {
     email: string;
     companyName?: string | null;
   };
+  // When a partner/expert names several companies, list them here. The PDF
+  // itemizes each one and {{COMPANY}} becomes the joined list. Falls back to
+  // signer.companyName when omitted.
+  companies?: { name: string; category?: string | null; member_offer?: string | null }[] | null;
   memberOffer?: string | null;
   signedAt: Date;
   ipHashLast6: string;
   accepted?: boolean;
 };
+
+/** Join names for prose: ["A","B","C"] → "A, B and C". */
+function joinAnd(names: string[]): string {
+  if (names.length <= 1) return names[0] ?? "";
+  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+}
 
 function escapeHtml(value: string): string {
   return value
@@ -97,31 +107,82 @@ function formatEffectiveDate(date: Date): string {
   }).format(date);
 }
 
-function memberOfferFor(input: FoundingAgreementPdfInput): string {
+function memberOfferFor(
+  input: FoundingAgreementPdfInput,
+  companyCount: number,
+): string {
   if (input.role === "expert") return "";
-  const offer = input.memberOffer?.trim();
+  // Multi-company agreements list each company's own offer under
+  // "Companies covered" in Schedule B — the single line just points there.
+  if (companyCount > 1) {
+    return "Per company — each offer is listed under “Companies covered” in Schedule B.";
+  }
+  const offer = input.memberOffer?.trim() || input.companies?.[0]?.member_offer?.trim();
   return offer || "To be confirmed before your listing goes live.";
 }
 
 async function renderAgreementHtml(input: FoundingAgreementPdfInput): Promise<string> {
   const [template, fontFaceCss] = await Promise.all([loadTemplate(input.role), getFontFaceCss()]);
   const accepted = input.accepted !== false;
+
+  // Resolve the company list. Prefer the explicit companies[]; fall back to
+  // the single companyName so single-company invites are unchanged.
+  const companyList = (input.companies ?? [])
+    .map((c) => ({
+      name: (c.name ?? "").trim(),
+      category: c.category?.trim() || null,
+      member_offer: c.member_offer?.trim() || null,
+    }))
+    .filter((c) => c.name);
+  const fallbackName = input.signer.companyName?.trim() || input.signer.name;
+  const names = companyList.length ? companyList.map((c) => c.name) : [fallbackName];
+  const companyJoined = joinAnd(names);
+
+  // The primary company's offer may live on the invite itself rather than
+  // the companies[0] entry — fold it in so the itemized list is complete.
+  if (companyList.length > 0 && !companyList[0].member_offer && input.memberOffer?.trim()) {
+    companyList[0].member_offer = input.memberOffer.trim();
+  }
+
   const tokens: Record<string, string> = {
     SIGNER_NAME: input.signer.name,
     SIGNER_EMAIL: input.signer.email,
-    COMPANY: input.signer.companyName?.trim() || input.signer.name,
-    MEMBER_OFFER: memberOfferFor(input),
+    COMPANY: companyJoined,
+    MEMBER_OFFER: memberOfferFor(input, companyList.length),
     EFFECTIVE_DATETIME: formatEffectiveDate(input.signedAt),
     STATUS: accepted
       ? `Accepted electronically. IP fingerprint SHA-256 ${input.ipHashLast6}`
       : "Awaiting electronic acceptance via your private invite link",
   };
 
+  // Itemized list for the "Companies covered" block — each company with its
+  // category AND its own member-exclusive offer. Injected raw (after the
+  // escaped-token pass) with every value individually escaped.
+  const listSource = companyList.length
+    ? companyList
+    : names.map((n) => ({ name: n, category: null as string | null, member_offer: null as string | null }));
+  const companiesListHtml = listSource
+    .map((c) => {
+      const offer =
+        input.role === "expert"
+          ? ""
+          : `<div style="font-size:9pt;color:#3B4A55;margin-top:1px;"><span style="color:#7a8794;">Member offer:</span> ${
+              c.member_offer
+                ? escapeHtml(c.member_offer)
+                : "to be confirmed before this listing goes live"
+            }</div>`;
+      return `<li style="margin-bottom:5px;">${escapeHtml(c.name)}${
+        c.category ? ` <span style="color:#7a8794;">&middot; ${escapeHtml(c.category)}</span>` : ""
+      }${offer}</li>`;
+    })
+    .join("");
+
   const withFonts = template.replace("{{FONT_FACE_CSS}}", fontFaceCss);
-  return Object.entries(tokens).reduce(
+  const withTokens = Object.entries(tokens).reduce(
     (html, [token, value]) => html.replaceAll(`{{${token}}}`, escapeHtml(value)),
     withFonts,
   );
+  return withTokens.replaceAll("{{COMPANIES_LIST}}", companiesListHtml);
 }
 
 async function launchBrowser(): Promise<Browser> {

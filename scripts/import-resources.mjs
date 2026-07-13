@@ -107,6 +107,18 @@ const BOOK_CLUB_CATEGORY = args["book-club-category"] || "Book Club";
 const ONLY = Array.isArray(args.only) ? args.only : args.only ? [args.only] : [];
 const DRY_RUN = !!args["dry-run"];
 const PUBLISH = !!args["publish"];
+// Attribution: when set, every imported kit is tied to this expert / vendor
+// (originating_expert_id / originating_vendor_id). Attributed kits are
+// MEMBER-PORTAL ONLY — the public /api/resources endpoint excludes them.
+const EXPERT_EMAIL = (args["expert-email"] || "").trim().toLowerCase() || null;
+const VENDOR_EMAIL = (args["vendor-email"] || "").trim().toLowerCase() || null;
+// Force the square social cover ("Cover - Square (social).png") as the kit
+// thumbnail instead of the default "Card - Portal Grid".
+const SQUARE_COVER = !!args["square-cover"];
+
+// Resolved once at startup from the emails above.
+let ORIGINATING_EXPERT_ID = null;
+let ORIGINATING_VENDOR_ID = null;
 
 if (!existsSync(ROOT)) {
   console.error(`Folder doesn't exist: ${ROOT}`);
@@ -175,8 +187,10 @@ async function listKitFolders(root) {
 }
 
 function detectKitType(filenames) {
+  // Only a Book Study Guide marks a true Book Club kit. Shorts alone do
+  // NOT — expert kits (Ashley, Phillips, …) ship 9×16 shorts too and must
+  // stay "standard" so they keep their real category + no Book Club badge.
   if (filenames.some((n) => /^Book Study Guide\.pdf$/i.test(n))) return "book_club";
-  if (filenames.some((n) => SHORT_RE.test(n))) return "book_club";
   return "standard";
 }
 
@@ -268,6 +282,41 @@ async function kitSlugExists(slug) {
   console.log(`Default category: ${DEFAULT_CATEGORY ?? "(none)"}`);
   console.log(`Book Club category: ${BOOK_CLUB_CATEGORY}`);
   console.log(`Publish on insert: ${PUBLISH ? "yes (approved)" : "no (pending_review)"}`);
+
+  // Resolve attribution once. Fail loudly if the person isn't in the DB yet
+  // (they must have accepted / been added first), so we never silently import
+  // an unattributed — and therefore publicly-visible — kit.
+  if (EXPERT_EMAIL) {
+    const { data, error } = await supabase
+      .from("experts")
+      .select("id, full_name")
+      .eq("email", EXPERT_EMAIL)
+      .maybeSingle();
+    if (error || !data) {
+      console.error(`No expert found with email ${EXPERT_EMAIL}. Add/accept them first, then re-run.`);
+      process.exit(1);
+    }
+    ORIGINATING_EXPERT_ID = data.id;
+    console.log(`Attributing kits to EXPERT: ${data.full_name} <${EXPERT_EMAIL}> (${data.id})`);
+  }
+  if (VENDOR_EMAIL) {
+    const { data, error } = await supabase
+      .from("vendors")
+      .select("id, company_name")
+      .eq("contact_email", VENDOR_EMAIL)
+      .maybeSingle();
+    if (error || !data) {
+      console.error(`No partner found with contact_email ${VENDOR_EMAIL}. Add/accept them first, then re-run.`);
+      process.exit(1);
+    }
+    ORIGINATING_VENDOR_ID = data.id;
+    console.log(`Attributing kits to PARTNER: ${data.company_name} <${VENDOR_EMAIL}> (${data.id})`);
+  }
+  if (SQUARE_COVER) console.log("Thumbnail: forcing 'Cover - Square (social)'.");
+  if (ORIGINATING_EXPERT_ID || ORIGINATING_VENDOR_ID) {
+    console.log("→ These kits are MEMBER-PORTAL ONLY (excluded from the public resources page).\n");
+  }
+
   if (DRY_RUN) console.log("DRY RUN — nothing will be uploaded or inserted.\n");
 
   const allFolders = await listKitFolders(ROOT);
@@ -317,10 +366,14 @@ async function kitSlugExists(slug) {
 // Inline shim around importKit so we can pass a parent path explicitly
 // without rewriting the original (which read `ROOT` globally).
 async function runOneKit(folderName, parentDir) {
-  const slug = slugify(folderName);
+  // Folders may be named "Kit - Transition Without Turbulence"; strip the
+  // leading "Kit -" so the displayed title + slug are clean.
+  const displayName = folderName.replace(/^Kit\s*[-–—]\s*/i, "").trim() || folderName;
+  const slug = slugify(displayName);
   if (!slug) return { skipped: true, reason: "empty slug" };
 
   console.log(`\n→ ${folderName}`);
+  console.log(`  title: ${displayName}`);
   console.log(`  slug: ${slug}`);
 
   const abs = path.join(parentDir, folderName);
@@ -337,8 +390,11 @@ async function runOneKit(folderName, parentDir) {
     return { skipped: true, reason: "exists" };
   }
 
-  const portalCardName = filenames.find((n) => COVER_PORTAL_RE.test(n))
-                       || filenames.find((n) => COVER_SQUARE_RE.test(n));
+  // Default: prefer the "Card - Portal Grid" cover, fall back to the square
+  // social cover. With --square-cover, force the square social cover.
+  const portalCardName = SQUARE_COVER
+    ? (filenames.find((n) => COVER_SQUARE_RE.test(n)) || filenames.find((n) => COVER_PORTAL_RE.test(n)))
+    : (filenames.find((n) => COVER_PORTAL_RE.test(n)) || filenames.find((n) => COVER_SQUARE_RE.test(n)));
   const heroName = filenames.find((n) => COVER_HERO_RE.test(n));
 
   let portalCardUrl = null;
@@ -386,8 +442,10 @@ async function runOneKit(folderName, parentDir) {
     });
   }
 
+  // Shorts upload for ANY kit that has them (expert kits ship 9×16 shorts
+  // too); the book_club_payload is only attached for true Book Club kits.
   let bookClubPayload = null;
-  if (kitType === "book_club") {
+  {
     const shorts = findShorts(filenames);
     const shortsPayload = [];
     for (const s of shorts) {
@@ -418,12 +476,14 @@ async function runOneKit(folderName, parentDir) {
         public_url: publicLink,
       });
     }
-    bookClubPayload = {
-      shorts: shortsPayload,
-      has_infographic:
-        filenames.some((n) => /^Infographic\.png$/i.test(n))
-        || filenames.some((n) => /^Infographic\.pdf$/i.test(n)),
-    };
+    if (kitType === "book_club") {
+      bookClubPayload = {
+        shorts: shortsPayload,
+        has_infographic:
+          filenames.some((n) => /^Infographic\.png$/i.test(n))
+          || filenames.some((n) => /^Infographic\.pdf$/i.test(n)),
+      };
+    }
   }
 
   if (rows.length === 0) {
@@ -438,7 +498,7 @@ async function runOneKit(folderName, parentDir) {
 
   const inserts = rows.map((r) => ({
     topic_slug: slug,
-    topic_title: folderName,
+    topic_title: displayName,
     topic_summary: null,
     category,
     portal_card_url: portalCardUrl,
@@ -458,6 +518,9 @@ async function runOneKit(folderName, parentDir) {
     approved_at: PUBLISH ? now : null,
     kit_type: kitType,
     book_club_payload: kitType === "book_club" ? bookClubPayload : null,
+    // Attribution → member-portal-only. Null for unattributed (public) kits.
+    originating_expert_id: ORIGINATING_EXPERT_ID,
+    originating_vendor_id: ORIGINATING_VENDOR_ID,
   }));
 
   if (DRY_RUN) {

@@ -103,7 +103,7 @@ export default function MemberExpertsPage() {
             Find resources by expert
           </Typography>
           <Typography sx={{ color: INK_SOFT, fontSize: "0.98rem", maxWidth: 640, lineHeight: 1.55 }}>
-            Every expert on the DMN bench. Tap one to filter the library to just their kits.
+            Every expert on the DMN bench. Tap one to see their full profile and kits.
           </Typography>
         </Box>
 
@@ -170,7 +170,7 @@ function ExpertCard({ expert }: { expert: Expert }) {
   return (
     <Box
       component={Link}
-      href={`/dashboard/resources?expert=${expert.id}`}
+      href={`/dashboard/experts/${expert.id}`}
       sx={{
         display: "flex",
         flexDirection: "column",
@@ -277,7 +277,7 @@ function ExpertCard({ expert }: { expert: Expert }) {
             : `${expert.kit_count} kit${expert.kit_count === 1 ? "" : "s"}`}
         </Typography>
         <Stack direction="row" spacing={0.5} sx={{ alignItems: "center", color: GOLD, fontSize: "0.74rem", fontWeight: 700 }}>
-          View kits <ArrowForwardRoundedIcon sx={{ fontSize: 14 }} />
+          View profile <ArrowForwardRoundedIcon sx={{ fontSize: 14 }} />
         </Stack>
       </Stack>
     </Box>

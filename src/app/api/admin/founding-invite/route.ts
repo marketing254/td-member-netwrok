@@ -3,7 +3,7 @@ import crypto from "node:crypto";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/guards";
 import { appOrigin } from "@/lib/stripe";
-import type { FoundingInviteRole } from "@/lib/supabase/types";
+import type { FoundingInviteRole, FoundingInviteCompany } from "@/lib/supabase/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -37,11 +37,31 @@ type Body = {
   secondary_phone?: string;
   signer_name?: string;
   signer_title?: string;
+  companies?: FoundingInviteCompany[];
 };
 
 function clean(v: string | undefined): string | null {
   const t = (v ?? "").trim();
   return t || null;
+}
+
+/** Keep only well-formed company entries (a non-empty name). */
+function cleanCompanies(input: unknown): FoundingInviteCompany[] | null {
+  if (!Array.isArray(input)) return null;
+  const out = input
+    .filter((c): c is Record<string, unknown> => !!c && typeof c === "object")
+    .map((c) => ({
+      name: String((c as { name?: unknown }).name ?? "").trim(),
+      category: clean((c as { category?: string }).category),
+      website: clean((c as { website?: string }).website),
+      description: clean((c as { description?: string }).description),
+      member_offer: clean((c as { member_offer?: string }).member_offer),
+      contact_name: clean((c as { contact_name?: string }).contact_name),
+      contact_email: clean((c as { contact_email?: string }).contact_email)?.toLowerCase() ?? null,
+      calendar_link: clean((c as { calendar_link?: string }).calendar_link),
+    }))
+    .filter((c) => c.name);
+  return out.length ? out : null;
 }
 
 function genCode(): string {
@@ -57,7 +77,7 @@ export async function GET() {
   const { data, error } = await sb
     .from("founding_invites")
     .select(
-      "id, code, role, full_name, email, company_name, member_offer, phone, notes, website, category, calendar_link, description, secondary_email, secondary_phone, signer_name, signer_title, status, agreement_pdf_path, viewed_at, accepted_at, expires_at, created_at",
+      "id, code, role, full_name, email, company_name, member_offer, phone, notes, website, category, calendar_link, description, secondary_email, secondary_phone, signer_name, signer_title, companies, status, agreement_pdf_path, viewed_at, accepted_at, expires_at, created_at",
     )
     .order("created_at", { ascending: false });
   if (error) {
@@ -130,6 +150,7 @@ export async function POST(req: Request) {
       secondary_phone: clean(body.secondary_phone),
       signer_name: clean(body.signer_name),
       signer_title: clean(body.signer_title),
+      companies: cleanCompanies(body.companies),
       agreement_version: AGREEMENT_VERSION,
       agreement_pdf_path: null,
       status: "draft",

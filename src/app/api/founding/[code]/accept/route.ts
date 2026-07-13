@@ -15,6 +15,16 @@ export const dynamic = "force-dynamic";
 
 const TRIAL_DAYS = 180;
 
+// Founding billing anchor. The founding ramp is a fixed-date schedule tied
+// to the Aug 1, 2026 launch: 6 months free → $49/mo → $199/mo, the same for
+// every founding partner regardless of when they accept (the "clock anchors
+// to launch" rule). Verify/adjust these two dates if the launch shifts.
+//   • Free ($0)      : acceptance → FOUNDING_TRIAL_END_ISO
+//   • Growth ($49/mo): FOUNDING_TRIAL_END_ISO → FOUNDING_STANDARD_START_ISO
+//   • Standard ($199): FOUNDING_STANDARD_START_ISO onward
+const FOUNDING_TRIAL_END_ISO = "2027-02-01T00:00:00Z";
+const FOUNDING_STANDARD_START_ISO = "2027-08-01T00:00:00Z";
+
 type Body = { setupIntentId?: string; paymentMethodId?: string };
 
 function clientIp(req: Request): string {
@@ -130,28 +140,69 @@ export async function POST(req: Request, ctx: { params: Promise<{ code: string }
       /* best effort */
     }
 
-    // Partner-bearing invites keep one Stripe subscription for the paid
+    // Partner-bearing invites keep ONE Stripe subscription for the paid
     // partner ramp. Expert-only founding invites do not enter Stripe.
+    // The ramp is a phased subscription schedule so month 13 steps up to
+    // $199 on its own: $0 (trial) → $49 growth → $199 standard.
+    let growthPrice: string;
+    let standardPrice: string;
     try {
-      priceId = partnerPriceIdFor("partner_growth_monthly");
+      growthPrice = partnerPriceIdFor("partner_growth_monthly");
+      standardPrice = partnerPriceIdFor("partner_standard_monthly");
     } catch (err) {
       return NextResponse.json(
         { error: err instanceof Error ? err.message : "Stripe price missing." },
         { status: 503 },
       );
     }
+    priceId = growthPrice; // stored as the "current" price on the row
+
+    const nowSec = Math.floor(Date.now() / 1000);
+    const trialEndSec = Math.floor(new Date(FOUNDING_TRIAL_END_ISO).getTime() / 1000);
+    const standardStartSec = Math.floor(new Date(FOUNDING_STANDARD_START_ISO).getTime() / 1000);
+    const canSchedule = trialEndSec > nowSec && standardStartSec > trialEndSec;
 
     let subscription;
     try {
-      subscription = await stripe.subscriptions.create({
-        customer: customerId,
-        items: [{ price: priceId }],
-        trial_period_days: TRIAL_DAYS,
-        default_payment_method: paymentMethodId,
-        trial_settings: { end_behavior: { missing_payment_method: "pause" } },
-        metadata: { founding_invite: code, role: invite.role },
-        expand: ["latest_invoice"],
-      });
+      if (canSchedule) {
+        // Fixed-date founding ramp.
+        const schedule = await stripe.subscriptionSchedules.create({
+          customer: customerId,
+          start_date: nowSec,
+          end_behavior: "release",
+          default_settings: {
+            default_payment_method: paymentMethodId,
+            collection_method: "charge_automatically",
+          },
+          phases: [
+            // $0 until the free period ends (card on file, no charge).
+            { items: [{ price: growthPrice }], trial: true, end_date: trialEndSec },
+            // $49/mo growth phase (months 7–12).
+            { items: [{ price: growthPrice }], end_date: standardStartSec },
+            // $199/mo standard, month 13 onward (open-ended).
+            { items: [{ price: standardPrice }] },
+          ],
+          metadata: { founding_invite: code, role: invite.role },
+        });
+        const subId =
+          typeof schedule.subscription === "string"
+            ? schedule.subscription
+            : schedule.subscription?.id;
+        if (!subId) throw new Error("Schedule did not create a subscription.");
+        subscription = await stripe.subscriptions.retrieve(subId);
+      } else {
+        // Safety fallback (only if the anchor dates have already passed):
+        // a simple 180-day trial on the growth price so acceptance never
+        // breaks. The $199 step can be scheduled manually if this fires.
+        subscription = await stripe.subscriptions.create({
+          customer: customerId,
+          items: [{ price: growthPrice }],
+          trial_period_days: TRIAL_DAYS,
+          default_payment_method: paymentMethodId,
+          trial_settings: { end_behavior: { missing_payment_method: "pause" } },
+          metadata: { founding_invite: code, role: invite.role, ramp: "fallback-no-schedule" },
+        });
+      }
     } catch (err) {
       return NextResponse.json(
         { error: err instanceof Error ? `Stripe rejected the subscription: ${err.message}` : "Stripe error" },
@@ -271,6 +322,46 @@ export async function POST(req: Request, ctx: { params: Promise<{ code: string }
     }
   }
 
+  // Fan out the EXTRA companies (companies[1..]) into covered listings under
+  // the principal partner. One fee already covers them; each is created as a
+  // draft (pending_review) for the team to publish. companies[0] is the
+  // principal created above.
+  if (wantsPartner && vendorId && Array.isArray(invite.companies) && invite.companies.length > 1) {
+    const emailLocal = email.split("@")[0] ?? "partner";
+    const emailDomain = email.split("@")[1] ?? "example.com";
+    const extras = invite.companies.slice(1);
+    for (let i = 0; i < extras.length; i++) {
+      const c = extras[i];
+      const name = (c?.name ?? "").trim();
+      if (!name) continue;
+      // Each covered company needs its own contact email. Use the provided
+      // one; otherwise a plus-addressed alias of the principal keeps it
+      // unique and still deliverable to them.
+      const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 20) || `co${i + 2}`;
+      const cEmail = c.contact_email?.trim().toLowerCase() || `${emailLocal}+${slug}@${emailDomain}`;
+      // eslint-disable-next-line no-await-in-loop
+      const { data: dup } = await sb.from("vendors").select("id").eq("contact_email", cEmail).maybeSingle();
+      if (dup) continue;
+      // eslint-disable-next-line no-await-in-loop
+      await sb.from("vendors").insert({
+        company_name: name,
+        display_name: name,
+        contact_name: invite.full_name,
+        contact_email: cEmail,
+        billing_email: email,
+        category: c.category ?? null,
+        website: c.website ?? null,
+        description: c.description ?? null,
+        calendar_link: c.calendar_link ?? null,
+        plan_id: "covered",
+        billing_parent_id: vendorId,
+        status: "pending_review",
+        verified: false,
+        months_in_program: 0,
+      } as never);
+    }
+  }
+
   // Regenerate the signed PDF (with the acceptance record filled).
   let signedPdf: Buffer | null = null;
   let signedPath: string | null = null;
@@ -278,6 +369,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ code: string }
     signedPdf = await renderFoundingAgreementPdf({
       role: invite.role,
       signer: { name: signerName, email, companyName: invite.company_name },
+      companies: invite.companies ?? undefined,
       memberOffer: invite.member_offer,
       signedAt,
       ipHashLast6: ipHash.slice(-6),
@@ -327,6 +419,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ code: string }
       agreementVersion: invite.agreement_version,
       signedAt,
       memberOffer: invite.member_offer,
+      companies: invite.companies ?? undefined,
       trialEndsAt: periodEnd,
       cardCaptured: invite.role === "partner" || invite.role === "both",
     });

@@ -24,11 +24,16 @@ export async function GET() {
   try {
     const admin = getSupabaseAdmin();
 
+    // Publish-ready gate (same rule as the public directory): an expert
+    // must have a headshot AND a bio before members see them. Internal
+    // test rows / half-set profiles never reach the directory.
     const { data: experts, error } = await admin
       .from("experts")
       .select("id, display_name, full_name, specialty, headshot_url, bio")
       .neq("status", "archived")
       .neq("status", "suspended")
+      .not("headshot_url", "is", null)
+      .not("bio", "is", null)
       .order("display_name", { ascending: true, nullsFirst: false });
     if (error) throw error;
 
