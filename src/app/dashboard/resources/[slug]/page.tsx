@@ -61,6 +61,7 @@ type ResourceItem = {
     shorts?: { index: number; principle: string; public_url: string | null }[];
     has_infographic?: boolean;
   } | null;
+  originating_expert_id?: string | null;
   progress: Progress | null;
 };
 
@@ -168,6 +169,18 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
   const [resources, setResources] = useState<ResourceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeId, setActiveId] = useState<string | null>(null);
+  // Book Club shorts play inline in their own compact card (not the big
+  // 16:9 player) — this tracks which short is currently expanded/playing.
+  const [activeShortId, setActiveShortId] = useState<string | null>(null);
+  // The kit's originating expert (attributed kits): face + scheduler for
+  // the "Go deeper" card. Null for house kits → the card features Gary.
+  const [kitExpert, setKitExpert] = useState<{
+    name: string;
+    headshot_url: string | null;
+    booking_link: string | null;
+    specialty: string | null;
+    company_name: string | null;
+  } | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   /**
@@ -176,6 +189,40 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
    * local mirror, the user had to refresh to see progress at all because
    * the React state stayed at the values fetched on mount.
    */
+  // Attributed kit → load its expert's public info (face, scheduler) so
+  // the "Go deeper" card features them instead of the default coach.
+  const originatingExpertId = resources.find((r) => r.originating_expert_id)?.originating_expert_id ?? null;
+  useEffect(() => {
+    if (!originatingExpertId) {
+      setKitExpert(null);
+      return;
+    }
+    let active = true;
+    (async () => {
+      try {
+        const res = await fetch(`/api/member/experts/${originatingExpertId}`, { cache: "no-store" });
+        if (!active || !res.ok) return;
+        const body = (await res.json()) as {
+          expert?: { name: string; headshot_url: string | null; booking_link: string | null; specialty: string | null; company_name: string | null };
+        };
+        if (active && body.expert) {
+          setKitExpert({
+            name: body.expert.name,
+            headshot_url: body.expert.headshot_url,
+            booking_link: body.expert.booking_link,
+            specialty: body.expert.specialty,
+            company_name: body.expert.company_name,
+          });
+        }
+      } catch {
+        /* card falls back to the default coach */
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [originatingExpertId]);
+
   const markProgress = useCallback(async (resourceId: string, action: "view" | "complete") => {
     const now = new Date().toISOString();
     setResources((prev) =>
@@ -269,8 +316,17 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
     });
   }, [resources]);
 
-  const videos = useMemo(() => orderedResources.filter((r) => isVideo(r.kind)), [orderedResources]);
+  // Book Club "shorts" live in their own reel below the player, so they're
+  // excluded from the big-player video list and the curriculum list.
+  const videos = useMemo(
+    () => orderedResources.filter((r) => isVideo(r.kind) && r.kind !== "video_short"),
+    [orderedResources],
+  );
   const downloads = useMemo(() => orderedResources.filter((r) => !isVideo(r.kind)), [orderedResources]);
+  const curriculumResources = useMemo(
+    () => orderedResources.filter((r) => r.kind !== "video_short"),
+    [orderedResources],
+  );
 
   // Derive the active resource. When the user hasn't picked anything explicitly
   // (activeId === null), fall back to the first playable video so the player
@@ -528,16 +584,42 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
                   {activeResource &&
                     !isVideo(activeResource.kind) &&
                     !isPreviewable(activeResource) && (
-                      <Typography
-                        sx={{
-                          fontSize: "0.78rem",
-                          color: "rgba(255,255,255,0.7)",
-                          maxWidth: 320,
-                        }}
-                      >
-                        This file format can&apos;t be previewed inline. Use the Download
-                        button below to grab it.
-                      </Typography>
+                      <>
+                        <Typography
+                          sx={{
+                            fontSize: "0.78rem",
+                            color: "rgba(255,255,255,0.7)",
+                            maxWidth: 320,
+                          }}
+                        >
+                          {activeResource.title.toLowerCase().includes("powerpoint") ||
+                          activeResource.mime_type?.includes("presentation")
+                            ? "This is the editable PowerPoint copy — download it to customize the slides."
+                            : "This file format can't be previewed inline — download it to view."}
+                        </Typography>
+                        {activeResource.external_url && (
+                          <Button
+                            component="a"
+                            href={activeResource.external_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            variant="contained"
+                            startIcon={<DownloadOutlinedIcon sx={{ fontSize: 17 }} />}
+                            onClick={() => void markProgress(activeResource.id, "view")}
+                            sx={{
+                              mt: 1,
+                              textTransform: "none",
+                              fontWeight: 700,
+                              borderRadius: 999,
+                              bgcolor: "rgba(217,168,75,0.9)",
+                              color: "#0A1A2F",
+                              "&:hover": { bgcolor: "#F0C16E" },
+                            }}
+                          >
+                            Download {activeResource.title}
+                          </Button>
+                        )}
+                      </>
                     )}
                 </Stack>
               )}
@@ -669,7 +751,7 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
               sx={{ justifyContent: "space-between", alignItems: "baseline", mb: 1.5 }}
             >
               <Typography sx={editorialText.heading}>
-                {orderedResources.length} {orderedResources.length === 1 ? "item" : "items"}
+                {curriculumResources.length} {curriculumResources.length === 1 ? "item" : "items"}
               </Typography>
               <Typography sx={editorialText.meta}>
                 {videos.length} video{videos.length === 1 ? "" : "s"} · {downloads.length} file
@@ -678,7 +760,7 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
             </Stack>
 
             <Box>
-              {orderedResources.map((r, idx) => (
+              {curriculumResources.map((r, idx) => (
                 <CurriculumRow
                   key={r.id}
                   index={idx + 1}
@@ -687,6 +769,12 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
                   onSelect={() => {
                     if (isVideo(r.kind) && r.external_url) {
                       playLesson(r);
+                    } else if (r.external_url && !isPreviewable(r)) {
+                      // Non-previewable file (e.g. the editable .pptx slide
+                      // deck) — download it directly instead of parking the
+                      // player on a "can't preview" dead end.
+                      void markProgress(r.id, "view");
+                      window.open(r.external_url, "_blank", "noopener,noreferrer");
                     } else if (r.external_url) {
                       setActiveId(r.id);
                     }
@@ -698,155 +786,175 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
         </Grid>
       </Grid>
 
-      {/* Book Club only — Key Principles reel. Each short represents one
-          named principle from the book; clicking plays it in the player. */}
-      {isBookClub && shortResources.length > 0 && (
+      {/* Key Principles reel — any kit that ships 9×16 shorts (Book Club
+          AND expert kits). Compact horizontal strip; each short plays
+          inline in its own card (not the big player). */}
+      {shortResources.length > 0 && (
         <Box sx={{ mb: 3.5 }}>
-          <Stack
-            direction="row"
-            sx={{ alignItems: "baseline", justifyContent: "space-between", mb: 1.5 }}
-          >
-            <Box>
-              <Typography sx={{ ...editorialText.eyebrow, color: "#6E3346" }}>
-                Key principles
-              </Typography>
-              <Typography
-                sx={{
-                  fontFamily: "var(--font-display)",
-                  fontSize: { xs: "1.2rem", md: "1.4rem" },
-                  fontWeight: 500,
-                  color: "var(--ink)",
-                  letterSpacing: "-0.01em",
-                  mt: 0.25,
-                }}
-              >
-                The {shortResources.length} ideas from the book
-              </Typography>
-            </Box>
-          </Stack>
+          <Box sx={{ mb: 1.25 }}>
+            <Typography sx={{ ...editorialText.eyebrow, color: "#6E3346" }}>
+              Key principles
+            </Typography>
+            <Typography
+              sx={{
+                fontFamily: "var(--font-display)",
+                fontSize: { xs: "1.05rem", md: "1.2rem" },
+                fontWeight: 500,
+                color: "var(--ink)",
+                letterSpacing: "-0.01em",
+                mt: 0.25,
+              }}
+            >
+              {shortResources.length} quick ideas from {isBookClub ? "the book" : "this kit"}
+            </Typography>
+          </Box>
           <Box
             sx={{
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "1fr",
-                sm: "repeat(2, 1fr)",
-                md: `repeat(${Math.min(shortResources.length, 3)}, 1fr)`,
+              display: "flex",
+              gap: 1.5,
+              overflowX: "auto",
+              pb: 1,
+              scrollbarWidth: "thin",
+              "&::-webkit-scrollbar": { height: 6 },
+              "&::-webkit-scrollbar-thumb": {
+                background: "rgba(110,51,70,0.25)",
+                borderRadius: 3,
               },
-              gap: 2,
             }}
           >
-            {shortResources.map((s, i) => (
-              <Box
-                key={s.id}
-                role="button"
-                tabIndex={0}
-                onClick={() => playLesson(s)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    playLesson(s);
-                  }
-                }}
-                sx={{
-                  cursor: "pointer",
-                  borderRadius: 1.5,
-                  border: "1px solid var(--paper-rule)",
-                  bgcolor: "var(--paper, #FBF8F1)",
-                  overflow: "hidden",
-                  transition: "transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease",
-                  "&:hover": {
-                    transform: "translateY(-2px)",
-                    borderColor: "#6E3346",
-                    boxShadow: "0 16px 32px -16px rgba(110,51,70,0.25)",
-                  },
-                  "&:focus-visible": {
-                    outline: "2px solid var(--gold)",
-                    outlineOffset: 2,
-                  },
-                }}
-              >
-                <Box
-                  sx={{
-                    position: "relative",
-                    aspectRatio: "9 / 16",
-                    bgcolor: "#0A1A2F",
-                    backgroundImage:
-                      "linear-gradient(160deg, #14334A 0%, #0A2236 100%)",
-                    display: "grid",
-                    placeItems: "center",
-                  }}
-                >
+            {shortResources.map((s, i) => {
+              const playing = activeShortId === s.id && !!s.external_url;
+              const open = () => {
+                if (!playing && s.external_url) {
+                  setActiveShortId(s.id);
+                  void markProgress(s.id, "view");
+                }
+              };
+              return (
+                <Box key={s.id} sx={{ flex: "0 0 auto", width: { xs: 168, sm: 196, md: 216 } }}>
                   <Box
+                    role={playing ? undefined : "button"}
+                    tabIndex={playing ? -1 : 0}
+                    onClick={open}
+                    onKeyDown={(e) => {
+                      if (!playing && (e.key === "Enter" || e.key === " ")) {
+                        e.preventDefault();
+                        open();
+                      }
+                    }}
                     sx={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: "50%",
-                      bgcolor: "rgba(217,168,75,0.85)",
-                      color: "#0A1A2F",
-                      display: "grid",
-                      placeItems: "center",
-                      boxShadow: "0 8px 22px -8px rgba(217,168,75,0.5)",
+                      position: "relative",
+                      aspectRatio: "9 / 16",
+                      borderRadius: 1.5,
+                      overflow: "hidden",
+                      cursor: playing ? "default" : "pointer",
+                      bgcolor: "#0A1A2F",
+                      backgroundImage: playing
+                        ? "none"
+                        : "linear-gradient(160deg, #14334A 0%, #0A2236 100%)",
+                      border: "1px solid var(--paper-rule)",
+                      transition: "transform 180ms ease, border-color 180ms ease",
+                      "&:hover": playing
+                        ? {}
+                        : { transform: "translateY(-2px)", borderColor: "#6E3346" },
+                      "&:focus-visible": { outline: "2px solid var(--gold)", outlineOffset: 2 },
                     }}
                   >
-                    <PlayArrowRoundedIcon sx={{ fontSize: 28 }} />
+                    {playing ? (
+                      <video
+                        src={s.external_url ?? undefined}
+                        controls
+                        autoPlay
+                        playsInline
+                        onPlay={() => void markProgress(s.id, "view")}
+                        onEnded={() => void markProgress(s.id, "complete")}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          // "contain", never "cover": the element keeps its
+                          // CSS in native fullscreen, and cover would crop a
+                          // 9:16 short in half on a 16:9 screen when the
+                          // member hits the make-larger control.
+                          objectFit: "contain",
+                          background: "#000",
+                          display: "block",
+                        }}
+                      />
+                    ) : (
+                      <>
+                        <Box sx={{ position: "absolute", inset: 0, display: "grid", placeItems: "center" }}>
+                          <Box
+                            sx={{
+                              width: 48,
+                              height: 48,
+                              borderRadius: "50%",
+                              bgcolor: "rgba(217,168,75,0.9)",
+                              color: "#0A1A2F",
+                              display: "grid",
+                              placeItems: "center",
+                              boxShadow: "0 8px 20px -8px rgba(217,168,75,0.6)",
+                            }}
+                          >
+                            <PlayArrowRoundedIcon sx={{ fontSize: 28 }} />
+                          </Box>
+                        </Box>
+                        <Typography
+                          sx={{
+                            position: "absolute",
+                            top: 8,
+                            left: 10,
+                            fontSize: "0.62rem",
+                            fontWeight: 800,
+                            letterSpacing: "0.12em",
+                            color: "#F0C16E",
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          {i + 1}
+                        </Typography>
+                        {s.progress?.completed_at && (
+                          <Box
+                            sx={{
+                              position: "absolute",
+                              top: 8,
+                              right: 8,
+                              height: 17,
+                              px: 0.75,
+                              borderRadius: 0.5,
+                              bgcolor: "rgba(34,108,78,0.9)",
+                              color: "#FFFFFF",
+                              fontSize: "0.56rem",
+                              fontWeight: 800,
+                              letterSpacing: "0.08em",
+                              textTransform: "uppercase",
+                              display: "inline-flex",
+                              alignItems: "center",
+                            }}
+                          >
+                            Done
+                          </Box>
+                        )}
+                      </>
+                    )}
                   </Box>
                   <Typography
                     sx={{
-                      position: "absolute",
-                      top: 10,
-                      left: 10,
-                      fontSize: "0.62rem",
-                      fontWeight: 800,
-                      letterSpacing: "0.14em",
-                      color: "#F0C16E",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    Principle {i + 1}
-                  </Typography>
-                  {s.progress?.completed_at && (
-                    <Box
-                      sx={{
-                        position: "absolute",
-                        top: 10,
-                        right: 10,
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 0.4,
-                        height: 18,
-                        px: 0.75,
-                        borderRadius: 0.5,
-                        bgcolor: "rgba(34,108,78,0.85)",
-                        color: "#FFFFFF",
-                        fontSize: "0.58rem",
-                        fontWeight: 800,
-                        letterSpacing: "0.12em",
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      Done
-                    </Box>
-                  )}
-                </Box>
-                <Box sx={{ p: 1.5 }}>
-                  <Typography
-                    sx={{
-                      fontFamily: "var(--font-display)",
-                      fontSize: "1rem",
+                      fontSize: "0.82rem",
                       fontWeight: 600,
                       color: "var(--ink)",
-                      letterSpacing: "-0.005em",
                       lineHeight: 1.25,
+                      mt: 0.75,
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
                     }}
                   >
                     {s.title}
                   </Typography>
-                  <Typography sx={{ ...editorialText.meta, fontSize: "0.72rem", mt: 0.4 }}>
-                    9×16 short · Tap to play
-                  </Typography>
                 </Box>
-              </Box>
-            ))}
+              );
+            })}
           </Box>
         </Box>
       )}
@@ -865,7 +973,7 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
       {/* 1-on-1 coaching booking — every kit page surfaces this so members
           can take what they just learned into a focused call with Gary. */}
       <Box sx={{ mt: { xs: 4, lg: 5 } }}>
-        <BookCoachingCard topicTitle={topicTitle} />
+        <BookCoachingCard topicTitle={topicTitle} expert={kitExpert} />
       </Box>
 
       {/* Mid-kit feedback — fires once at 50% (see effect above). */}

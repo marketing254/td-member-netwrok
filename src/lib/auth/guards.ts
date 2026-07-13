@@ -265,15 +265,31 @@ export async function requirePaidVendor(): Promise<VendorContext | Failure> {
   const admin = getSupabaseAdmin();
   const { data: billing } = await admin
     .from("vendors")
-    .select("months_in_program, subscription_status, stripe_subscription_id")
+    .select("months_in_program, subscription_status, stripe_subscription_id, billing_parent_id")
     .eq("id", guard.vendorId)
     .maybeSingle();
 
-  const access = checkBillingAccess({
-    monthsInProgram: billing?.months_in_program ?? 0,
-    subscriptionStatus: billing?.subscription_status ?? null,
-    hasSubscription: !!billing?.stripe_subscription_id,
-  });
+  // Multi-company partners: a "covered" company (billing_parent_id set)
+  // has no card of its own — its access inherits the paying partner's
+  // subscription. Single-company partners have a null parent and use their
+  // own billing, exactly as before.
+  let monthsInProgram = billing?.months_in_program ?? 0;
+  let subscriptionStatus = billing?.subscription_status ?? null;
+  let hasSubscription = !!billing?.stripe_subscription_id;
+  if (billing?.billing_parent_id) {
+    const { data: parent } = await admin
+      .from("vendors")
+      .select("months_in_program, subscription_status, stripe_subscription_id")
+      .eq("id", billing.billing_parent_id)
+      .maybeSingle();
+    if (parent) {
+      monthsInProgram = parent.months_in_program ?? 0;
+      subscriptionStatus = parent.subscription_status ?? null;
+      hasSubscription = !!parent.stripe_subscription_id;
+    }
+  }
+
+  const access = checkBillingAccess({ monthsInProgram, subscriptionStatus, hasSubscription });
 
   if (!access.allowed) {
     return {

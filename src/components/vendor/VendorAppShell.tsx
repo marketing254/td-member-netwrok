@@ -482,6 +482,33 @@ export default function VendorAppShell({ children }: { children: React.ReactNode
   // identity card and the top-right user menu so they always agree.
   const { vendor: currentVendor } = useCurrentVendorRow();
   const alsoExpert = useAlsoHasRole("expert");
+
+  // Multi-company family for the "Your companies" switcher. Switching is a
+  // fresh sign-in with THAT company's email (access = control of its inbox),
+  // so a principal using plus-aliases can hop companies from one inbox while
+  // a separately-managed company stays locked to its own manager.
+  const [companies, setCompanies] = useState<
+    { id: string; name: string; contact_email: string; is_current: boolean; is_principal: boolean; status: string }[]
+  >([]);
+  const [companyMenuAnchor, setCompanyMenuAnchor] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    if (!currentVendor) return;
+    let active = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/vendor/companies", { cache: "no-store" });
+        if (!active || !res.ok) return;
+        const body = (await res.json()) as { companies?: typeof companies };
+        if (active) setCompanies(body.companies ?? []);
+      } catch {
+        /* switcher simply stays hidden */
+      }
+    })();
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentVendor?.id]);
   const topbarDisplayName = currentVendor?.display_name ?? currentVendor?.company_name ?? "—";
   const topbarEmail = currentVendor?.contact_email ?? "";
   const topbarInitials = initialsFromName(topbarDisplayName);
@@ -609,6 +636,66 @@ export default function VendorAppShell({ children }: { children: React.ReactNode
 
             <Box sx={{ flex: 1 }} />
 
+            {companies.length > 1 && (
+              <>
+                <Button
+                  onClick={(e) => setCompanyMenuAnchor(e.currentTarget)}
+                  size="small"
+                  variant="outlined"
+                  startIcon={<StoreOutlinedIcon sx={{ fontSize: 16 }} />}
+                  endIcon={<KeyboardArrowDownOutlinedIcon sx={{ fontSize: 15 }} />}
+                  sx={{
+                    display: { xs: "none", sm: "inline-flex" },
+                    textTransform: "none",
+                    borderRadius: 999,
+                    fontWeight: 600,
+                    fontSize: "0.8rem",
+                    whiteSpace: "nowrap",
+                    maxWidth: 220,
+                  }}
+                >
+                  <Box component="span" sx={{ overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {companies.find((c) => c.is_current)?.name ?? "Your companies"}
+                  </Box>
+                </Button>
+                <Menu
+                  open={!!companyMenuAnchor}
+                  anchorEl={companyMenuAnchor}
+                  onClose={() => setCompanyMenuAnchor(null)}
+                  slotProps={{ paper: { sx: { mt: 1, minWidth: 260, borderRadius: 2 } } }}
+                >
+                  <Box sx={{ px: 1.75, pt: 1, pb: 0.75 }}>
+                    <Typography sx={{ fontSize: "0.66rem", fontWeight: 800, letterSpacing: "0.12em", color: "text.secondary", textTransform: "uppercase" }}>
+                      Your companies — one founding fee
+                    </Typography>
+                  </Box>
+                  {companies.map((c) => (
+                    <MenuItem
+                      key={c.id}
+                      selected={c.is_current}
+                      disabled={c.is_current}
+                      onClick={() => {
+                        setCompanyMenuAnchor(null);
+                        // Switching = fresh sign-in with that company's email.
+                        // The OTP goes to that inbox, which is what authorizes
+                        // access to the company.
+                        router.push(`/vendor/login?prefill=${encodeURIComponent(c.contact_email)}&switch=1`);
+                      }}
+                      sx={{ py: 0.9 }}
+                    >
+                      <ListItemText
+                        primary={`${c.name}${c.is_principal ? " · billing" : ""}`}
+                        secondary={c.is_current ? "Currently viewing" : `Sign in as ${c.contact_email}`}
+                        slotProps={{
+                          primary: { sx: { fontSize: "0.85rem", fontWeight: 600 } },
+                          secondary: { sx: { fontSize: "0.7rem" } },
+                        }}
+                      />
+                    </MenuItem>
+                  ))}
+                </Menu>
+              </>
+            )}
             {alsoExpert && (
               <Button
                 onClick={() => router.push("/expert")}
@@ -756,12 +843,20 @@ export default function VendorAppShell({ children }: { children: React.ReactNode
               // subscription. Allow-lists /vendor/account so the partner
               // can always get to billing to update their card or
               // re-sync from Stripe.
+              //
+              // Covered companies (multi-company partners: billing_parent_id
+              // set) never carry their own card — access inherits the paying
+              // principal's subscription, and the server guards enforce the
+              // parent's real status on every write. Never show them the
+              // "add your card" wall.
               const access = currentVendor
-                ? checkBillingAccess({
-                    monthsInProgram: currentVendor.months_in_program ?? 0,
-                    subscriptionStatus: currentVendor.subscription_status ?? null,
-                    hasSubscription: !!currentVendor.stripe_subscription_id,
-                  })
+                ? currentVendor.billing_parent_id
+                  ? { allowed: true as const }
+                  : checkBillingAccess({
+                      monthsInProgram: currentVendor.months_in_program ?? 0,
+                      subscriptionStatus: currentVendor.subscription_status ?? null,
+                      hasSubscription: !!currentVendor.stripe_subscription_id,
+                    })
                 : { allowed: true as const };
               const onAccountPage = pathname.startsWith("/vendor/account");
               if (!access.allowed && !onAccountPage) {

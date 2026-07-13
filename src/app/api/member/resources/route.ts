@@ -36,6 +36,9 @@ export async function GET(req: Request) {
 
   if (topicSlug) query = query.eq("topic_slug", topicSlug);
   if (expertId) query = query.eq("originating_expert_id", expertId);
+  // NOTE: members see EVERY published kit here — house, Book Club, and
+  // expert/partner-attributed alike. Attribution only hides a kit from the
+  // PUBLIC website (/api/resources), never from the member portal.
 
   const { data: resources, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

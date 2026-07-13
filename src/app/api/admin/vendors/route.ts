@@ -30,7 +30,7 @@ export async function GET(req: Request) {
     const { data, error } = await supabase
       .from("vendors")
       .select(
-        "id, company_name, display_name, category, contact_name, contact_email, plan_id, status, verified, created_at",
+        "id, company_name, display_name, category, contact_name, contact_email, plan_id, status, verified, billing_parent_id, created_at",
       )
       .order("created_at", { ascending: false })
       .limit(500);
@@ -42,7 +42,7 @@ export async function GET(req: Request) {
   }
 }
 
-type Action = "approve" | "reject" | "suspend" | "unsuspend";
+type Action = "approve" | "reject" | "suspend" | "unsuspend" | "grant_login";
 
 export async function PATCH(req: Request) {
   const guard = await requireAdmin();
@@ -55,7 +55,7 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: "Invalid JSON." }, { status: 400 });
   }
 
-  const allowed: Action[] = ["approve", "reject", "suspend", "unsuspend"];
+  const allowed: Action[] = ["approve", "reject", "suspend", "unsuspend", "grant_login"];
   if (!body.id || !body.action || !allowed.includes(body.action as Action)) {
     return NextResponse.json(
       { error: "id and a valid action are required." },
@@ -75,6 +75,40 @@ export async function PATCH(req: Request) {
     if (readErr) throw readErr;
     if (!existing) {
       return NextResponse.json({ error: "Vendor not found." }, { status: 404 });
+    }
+
+    // ---- Grant portal access (covered companies / separate managers) ----
+    // Creates the Supabase auth user for this company's contact email so
+    // its manager can request an OTP at /vendor/login. Sends NOTHING —
+    // the manager signs in themselves (or the principal does, if the email
+    // is a plus-alias of their inbox).
+    if (action === "grant_login") {
+      const email = existing.contact_email?.trim().toLowerCase();
+      if (!email || /\.(invalid|local|example)$/i.test(email.split("@")[1] ?? "")) {
+        return NextResponse.json(
+          { error: "Set a real contact email on this company before granting access." },
+          { status: 400 },
+        );
+      }
+      const { error: createErr } = await supabase.auth.admin.createUser({
+        email,
+        email_confirm: true,
+        user_metadata: { user_type: "vendor", company: existing.company_name, covered_company: true },
+      });
+      if (createErr && !/already.*registered|exists/i.test(createErr.message)) {
+        return NextResponse.json({ error: createErr.message }, { status: 500 });
+      }
+      await supabase.from("review_actions").insert({
+        target_type: "vendor",
+        target_id: existing.id,
+        action: "grant_login",
+        note: `Portal access granted for ${email}`,
+        admin_id: guard.adminId,
+      });
+      return NextResponse.json({
+        ok: true,
+        message: `Portal access granted. They sign in at /vendor/login with ${email} (6-digit code goes to that inbox).`,
+      });
     }
 
     const patch: { status: VendorStatus; verified?: boolean } = (() => {
@@ -196,6 +230,9 @@ export async function POST(req: Request) {
     member_offer?: string;
     calendar_link?: string;
     notes?: string;
+    // When set, create a COVERED company under this paying partner instead
+    // of a new stand-alone partner (multi-company partners).
+    billing_parent_id?: string;
   };
   try {
     body = await req.json();
@@ -214,6 +251,102 @@ export async function POST(req: Request) {
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 320) {
     return NextResponse.json({ error: "Invalid email." }, { status: 400 });
+  }
+
+  // ── Covered company (one partner, several companies) ────────────────
+  // Creates an extra company listing whose billing + access inherit the
+  // paying partner. No card, no subscription, no login / magic-link of its
+  // own — the partner signs in through their principal record. Staged as a
+  // draft (pending_review); publish with the normal Approve action.
+  const billingParentId = (body.billing_parent_id ?? "").trim() || null;
+  if (billingParentId) {
+    try {
+      const supabase = getSupabaseAdmin();
+      const { data: parent } = await supabase
+        .from("vendors")
+        .select("id, company_name, billing_parent_id")
+        .eq("id", billingParentId)
+        .maybeSingle();
+      if (!parent) {
+        return NextResponse.json({ error: "Paying partner not found." }, { status: 400 });
+      }
+      if (parent.billing_parent_id) {
+        return NextResponse.json(
+          { error: "Pick the paying partner, not another covered company." },
+          { status: 400 },
+        );
+      }
+
+      const { data: inserted, error: insErr } = await supabase
+        .from("vendors")
+        .insert({
+          company_name: companyName,
+          display_name: companyName,
+          contact_name: contactName,
+          contact_email: email,
+          contact_phone: body.contact_phone?.trim() || null,
+          category: body.category?.trim() || null,
+          website: body.website?.trim() || null,
+          description: body.description?.trim() || null,
+          calendar_link: body.calendar_link?.trim() || null,
+          billing_email: email,
+          plan_id: "covered",
+          billing_parent_id: billingParentId,
+          status: "pending_review",
+          verified: false,
+          months_in_program: 0,
+        } as never)
+        .select("id")
+        .single();
+      if (insErr) {
+        if (insErr.code === "23505") {
+          return NextResponse.json(
+            { error: "A partner already exists under this contact email." },
+            { status: 409 },
+          );
+        }
+        throw insErr;
+      }
+
+      await supabase.from("review_actions").insert({
+        target_type: "vendor",
+        target_id: inserted.id,
+        action: "admin_add_company",
+        note: [`Covered company under ${parent.company_name}`, body.member_offer && `Offer: ${body.member_offer}`, body.notes]
+          .filter(Boolean)
+          .join(" · "),
+        admin_id: guard.adminId,
+      });
+      await supabase.from("notifications").insert({
+        audience: "admin",
+        admin_id: null,
+        kind: "vendor_company_added",
+        title: `Company added under ${parent.company_name}: ${companyName}`,
+        body: `Billing is covered by the partner. Draft — approve it to publish.`,
+        link: "/admin/vendors?filter=pending_review",
+        metadata: { vendor_id: inserted.id, billing_parent_id: billingParentId },
+      });
+      void notifyTeamEvent({
+        kind: "admin_added",
+        role: "partner",
+        name: companyName,
+        email,
+        adminLink: "https://dentalmembernetwork.com/admin/vendors?filter=pending_review",
+        highlight: `Extra company under ${parent.company_name} — billing covered by the partner (no separate charge).`,
+        fields: [
+          { label: "Company", value: companyName },
+          { label: "Under partner", value: parent.company_name },
+          { label: "Category", value: body.category },
+          { label: "Contact", value: `${contactName} · ${email}` },
+          { label: "Member offer", value: body.member_offer },
+        ],
+      });
+
+      return NextResponse.json({ ok: true, vendor_id: inserted.id, covered: true });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to add company.";
+      return NextResponse.json({ error: message }, { status: 500 });
+    }
   }
 
   const secondaryEmail = body.secondary_email?.trim().toLowerCase() || null;

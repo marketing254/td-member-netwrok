@@ -188,6 +188,9 @@ export type VendorsRow = {
   card_brand: string | null;
   card_last4: string | null;
   founding_partner_locked: boolean;
+  // Added in 0039_vendor_billing_parent.sql — when set, this company's
+  // billing + access inherit the referenced (paying) partner vendor.
+  billing_parent_id: string | null;
   // Added in 0034_agreement_esign.sql.
   agreement_ip_hash: string | null;
   agreement_user_agent: string | null;
@@ -784,6 +787,20 @@ export type LeadMagnetLeadsRow = {
 export type FoundingInviteStatus = "draft" | "sent" | "viewed" | "accepted" | "revoked";
 export type FoundingInviteRole = "expert" | "partner" | "both";
 
+// Added in 0041_founding_invite_companies.sql. One entry per company on a
+// founding invite; [0] is the principal (paying) company, the rest become
+// covered listings at acceptance. Itemized in the agreement PDF.
+export type FoundingInviteCompany = {
+  name: string;
+  category?: string | null;
+  website?: string | null;
+  description?: string | null;
+  member_offer?: string | null;
+  contact_name?: string | null;
+  contact_email?: string | null;
+  calendar_link?: string | null;
+};
+
 export type FoundingInvitesRow = {
   id: string;
   code: string;
@@ -794,6 +811,8 @@ export type FoundingInvitesRow = {
   member_offer: string | null;
   phone: string | null;
   notes: string | null;
+  // Added in 0041_founding_invite_companies.sql — multi-company support.
+  companies: FoundingInviteCompany[] | null;
   // Added in 0037_founding_invites_draft.sql — full intake detail.
   website: string | null;
   category: string | null;

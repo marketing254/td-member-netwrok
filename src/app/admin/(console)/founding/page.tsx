@@ -46,6 +46,9 @@ type InviteRow = {
   secondary_phone: string | null;
   signer_name: string | null;
   signer_title: string | null;
+  companies:
+    | { name: string; category: string | null; member_offer: string | null; contact_email: string | null }[]
+    | null;
   status: "draft" | "sent" | "viewed" | "accepted" | "revoked";
   agreement_pdf_path: string | null;
   viewed_at: string | null;
@@ -138,6 +141,12 @@ export default function AdminFoundingPage() {
       signer_name: r.signer_name ?? "",
       signer_title: r.signer_title ?? "",
       notes: r.notes ?? "",
+      additionalCompanies: (r.companies ?? []).slice(1).map((c) => ({
+        name: c.name ?? "",
+        category: c.category ?? "",
+        member_offer: c.member_offer ?? "",
+        contact_email: c.contact_email ?? "",
+      })),
     });
     setDialogOpen(true);
   };

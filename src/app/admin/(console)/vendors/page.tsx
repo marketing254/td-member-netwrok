@@ -21,6 +21,9 @@ import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
 import PauseCircleOutlinedIcon from "@mui/icons-material/PauseCircleOutlined";
 import PlayCircleOutlinedIcon from "@mui/icons-material/PlayCircleOutlined";
 import PersonAddAlt1OutlinedIcon from "@mui/icons-material/PersonAddAlt1Outlined";
+import VpnKeyOutlinedIcon from "@mui/icons-material/VpnKeyOutlined";
+import DomainAddOutlinedIcon from "@mui/icons-material/DomainAddOutlined";
+import AddCompanyDialog from "@/components/admin/AddCompanyDialog";
 
 type VendorRow = {
   id: string;
@@ -32,11 +35,12 @@ type VendorRow = {
   plan_id: string | null;
   status: "pending_review" | "approved" | "rejected" | "suspended" | "churned";
   verified: boolean;
+  billing_parent_id: string | null;
   created_at: string;
 };
 
 type FilterKey = "all" | "pending_review" | "approved" | "suspended" | "rejected";
-type ActionKey = "approve" | "reject" | "suspend" | "unsuspend";
+type ActionKey = "approve" | "reject" | "suspend" | "unsuspend" | "grant_login";
 
 export default function AdminVendorsPage() {
   return (
@@ -55,6 +59,7 @@ function Inner() {
   const [actingId, setActingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [addCompanyOpen, setAddCompanyOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -88,9 +93,14 @@ function Inner() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ id: vendorId, action }),
       });
-      const body = (await res.json()) as { ok?: boolean; error?: string };
+      const body = (await res.json()) as { ok?: boolean; error?: string; message?: string };
       if (!res.ok || body.error) {
         setToast(body.error ?? `Action failed (${res.status})`);
+        return;
+      }
+      if (action === "grant_login") {
+        setToast(body.message ?? "Portal access granted.");
+        await load();
         return;
       }
       const verb =
@@ -147,15 +157,25 @@ function Inner() {
             their personalized agreement link when ready.
           </Typography>
         </Box>
-        <Button
-          component={Link}
-          href="/admin/founding"
-          variant="contained"
-          startIcon={<PersonAddAlt1OutlinedIcon />}
-          sx={{ flexShrink: 0, whiteSpace: "nowrap" }}
-        >
-          Founding invites
-        </Button>
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ flexShrink: 0 }}>
+          <Button
+            variant="outlined"
+            startIcon={<DomainAddOutlinedIcon />}
+            onClick={() => setAddCompanyOpen(true)}
+            sx={{ whiteSpace: "nowrap" }}
+          >
+            Add company to a partner
+          </Button>
+          <Button
+            component={Link}
+            href="/admin/founding"
+            variant="contained"
+            startIcon={<PersonAddAlt1OutlinedIcon />}
+            sx={{ whiteSpace: "nowrap" }}
+          >
+            Founding invites
+          </Button>
+        </Stack>
       </Stack>
 
       {error && <Alert severity="error">{error}</Alert>}
@@ -327,6 +347,17 @@ function Inner() {
                         </Tooltip>
                       </>
                     )}
+                    {v.plan_id === "covered" && (
+                      <Tooltip title="Grant portal access (creates their login; nothing is emailed)">
+                        <IconButton
+                          size="small"
+                          sx={{ color: "#A07823" }}
+                          onClick={() => runAction(v.id, "grant_login")}
+                        >
+                          <VpnKeyOutlinedIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    )}
                     {v.status === "approved" && (
                       <Tooltip title="Suspend">
                         <IconButton
@@ -399,6 +430,18 @@ function Inner() {
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       />
 
+      <AddCompanyDialog
+        open={addCompanyOpen}
+        payers={rows
+          .filter((r) => !r.billing_parent_id && r.status !== "rejected" && r.status !== "churned")
+          .map((r) => ({ id: r.id, company_name: r.company_name }))}
+        onClose={() => setAddCompanyOpen(false)}
+        onSaved={(name) => {
+          setAddCompanyOpen(false);
+          setToast(`${name} added as a covered company. Approve it to publish.`);
+          void load();
+        }}
+      />
     </Stack>
   );
 }
@@ -413,6 +456,7 @@ function labelForFilter(k: FilterKey): string {
 function planLabel(planId: string | null): string {
   if (planId === "founding") return "Founding";
   if (planId === "annual") return "Annual";
+  if (planId === "covered") return "Covered";
   return "Standard";
 }
 

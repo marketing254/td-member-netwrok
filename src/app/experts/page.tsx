@@ -19,6 +19,7 @@ import MicRoundedIcon from "@mui/icons-material/MicRounded";
 import Header from "@/components/sections/Header";
 import WaitlistSection from "@/components/sections/WaitlistSection";
 import PoweredByStrip from "@/components/sections/PoweredByStrip";
+import FoundingDirectory from "@/components/directory/FoundingDirectory";
 import { poweredBy } from "@/lib/content";
 import { COLORS } from "@/theme";
 
@@ -222,6 +223,11 @@ export default function ExpertsPage() {
           </Box>
         </Container>
       </Box>
+
+      {/* Founding experts directory — DB-driven, paginated. Shows every
+          ACCEPTED expert (headshot, specialty, bio) linking to their public
+          profile page. Renders nothing until at least one expert is live. */}
+      <FoundingDirectory kind="experts" />
 
       {/* Cream band quote */}
       <Box sx={{ bgcolor: COLORS.surfaceAlt, py: { xs: 4, md: 5 }, borderBottom: `1px solid ${COLORS.line}` }}>
