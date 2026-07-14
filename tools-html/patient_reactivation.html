@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Patient Reactivation Value Calculator · Dental Member Network</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--navy:#1B3A5C;--gold:#C8993D;--cream:#F5ECD7;--ink:#243140;--muted:#5a6b7d;--hair:#dbe2ea;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',sans-serif;background:#f2f5f8;color:var(--ink);line-height:1.5;}
+  .wrap{max-width:880px;margin:0 auto;padding:28px 20px 60px;}
+  .hero{background:radial-gradient(120% 130% at 85% 0%,#7a68b4,#5a4a8e 35%,#221d39 78%);color:#fff;border-radius:14px;padding:28px 30px 24px;margin-bottom:22px;}
+  .hero .eyebrow{color:#E7B964;font-weight:700;letter-spacing:.16em;text-transform:uppercase;font-size:11px;}
+  .hero h1{font-family:'Fraunces',serif;font-weight:600;font-size:30px;line-height:1.1;margin:6px 0 8px;}
+  .hero p{color:#ddd7f0;font-size:14px;max-width:640px;}
+  .credit{display:inline-flex;align-items:center;gap:8px;margin-top:14px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:6px 14px;font-size:12.5px;color:#ece8f8;}
+  .credit b{color:#E7B964;font-weight:600;}
+  .grid{display:grid;grid-template-columns:1fr 1.15fr;gap:18px;}
+  @media (max-width:720px){.grid{grid-template-columns:1fr;}}
+  .card{background:#fff;border:1px solid var(--hair);border-radius:14px;padding:22px;}
+  .card h2{font-family:'Fraunces',serif;color:var(--navy);font-size:18px;margin-bottom:4px;}
+  .card .sub{font-size:12.5px;color:var(--muted);margin-bottom:14px;}
+  label{display:block;font-weight:600;font-size:13px;color:var(--navy);margin:14px 0 5px;}
+  .inp{display:flex;align-items:center;border:1.5px solid var(--hair);border-radius:9px;overflow:hidden;background:#fff;}
+  .inp:focus-within{border-color:var(--gold);}
+  .inp .unit{background:#f6f8fb;color:var(--muted);font-weight:600;padding:10px 12px;font-size:14px;}
+  .inp .unit.l{border-right:1px solid var(--hair);}
+  .inp .unit.r{border-left:1px solid var(--hair);}
+  .inp input{border:none;outline:none;font:inherit;font-size:16px;padding:10px 12px;width:100%;color:var(--ink);}
+  .hint{font-size:11.5px;color:var(--muted);margin-top:4px;}
+  .res-big{background:var(--cream);border-radius:11px;padding:14px 16px;margin-bottom:10px;}
+  .res-big .l{font-size:12px;color:#7a5d1f;font-weight:600;text-transform:uppercase;letter-spacing:.06em;}
+  .res-big .n{font-family:'Fraunces',serif;font-weight:700;color:var(--navy);font-size:32px;line-height:1.15;}
+  .res-big .s{font-size:12.5px;color:#5a4410;}
+  .res-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:9px 2px;border-bottom:1px dotted var(--hair);font-size:14px;}
+  .res-row:last-child{border-bottom:none;}
+  .res-row b{color:var(--navy);font-size:16px;white-space:nowrap;}
+  .note{margin-top:14px;background:#f2effa;border:1px solid #d8d0ec;border-radius:11px;padding:12px 15px;font-size:13.5px;color:#3d3363;}
+  .note b{color:#2a2347;}
+  .btn{display:inline-block;background:var(--gold);color:#10243b;font-weight:700;font-size:14px;border:none;border-radius:999px;padding:11px 22px;cursor:pointer;margin-top:16px;}
+  .btn:hover{filter:brightness(1.05);}
+  .disclaimer{font-size:11.5px;color:var(--muted);margin-top:14px;}
+  .foot{margin-top:26px;display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;color:var(--muted);font-size:12px;}
+  .foot .brand{color:var(--navy);font-weight:700;letter-spacing:.08em;}
+  .foot .url{color:var(--gold);font-weight:600;}
+  @media print{ body{background:#fff;} .btn,.noprint,.howto{display:none !important;} .grid{grid-template-columns:1fr 1fr;} }
+.howto h3{font-family:'Fraunces',serif;color:var(--navy);font-size:14.5px;margin:12px 0 4px;}.howto p{font-size:13.5px;margin:2px 0 10px;color:#37485a;}.howto ul{margin:4px 0 12px 18px;}.howto li{font-size:13.5px;margin-bottom:6px;color:#37485a;}.howto li b{color:var(--navy);}
+</style></head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <div class="eyebrow">DMN Member Tool &middot; Patient Experience</div>
+    <h1>The Patient Reactivation Value Calculator</h1>
+    <p>The cheapest new patient is the one who already knows you. See what the patients sleeping in your database are worth, and what winning even a small share back would mean.</p>
+    <div class="credit">A <b>Dental Member Network</b> original &middot; works alongside every kit in your library</div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Your numbers</h2>
+      <div class="sub">Nothing you type here is saved or sent anywhere. It stays on your screen.</div>
+
+      <label>Inactive patients in your database</label>
+      <div class="inp"><input id="inactive" type="number" min="0" step="50" value="600" inputmode="numeric"><span class="unit r">patients</span></div>
+      <div class="hint">Patients not seen in 18+ months. Your PMS can pull this in one report.</div>
+
+      <label>Average revenue per active patient, per year</label>
+      <div class="inp"><span class="unit l">$</span><input id="value" type="number" min="0" step="50" value="800" inputmode="numeric"></div>
+
+      <label>Share you believe you can win back</label>
+      <div class="inp"><input id="rate" type="number" min="0" max="100" step="1" value="10" inputmode="numeric"><span class="unit r">%</span></div>
+      <div class="hint">Be conservative. Even a small share is real money.</div>
+    </div>
+
+    <div class="card">
+      <h2>What it means</h2>
+      <div class="sub">Live results, updated as you type.</div>
+
+      <div class="res-big">
+        <div class="l">Recovered revenue per year</div>
+        <div class="n" id="recovered">$48,000</div>
+        <div class="s" id="recsub">From 60 returning patients you already paid to acquire once.</div>
+      </div>
+
+      <div class="res-row"><span>Value asleep in your database</span><b id="asleep">$480,000 / yr</b></div>
+      <div class="res-row"><span>Each 1% you win back is worth</span><b id="perpoint">$4,800 / yr</b></div>
+      <div class="res-row"><span>Returning patients</span><b id="count">60</b></div>
+
+      <div class="note"><b>Where to start:</b> a short recall list, a personal message (not a blast), and an easy way to book. These patients said yes to you once; most left by drift, not decision.</div>
+
+      <button class="btn noprint" onclick="window.print()">Download my results (PDF)</button>
+      <div class="disclaimer">Planning estimates from your own inputs, not financial advice. The win-back share is your assumption; test it small before you count on it.</div>
+    </div>
+  </div>
+
+  <div class="card howto">
+    <h2>How this tool works</h2>
+    <h3>What it does</h3>
+    <p>It values the patients sleeping in your database and shows what winning back even a small share of them is worth per year.</p>
+    <h3>What to gather before you start</h3>
+    <ul><li><b>Inactive patients:</b> a PMS report of patients not seen in 18+ months; exclude patients who moved away or passed</li><li><b>Average revenue per active patient per year:</b> yearly production divided by active patient count</li><li><b>Win-back share:</b> your own conservative assumption; test small before counting on it</li></ul>
+    <h3>The math, in plain English</h3>
+    <p>Value asleep = inactive patients x yearly value per patient. Recovered revenue = that value x your win-back share. Each 1% you win back equals 1% of the sleeping value. These are patients you already paid to acquire once.</p>
+  </div>
+
+  <div class="foot">
+    <span class="brand">DENTAL MEMBER NETWORK</span>
+    <span>Tool 10 &middot; Patient Experience &middot; More tools in your member portal</span>
+    <span class="url">dentalmembernetwork.com</span>
+  </div>
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const fmt = n => '$' + Math.round(n).toLocaleString('en-US');
+  function calc(){
+    const N = parseFloat($('inactive').value) || 0;
+    const V = parseFloat($('value').value) || 0;
+    const r = Math.min(Math.max(parseFloat($('rate').value) || 0, 0), 100) / 100;
+    const back = Math.round(N * r);
+    $('recovered').textContent = fmt(back * V);
+    $('recsub').textContent = 'From ' + back.toLocaleString() + ' returning patients you already paid to acquire once.';
+    $('asleep').textContent = fmt(N * V) + ' / yr';
+    $('perpoint').textContent = fmt(N * 0.01 * V) + ' / yr';
+    $('count').textContent = back.toLocaleString();
+  }
+  document.querySelectorAll('input').forEach(i => i.addEventListener('input', calc));
+  calc();
+</script>
+</body></html>

@@ -16,9 +16,11 @@ import { COLORS } from "@/theme";
 
 const PAGE_SIZE = 6;
 
-type Row = {
-  id: string;
+export type DirectoryRow = {
+  /** DB rows have an id (→ profile page); house/anchor rows have null (no link). */
+  id?: string | null;
   name: string;
+  badge?: string;
   // experts
   specialty?: string | null;
   company_name?: string | null;
@@ -31,14 +33,27 @@ type Row = {
 };
 
 /**
- * FoundingDirectory — public, DB-driven, paginated directory of accepted
- * experts / partners for the marketing site. Renders NOTHING until at
- * least one accepted person exists, so the section never shows empty.
- * Each card links to the public profile page (/experts/[id] or
- * /partners/[id]).
+ * FoundingDirectory — ONE unified public roster of experts / partners.
+ *
+ * Renders the `house` anchors (Gary, Naren, Thriving Dentist, Ekwa — static,
+ * no profile page) and the DB-driven accepted members (Ashley, Laura, …)
+ * together under a single title. House cards show on page 1; the DB set
+ * paginates below them. Accepted cards link to their public profile.
  */
-export default function FoundingDirectory({ kind }: { kind: "experts" | "partners" }) {
-  const [rows, setRows] = useState<Row[]>([]);
+export default function FoundingDirectory({
+  kind,
+  house = [],
+  eyebrow,
+  title,
+  subtitle,
+}: {
+  kind: "experts" | "partners";
+  house?: DirectoryRow[];
+  eyebrow?: string;
+  title?: string;
+  subtitle?: string;
+}) {
+  const [rows, setRows] = useState<DirectoryRow[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -52,12 +67,12 @@ export default function FoundingDirectory({ kind }: { kind: "experts" | "partner
           cache: "no-store",
         });
         if (!active || !res.ok) return;
-        const body = (await res.json()) as { experts?: Row[]; partners?: Row[]; total?: number };
+        const body = (await res.json()) as { experts?: DirectoryRow[]; partners?: DirectoryRow[]; total?: number };
         if (!active) return;
         setRows((kind === "experts" ? body.experts : body.partners) ?? []);
         setTotal(body.total ?? 0);
       } catch {
-        /* section simply stays hidden on error */
+        /* DB set stays empty on error; house anchors still render */
       } finally {
         if (active) setLoading(false);
       }
@@ -67,43 +82,32 @@ export default function FoundingDirectory({ kind }: { kind: "experts" | "partner
     };
   }, [kind, page]);
 
-  // Nothing accepted yet → render nothing (no empty section on the live site).
-  if (!loading && total === 0) return null;
+  const isExperts = kind === "experts";
+  // Nothing to show at all → render nothing.
+  if (!loading && total === 0 && house.length === 0) return null;
 
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const isExperts = kind === "experts";
+  // House anchors lead the roster on page 1 only, so they don't repeat.
+  const cards: DirectoryRow[] = [...(page === 1 ? house : []), ...rows];
 
   return (
     <Box sx={{ py: { xs: 6, md: 8 }, bgcolor: COLORS.surfaceAlt, borderTop: `1px solid ${COLORS.line}`, borderBottom: `1px solid ${COLORS.line}` }}>
       <Container maxWidth="lg">
         <Stack spacing={1} sx={{ alignItems: "center", textAlign: "center", mb: 4 }}>
-          <Typography
-            sx={{
-              fontSize: "0.72rem",
-              fontWeight: 700,
-              letterSpacing: "0.22em",
-              textTransform: "uppercase",
-              color: COLORS.accent,
-            }}
-          >
-            {isExperts ? "Founding experts" : "Founding partners"}
+          <Typography sx={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: COLORS.accent }}>
+            {eyebrow ?? (isExperts ? "The bench" : "The network")}
           </Typography>
           <Typography
             component="h2"
-            sx={{
-              fontFamily: "var(--font-display)",
-              fontSize: { xs: "1.7rem", md: "2.1rem" },
-              fontWeight: 500,
-              color: COLORS.ink,
-              letterSpacing: "-0.01em",
-            }}
+            sx={{ fontFamily: "var(--font-display)", fontSize: { xs: "1.7rem", md: "2.1rem" }, fontWeight: 500, color: COLORS.ink, letterSpacing: "-0.01em" }}
           >
-            {isExperts ? "Accepted onto the bench" : "Accepted into the network"}
+            {title ?? (isExperts ? "Meet the DMN experts" : "Meet the DMN partners")}
           </Typography>
-          <Typography sx={{ color: COLORS.muted, fontSize: "0.98rem", maxWidth: 600 }}>
-            {isExperts
-              ? "Every expert below has signed the founding agreement and is live inside the member portal."
-              : "Every company below has signed the founding agreement — members get their exclusive offers inside the portal."}
+          <Typography sx={{ color: COLORS.muted, fontSize: "0.98rem", maxWidth: 620 }}>
+            {subtitle ??
+              (isExperts
+                ? "The people behind the resource library — house experts and hand-picked founding experts, all live inside the member portal."
+                : "The companies behind the member-exclusive offers — from our anchor partners to hand-picked founding partners.")}
           </Typography>
         </Stack>
 
@@ -121,8 +125,8 @@ export default function FoundingDirectory({ kind }: { kind: "experts" | "partner
               mx: "auto",
             }}
           >
-            {rows.map((r) => (
-              <DirectoryCard key={r.id} row={r} kind={kind} />
+            {cards.map((r) => (
+              <DirectoryCard key={r.id ?? r.name} row={r} kind={kind} />
             ))}
           </Box>
         )}
@@ -145,16 +149,19 @@ export default function FoundingDirectory({ kind }: { kind: "experts" | "partner
   );
 }
 
-function DirectoryCard({ row, kind }: { row: Row; kind: "experts" | "partners" }) {
+function DirectoryCard({ row, kind }: { row: DirectoryRow; kind: "experts" | "partners" }) {
   const isExperts = kind === "experts";
   const tagline = isExperts ? row.specialty : row.category;
   const blurb = isExperts ? row.bio : row.description;
   const img = isExperts ? row.headshot_url : row.logo_url;
+  const href = row.id ? `/${kind}/${row.id}` : null;
+  const badge = row.badge ?? (isExperts ? "Founding Expert" : "Founding Partner");
+
+  const linkProps = href ? { component: Link, href } : {};
 
   return (
     <Box
-      component={Link}
-      href={`/${kind}/${row.id}`}
+      {...linkProps}
       sx={{
         display: "flex",
         flexDirection: "column",
@@ -164,17 +171,20 @@ function DirectoryCard({ row, kind }: { row: Row; kind: "experts" | "partners" }
         border: `1px solid ${COLORS.line}`,
         bgcolor: "#FFFFFF",
         overflow: "hidden",
+        cursor: href ? "pointer" : "default",
         transition: "transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease",
-        "&:hover": {
-          transform: "translateY(-3px)",
-          borderColor: COLORS.accent,
-          boxShadow: "0 22px 44px -20px rgba(217,168,75,0.4)",
-        },
-        "&:focus-visible": { outline: `2px solid ${COLORS.accent}`, outlineOffset: 3 },
+        ...(href
+          ? {
+              "&:hover": {
+                transform: "translateY(-3px)",
+                borderColor: COLORS.accent,
+                boxShadow: "0 22px 44px -20px rgba(217,168,75,0.4)",
+              },
+              "&:focus-visible": { outline: `2px solid ${COLORS.accent}`, outlineOffset: 3 },
+            }
+          : {}),
       }}
     >
-      {/* Featured image — square headshot for experts, padded logo panel
-          for partners. The 1:1 canvas matches the *_sq headshot set. */}
       <Box
         sx={{
           position: "relative",
@@ -191,14 +201,8 @@ function DirectoryCard({ row, kind }: { row: Row; kind: "experts" | "partners" }
             alt={row.name}
             fill
             sizes="(max-width: 600px) 100vw, 320px"
-            // Logos can be SVGs, which Next's optimizer refuses — serve
-            // partner logos unoptimized so every format renders.
             unoptimized={!isExperts}
-            style={
-              isExperts
-                ? { objectFit: "cover", objectPosition: "center top" }
-                : { objectFit: "contain", padding: 26 }
-            }
+            style={isExperts ? { objectFit: "cover", objectPosition: "center top" } : { objectFit: "contain", padding: 26 }}
           />
         ) : (
           <Typography sx={{ fontFamily: "var(--font-display)", fontWeight: 700, color: COLORS.accent, fontSize: "2.4rem" }}>
@@ -221,48 +225,31 @@ function DirectoryCard({ row, kind }: { row: Row; kind: "experts" | "partners" }
             textTransform: "uppercase",
           }}
         >
-          {isExperts ? "Founding Expert" : "Founding Partner"}
+          {badge}
         </Box>
       </Box>
 
       <Box sx={{ p: 2.5, display: "flex", flexDirection: "column", flex: 1 }}>
-        <Typography
-          sx={{ fontFamily: "var(--font-display)", fontSize: "1.2rem", fontWeight: 600, color: COLORS.ink, lineHeight: 1.2, letterSpacing: "-0.01em" }}
-          noWrap
-        >
+        <Typography sx={{ fontFamily: "var(--font-display)", fontSize: "1.2rem", fontWeight: 600, color: COLORS.ink, lineHeight: 1.2, letterSpacing: "-0.01em" }} noWrap>
           {row.name}
         </Typography>
         {tagline && (
-          <Typography
-            sx={{ fontSize: "0.72rem", color: COLORS.accent, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", mt: 0.5 }}
-            noWrap
-          >
+          <Typography sx={{ fontSize: "0.72rem", color: COLORS.accent, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", mt: 0.5 }} noWrap>
             {tagline}
           </Typography>
         )}
         {blurb && (
           <Typography
-            sx={{
-              fontSize: "0.87rem",
-              color: COLORS.inkSoft,
-              lineHeight: 1.55,
-              mt: 1.25,
-              display: "-webkit-box",
-              WebkitLineClamp: 3,
-              WebkitBoxOrient: "vertical",
-              overflow: "hidden",
-            }}
+            sx={{ fontSize: "0.87rem", color: COLORS.inkSoft, lineHeight: 1.55, mt: 1.25, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}
           >
             {blurb}
           </Typography>
         )}
-        <Stack
-          direction="row"
-          spacing={0.5}
-          sx={{ alignItems: "center", mt: "auto", pt: 1.75, color: COLORS.accent, fontSize: "0.8rem", fontWeight: 700 }}
-        >
-          View profile <ArrowForwardRoundedIcon sx={{ fontSize: 15 }} />
-        </Stack>
+        {href && (
+          <Stack direction="row" spacing={0.5} sx={{ alignItems: "center", mt: "auto", pt: 1.75, color: COLORS.accent, fontSize: "0.8rem", fontWeight: 700 }}>
+            View profile <ArrowForwardRoundedIcon sx={{ fontSize: 15 }} />
+          </Stack>
+        )}
       </Box>
     </Box>
   );

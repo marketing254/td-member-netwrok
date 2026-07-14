@@ -68,7 +68,7 @@ const PRICING_JSONLD = {
       "@type": "Product",
       name: "Dental Member Network — Expert Bench",
       description:
-        "Featured spot on the DMN expert bench for coaches, consultants and educators. We produce your kits, surface them in the member library, route warm leads to your calendar. Sell your own courses with a 90/10 split.",
+        "Featured spot on the DMN expert bench for coaches, consultants and educators. We produce your kits, surface them in the member library, route warm leads to your calendar. Sell your own courses with a 70/30 split.",
       brand: { "@type": "Brand", name: "Dental Member Network" },
       url: "https://dentalmembernetwork.com/pricing",
       offers: [
@@ -556,7 +556,7 @@ export default function PricingPage() {
                 title="Join as an Expert"
                 who="For consultants, coaches, and speakers who teach dental practices."
                 body="Your knowledge becomes content in the library — your profile, your warm leads, your booking link. We do the production."
-                callout="★ Sell your own courses — keep 90%"
+                callout="★ Sell your own courses — keep 70%"
                 ctaLabel="Apply as an Expert"
                 ctaHref="/experts#apply"
               />

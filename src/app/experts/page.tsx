@@ -74,7 +74,7 @@ const WHAT_YOU_GET = [
 
 // Phase ladder — same shape as the /partners page so both audiences
 // read consistently. Headline takeaway: every phase includes the same
-// Featured Expert benefits, and the bench keeps 90% of course revenue.
+// Featured Expert benefits, and the bench keeps 70% of course revenue.
 const PRICE_TIERS = [
   { cap: "Months 1–6", price: "$0", per: "", body: "Founding-cohort waiver. Build your library + warm-lead pipeline first.", hot: true },
   { cap: "Months 7–12", price: "$49", per: "/mo", body: "Locked launch rate. Auto-rolls from Phase 1.", hot: true },
@@ -198,36 +198,23 @@ export default function ExpertsPage() {
       {/* Trusted partners marquee — same logo strip as the homepage */}
       <PoweredByStrip />
 
-      {/* Our Experts — Gary, Naren, etc. sits high on the page so visitors
-          see the actual bench before reading any of the marketing sections. */}
-      <Box sx={{ py: { xs: 6, md: 9 } }}>
-        <Container maxWidth="lg">
-          <Stack spacing={1.25} sx={{ alignItems: "center", textAlign: "center", mb: 4 }}>
-            <SectionHeading title="Our Experts" />
-            <Typography sx={{ color: COLORS.muted, fontSize: "1rem", maxWidth: 620, mt: 1 }}>
-              The first names on the bench. New experts join by application.
-            </Typography>
-          </Stack>
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-              gap: 3,
-              maxWidth: 900,
-              mx: "auto",
-            }}
-          >
-            {EXPERTS.map((f) => (
-              <ExpertCard key={f.name} f={f} />
-            ))}
-          </Box>
-        </Container>
-      </Box>
-
-      {/* Founding experts directory — DB-driven, paginated. Shows every
-          ACCEPTED expert (headshot, specialty, bio) linking to their public
-          profile page. Renders nothing until at least one expert is live. */}
-      <FoundingDirectory kind="experts" />
+      {/* The bench — ONE unified roster. The house experts (Gary, Naren) and
+          every ACCEPTED founding expert (DB-driven, links to their profile)
+          sit under a single title, so visitors see the whole bench together
+          rather than two split sections. */}
+      <FoundingDirectory
+        kind="experts"
+        eyebrow="The bench"
+        title="Meet the DMN experts"
+        subtitle="The people behind the resource library — our house experts and every hand-picked founding expert, all live inside the member portal."
+        house={EXPERTS.map((f) => ({
+          name: f.name,
+          specialty: f.role,
+          bio: f.body,
+          headshot_url: f.photo,
+          badge: "DMN Expert",
+        }))}
+      />
 
       {/* Cream band quote */}
       <Box sx={{ bgcolor: COLORS.surfaceAlt, py: { xs: 4, md: 5 }, borderBottom: `1px solid ${COLORS.line}` }}>
@@ -353,9 +340,9 @@ export default function ExpertsPage() {
             <Typography sx={{ fontSize: "0.94rem", color: COLORS.inkSoft, lineHeight: 1.55 }}>
               ★{" "}
               <Box component="strong" sx={{ color: COLORS.ink }}>
-                Course revenue split — keep 90%.
+                Course revenue split — keep 70%.
               </Box>{" "}
-              Sell your own paid courses through DMN. We run the platform; you keep 90% of net, paid monthly via Stripe Connect.
+              Sell your own paid courses through DMN. We run the platform; you keep 70% of net, paid monthly via Stripe Connect.
             </Typography>
           </Box>
           <Stack direction="row" sx={{ justifyContent: "center", mt: 2.5 }}>
@@ -679,74 +666,6 @@ function FitColumn({
           </Stack>
         ))}
       </Stack>
-    </Box>
-  );
-}
-
-function ExpertCard({
-  f,
-}: {
-  f: { name: string; role: string; body: string; photo: string };
-}) {
-  return (
-    <Box
-      sx={{
-        borderRadius: 3,
-        border: `1px solid ${COLORS.line}`,
-        bgcolor: "#FFFFFF",
-        overflow: "hidden",
-        boxShadow: "0 16px 40px -28px rgba(14,42,61,0.25)",
-        display: "flex",
-        flexDirection: { xs: "column", sm: "row" },
-      }}
-    >
-      <Box
-        sx={{
-          position: "relative",
-          width: { xs: "100%", sm: 180 },
-          height: { xs: 240, sm: "auto" },
-          minHeight: { sm: 220 },
-          bgcolor: COLORS.surfaceAlt,
-          flexShrink: 0,
-        }}
-      >
-        <Image
-          src={f.photo}
-          alt={f.name}
-          fill
-          sizes="(max-width: 600px) 100vw, 180px"
-          style={{ objectFit: "cover", objectPosition: "center top" }}
-        />
-      </Box>
-      <Box sx={{ p: 3, display: "flex", flexDirection: "column", justifyContent: "center", flex: 1 }}>
-        <Typography
-          sx={{
-            fontSize: "0.7rem",
-            letterSpacing: "0.16em",
-            textTransform: "uppercase",
-            fontWeight: 700,
-            color: COLORS.accentDeep,
-            mb: 0.5,
-          }}
-        >
-          {f.role}
-        </Typography>
-        <Typography
-          sx={{
-            fontFamily: "var(--font-display)",
-            fontSize: "1.5rem",
-            color: COLORS.ink,
-            fontWeight: 500,
-            letterSpacing: "-0.01em",
-            mb: 1,
-          }}
-        >
-          {f.name}
-        </Typography>
-        <Typography sx={{ fontSize: "0.95rem", color: COLORS.inkSoft, lineHeight: 1.6 }}>
-          {f.body}
-        </Typography>
-      </Box>
     </Box>
   );
 }

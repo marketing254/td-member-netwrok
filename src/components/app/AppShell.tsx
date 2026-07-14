@@ -27,6 +27,7 @@ import HubOutlinedIcon from "@mui/icons-material/HubOutlined";
 import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
 import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
+import CalculateOutlinedIcon from "@mui/icons-material/CalculateOutlined";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import KeyboardArrowDownOutlinedIcon from "@mui/icons-material/KeyboardArrowDownOutlined";
@@ -45,6 +46,7 @@ const navItems = [
   { href: "/dashboard/resources", label: "Resource library", icon: LibraryBooksOutlinedIcon },
   { href: "/dashboard/experts", label: "Experts", icon: SchoolOutlinedIcon },
   { href: "/dashboard/partners", label: "Partners", icon: StorefrontOutlinedIcon },
+  { href: "/dashboard/tools", label: "Tools", icon: CalculateOutlinedIcon },
   { href: "/dashboard/network", label: "Network", icon: HubOutlinedIcon },
   { href: "/dashboard/account", label: "Profile", icon: PersonOutlineOutlinedIcon },
 ];

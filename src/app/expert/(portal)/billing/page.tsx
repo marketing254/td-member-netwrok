@@ -282,7 +282,7 @@ export default function ExpertBillingPage() {
                 <StatusPill label={status.label} tone={status.tone} />
               </MetaItem>
               {renewalLabel && <MetaItem label="Billing">{renewalLabel}</MetaItem>}
-              <MetaItem label="Course revenue">You keep 90%</MetaItem>
+              <MetaItem label="Course revenue">You keep 70%</MetaItem>
             </Stack>
 
             {portalError && (
@@ -373,7 +373,7 @@ export default function ExpertBillingPage() {
         <Box sx={{ px: 2.5, py: 1.75, borderTop: "1px solid rgba(14,42,61,0.06)", bgcolor: "#FBFAF6" }}>
           <Typography sx={{ fontSize: "0.8rem", color: "#5C6770", lineHeight: 1.55 }}>
             <Box component="strong" sx={{ color: "#0A1A2F" }}>Course revenue split</Box> — sell paid
-            courses through DMN and keep 90% (DMN keeps 10%), paid out monthly via Stripe Connect.
+            courses through DMN and keep 70% (DMN keeps 30%), paid out monthly via Stripe Connect.
           </Typography>
         </Box>
       </SectionCard>

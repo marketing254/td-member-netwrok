@@ -21,6 +21,20 @@ import ReplyRoundedIcon from "@mui/icons-material/ReplyRounded";
 import VerifiedOutlinedIcon from "@mui/icons-material/VerifiedOutlined";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 
+/**
+ * Parse a JSON response defensively. If the body isn't JSON — e.g. the dev
+ * server hands back an HTML 404/500 page — this returns null instead of
+ * throwing the cryptic `Unexpected token '<'` SyntaxError, so callers can
+ * fall through to their friendly error state.
+ */
+async function readJson<T>(res: Response): Promise<T | null> {
+  try {
+    return (await res.json()) as T;
+  } catch {
+    return null;
+  }
+}
+
 // Brand palette — sticks with the resource-page editorial system.
 const INK = "#0A1A2F";
 const INK_SOFT = "#3B4A55";
@@ -104,13 +118,13 @@ export default function ResourceInquiries({ resourceId, resourceTitle }: Props) 
           `/api/resources/${resourceId}/inquiries?${params.toString()}`,
           { cache: "no-store" },
         );
-        const body = (await res.json()) as {
+        const body = await readJson<{
           inquiries?: Inquiry[];
           cursor?: string | null;
           viewer?: Viewer;
           error?: string;
-        };
-        if (!res.ok || body.error) {
+        }>(res);
+        if (!res.ok || !body || body.error) {
           setError("Couldn't load the thread right now. Please try again.");
           return;
         }
@@ -204,16 +218,16 @@ export default function ResourceInquiries({ resourceId, resourceTitle }: Props) 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ body: text }),
       });
-      const body = (await res.json()) as {
+      const body = await readJson<{
         ok?: boolean;
         inquiry?: Inquiry;
         error?: string;
-      };
-      if (!res.ok || !body.ok || !body.inquiry) {
+      }>(res);
+      if (!res.ok || !body || !body.ok || !body.inquiry) {
         // Validation messages from the server (4xx) are user-friendly;
         // anything else collapses to the generic message.
         setError(
-          body.error && res.status >= 400 && res.status < 500
+          body?.error && res.status >= 400 && res.status < 500
             ? body.error
             : "Couldn't post that right now. Please try again.",
         );
@@ -566,9 +580,9 @@ function InquiryRow({
         `/api/resources/${resourceId}/inquiries/${inquiry.id}/replies`,
         { cache: "no-store" },
       );
-      const body = (await res.json()) as { replies?: Reply[]; error?: string };
-      if (!res.ok || body.error) {
-        setError(body.error ?? `Failed to load (${res.status})`);
+      const body = await readJson<{ replies?: Reply[]; error?: string }>(res);
+      if (!res.ok || !body || body.error) {
+        setError(body?.error ?? `Failed to load (${res.status})`);
         return;
       }
       setReplies(body.replies ?? []);
@@ -602,16 +616,16 @@ function InquiryRow({
           body: JSON.stringify({ body: text }),
         },
       );
-      const body = (await res.json()) as {
+      const body = await readJson<{
         ok?: boolean;
         reply?: Reply;
         error?: string;
-      };
-      if (!res.ok || !body.ok || !body.reply) {
+      }>(res);
+      if (!res.ok || !body || !body.ok || !body.reply) {
         // Validation messages from the server (4xx) are user-friendly;
         // anything else collapses to the generic message.
         setError(
-          body.error && res.status >= 400 && res.status < 500
+          body?.error && res.status >= 400 && res.status < 500
             ? body.error
             : "Couldn't post that right now. Please try again.",
         );

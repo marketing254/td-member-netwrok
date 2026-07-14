@@ -81,7 +81,7 @@ const CONFIG_BY_ROLE: Record<JoinRole, Config> = {
     bullets: [
       "Cancel anytime, 30-day written notice",
       "Featured expert listing free for 6 months once approved",
-      "Keep 90% of course revenue — DMN takes 10%",
+      "Keep 70% of course revenue — DMN takes 30%",
     ],
   },
 };

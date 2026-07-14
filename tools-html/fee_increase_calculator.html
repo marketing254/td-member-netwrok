@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fee Increase Impact Calculator · Dental Member Network</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--navy:#1B3A5C;--gold:#C8993D;--cream:#F5ECD7;--ink:#243140;--muted:#5a6b7d;--hair:#dbe2ea;--cat:#9a3b2e;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',sans-serif;background:#f2f5f8;color:var(--ink);line-height:1.5;}
+  .wrap{max-width:880px;margin:0 auto;padding:28px 20px 60px;}
+  .hero{background:radial-gradient(120% 130% at 85% 0%,#b5503f,#9a3b2e 35%,#5a221a 78%);color:#fff;border-radius:14px;padding:28px 30px 24px;margin-bottom:22px;}
+  .hero .eyebrow{color:#E7B964;font-weight:700;letter-spacing:.16em;text-transform:uppercase;font-size:11px;}
+  .hero h1{font-family:'Fraunces',serif;font-weight:600;font-size:30px;line-height:1.1;margin:6px 0 8px;}
+  .hero p{color:#f3d9d2;font-size:14px;max-width:640px;}
+  .credit{display:inline-flex;align-items:center;gap:8px;margin-top:14px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:6px 14px;font-size:12.5px;color:#f8ece8;}
+  .credit b{color:#E7B964;font-weight:600;}
+  .grid{display:grid;grid-template-columns:1fr 1.15fr;gap:18px;}
+  @media (max-width:720px){.grid{grid-template-columns:1fr;}}
+  .card{background:#fff;border:1px solid var(--hair);border-radius:14px;padding:22px;}
+  .card h2{font-family:'Fraunces',serif;color:var(--navy);font-size:18px;margin-bottom:4px;}
+  .card .sub{font-size:12.5px;color:var(--muted);margin-bottom:14px;}
+  label{display:block;font-weight:600;font-size:13px;color:var(--navy);margin:14px 0 5px;}
+  .inp{display:flex;align-items:center;border:1.5px solid var(--hair);border-radius:9px;overflow:hidden;background:#fff;}
+  .inp:focus-within{border-color:var(--gold);}
+  .inp .unit{background:#f6f8fb;color:var(--muted);font-weight:600;padding:10px 12px;font-size:14px;}
+  .inp .unit.l{border-right:1px solid var(--hair);}
+  .inp .unit.r{border-left:1px solid var(--hair);}
+  .inp input{border:none;outline:none;font:inherit;font-size:16px;padding:10px 12px;width:100%;color:var(--ink);}
+  .hint{font-size:11.5px;color:var(--muted);margin-top:4px;}
+  .res-big{background:var(--cream);border-radius:11px;padding:14px 16px;margin-bottom:10px;}
+  .res-big .l{font-size:12px;color:#7a5d1f;font-weight:600;text-transform:uppercase;letter-spacing:.06em;}
+  .res-big .n{font-family:'Fraunces',serif;font-weight:700;color:var(--navy);font-size:32px;line-height:1.15;}
+  .res-big .s{font-size:12.5px;color:#5a4410;}
+  .res-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:9px 2px;border-bottom:1px dotted var(--hair);font-size:14px;}
+  .res-row:last-child{border-bottom:none;}
+  .res-row b{color:var(--navy);font-size:16px;white-space:nowrap;}
+  .quote{margin-top:14px;background:#fbf1ee;border:1px solid #e7cfc8;border-radius:11px;padding:12px 15px;font-size:13.5px;color:#5a221a;}
+  .quote b{color:#9a3b2e;}
+  .btn{display:inline-block;background:var(--gold);color:#10243b;font-weight:700;font-size:14px;border:none;border-radius:999px;padding:11px 22px;cursor:pointer;margin-top:16px;}
+  .btn:hover{filter:brightness(1.05);}
+  .disclaimer{font-size:11.5px;color:var(--muted);margin-top:14px;}
+  .foot{margin-top:26px;display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;color:var(--muted);font-size:12px;}
+  .foot .brand{color:var(--navy);font-weight:700;letter-spacing:.08em;}
+  .foot .url{color:var(--gold);font-weight:600;}
+  @media print{ body{background:#fff;} .btn,.noprint,.howto{display:none !important;} .grid{grid-template-columns:1fr 1fr;} }
+.howto h3{font-family:'Fraunces',serif;color:var(--navy);font-size:14.5px;margin:12px 0 4px;}.howto p{font-size:13.5px;margin:2px 0 10px;color:#37485a;}.howto ul{margin:4px 0 12px 18px;}.howto li{font-size:13.5px;margin-bottom:6px;color:#37485a;}.howto li b{color:var(--navy);}
+</style></head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <div class="eyebrow">DMN Member Tool &middot; Practice Transitions</div>
+    <h1>The Fee Increase Impact Calculator</h1>
+    <p>Stagnant fees are a quiet pay cut: your costs rise every year even when your fees don't. See what a fee increase is actually worth on your numbers, including the patients you might lose.</p>
+    <div class="credit">Built with <b>Dr David Moffet</b> &middot; from his kit "Profit Through the Transition"</div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Your numbers</h2>
+      <div class="sub">Nothing you type here is saved or sent anywhere. It stays on your screen.</div>
+
+      <label>Annual production</label>
+      <div class="inp"><span class="unit l">$</span><input id="production" type="number" min="0" step="50000" value="1000000" inputmode="numeric"></div>
+
+      <label>Planned fee increase</label>
+      <div class="inp"><input id="increase" type="number" min="0" max="30" step="0.5" value="5" inputmode="decimal"><span class="unit r">%</span></div>
+
+      <label>Patients you expect to lose</label>
+      <div class="inp"><input id="attrition" type="number" min="0" max="30" step="0.5" value="1" inputmode="decimal"><span class="unit r">%</span></div>
+      <div class="hint">Dr Moffet's experience: every time he raised fees 10%, he lost about 1% of patients. Never 10%.</div>
+
+      <label>Your yearly cost inflation</label>
+      <div class="inp"><input id="inflation" type="number" min="0" max="15" step="0.5" value="3" inputmode="decimal"><span class="unit r">%</span></div>
+      <div class="hint">Supplies, wages, rent. This is what eats you if fees stay flat.</div>
+    </div>
+
+    <div class="card">
+      <h2>What it means</h2>
+      <div class="sub">Live results, updated as you type.</div>
+
+      <div class="res-big">
+        <div class="l">Extra production in year one</div>
+        <div class="n" id="gain">+$39,500</div>
+        <div class="s" id="gainsub">After losing 1% of patients, you still come out ahead.</div>
+      </div>
+
+      <div class="res-row"><span>Production if you raise fees</span><b id="newprod">$1,039,500</b></div>
+      <div class="res-row"><span>The hidden pay cut if fees stay flat this year</span><b id="paycut">&ndash;$30,000</b></div>
+      <div class="res-row"><span>Raise yearly vs stay flat, over 5 years</span><b id="fivegap">&ndash;</b></div>
+
+      <div class="quote">Dr Moffet's rule: <b>"Raise your fees 10% and you might lose 1% of your patients. Never 10%."</b> Around 20-25% of people choose value and relationship over price. Raise with the cost of living, every year.</div>
+
+      <button class="btn noprint" onclick="window.print()">Download my results (PDF)</button>
+      <div class="disclaimer">Planning estimates from your own inputs, not financial advice. The experience figures come from Dr David Moffet's "Profit Through the Transition" kit, in your member library.</div>
+    </div>
+  </div>
+
+  <div class="card howto">
+    <h2>How this tool works</h2>
+    <h3>What it does</h3>
+    <p>It shows what a fee increase is worth in year one after the patients you might lose, what staying flat quietly costs you as your expenses inflate, and the five-year gap between raising yearly and never raising.</p>
+    <h3>What to gather before you start</h3>
+    <ul><li><b>Annual production:</b> your year-end production report</li><li><b>Planned fee increase:</b> the percentage you are considering; Dr Moffet raised with the cost of living every year</li><li><b>Patients you expect to lose:</b> Dr Moffet's experience was about 1% lost per 10% raise; adjust if your market differs</li><li><b>Your yearly cost inflation:</b> compare this year's total overhead to last year's on your P&L</li></ul>
+    <h3>The math, in plain English</h3>
+    <p>New production = current production, raised by the fee increase, reduced by the patient loss. The hidden pay cut = production times your cost inflation (costs rise while flat fees do not). The five-year line compounds the yearly raise and adds up the difference.</p>
+  </div>
+
+  <div class="foot">
+    <span class="brand">DENTAL MEMBER NETWORK</span>
+    <span>Tool 02 &middot; Practice Transitions &middot; More tools in your member portal</span>
+    <span class="url">dentalmembernetwork.com</span>
+  </div>
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const fmt = n => (n < 0 ? '–$' : '$') + Math.abs(Math.round(n)).toLocaleString('en-US');
+  function calc(){
+    const P = parseFloat($('production').value) || 0;
+    const f = (parseFloat($('increase').value) || 0) / 100;
+    const l = (parseFloat($('attrition').value) || 0) / 100;
+    const c = (parseFloat($('inflation').value) || 0) / 100;
+    const newP = P * (1 + f) * (1 - l);
+    const gain = newP - P;
+    $('newprod').textContent = fmt(newP);
+    $('gain').textContent = (gain >= 0 ? '+' : '') + fmt(gain);
+    $('gainsub').textContent = gain >= 0
+      ? 'After losing ' + (l*100).toFixed(1).replace(/\.0$/,'') + '% of patients, you still come out ahead.'
+      : 'At this attrition level the increase costs you. Check the assumptions.';
+    $('paycut').textContent = '–' + fmt(P * c);
+    // 5-year gap = cumulative extra production from raising yearly vs keeping fees flat
+    let cum = 0, r2 = P;
+    for (let y = 1; y <= 5; y++){ r2 = r2 * (1 + f) * (1 - l); cum += (r2 - P); }
+    $('fivegap').textContent = '+' + fmt(cum);
+  }
+  document.querySelectorAll('input').forEach(i => i.addEventListener('input', calc));
+  calc();
+</script>
+</body></html>

@@ -307,47 +307,23 @@ export default function PartnersPage() {
         </Container>
       </Box>
 
-      {/* Our Founding Partners */}
-      <Box sx={{ py: { xs: 6, md: 9 }, bgcolor: COLORS.surfaceAlt }}>
-        <Container maxWidth="lg">
-          <Stack spacing={1.25} sx={{ alignItems: "center", textAlign: "center", mb: 4 }}>
-            <Typography
-              sx={{
-                fontSize: "0.72rem",
-                letterSpacing: "0.22em",
-                textTransform: "uppercase",
-                fontWeight: 700,
-                color: COLORS.accentDeep,
-              }}
-            >
-              Founding Partners
-            </Typography>
-            <SectionHeading title="Our Founding Partners" />
-            <Typography sx={{ color: COLORS.muted, maxWidth: 620, mt: 1, fontSize: "1rem" }}>
-              The first two companies anchoring the DMN partner roster. More
-              founding partners join by application.
-            </Typography>
-          </Stack>
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-              gap: 3,
-              maxWidth: 900,
-              mx: "auto",
-            }}
-          >
-            {FOUNDING_PARTNERS.map((p) => (
-              <FoundingPartnerCard key={p.name} p={p} />
-            ))}
-          </Box>
-        </Container>
-      </Box>
-
-      {/* Founding partners directory — DB-driven, paginated. Shows every
-          ACCEPTED partner company (logo, category, one-liner) linking to
-          their public profile page. Hidden until at least one is live. */}
-      <FoundingDirectory kind="partners" />
+      {/* The network — ONE unified roster. The anchor partners (Thriving
+          Dentist, Ekwa) and every ACCEPTED founding partner (DB-driven, links
+          to their profile) sit under a single title, so the whole roster reads
+          as one shelter rather than two split sections. */}
+      <FoundingDirectory
+        kind="partners"
+        eyebrow="Founding partners"
+        title="Meet the DMN partners"
+        subtitle="The companies behind the member-exclusive offers — our anchor partners and every hand-picked founding partner."
+        house={FOUNDING_PARTNERS.map((p) => ({
+          name: p.name,
+          category: p.tag,
+          description: p.body,
+          logo_url: p.logo,
+          badge: "Anchor Partner",
+        }))}
+      />
 
       {/* How it works */}
       <Box id="how" sx={{ py: { xs: 6, md: 9 } }}>
@@ -830,87 +806,6 @@ function FitColumn({
           </Stack>
         ))}
       </Stack>
-    </Box>
-  );
-}
-
-function FoundingPartnerCard({
-  p,
-}: {
-  p: { name: string; tag: string; body: string; logo?: string };
-}) {
-  return (
-    <Box
-      sx={{
-        borderRadius: 3,
-        border: `1px solid ${COLORS.line}`,
-        bgcolor: "#FFFFFF",
-        p: { xs: 3, md: 4 },
-        boxShadow: "0 16px 40px -28px rgba(14,42,61,0.25)",
-        position: "relative",
-      }}
-    >
-      <Chip
-        label="Founding Partner"
-        sx={{
-          position: "absolute",
-          top: 16,
-          right: 16,
-          bgcolor: COLORS.accent,
-          color: COLORS.primaryDeep,
-          fontWeight: 700,
-          fontSize: "0.7rem",
-          letterSpacing: "0.08em",
-          textTransform: "uppercase",
-          height: 26,
-          px: 0.5,
-        }}
-      />
-      {p.logo && (
-        <Box
-          sx={{
-            position: "relative",
-            width: { xs: 110, md: 130 },
-            height: { xs: 42, md: 50 },
-            mb: 2.25,
-          }}
-        >
-          <Image
-            src={p.logo}
-            alt={`${p.name} logo`}
-            fill
-            sizes="130px"
-            style={{ objectFit: "contain", objectPosition: "left center" }}
-          />
-        </Box>
-      )}
-      <Typography
-        sx={{
-          fontSize: "0.7rem",
-          letterSpacing: "0.16em",
-          textTransform: "uppercase",
-          fontWeight: 700,
-          color: COLORS.accentDeep,
-          mb: 0.5,
-        }}
-      >
-        {p.tag}
-      </Typography>
-      <Typography
-        sx={{
-          fontFamily: "var(--font-display)",
-          fontSize: { xs: "1.5rem", md: "1.7rem" },
-          fontWeight: 500,
-          color: COLORS.ink,
-          letterSpacing: "-0.01em",
-          mb: 1,
-        }}
-      >
-        {p.name}
-      </Typography>
-      <Typography sx={{ fontSize: "0.95rem", color: COLORS.inkSoft, lineHeight: 1.6 }}>
-        {p.body}
-      </Typography>
     </Box>
   );
 }

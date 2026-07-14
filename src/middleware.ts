@@ -124,6 +124,22 @@ export async function middleware(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
   const res = NextResponse.next({ request: req });
 
+  // Member tools render inside the portal's own <iframe>. The global
+  // frame-ancestors 'none' would make the browser refuse to frame them —
+  // even by our own page — so this one path gets a same-origin framing
+  // policy instead. Auth is enforced inside the route itself
+  // (requireMemberOrAdminPreview), and 'self' still blocks any other
+  // site from embedding the tools.
+  if (pathname.startsWith("/api/member/tools/")) {
+    applySecurityHeaders(res);
+    res.headers.set(
+      "Content-Security-Policy",
+      CSP.replace("frame-ancestors 'none'", "frame-ancestors 'self'"),
+    );
+    res.headers.set("X-Frame-Options", "SAMEORIGIN");
+    return res;
+  }
+
   // Only run on protected portal paths. Auth callback is always allowed.
   if (pathname.startsWith("/auth/")) return applySecurityHeaders(res);
 

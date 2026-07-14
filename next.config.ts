@@ -35,6 +35,10 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/api/admin/founding-invite/\\[id\\]": ["./node_modules/@sparticuz/chromium/bin/**"],
     "/api/founding/\\[code\\]/accept": ["./node_modules/@sparticuz/chromium/bin/**"],
+    // Member tools are self-contained HTML files read from disk at runtime
+    // (kept OUT of /public so they're member-gated). Trace them into the
+    // serving function's bundle.
+    "/api/member/tools/\\[id\\]": ["./tools-html/**"],
   },
   compiler: {
     removeConsole:
