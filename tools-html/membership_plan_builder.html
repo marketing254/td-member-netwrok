@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>In-House Membership Plan Builder · Dental Member Network</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--navy:#1B3A5C;--gold:#C8993D;--cream:#F5ECD7;--ink:#243140;--muted:#5a6b7d;--hair:#dbe2ea;--cat:#0d7d96;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',sans-serif;background:#f2f5f8;color:var(--ink);line-height:1.5;}
+  .wrap{max-width:880px;margin:0 auto;padding:28px 20px 60px;}
+  .hero{background:radial-gradient(120% 130% at 85% 0%,#15a0bf,#0d7d96 35%,#063d4a 78%);color:#fff;border-radius:14px;padding:28px 30px 24px;margin-bottom:22px;}
+  .hero .eyebrow{color:#E7B964;font-weight:700;letter-spacing:.16em;text-transform:uppercase;font-size:11px;}
+  .hero h1{font-family:'Fraunces',serif;font-weight:600;font-size:30px;line-height:1.1;margin:6px 0 8px;}
+  .hero p{color:#d3eef5;font-size:14px;max-width:640px;}
+  .credit{display:inline-flex;align-items:center;gap:8px;margin-top:14px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:6px 14px;font-size:12.5px;color:#eaf7fa;}
+  .credit b{color:#E7B964;font-weight:600;}
+  .grid{display:grid;grid-template-columns:1fr 1.15fr;gap:18px;}
+  @media (max-width:720px){.grid{grid-template-columns:1fr;}}
+  .card{background:#fff;border:1px solid var(--hair);border-radius:14px;padding:22px;}
+  .card h2{font-family:'Fraunces',serif;color:var(--navy);font-size:18px;margin-bottom:4px;}
+  .card .sub{font-size:12.5px;color:var(--muted);margin-bottom:14px;}
+  label{display:block;font-weight:600;font-size:13px;color:var(--navy);margin:14px 0 5px;}
+  label span.opt{color:var(--muted);font-weight:400;}
+  .inp{display:flex;align-items:center;border:1.5px solid var(--hair);border-radius:9px;overflow:hidden;background:#fff;}
+  .inp:focus-within{border-color:var(--gold);}
+  .inp .unit{background:#f6f8fb;color:var(--muted);font-weight:600;padding:10px 12px;font-size:14px;}
+  .inp .unit.l{border-right:1px solid var(--hair);}
+  .inp .unit.r{border-left:1px solid var(--hair);}
+  .inp input{border:none;outline:none;font:inherit;font-size:16px;padding:10px 12px;width:100%;color:var(--ink);}
+  .hint{font-size:11.5px;color:var(--muted);margin-top:4px;}
+  .res-big{background:var(--cream);border-radius:11px;padding:14px 16px;margin-bottom:10px;}
+  .res-big .l{font-size:12px;color:#7a5d1f;font-weight:600;text-transform:uppercase;letter-spacing:.06em;}
+  .res-big .n{font-family:'Fraunces',serif;font-weight:700;color:var(--navy);font-size:32px;line-height:1.15;}
+  .res-big .s{font-size:12.5px;color:#5a4410;}
+  .res-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:9px 2px;border-bottom:1px dotted var(--hair);font-size:14px;}
+  .res-row:last-child{border-bottom:none;}
+  .res-row b{color:var(--navy);font-size:16px;white-space:nowrap;}
+  .good{margin-top:14px;background:#eef6f1;border:1px solid #cbe3d4;border-radius:11px;padding:12px 15px;font-size:13.5px;color:#1d4d33;}
+  .good b{color:#14532d;}
+  .warn{margin-top:14px;background:#fdf3e7;border:1px solid #ecd3b0;border-radius:11px;padding:12px 15px;font-size:13.5px;color:#7a4a12;}
+  .warn b{color:#8a4a0c;}
+  .btn{display:inline-block;background:var(--gold);color:#10243b;font-weight:700;font-size:14px;border:none;border-radius:999px;padding:11px 22px;cursor:pointer;margin-top:16px;}
+  .btn:hover{filter:brightness(1.05);}
+  .disclaimer{font-size:11.5px;color:var(--muted);margin-top:14px;}
+  .foot{margin-top:26px;display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;color:var(--muted);font-size:12px;}
+  .foot .brand{color:var(--navy);font-weight:700;letter-spacing:.08em;}
+  .foot .url{color:var(--gold);font-weight:600;}
+  @media print{ body{background:#fff;} .btn,.noprint,.howto{display:none !important;} .grid{grid-template-columns:1fr 1fr;} }
+.howto h3{font-family:'Fraunces',serif;color:var(--navy);font-size:14.5px;margin:12px 0 4px;}.howto p{font-size:13.5px;margin:2px 0 10px;color:#37485a;}.howto ul{margin:4px 0 12px 18px;}.howto li{font-size:13.5px;margin-bottom:6px;color:#37485a;}.howto li b{color:var(--navy);}
+</style></head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <div class="eyebrow">DMN Member Tool &middot; Case Acceptance</div>
+    <h1>The In-House Membership Plan Builder</h1>
+    <p>Price a patient membership plan for your uninsured patients: what they pay, what they save, and what it means for your practice. Plans work when the patient clearly wins and your revenue becomes predictable.</p>
+    <div class="credit">Built with <b>Dr. Christopher Phelps</b> (Dental Membership Direct) &middot; from his kit "The Science of Yes"</div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Your plan design</h2>
+      <div class="sub">Nothing you type here is saved or sent anywhere. It stays on your screen.</div>
+
+      <label>Monthly membership fee</label>
+      <div class="inp"><span class="unit l">$</span><input id="fee" type="number" min="0" step="5" value="35" inputmode="numeric"></div>
+
+      <label>Value of included care per year, at YOUR fees</label>
+      <div class="inp"><span class="unit l">$</span><input id="value" type="number" min="0" step="25" value="650" inputmode="numeric"></div>
+      <div class="hint">Example: 2 cleanings + 1 exam + x-rays, priced from your own fee schedule.</div>
+
+      <label>Member discount on other treatment</label>
+      <div class="inp"><input id="discount" type="number" min="0" max="50" step="1" value="10" inputmode="numeric"><span class="unit r">%</span></div>
+
+      <label>Expected members in year one</label>
+      <div class="inp"><input id="members" type="number" min="0" step="10" value="100" inputmode="numeric"></div>
+      <div class="hint">Think uninsured patients already in your chairs. Most practices start there.</div>
+
+      <label>Extra treatment an average member accepts per year <span class="opt">(optional)</span></label>
+      <div class="inp"><span class="unit l">$</span><input id="treatment" type="number" min="0" step="100" value="500" inputmode="numeric"></div>
+    </div>
+
+    <div class="card">
+      <h2>What it means</h2>
+      <div class="sub">Live results, updated as you type.</div>
+
+      <div class="res-big">
+        <div class="l">Predictable plan revenue per year</div>
+        <div class="n" id="planrev">$42,000</div>
+        <div class="s">Recurring, insurance-free, and paid whether or not the schedule is full.</div>
+      </div>
+
+      <div class="res-row"><span>A member pays per year</span><b id="memberpays">$420</b></div>
+      <div class="res-row"><span>Care they receive, at your fees</span><b id="carevalue">$650</b></div>
+      <div class="res-row"><span>The member saves</span><b id="saves">$230 (35%)</b></div>
+      <div class="res-row"><span>Treatment revenue after member discount</span><b id="treatrev">$45,000 / yr</b></div>
+      <div class="res-row"><span>Total plan economics, year one</span><b id="total">$87,000 / yr</b></div>
+
+      <div id="verdict" class="good"><b>The patient clearly wins.</b> A visible saving is what makes the plan an easy yes at the front desk, and an easy yes is the whole game.</div>
+
+      <button class="btn noprint" onclick="window.print()">Download my results (PDF)</button>
+      <div class="disclaimer">Planning estimates from your own inputs, not financial, legal, or insurance advice. Some states regulate in-house plans; confirm your state's rules before launching. Built with Dr. Christopher Phelps, whose kit "The Science of Yes" is in your member library.</div>
+    </div>
+  </div>
+
+  <div class="card howto">
+    <h2>How this tool works</h2>
+    <h3>What it does</h3>
+    <p>It prices an in-house membership plan for uninsured patients: what the member pays, what care they receive, whether they clearly win, and what the plan means in predictable yearly revenue for the practice.</p>
+    <h3>What to gather before you start</h3>
+    <ul><li><b>Monthly membership fee:</b> your planned price; keep it simple to say at the front desk</li><li><b>Value of included care:</b> price 2 cleanings, 1 exam, and x-rays from YOUR own fee schedule</li><li><b>Member discount on other treatment:</b> your planned percentage, commonly 10-15%</li><li><b>Expected members in year one:</b> run a PMS report of active patients WITHOUT insurance; they are your starting pool</li><li><b>Extra treatment per member (optional):</b> your average yearly treatment revenue per uninsured patient</li></ul>
+    <h3>The math, in plain English</h3>
+    <p>Plan revenue = fee x 12 x members. The member's saving = included care value minus what they pay per year; if that number is not clearly positive, the tool warns you to fix the design. Treatment revenue applies your member discount to the extra treatment you expect.</p>
+  </div>
+
+  <div class="foot">
+    <span class="brand">DENTAL MEMBER NETWORK</span>
+    <span>Tool 03 &middot; Case Acceptance &middot; More tools in your member portal</span>
+    <span class="url">dentalmembernetwork.com</span>
+  </div>
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const fmt = n => '$' + Math.round(n).toLocaleString('en-US');
+  function calc(){
+    const F = parseFloat($('fee').value) || 0;
+    const V = parseFloat($('value').value) || 0;
+    const d = Math.min(Math.max(parseFloat($('discount').value) || 0, 0), 50) / 100;
+    const M = parseFloat($('members').value) || 0;
+    const T = parseFloat($('treatment').value) || 0;
+    const yearly = F * 12;
+    const planrev = yearly * M;
+    const saves = V - yearly;
+    const savepct = V > 0 ? (saves / V) * 100 : 0;
+    const treatrev = M * T * (1 - d);
+    $('planrev').textContent = fmt(planrev);
+    $('memberpays').textContent = fmt(yearly);
+    $('carevalue').textContent = fmt(V);
+    $('saves').textContent = (saves >= 0 ? fmt(saves) + ' (' + Math.round(savepct) + '%)' : 'nothing');
+    $('treatrev').textContent = fmt(treatrev) + ' / yr';
+    $('total').textContent = fmt(planrev + treatrev) + ' / yr';
+    const v = $('verdict');
+    if (saves > 0){
+      v.className = 'good';
+      v.innerHTML = '<b>The patient clearly wins.</b> A visible saving is what makes the plan an easy yes at the front desk, and an easy yes is the whole game.';
+    } else {
+      v.className = 'warn';
+      v.innerHTML = '<b>Careful: at these numbers the member pays more than the care is worth.</b> Raise the included value or lower the fee. A plan only works when the patient clearly wins.';
+    }
+  }
+  document.querySelectorAll('input').forEach(i => i.addEventListener('input', calc));
+  calc();
+</script>
+</body></html>

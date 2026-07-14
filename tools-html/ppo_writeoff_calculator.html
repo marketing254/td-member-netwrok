@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PPO Write-Off Calculator · Dental Member Network</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--navy:#1B3A5C;--blue:#2A5F8F;--gold:#C8993D;--cream:#F5ECD7;--ink:#243140;--muted:#5a6b7d;--hair:#dbe2ea;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',sans-serif;background:#f2f5f8;color:var(--ink);line-height:1.5;}
+  .wrap{max-width:880px;margin:0 auto;padding:28px 20px 60px;}
+  .hero{background:radial-gradient(120% 130% at 85% 0%,#2a5a86,#234a72 35%,#1B3A5C 75%);color:#fff;border-radius:14px;padding:28px 30px 24px;margin-bottom:22px;}
+  .hero .eyebrow{color:#E7B964;font-weight:700;letter-spacing:.16em;text-transform:uppercase;font-size:11px;}
+  .hero h1{font-family:'Fraunces',serif;font-weight:600;font-size:30px;line-height:1.1;margin:6px 0 8px;}
+  .hero p{color:#cfe0ee;font-size:14px;max-width:640px;}
+  .credit{display:inline-flex;align-items:center;gap:8px;margin-top:14px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:6px 14px;font-size:12.5px;color:#e8f0f7;}
+  .credit b{color:#E7B964;font-weight:600;}
+  .grid{display:grid;grid-template-columns:1fr 1.15fr;gap:18px;}
+  @media (max-width:720px){.grid{grid-template-columns:1fr;}}
+  .card{background:#fff;border:1px solid var(--hair);border-radius:14px;padding:22px;}
+  .card h2{font-family:'Fraunces',serif;color:var(--navy);font-size:18px;margin-bottom:4px;}
+  .card .sub{font-size:12.5px;color:var(--muted);margin-bottom:14px;}
+  label{display:block;font-weight:600;font-size:13px;color:var(--navy);margin:14px 0 5px;}
+  label span.opt{color:var(--muted);font-weight:400;}
+  .inp{display:flex;align-items:center;border:1.5px solid var(--hair);border-radius:9px;overflow:hidden;background:#fff;}
+  .inp:focus-within{border-color:var(--gold);}
+  .inp .unit{background:#f6f8fb;color:var(--muted);font-weight:600;padding:10px 12px;font-size:14px;border-right:1px solid var(--hair);}
+  .inp input{border:none;outline:none;font:inherit;font-size:16px;padding:10px 12px;width:100%;color:var(--ink);}
+  .hint{font-size:11.5px;color:var(--muted);margin-top:4px;}
+  .res-big{background:var(--cream);border-radius:11px;padding:14px 16px;margin-bottom:10px;}
+  .res-big .l{font-size:12px;color:#7a5d1f;font-weight:600;text-transform:uppercase;letter-spacing:.06em;}
+  .res-big .n{font-family:'Fraunces',serif;font-weight:700;color:var(--navy);font-size:32px;line-height:1.15;}
+  .res-big .s{font-size:12.5px;color:#5a4410;}
+  .res-row{display:flex;justify-content:space-between;align-items:baseline;padding:9px 2px;border-bottom:1px dotted var(--hair);font-size:14px;}
+  .res-row:last-child{border-bottom:none;}
+  .res-row b{color:var(--navy);font-size:16px;}
+  .ask{margin-top:14px;background:#eef6f1;border:1px solid #cbe3d4;border-radius:11px;padding:12px 15px;font-size:13.5px;color:#1d4d33;}
+  .ask b{color:#14532d;}
+  .divider{margin:26px 0 18px;border:none;border-top:2px solid var(--gold);}
+  .exit h2{margin-top:2px;}
+  .foot{margin-top:26px;display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;color:var(--muted);font-size:12px;}
+  .foot .brand{color:var(--navy);font-weight:700;letter-spacing:.08em;}
+  .foot .url{color:var(--gold);font-weight:600;}
+  .btn{display:inline-block;background:var(--gold);color:#10243b;font-weight:700;font-size:14px;border:none;border-radius:999px;padding:11px 22px;cursor:pointer;margin-top:16px;}
+  .btn:hover{filter:brightness(1.05);}
+  .disclaimer{font-size:11.5px;color:var(--muted);margin-top:14px;}
+  @media print{
+    body{background:#fff;}
+    .hero{border-radius:0;}
+    .btn, .noprint{display:none !important;}
+    .grid{grid-template-columns:1fr 1fr;}
+  }
+.howto h3{font-family:'Fraunces',serif;color:var(--navy);font-size:14.5px;margin:12px 0 4px;}.howto p{font-size:13.5px;margin:2px 0 10px;color:#37485a;}.howto ul{margin:4px 0 12px 18px;}.howto li{font-size:13.5px;margin-bottom:6px;color:#37485a;}.howto li b{color:var(--navy);}
+</style></head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <div class="eyebrow">DMN Member Tool &middot; Insurance &amp; PPOs</div>
+    <h1>The PPO Write-Off Calculator</h1>
+    <p>What are your PPO write-offs really costing you, and what would it take to replace a plan if you left? Two numbers every practice owner should know before renegotiating or going out of network.</p>
+    <div class="credit">Built with <b>Kelly Fox-Galvagni</b> &middot; from her kit "The PPO Exit Playbook"</div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Your numbers</h2>
+      <div class="sub">Nothing you type here is saved or sent anywhere. It stays on your screen.</div>
+
+      <label>Monthly insurance write-offs</label>
+      <div class="inp"><span class="unit">$</span><input id="writeoffs" type="number" min="0" step="500" value="35000" inputmode="numeric"></div>
+      <div class="hint">The difference between your full fees and what the plans actually allow, per month.</div>
+
+      <label>Monthly production <span class="opt">(optional)</span></label>
+      <div class="inp"><span class="unit">$</span><input id="production" type="number" min="0" step="1000" placeholder="e.g. 150000" inputmode="numeric"></div>
+
+      <hr class="divider">
+      <h2 class="exit">The exit math (one plan)</h2>
+      <div class="sub">Analyzing one PPO you might drop? Use utilization, not patient counts.</div>
+
+      <label>That plan's revenue over the last 12 months <span class="opt">(insurance + patient side)</span></label>
+      <div class="inp"><span class="unit">$</span><input id="planrev" type="number" min="0" step="5000" placeholder="e.g. 240000" inputmode="numeric"></div>
+
+      <label>Average discount off your full fees on that plan</label>
+      <div class="inp"><input id="discount" type="number" min="0" max="70" step="1" value="35" inputmode="numeric"><span class="unit">%</span></div>
+      <div class="hint">Many PPO contracts run 30-40% below full fees.</div>
+    </div>
+
+    <div class="card">
+      <h2>What it means</h2>
+      <div class="sub">Live results, updated as you type.</div>
+
+      <div class="res-big">
+        <div class="l">Write-offs per year</div>
+        <div class="n" id="yearly">$420,000</div>
+        <div class="s" id="fiveyear">That is $2,100,000 over five years.</div>
+      </div>
+      <div class="res-row"><span>Write-offs as a share of production</span><b id="pctprod">&ndash;</b></div>
+      <div class="res-row"><span>Written off every working day (16 days/mo)</span><b id="daily">$2,188</b></div>
+
+      <div class="ask" id="marketing">Kelly's question: <b>if you spent $420,000 a year on marketing instead, what would you have?</b> That is the reframe that starts the whole conversation.</div>
+
+      <div id="exitblock" style="display:none;">
+        <hr class="divider">
+        <h2 class="exit">If you dropped that plan</h2>
+        <div class="res-row"><span>Full-fee value of that same care</span><b id="fullfee">&ndash;</b></div>
+        <div class="res-row"><span>Patients you must keep to match today's revenue</span><b id="keeppct">&ndash;</b></div>
+        <div class="res-row"><span>Revenue upside if they ALL stayed at full fees</span><b id="upside">&ndash;</b></div>
+        <div class="ask">Every patient you keep beyond the break-even line is growth. Kelly's rule: <b>be methodical, not emotional.</b> Pass the readiness test in the kit before you leap.</div>
+      </div>
+
+      <button class="btn noprint" onclick="window.print()">Download my results (PDF)</button>
+      <div class="disclaimer">These are planning estimates built from your own inputs, not financial advice. The formulas follow Kelly Fox-Galvagni's "PPO Exit Playbook" kit, in your member library.</div>
+    </div>
+  </div>
+
+  <div class="card howto">
+    <h2>How this tool works</h2>
+    <h3>What it does</h3>
+    <p>It shows two things: what your PPO write-offs cost you per year, and, if you are analyzing one plan, how many of that plan's patients you would need to keep at full fees to match today's revenue if you dropped it.</p>
+    <h3>What to gather before you start</h3>
+    <ul><li><b>Monthly insurance write-offs:</b> run your PMS adjustment report and total the insurance adjustments for a typical month</li><li><b>Monthly production (optional):</b> your PMS production report for the same month</li><li><b>One plan's 12-month revenue (for the exit math):</b> a per-plan production report covering BOTH the insurance payments and the patient payments for that plan's patients</li><li><b>Average discount off your full fees:</b> compare that plan's contracted fee schedule against your full fees, or ask your billing coordinator; many PPO contracts run 30-40% below</li></ul>
+    <h3>The math, in plain English</h3>
+    <p>Write-offs are multiplied by 12 for the yearly total. For the exit math: the plan's revenue divided by (100% minus the discount) gives the full-fee value of the same care; keeping that percentage of the patients' visits at full fees is the break-even line, and anything above it is growth.</p>
+  </div>
+
+  <div class="foot">
+    <span class="brand">DENTAL MEMBER NETWORK</span>
+    <span>Tool 01 &middot; Insurance &amp; PPOs &middot; More tools in your member portal</span>
+    <span class="url">dentalmembernetwork.com</span>
+  </div>
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const fmt = n => '$' + Math.round(n).toLocaleString('en-US');
+  function calc(){
+    const w = parseFloat($('writeoffs').value) || 0;
+    const p = parseFloat($('production').value) || 0;
+    const yearly = w * 12;
+    $('yearly').textContent = fmt(yearly);
+    $('fiveyear').textContent = 'That is ' + fmt(yearly * 5) + ' over five years.';
+    $('daily').textContent = fmt(w / 16);
+    $('pctprod').textContent = p > 0 ? ((w / p) * 100).toFixed(1) + '%' : '–';
+    $('marketing').innerHTML = 'Kelly\'s question: <b>if you spent ' + fmt(yearly) +
+      ' a year on marketing instead, what would you have?</b> That is the reframe that starts the whole conversation.';
+    const r = parseFloat($('planrev').value) || 0;
+    const d = Math.min(Math.max(parseFloat($('discount').value) || 0, 0), 70) / 100;
+    const block = $('exitblock');
+    if (r > 0 && d > 0 && d < 1){
+      block.style.display = 'block';
+      const full = r / (1 - d);
+      block.style.display = 'block';
+      $('fullfee').textContent = fmt(full) + ' / yr';
+      $('keeppct').textContent = Math.round((1 - d) * 100) + '% of their visits (break-even)';
+      $('upside').textContent = '+' + fmt(full - r) + ' / yr';
+    } else {
+      block.style.display = 'none';
+    }
+  }
+  document.querySelectorAll('input').forEach(i => i.addEventListener('input', calc));
+  calc();
+</script>
+</body></html>

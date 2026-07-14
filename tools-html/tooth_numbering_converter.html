@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tooth Numbering Converter · Dental Member Network</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--navy:#1B3A5C;--gold:#C8993D;--cream:#F5ECD7;--ink:#243140;--muted:#5a6b7d;--hair:#dbe2ea;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',sans-serif;background:#f2f5f8;color:var(--ink);line-height:1.5;}
+  .wrap{max-width:920px;margin:0 auto;padding:28px 20px 60px;}
+  .hero{background:radial-gradient(120% 130% at 85% 0%,#4a6da8,#3a5a8e 35%,#15243f 78%);color:#fff;border-radius:14px;padding:28px 30px 24px;margin-bottom:22px;}
+  .hero .eyebrow{color:#E7B964;font-weight:700;letter-spacing:.16em;text-transform:uppercase;font-size:11px;}
+  .hero h1{font-family:'Fraunces',serif;font-weight:600;font-size:30px;line-height:1.1;margin:6px 0 8px;}
+  .hero p{color:#d5e0f0;font-size:14px;max-width:680px;}
+  .credit{display:inline-flex;align-items:center;gap:8px;margin-top:14px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:6px 14px;font-size:12.5px;color:#e8eef8;}
+  .credit b{color:#E7B964;font-weight:600;}
+  .card{background:#fff;border:1px solid var(--hair);border-radius:14px;padding:22px;margin-bottom:18px;}
+  .card h2{font-family:'Fraunces',serif;color:var(--navy);font-size:18px;margin-bottom:4px;}
+  .card .sub{font-size:12.5px;color:var(--muted);margin-bottom:14px;}
+  .archlbl{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:10px 0 6px;text-align:center;}
+  .arch{display:grid;grid-template-columns:repeat(16,1fr);gap:4px;}
+  .tooth{border:1.5px solid var(--hair);border-radius:7px;background:#f8fafc;font:inherit;font-size:12.5px;font-weight:600;color:var(--navy);padding:8px 0;cursor:pointer;text-align:center;}
+  .tooth:hover{border-color:var(--gold);background:var(--cream);}
+  .tooth.sel{background:var(--navy);color:#fff;border-color:var(--navy);}
+  .mid{display:flex;justify-content:center;margin:2px 0;}
+  .mid span{font-size:10px;color:var(--muted);letter-spacing:.08em;}
+  .detail{margin-top:16px;background:var(--cream);border-radius:11px;padding:14px 18px;display:none;}
+  .detail.show{display:block;}
+  .detail .name{font-family:'Fraunces',serif;font-weight:700;color:var(--navy);font-size:20px;margin-bottom:8px;}
+  .codes{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .code{background:#fff;border:1px solid #e6d9b8;border-radius:9px;padding:10px 12px;text-align:center;}
+  .code .sys{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#7a5d1f;}
+  .code .val{font-family:'Fraunces',serif;font-weight:700;color:var(--navy);font-size:24px;}
+  .search{display:flex;align-items:center;border:1.5px solid var(--hair);border-radius:9px;overflow:hidden;margin-top:6px;}
+  .search:focus-within{border-color:var(--gold);}
+  .search input{border:none;outline:none;font:inherit;font-size:16px;padding:10px 12px;width:100%;color:var(--ink);}
+  .hint{font-size:11.5px;color:var(--muted);margin-top:6px;}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px;}
+  th{background:var(--navy);color:#fff;text-align:left;padding:6px 9px;font-weight:600;}
+  td{border:1px solid var(--hair);padding:5px 9px;color:var(--ink);}
+  tr:nth-child(even) td{background:#f6f8fb;}
+  .btn{display:inline-block;background:var(--gold);color:#10243b;font-weight:700;font-size:14px;border:none;border-radius:999px;padding:11px 22px;cursor:pointer;margin-top:12px;}
+  .btn:hover{filter:brightness(1.05);}
+  .disclaimer{font-size:11.5px;color:var(--muted);margin-top:10px;}
+  .foot{margin-top:22px;display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;color:var(--muted);font-size:12px;}
+  .foot .brand{color:var(--navy);font-weight:700;letter-spacing:.08em;}
+  .foot .url{color:var(--gold);font-weight:600;}
+  @media (max-width:720px){ .arch{grid-template-columns:repeat(8,1fr);} .codes{grid-template-columns:1fr;} }
+  @media print{ body{background:#fff;} .btn,.noprint,.howto{display:none !important;} .hero{border-radius:0;} }
+.howto h3{font-family:'Fraunces',serif;color:var(--navy);font-size:14.5px;margin:12px 0 4px;}.howto p{font-size:13.5px;margin:2px 0 10px;color:#37485a;}.howto ul{margin:4px 0 12px 18px;}.howto li{font-size:13.5px;margin-bottom:6px;color:#37485a;}.howto li b{color:var(--navy);}
+</style></head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <div class="eyebrow">DMN Team Tool &middot; Chairside Reference</div>
+    <h1>The Tooth Numbering Converter</h1>
+    <p>Universal, FDI, and Palmer, side by side. Click any tooth, or type a code from any system. Made for insurance coordinators, international team members, and anyone reading a chart from another office.</p>
+    <div class="credit">A <b>Dental Member Network</b> original &middot; print the full chart for the front desk</div>
+  </div>
+
+  <div class="card">
+    <h2>Click a tooth (Universal numbers shown)</h2>
+    <div class="sub">Adult dentition. Patient's upper right appears on the left, as on a chart.</div>
+    <div class="archlbl">Upper arch</div>
+    <div class="arch" id="upper"></div>
+    <div class="mid"><span>PATIENT'S RIGHT &nbsp;&middot;&nbsp; MIDLINE &nbsp;&middot;&nbsp; PATIENT'S LEFT</span></div>
+    <div class="arch" id="lower"></div>
+    <div class="archlbl">Lower arch</div>
+
+    <div class="detail" id="detail">
+      <div class="name" id="dname">&ndash;</div>
+      <div class="codes">
+        <div class="code"><div class="sys">Universal (US)</div><div class="val" id="duni">&ndash;</div></div>
+        <div class="code"><div class="sys">FDI (ISO)</div><div class="val" id="dfdi">&ndash;</div></div>
+        <div class="code"><div class="sys">Palmer</div><div class="val" id="dpal">&ndash;</div></div>
+      </div>
+    </div>
+
+    <label style="display:block;font-weight:600;font-size:13px;color:var(--navy);margin:16px 0 0;">Or type a code from any system</label>
+    <div class="search"><input id="q" placeholder='Try "19", "36", or "LL6"'></div>
+    <div class="hint">Universal: 1-32 &nbsp;&middot;&nbsp; FDI: 11-48 &nbsp;&middot;&nbsp; Palmer: UR8, UL1, LL6, LR3 ...</div>
+  </div>
+
+  <div class="card">
+    <h2>The full chart</h2>
+    <div class="sub">All 32 adult teeth in all three systems. Print it and pin it at the front desk.</div>
+    <table id="fulltable"><tr><th>Universal</th><th>FDI</th><th>Palmer</th><th>Tooth</th></tr></table>
+    <button class="btn noprint" onclick="window.print()">Print the chart</button>
+    <div class="disclaimer">Standard adult tooth numbering per the Universal (ADA), FDI (ISO 3950), and Palmer notation systems. Educational reference for team use.</div>
+  </div>
+
+  <div class="card howto">
+    <h2>How this tool works</h2>
+    <h3>What it does</h3>
+    <p>It translates any tooth between the three numbering systems. Click a tooth on the arches or type a code from any system, and all three appear together with the tooth's name.</p>
+    <h3>The three systems, one line each</h3>
+    <ul><li><b>Universal (US):</b> numbers 1-32, starting at the upper right third molar; what most US insurance forms use</li><li><b>FDI (ISO):</b> two digits: quadrant then tooth (11-48); common internationally and in research</li><li><b>Palmer:</b> quadrant letters plus 1-8 counted from the midline (UR1, LL6); common in orthodontics and the UK</li></ul>
+    <h3>How to use it</h3>
+    <p>Nothing to calculate and nothing to gather: the mapping between the three systems is fixed. Print the full chart below and pin it where insurance paperwork happens.</p>
+  </div>
+
+  <div class="foot">
+    <span class="brand">DENTAL MEMBER NETWORK</span>
+    <span>Tool 12 &middot; Chairside Reference &middot; More tools in your member portal</span>
+    <span class="url">dentalmembernetwork.com</span>
+  </div>
+</div>
+
+<script>
+  const NAMES = ['Third Molar','Second Molar','First Molar','Second Premolar','First Premolar','Canine','Lateral Incisor','Central Incisor'];
+  // Build the 32 adult teeth. Universal 1 starts at the patient's UPPER RIGHT third molar,
+  // runs to upper left third molar (16), drops to LOWER LEFT third molar (17), ends lower right (32).
+  const TEETH = [];
+  for (let i = 0; i < 8; i++)  TEETH.push({uni: 1+i,  fdi: 18-i, pal: 'UR' + (8-i), name: 'Upper Right ' + NAMES[i]});
+  for (let i = 0; i < 8; i++)  TEETH.push({uni: 9+i,  fdi: 21+i, pal: 'UL' + (1+i), name: 'Upper Left ' + NAMES[7-i]});
+  for (let i = 0; i < 8; i++)  TEETH.push({uni: 17+i, fdi: 38-i, pal: 'LL' + (8-i), name: 'Lower Left ' + NAMES[i]});
+  for (let i = 0; i < 8; i++)  TEETH.push({uni: 25+i, fdi: 41+i, pal: 'LR' + (1+i), name: 'Lower Right ' + NAMES[7-i]});
+  const byUni = {}; TEETH.forEach(t => byUni[t.uni] = t);
+
+  const upper = document.getElementById('upper'), lower = document.getElementById('lower');
+  for (let u = 1; u <= 16; u++){
+    const b = document.createElement('button'); b.className = 'tooth'; b.textContent = u; b.dataset.uni = u;
+    b.onclick = () => select(u); upper.appendChild(b);
+  }
+  // Lower arch displays 32 -> 17 left-to-right so the patient's right stays on the viewer's left.
+  for (let u = 32; u >= 17; u--){
+    const b = document.createElement('button'); b.className = 'tooth'; b.textContent = u; b.dataset.uni = u;
+    b.onclick = () => select(u); lower.appendChild(b);
+  }
+  function select(u){
+    const t = byUni[u]; if (!t) return;
+    document.querySelectorAll('.tooth').forEach(b => b.classList.toggle('sel', +b.dataset.uni === u));
+    document.getElementById('detail').classList.add('show');
+    document.getElementById('dname').textContent = t.name + ' (' + (u <= 16 ? 'upper' : 'lower') + ' arch)';
+    document.getElementById('duni').textContent = t.uni;
+    document.getElementById('dfdi').textContent = t.fdi;
+    document.getElementById('dpal').textContent = t.pal;
+  }
+  document.getElementById('q').addEventListener('input', e => {
+    const v = e.target.value.trim().toUpperCase();
+    if (!v) return;
+    let hit = null;
+    if (/^(UR|UL|LL|LR)[1-8]$/.test(v)) hit = TEETH.find(t => t.pal === v);
+    else if (/^\d+$/.test(v)){
+      const n = parseInt(v, 10);
+      if (n >= 1 && n <= 32) hit = byUni[n];               // Universal first
+      if (!hit) hit = TEETH.find(t => t.fdi === n);        // then FDI
+    }
+    if (hit) select(hit.uni);
+  });
+  const table = document.getElementById('fulltable');
+  TEETH.forEach(t => {
+    const r = document.createElement('tr');
+    r.innerHTML = '<td><b>' + t.uni + '</b></td><td>' + t.fdi + '</td><td>' + t.pal + '</td><td>' + t.name + '</td>';
+    table.appendChild(r);
+  });
+  select(3);
+</script>
+</body></html>

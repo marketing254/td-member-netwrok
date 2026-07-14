@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Break-Even Day Calculator · Dental Member Network</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--navy:#1B3A5C;--gold:#C8993D;--cream:#F5ECD7;--ink:#243140;--muted:#5a6b7d;--hair:#dbe2ea;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',sans-serif;background:#f2f5f8;color:var(--ink);line-height:1.5;}
+  .wrap{max-width:880px;margin:0 auto;padding:28px 20px 60px;}
+  .hero{background:radial-gradient(120% 130% at 85% 0%,#2a5a86,#23496f 35%,#0d2641 78%);color:#fff;border-radius:14px;padding:28px 30px 24px;margin-bottom:22px;}
+  .hero .eyebrow{color:#E7B964;font-weight:700;letter-spacing:.16em;text-transform:uppercase;font-size:11px;}
+  .hero h1{font-family:'Fraunces',serif;font-weight:600;font-size:30px;line-height:1.1;margin:6px 0 8px;}
+  .hero p{color:#cfe0ee;font-size:14px;max-width:640px;}
+  .credit{display:inline-flex;align-items:center;gap:8px;margin-top:14px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:6px 14px;font-size:12.5px;color:#e8f0f7;}
+  .credit b{color:#E7B964;font-weight:600;}
+  .grid{display:grid;grid-template-columns:1fr 1.15fr;gap:18px;}
+  @media (max-width:720px){.grid{grid-template-columns:1fr;}}
+  .card{background:#fff;border:1px solid var(--hair);border-radius:14px;padding:22px;}
+  .card h2{font-family:'Fraunces',serif;color:var(--navy);font-size:18px;margin-bottom:4px;}
+  .card .sub{font-size:12.5px;color:var(--muted);margin-bottom:14px;}
+  label{display:block;font-weight:600;font-size:13px;color:var(--navy);margin:14px 0 5px;}
+  .inp{display:flex;align-items:center;border:1.5px solid var(--hair);border-radius:9px;overflow:hidden;background:#fff;}
+  .inp:focus-within{border-color:var(--gold);}
+  .inp .unit{background:#f6f8fb;color:var(--muted);font-weight:600;padding:10px 12px;font-size:14px;}
+  .inp .unit.l{border-right:1px solid var(--hair);}
+  .inp .unit.r{border-left:1px solid var(--hair);}
+  .inp input, .inp select{border:none;outline:none;font:inherit;font-size:16px;padding:10px 12px;width:100%;color:var(--ink);background:#fff;}
+  .hint{font-size:11.5px;color:var(--muted);margin-top:4px;}
+  .res-big{background:var(--cream);border-radius:11px;padding:14px 16px;margin-bottom:10px;}
+  .res-big .l{font-size:12px;color:#7a5d1f;font-weight:600;text-transform:uppercase;letter-spacing:.06em;}
+  .res-big .n{font-family:'Fraunces',serif;font-weight:700;color:var(--navy);font-size:32px;line-height:1.15;}
+  .res-big .s{font-size:12.5px;color:#5a4410;}
+  .res-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:9px 2px;border-bottom:1px dotted var(--hair);font-size:14px;}
+  .res-row:last-child{border-bottom:none;}
+  .res-row b{color:var(--navy);font-size:16px;white-space:nowrap;}
+  .good{margin-top:14px;background:#eef6f1;border:1px solid #cbe3d4;border-radius:11px;padding:12px 15px;font-size:13.5px;color:#1d4d33;}
+  .good b{color:#14532d;}
+  .warn{margin-top:14px;background:#fdf3e7;border:1px solid #ecd3b0;border-radius:11px;padding:12px 15px;font-size:13.5px;color:#7a4a12;}
+  .warn b{color:#8a4a0c;}
+  .btn{display:inline-block;background:var(--gold);color:#10243b;font-weight:700;font-size:14px;border:none;border-radius:999px;padding:11px 22px;cursor:pointer;margin-top:16px;}
+  .btn:hover{filter:brightness(1.05);}
+  .disclaimer{font-size:11.5px;color:var(--muted);margin-top:14px;}
+  .foot{margin-top:26px;display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;color:var(--muted);font-size:12px;}
+  .foot .brand{color:var(--navy);font-weight:700;letter-spacing:.08em;}
+  .foot .url{color:var(--gold);font-weight:600;}
+  @media print{ body{background:#fff;} .btn,.noprint,.howto{display:none !important;} .grid{grid-template-columns:1fr 1fr;} }
+.howto h3{font-family:'Fraunces',serif;color:var(--navy);font-size:14.5px;margin:12px 0 4px;}.howto p{font-size:13.5px;margin:2px 0 10px;color:#37485a;}.howto ul{margin:4px 0 12px 18px;}.howto li{font-size:13.5px;margin-bottom:6px;color:#37485a;}.howto li b{color:var(--navy);}
+</style></head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <div class="eyebrow">DMN Member Tool &middot; Practice Management</div>
+    <h1>The Break-Even Day Calculator</h1>
+    <p>Every day, the first hours of production go to rent, team, and supplies. This shows the exact time of day your practice stops working for the bills and starts working for you.</p>
+    <div class="credit">A <b>Dental Member Network</b> original &middot; works alongside every kit in your library</div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Your numbers</h2>
+      <div class="sub">Nothing you type here is saved or sent anywhere. It stays on your screen.</div>
+
+      <label>Monthly practice overhead</label>
+      <div class="inp"><span class="unit l">$</span><input id="overhead" type="number" min="0" step="1000" value="78000" inputmode="numeric"></div>
+      <div class="hint">Everything it costs to open the doors, excluding the owner's own pay.</div>
+
+      <label>Working days per month</label>
+      <div class="inp"><input id="days" type="number" min="1" max="31" step="1" value="16" inputmode="numeric"><span class="unit r">days</span></div>
+
+      <label>Average production per day</label>
+      <div class="inp"><span class="unit l">$</span><input id="production" type="number" min="0" step="250" value="6000" inputmode="numeric"></div>
+
+      <label>Your working day</label>
+      <div class="inp"><input id="start" type="number" min="5" max="12" step="0.5" value="8" inputmode="decimal"><span class="unit r">AM start</span></div>
+      <div class="inp" style="margin-top:8px;"><input id="length" type="number" min="4" max="14" step="0.5" value="8" inputmode="decimal"><span class="unit r">hours</span></div>
+    </div>
+
+    <div class="card">
+      <h2>What it means</h2>
+      <div class="sub">Live results, updated as you type.</div>
+
+      <div class="res-big">
+        <div class="l">You break even at</div>
+        <div class="n" id="time">2:30 PM</div>
+        <div class="s" id="timesub">Everything produced after this hour is yours.</div>
+      </div>
+
+      <div class="res-row"><span>Daily break-even production</span><b id="daily">$4,875</b></div>
+      <div class="res-row"><span>Share of your day working for the bills</span><b id="share">81%</b></div>
+      <div class="res-row"><span>Yours, per day, after break-even</span><b id="keep">$1,125</b></div>
+
+      <div id="verdict" class="warn"><b>A late break-even hour is the practice telling you something:</b> overhead too heavy, production too light, or both. Two other tools in this section (Overhead Benchmark, Open Chair Cost) show which one.</div>
+
+      <button class="btn noprint" onclick="window.print()">Download my results (PDF)</button>
+      <div class="disclaimer">Planning estimates from your own inputs, not financial advice. Averages by design: real days vary, the picture holds.</div>
+    </div>
+  </div>
+
+  <div class="card howto">
+    <h2>How this tool works</h2>
+    <h3>What it does</h3>
+    <p>It finds the time of day your practice has covered its own costs, so everything produced after that hour is yours. One memorable number for the whole team.</p>
+    <h3>What to gather before you start</h3>
+    <ul><li><b>Monthly practice overhead:</b> your P&L: everything it costs to open the doors, excluding your own pay</li><li><b>Working days per month:</b> your calendar</li><li><b>Average production per day:</b> monthly production divided by working days</li><li><b>Your working day:</b> start time and length in hours</li></ul>
+    <h3>The math, in plain English</h3>
+    <p>Daily break-even = overhead divided by working days. The share of the day working for the bills = daily break-even divided by daily production. The clock time maps that share onto your actual working hours.</p>
+  </div>
+
+  <div class="foot">
+    <span class="brand">DENTAL MEMBER NETWORK</span>
+    <span>Tool 09 &middot; Practice Management &middot; More tools in your member portal</span>
+    <span class="url">dentalmembernetwork.com</span>
+  </div>
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const fmt = n => '$' + Math.round(n).toLocaleString('en-US');
+  function clock(h){
+    let hh = Math.floor(h), mm = Math.round((h - hh) * 60);
+    if (mm === 60){ hh++; mm = 0; }
+    const ap = hh >= 12 ? 'PM' : 'AM';
+    let disp = hh > 12 ? hh - 12 : (hh === 0 ? 12 : hh);
+    return disp + ':' + String(mm).padStart(2, '0') + ' ' + ap;
+  }
+  function calc(){
+    const O = parseFloat($('overhead').value) || 0;
+    const D = Math.max(parseFloat($('days').value) || 1, 1);
+    const P = parseFloat($('production').value) || 0;
+    const S = parseFloat($('start').value) || 8;
+    const L = Math.max(parseFloat($('length').value) || 8, 1);
+    const daily = O / D;
+    $('daily').textContent = fmt(daily);
+    const v = $('verdict');
+    if (P <= 0){ $('time').textContent = '–'; $('share').textContent = '–'; $('keep').textContent = '–'; return; }
+    const frac = daily / P;
+    $('share').textContent = Math.min(Math.round(frac * 100), 999) + '%';
+    $('keep').textContent = P > daily ? fmt(P - daily) : '$0';
+    if (frac >= 1){
+      $('time').textContent = 'not today';
+      $('timesub').textContent = 'At these numbers an average day does not cover its own costs.';
+      v.className = 'warn';
+      v.innerHTML = '<b>An average day is underwater.</b> Overhead too heavy, production too light, or both. Start with the Overhead Benchmark and Open Chair Cost tools in this section.';
+    } else {
+      $('time').textContent = clock(S + L * frac);
+      $('timesub').textContent = 'Everything produced after this hour is yours.';
+      if (frac <= 0.6){
+        v.className = 'good';
+        v.innerHTML = '<b>Strong position:</b> you break even before the day is 60% done. Protect it: overhead creeps and schedules leak.';
+      } else {
+        v.className = 'warn';
+        v.innerHTML = '<b>A late break-even hour is the practice telling you something:</b> overhead too heavy, production too light, or both. Two other tools in this section (Overhead Benchmark, Open Chair Cost) show which one.';
+      }
+    }
+  }
+  document.querySelectorAll('input').forEach(i => i.addEventListener('input', calc));
+  calc();
+</script>
+</body></html>

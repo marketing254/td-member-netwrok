@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Open Chair Cost Calculator · Dental Member Network</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--navy:#1B3A5C;--gold:#C8993D;--cream:#F5ECD7;--ink:#243140;--muted:#5a6b7d;--hair:#dbe2ea;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',sans-serif;background:#f2f5f8;color:var(--ink);line-height:1.5;}
+  .wrap{max-width:880px;margin:0 auto;padding:28px 20px 60px;}
+  .hero{background:radial-gradient(120% 130% at 85% 0%,#2a5a86,#23496f 35%,#0d2641 78%);color:#fff;border-radius:14px;padding:28px 30px 24px;margin-bottom:22px;}
+  .hero .eyebrow{color:#E7B964;font-weight:700;letter-spacing:.16em;text-transform:uppercase;font-size:11px;}
+  .hero h1{font-family:'Fraunces',serif;font-weight:600;font-size:30px;line-height:1.1;margin:6px 0 8px;}
+  .hero p{color:#cfe0ee;font-size:14px;max-width:640px;}
+  .credit{display:inline-flex;align-items:center;gap:8px;margin-top:14px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:6px 14px;font-size:12.5px;color:#e8f0f7;}
+  .credit b{color:#E7B964;font-weight:600;}
+  .grid{display:grid;grid-template-columns:1fr 1.15fr;gap:18px;}
+  @media (max-width:720px){.grid{grid-template-columns:1fr;}}
+  .card{background:#fff;border:1px solid var(--hair);border-radius:14px;padding:22px;}
+  .card h2{font-family:'Fraunces',serif;color:var(--navy);font-size:18px;margin-bottom:4px;}
+  .card .sub{font-size:12.5px;color:var(--muted);margin-bottom:14px;}
+  label{display:block;font-weight:600;font-size:13px;color:var(--navy);margin:14px 0 5px;}
+  .inp{display:flex;align-items:center;border:1.5px solid var(--hair);border-radius:9px;overflow:hidden;background:#fff;}
+  .inp:focus-within{border-color:var(--gold);}
+  .inp .unit{background:#f6f8fb;color:var(--muted);font-weight:600;padding:10px 12px;font-size:14px;}
+  .inp .unit.l{border-right:1px solid var(--hair);}
+  .inp .unit.r{border-left:1px solid var(--hair);}
+  .inp input{border:none;outline:none;font:inherit;font-size:16px;padding:10px 12px;width:100%;color:var(--ink);}
+  .hint{font-size:11.5px;color:var(--muted);margin-top:4px;}
+  .res-big{background:var(--cream);border-radius:11px;padding:14px 16px;margin-bottom:10px;}
+  .res-big .l{font-size:12px;color:#7a5d1f;font-weight:600;text-transform:uppercase;letter-spacing:.06em;}
+  .res-big .n{font-family:'Fraunces',serif;font-weight:700;color:var(--navy);font-size:32px;line-height:1.15;}
+  .res-big .s{font-size:12.5px;color:#5a4410;}
+  .res-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:9px 2px;border-bottom:1px dotted var(--hair);font-size:14px;}
+  .res-row:last-child{border-bottom:none;}
+  .res-row b{color:var(--navy);font-size:16px;white-space:nowrap;}
+  .quote{margin-top:14px;background:var(--cream);border:1px solid #e6d9b8;border-radius:11px;padding:12px 15px;font-size:13.5px;color:#5a4410;}
+  .quote b{color:#7a5d1f;}
+  .btn{display:inline-block;background:var(--gold);color:#10243b;font-weight:700;font-size:14px;border:none;border-radius:999px;padding:11px 22px;cursor:pointer;margin-top:16px;}
+  .btn:hover{filter:brightness(1.05);}
+  .disclaimer{font-size:11.5px;color:var(--muted);margin-top:14px;}
+  .foot{margin-top:26px;display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;color:var(--muted);font-size:12px;}
+  .foot .brand{color:var(--navy);font-weight:700;letter-spacing:.08em;}
+  .foot .url{color:var(--gold);font-weight:600;}
+  @media print{ body{background:#fff;} .btn,.noprint,.howto{display:none !important;} .grid{grid-template-columns:1fr 1fr;} }
+.howto h3{font-family:'Fraunces',serif;color:var(--navy);font-size:14.5px;margin:12px 0 4px;}.howto p{font-size:13.5px;margin:2px 0 10px;color:#37485a;}.howto ul{margin:4px 0 12px 18px;}.howto li{font-size:13.5px;margin-bottom:6px;color:#37485a;}.howto li b{color:var(--navy);}
+</style></head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <div class="eyebrow">DMN Member Tool &middot; Practice Management</div>
+    <h1>The Open Chair Cost Calculator</h1>
+    <p>An empty chair costs the same to run as a busy one: same rent, same team, same lights. See what no-shows, cancellations, and unfilled gaps are really costing you per year.</p>
+    <div class="credit">Built with <b>Gary Takacs</b> &middot; from his kit "Scheduling for Profitability"</div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Your numbers</h2>
+      <div class="sub">Nothing you type here is saved or sent anywhere. It stays on your screen.</div>
+
+      <label>Average production per chair hour</label>
+      <div class="inp"><span class="unit l">$</span><input id="perhour" type="number" min="0" step="25" value="500" inputmode="numeric"></div>
+      <div class="hint">Weekly production divided by scheduled chair hours is a quick way to get this.</div>
+
+      <label>Open or no-show chair hours per week</label>
+      <div class="inp"><input id="hours" type="number" min="0" step="0.5" value="5" inputmode="decimal"><span class="unit r">hrs</span></div>
+      <div class="hint">Count reschedules too: a moved appointment still leaves a hole today.</div>
+
+      <label>Working weeks per year</label>
+      <div class="inp"><input id="weeks" type="number" min="1" max="52" step="1" value="48" inputmode="numeric"><span class="unit r">wks</span></div>
+    </div>
+
+    <div class="card">
+      <h2>What it means</h2>
+      <div class="sub">Live results, updated as you type.</div>
+
+      <div class="res-big">
+        <div class="l">Empty chair time costs you per year</div>
+        <div class="n" id="yearly">$120,000</div>
+        <div class="s" id="yearlysub">At 5 open hours a week, that is a full team member's salary, unbilled.</div>
+      </div>
+
+      <div class="res-row"><span>Per week</span><b id="weekly">$2,500</b></div>
+      <div class="res-row"><span>Per month</span><b id="monthly">$10,000</b></div>
+      <div class="res-row"><span>Winning back just 1 hour a week is worth</span><b id="onehour">$24,000 / yr</b></div>
+
+      <div class="quote"><b>The kit's fix:</b> a confirmation system, a short-notice list, and a schedule built for profitability, not just fullness. A day's work should reliably earn a day's pay.</div>
+
+      <button class="btn noprint" onclick="window.print()">Download my results (PDF)</button>
+      <div class="disclaimer">Planning estimates from your own inputs, not financial advice. Built with Gary Takacs, whose kit "Scheduling for Profitability" is in your member library.</div>
+    </div>
+  </div>
+
+  <div class="card howto">
+    <h2>How this tool works</h2>
+    <h3>What it does</h3>
+    <p>It totals what empty chair time actually costs per year, and what winning back even one hour a week is worth.</p>
+    <h3>What to gather before you start</h3>
+    <ul><li><b>Average production per chair hour:</b> weekly production divided by scheduled chair hours</li><li><b>Open or no-show hours per week:</b> audit one typical week's schedule and count the holes, including reschedules that left a gap</li><li><b>Working weeks per year:</b> 52 minus your holidays and vacation weeks</li></ul>
+    <h3>The math, in plain English</h3>
+    <p>Weekly cost = production per hour x open hours. The yearly number multiplies that by your working weeks. The one-hour line shows production per hour x working weeks: what a single reclaimed hour is worth.</p>
+  </div>
+
+  <div class="foot">
+    <span class="brand">DENTAL MEMBER NETWORK</span>
+    <span>Tool 07 &middot; Practice Management &middot; More tools in your member portal</span>
+    <span class="url">dentalmembernetwork.com</span>
+  </div>
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const fmt = n => '$' + Math.round(n).toLocaleString('en-US');
+  function calc(){
+    const H = parseFloat($('perhour').value) || 0;
+    const W = parseFloat($('hours').value) || 0;
+    const K = Math.min(Math.max(parseFloat($('weeks').value) || 0, 0), 52);
+    const weekly = H * W;
+    const yearly = weekly * K;
+    $('weekly').textContent = fmt(weekly);
+    $('monthly').textContent = fmt(yearly / 12);
+    $('yearly').textContent = fmt(yearly);
+    $('onehour').textContent = fmt(H * K) + ' / yr';
+    $('yearlysub').textContent = 'At ' + W + ' open hours a week, that is money the practice was staffed and ready to earn.';
+  }
+  document.querySelectorAll('input').forEach(i => i.addEventListener('input', calc));
+  calc();
+</script>
+</body></html>

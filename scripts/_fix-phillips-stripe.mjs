@@ -15,11 +15,15 @@ const CUSTOMER_ID = "cus_Ur6yrdNoIicViw";
 const EMAIL = "andrew@phillipsgrouptax.com";
 
 // --- Stripe customer name ---
-if (!process.env.STRIPE_SECRET_KEY) {
-  console.log("STRIPE_SECRET_KEY not set — skipping Stripe check.");
+// Live customer: pass STRIPE_LIVE_KEY for this run (falls back to the
+// test key in .env.local, where the customer won't exist).
+const stripeKey = process.env.STRIPE_LIVE_KEY || process.env.STRIPE_SECRET_KEY;
+if (!stripeKey) {
+  console.log("No Stripe key set — skipping Stripe check.");
 } else {
+  console.log(`Stripe mode: ${stripeKey.startsWith("sk_live") ? "LIVE" : "TEST"}`);
   try {
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    const stripe = new Stripe(stripeKey);
     const c = await stripe.customers.retrieve(CUSTOMER_ID);
     console.log(`Stripe customer name: "${c.name}"  (email: ${c.email})`);
     if (c.name !== GOOD) {

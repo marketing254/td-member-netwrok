@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Patient Portion Estimator · Dental Member Network</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--navy:#1B3A5C;--gold:#C8993D;--cream:#F5ECD7;--ink:#243140;--muted:#5a6b7d;--hair:#dbe2ea;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',sans-serif;background:#f2f5f8;color:var(--ink);line-height:1.5;}
+  .wrap{max-width:880px;margin:0 auto;padding:28px 20px 60px;}
+  .hero{background:radial-gradient(120% 130% at 85% 0%,#2a9090,#1f6f6f 35%,#0b2c2c 78%);color:#fff;border-radius:14px;padding:28px 30px 24px;margin-bottom:22px;}
+  .hero .eyebrow{color:#E7B964;font-weight:700;letter-spacing:.16em;text-transform:uppercase;font-size:11px;}
+  .hero h1{font-family:'Fraunces',serif;font-weight:600;font-size:30px;line-height:1.1;margin:6px 0 8px;}
+  .hero p{color:#cfe8e8;font-size:14px;max-width:640px;}
+  .credit{display:inline-flex;align-items:center;gap:8px;margin-top:14px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:6px 14px;font-size:12.5px;color:#e6f4f4;}
+  .credit b{color:#E7B964;font-weight:600;}
+  .grid{display:grid;grid-template-columns:1fr 1.15fr;gap:18px;}
+  @media (max-width:720px){.grid{grid-template-columns:1fr;}}
+  .card{background:#fff;border:1px solid var(--hair);border-radius:14px;padding:22px;}
+  .card h2{font-family:'Fraunces',serif;color:var(--navy);font-size:18px;margin-bottom:4px;}
+  .card .sub{font-size:12.5px;color:var(--muted);margin-bottom:14px;}
+  label{display:block;font-weight:600;font-size:13px;color:var(--navy);margin:14px 0 5px;}
+  .inp{display:flex;align-items:center;border:1.5px solid var(--hair);border-radius:9px;overflow:hidden;background:#fff;}
+  .inp:focus-within{border-color:var(--gold);}
+  .inp .unit{background:#f6f8fb;color:var(--muted);font-weight:600;padding:10px 12px;font-size:14px;}
+  .inp .unit.l{border-right:1px solid var(--hair);}
+  .inp .unit.r{border-left:1px solid var(--hair);}
+  .inp input{border:none;outline:none;font:inherit;font-size:16px;padding:10px 12px;width:100%;color:var(--ink);}
+  .hint{font-size:11.5px;color:var(--muted);margin-top:4px;}
+  .res-big{background:var(--cream);border-radius:11px;padding:14px 16px;margin-bottom:10px;}
+  .res-big .l{font-size:12px;color:#7a5d1f;font-weight:600;text-transform:uppercase;letter-spacing:.06em;}
+  .res-big .n{font-family:'Fraunces',serif;font-weight:700;color:var(--navy);font-size:32px;line-height:1.15;}
+  .res-big .s{font-size:12.5px;color:#5a4410;}
+  .res-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:9px 2px;border-bottom:1px dotted var(--hair);font-size:14px;}
+  .res-row:last-child{border-bottom:none;}
+  .res-row b{color:var(--navy);font-size:16px;white-space:nowrap;}
+  .warnbox{margin-top:14px;background:#fdf3e7;border:1px solid #ecd3b0;border-radius:11px;padding:12px 15px;font-size:13.5px;color:#7a4a12;}
+  .warnbox b{color:#8a4a0c;}
+  .btn{display:inline-block;background:var(--gold);color:#10243b;font-weight:700;font-size:14px;border:none;border-radius:999px;padding:11px 22px;cursor:pointer;margin-top:16px;}
+  .btn:hover{filter:brightness(1.05);}
+  .disclaimer{font-size:11.5px;color:var(--muted);margin-top:14px;}
+  .foot{margin-top:26px;display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;color:var(--muted);font-size:12px;}
+  .foot .brand{color:var(--navy);font-weight:700;letter-spacing:.08em;}
+  .foot .url{color:var(--gold);font-weight:600;}
+  @media print{ body{background:#fff;} .btn,.noprint,.howto{display:none !important;} .grid{grid-template-columns:1fr 1fr;} }
+.howto h3{font-family:'Fraunces',serif;color:var(--navy);font-size:14.5px;margin:12px 0 4px;}.howto p{font-size:13.5px;margin:2px 0 10px;color:#37485a;}.howto ul{margin:4px 0 12px 18px;}.howto li{font-size:13.5px;margin-bottom:6px;color:#37485a;}.howto li b{color:var(--navy);}
+</style></head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <div class="eyebrow">DMN Team Tool &middot; Front Desk</div>
+    <h1>The Patient Portion Estimator</h1>
+    <p>A clean chairside estimate in ten seconds: what insurance is likely to cover, what the patient pays, and a printable quote slip. Built for treatment coordinators and the front desk.</p>
+    <div class="credit">A <b>Dental Member Network</b> original &middot; every printout carries the "estimate only" line</div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>The treatment</h2>
+      <div class="sub">Nothing you type here is saved or sent anywhere. It stays on your screen.</div>
+
+      <label>Treatment fee (total)</label>
+      <div class="inp"><span class="unit l">$</span><input id="fee" type="number" min="0" step="50" value="1200" inputmode="numeric"></div>
+
+      <label>Plan coverage for this procedure class</label>
+      <div class="inp"><input id="coverage" type="number" min="0" max="100" step="5" value="80" inputmode="numeric"><span class="unit r">%</span></div>
+      <div class="hint">From the breakdown of benefits: 100 / 80 / 50 is the common pattern.</div>
+
+      <label>Deductible still remaining</label>
+      <div class="inp"><span class="unit l">$</span><input id="deductible" type="number" min="0" step="25" value="50" inputmode="numeric"></div>
+
+      <label>Annual maximum still remaining</label>
+      <div class="inp"><span class="unit l">$</span><input id="maximum" type="number" min="0" step="100" value="1000" inputmode="numeric"></div>
+    </div>
+
+    <div class="card">
+      <h2>The estimate</h2>
+      <div class="sub">Live results, updated as you type.</div>
+
+      <div class="res-big">
+        <div class="l">Estimated patient portion</div>
+        <div class="n" id="patient">$320</div>
+        <div class="s" id="patientsub">Fee minus the estimated insurance payment.</div>
+      </div>
+
+      <div class="res-row"><span>Deductible applied first</span><b id="ded">$50</b></div>
+      <div class="res-row"><span>Insurance pays an estimated</span><b id="ins">$880</b></div>
+      <div class="res-row"><span>Annual max remaining after this</span><b id="maxleft">$120</b></div>
+
+      <div class="warnbox" id="capnote" style="display:none;"><b>Capped by the annual maximum:</b> the plan's remaining maximum limits this claim, so the patient portion is larger than the coverage percentage suggests. Say it before they hear it from the carrier.</div>
+
+      <button class="btn noprint" onclick="window.print()">Print the quote slip</button>
+      <div class="disclaimer"><b>ESTIMATE ONLY, not a guarantee of payment.</b> Actual payment is determined by the carrier at claim time (frequencies, downgrades, waiting periods, and exclusions may apply). Verify benefits before treatment. Nothing here is insurance or financial advice.</div>
+    </div>
+  </div>
+
+  <div class="card howto">
+    <h2>How this tool works</h2>
+    <h3>What it does</h3>
+    <p>It gives the front desk a ten-second estimate of what insurance is likely to pay and what the patient owes, with a printable quote slip that carries the estimate-only disclaimer.</p>
+    <h3>What to gather before you start</h3>
+    <ul><li><b>Treatment fee:</b> the patient's treatment plan or your fee schedule</li><li><b>Coverage percentage:</b> the breakdown of benefits from your eligibility verification; the common pattern is 100% preventive / 80% basic / 50% major</li><li><b>Deductible remaining:</b> the carrier portal or eligibility call</li><li><b>Annual maximum remaining:</b> same place; it shrinks with every claim in the benefit year</li></ul>
+    <h3>The math, in plain English</h3>
+    <p>The remaining deductible comes off the fee first. The coverage percentage applies to what is left, and the result is capped at the remaining annual maximum (the tool warns you when the cap bites). The patient pays the rest. Always verify benefits: this is an estimate, never a guarantee.</p>
+  </div>
+
+  <div class="foot">
+    <span class="brand">DENTAL MEMBER NETWORK</span>
+    <span>Tool 13 &middot; Front Desk &middot; More tools in your member portal</span>
+    <span class="url">dentalmembernetwork.com</span>
+  </div>
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const fmt = n => '$' + Math.round(n).toLocaleString('en-US');
+  function calc(){
+    const F = parseFloat($('fee').value) || 0;
+    const c = Math.min(Math.max(parseFloat($('coverage').value) || 0, 0), 100) / 100;
+    const D = parseFloat($('deductible').value) || 0;
+    const M = parseFloat($('maximum').value) || 0;
+    const dedApplied = Math.min(D, F);
+    const coveredBase = Math.max(F - dedApplied, 0);
+    const insRaw = coveredBase * c;
+    const ins = Math.min(insRaw, M);
+    const patient = F - ins;
+    $('ded').textContent = fmt(dedApplied);
+    $('ins').textContent = fmt(ins);
+    $('patient').textContent = fmt(patient);
+    $('maxleft').textContent = fmt(Math.max(M - ins, 0));
+    const capped = insRaw > M;
+    $('capnote').style.display = capped ? 'block' : 'none';
+    $('patientsub').textContent = capped
+      ? 'Larger than usual because the annual maximum caps this claim.'
+      : 'Fee minus the estimated insurance payment.';
+  }
+  document.querySelectorAll('input').forEach(i => i.addEventListener('input', calc));
+  calc();
+</script>
+</body></html>

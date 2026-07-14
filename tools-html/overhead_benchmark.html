@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Overhead Benchmark Calculator · Dental Member Network</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--navy:#1B3A5C;--gold:#C8993D;--cream:#F5ECD7;--ink:#243140;--muted:#5a6b7d;--hair:#dbe2ea;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',sans-serif;background:#f2f5f8;color:var(--ink);line-height:1.5;}
+  .wrap{max-width:880px;margin:0 auto;padding:28px 20px 60px;}
+  .hero{background:radial-gradient(120% 130% at 85% 0%,#2a5a86,#23496f 35%,#0d2641 78%);color:#fff;border-radius:14px;padding:28px 30px 24px;margin-bottom:22px;}
+  .hero .eyebrow{color:#E7B964;font-weight:700;letter-spacing:.16em;text-transform:uppercase;font-size:11px;}
+  .hero h1{font-family:'Fraunces',serif;font-weight:600;font-size:30px;line-height:1.1;margin:6px 0 8px;}
+  .hero p{color:#cfe0ee;font-size:14px;max-width:640px;}
+  .credit{display:inline-flex;align-items:center;gap:8px;margin-top:14px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:6px 14px;font-size:12.5px;color:#e8f0f7;}
+  .credit b{color:#E7B964;font-weight:600;}
+  .grid{display:grid;grid-template-columns:1fr 1.15fr;gap:18px;}
+  @media (max-width:720px){.grid{grid-template-columns:1fr;}}
+  .card{background:#fff;border:1px solid var(--hair);border-radius:14px;padding:22px;}
+  .card h2{font-family:'Fraunces',serif;color:var(--navy);font-size:18px;margin-bottom:4px;}
+  .card .sub{font-size:12.5px;color:var(--muted);margin-bottom:14px;}
+  label{display:block;font-weight:600;font-size:13px;color:var(--navy);margin:14px 0 5px;}
+  .inp{display:flex;align-items:center;border:1.5px solid var(--hair);border-radius:9px;overflow:hidden;background:#fff;}
+  .inp:focus-within{border-color:var(--gold);}
+  .inp .unit{background:#f6f8fb;color:var(--muted);font-weight:600;padding:10px 12px;font-size:14px;}
+  .inp .unit.l{border-right:1px solid var(--hair);}
+  .inp input{border:none;outline:none;font:inherit;font-size:16px;padding:10px 12px;width:100%;color:var(--ink);}
+  .hint{font-size:11.5px;color:var(--muted);margin-top:4px;}
+  .res-big{background:var(--cream);border-radius:11px;padding:14px 16px;margin-bottom:10px;}
+  .res-big .l{font-size:12px;color:#7a5d1f;font-weight:600;text-transform:uppercase;letter-spacing:.06em;}
+  .res-big .n{font-family:'Fraunces',serif;font-weight:700;color:var(--navy);font-size:32px;line-height:1.15;}
+  .res-big .s{font-size:12.5px;color:#5a4410;}
+  .res-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:9px 2px;border-bottom:1px dotted var(--hair);font-size:14px;}
+  .res-row:last-child{border-bottom:none;}
+  .res-row b{color:var(--navy);font-size:16px;white-space:nowrap;}
+  .good{margin-top:14px;background:#eef6f1;border:1px solid #cbe3d4;border-radius:11px;padding:12px 15px;font-size:13.5px;color:#1d4d33;}
+  .good b{color:#14532d;}
+  .warn{margin-top:14px;background:#fdf3e7;border:1px solid #ecd3b0;border-radius:11px;padding:12px 15px;font-size:13.5px;color:#7a4a12;}
+  .warn b{color:#8a4a0c;}
+  .btn{display:inline-block;background:var(--gold);color:#10243b;font-weight:700;font-size:14px;border:none;border-radius:999px;padding:11px 22px;cursor:pointer;margin-top:16px;}
+  .btn:hover{filter:brightness(1.05);}
+  .disclaimer{font-size:11.5px;color:var(--muted);margin-top:14px;}
+  .foot{margin-top:26px;display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;color:var(--muted);font-size:12px;}
+  .foot .brand{color:var(--navy);font-weight:700;letter-spacing:.08em;}
+  .foot .url{color:var(--gold);font-weight:600;}
+  @media print{ body{background:#fff;} .btn,.noprint,.howto{display:none !important;} .grid{grid-template-columns:1fr 1fr;} }
+.howto h3{font-family:'Fraunces',serif;color:var(--navy);font-size:14.5px;margin:12px 0 4px;}.howto p{font-size:13.5px;margin:2px 0 10px;color:#37485a;}.howto ul{margin:4px 0 12px 18px;}.howto li{font-size:13.5px;margin-bottom:6px;color:#37485a;}.howto li b{color:var(--navy);}
+</style></head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <div class="eyebrow">DMN Member Tool &middot; Practice Management</div>
+    <h1>The Overhead Benchmark Calculator</h1>
+    <p>The healthiest general practices keep overhead under 60% of collections. See where you stand, what each point of overhead costs you, and what getting to the benchmark would free up.</p>
+    <div class="credit">Built with <b>Gary Takacs</b> &middot; from his kit "The Overhead Equation: Getting Under 60%"</div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Your numbers</h2>
+      <div class="sub">Nothing you type here is saved or sent anywhere. It stays on your screen.</div>
+
+      <label>Monthly collections</label>
+      <div class="inp"><span class="unit l">$</span><input id="collections" type="number" min="0" step="5000" value="120000" inputmode="numeric"></div>
+
+      <label>Monthly overhead</label>
+      <div class="inp"><span class="unit l">$</span><input id="expenses" type="number" min="0" step="1000" value="78000" inputmode="numeric"></div>
+      <div class="hint">All practice expenses excluding the owner's own compensation.</div>
+    </div>
+
+    <div class="card">
+      <h2>What it means</h2>
+      <div class="sub">Live results, updated as you type.</div>
+
+      <div class="res-big">
+        <div class="l">Your overhead</div>
+        <div class="n" id="pct">65.0%</div>
+        <div class="s">Benchmark for a healthy general practice: under 60%.</div>
+      </div>
+
+      <div class="res-row"><span>Each 1% of overhead costs you per year</span><b id="perpoint">$14,400</b></div>
+      <div class="res-row"><span>Gap between you and the 60% benchmark</span><b id="gap">5.0 points</b></div>
+      <div class="res-row"><span>Freed up per year if you reach 60%</span><b id="freed">$72,000</b></div>
+
+      <div id="verdict" class="warn"><b>Above the benchmark.</b> Every point you claw back is money you keep. The kit walks through the biggest overhead levers, category by category.</div>
+
+      <button class="btn noprint" onclick="window.print()">Download my results (PDF)</button>
+      <div class="disclaimer">Planning estimates from your own inputs, not financial advice. The under-60% benchmark comes from Gary Takacs' "The Overhead Equation" kit, in your member library.</div>
+    </div>
+  </div>
+
+  <div class="card howto">
+    <h2>How this tool works</h2>
+    <h3>What it does</h3>
+    <p>It measures your overhead percentage against the under-60% benchmark for a healthy general practice, and shows what each point of overhead costs and what reaching the benchmark would free up.</p>
+    <h3>What to gather before you start</h3>
+    <ul><li><b>Monthly collections:</b> your PMS collections report for a typical month</li><li><b>Monthly overhead:</b> your P&L from your bookkeeper or accounting software: all practice expenses EXCLUDING your own compensation</li></ul>
+    <h3>The math, in plain English</h3>
+    <p>Overhead percentage = expenses divided by collections. Each 1% of overhead equals 1% of your yearly collections. The freed-up number is the yearly difference between your current expenses and what they would be at exactly 60%.</p>
+  </div>
+
+  <div class="foot">
+    <span class="brand">DENTAL MEMBER NETWORK</span>
+    <span>Tool 04 &middot; Practice Management &middot; More tools in your member portal</span>
+    <span class="url">dentalmembernetwork.com</span>
+  </div>
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const fmt = n => '$' + Math.round(n).toLocaleString('en-US');
+  function calc(){
+    const C = parseFloat($('collections').value) || 0;
+    const E = parseFloat($('expenses').value) || 0;
+    const pct = C > 0 ? (E / C) * 100 : 0;
+    $('pct').textContent = pct.toFixed(1) + '%';
+    $('perpoint').textContent = fmt(C * 12 * 0.01);
+    const gap = pct - 60;
+    $('gap').textContent = (gap > 0 ? gap.toFixed(1) + ' points' : 'none — you beat it');
+    $('freed').textContent = gap > 0 ? fmt((E - 0.60 * C) * 12) : '$0';
+    const v = $('verdict');
+    if (C <= 0){ v.className='warn'; v.innerHTML='<b>Enter your collections</b> to see where you stand.'; return; }
+    if (pct <= 60){
+      v.className = 'good';
+      v.innerHTML = '<b>You are at or under the 60% benchmark.</b> Protect it: overhead creeps back the moment nobody is watching the categories.';
+    } else {
+      v.className = 'warn';
+      v.innerHTML = '<b>Above the benchmark.</b> Every point you claw back is money you keep. The kit walks through the biggest overhead levers, category by category.';
+    }
+  }
+  document.querySelectorAll('input').forEach(i => i.addEventListener('input', calc));
+  calc();
+</script>
+</body></html>

@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Equipment ROI Calculator · Dental Member Network</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--navy:#1B3A5C;--gold:#C8993D;--cream:#F5ECD7;--ink:#243140;--muted:#5a6b7d;--hair:#dbe2ea;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',sans-serif;background:#f2f5f8;color:var(--ink);line-height:1.5;}
+  .wrap{max-width:880px;margin:0 auto;padding:28px 20px 60px;}
+  .hero{background:radial-gradient(120% 130% at 85% 0%,#2a5a86,#23496f 35%,#0d2641 78%);color:#fff;border-radius:14px;padding:28px 30px 24px;margin-bottom:22px;}
+  .hero .eyebrow{color:#E7B964;font-weight:700;letter-spacing:.16em;text-transform:uppercase;font-size:11px;}
+  .hero h1{font-family:'Fraunces',serif;font-weight:600;font-size:30px;line-height:1.1;margin:6px 0 8px;}
+  .hero p{color:#cfe0ee;font-size:14px;max-width:640px;}
+  .credit{display:inline-flex;align-items:center;gap:8px;margin-top:14px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:6px 14px;font-size:12.5px;color:#e8f0f7;}
+  .credit b{color:#E7B964;font-weight:600;}
+  .grid{display:grid;grid-template-columns:1fr 1.15fr;gap:18px;}
+  @media (max-width:720px){.grid{grid-template-columns:1fr;}}
+  .card{background:#fff;border:1px solid var(--hair);border-radius:14px;padding:22px;}
+  .card h2{font-family:'Fraunces',serif;color:var(--navy);font-size:18px;margin-bottom:4px;}
+  .card .sub{font-size:12.5px;color:var(--muted);margin-bottom:14px;}
+  label{display:block;font-weight:600;font-size:13px;color:var(--navy);margin:14px 0 5px;}
+  label span.opt{color:var(--muted);font-weight:400;}
+  .inp{display:flex;align-items:center;border:1.5px solid var(--hair);border-radius:9px;overflow:hidden;background:#fff;}
+  .inp:focus-within{border-color:var(--gold);}
+  .inp .unit{background:#f6f8fb;color:var(--muted);font-weight:600;padding:10px 12px;font-size:14px;}
+  .inp .unit.l{border-right:1px solid var(--hair);}
+  .inp .unit.r{border-left:1px solid var(--hair);}
+  .inp input{border:none;outline:none;font:inherit;font-size:16px;padding:10px 12px;width:100%;color:var(--ink);}
+  .hint{font-size:11.5px;color:var(--muted);margin-top:4px;}
+  .res-big{background:var(--cream);border-radius:11px;padding:14px 16px;margin-bottom:10px;}
+  .res-big .l{font-size:12px;color:#7a5d1f;font-weight:600;text-transform:uppercase;letter-spacing:.06em;}
+  .res-big .n{font-family:'Fraunces',serif;font-weight:700;color:var(--navy);font-size:32px;line-height:1.15;}
+  .res-big .s{font-size:12.5px;color:#5a4410;}
+  .res-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:9px 2px;border-bottom:1px dotted var(--hair);font-size:14px;}
+  .res-row:last-child{border-bottom:none;}
+  .res-row b{color:var(--navy);font-size:16px;white-space:nowrap;}
+  .note{margin-top:14px;background:var(--cream);border:1px solid #e6d9b8;border-radius:11px;padding:12px 15px;font-size:13.5px;color:#5a4410;}
+  .note b{color:#7a5d1f;}
+  .btn{display:inline-block;background:var(--gold);color:#10243b;font-weight:700;font-size:14px;border:none;border-radius:999px;padding:11px 22px;cursor:pointer;margin-top:16px;}
+  .btn:hover{filter:brightness(1.05);}
+  .disclaimer{font-size:11.5px;color:var(--muted);margin-top:14px;}
+  .foot{margin-top:26px;display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;color:var(--muted);font-size:12px;}
+  .foot .brand{color:var(--navy);font-weight:700;letter-spacing:.08em;}
+  .foot .url{color:var(--gold);font-weight:600;}
+  @media print{ body{background:#fff;} .btn,.noprint,.howto{display:none !important;} .grid{grid-template-columns:1fr 1fr;} }
+.howto h3{font-family:'Fraunces',serif;color:var(--navy);font-size:14.5px;margin:12px 0 4px;}.howto p{font-size:13.5px;margin:2px 0 10px;color:#37485a;}.howto ul{margin:4px 0 12px 18px;}.howto li{font-size:13.5px;margin-bottom:6px;color:#37485a;}.howto li b{color:var(--navy);}
+</style></head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <div class="eyebrow">DMN Member Tool &middot; Practice Management</div>
+    <h1>The Equipment ROI Calculator</h1>
+    <p>Scanner, CBCT, laser, new chair: before you sign, see the payback period and the five-year return in your own numbers, not the sales rep's.</p>
+    <div class="credit">A <b>Dental Member Network</b> original &middot; works alongside every kit in your library</div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>The purchase</h2>
+      <div class="sub">Nothing you type here is saved or sent anywhere. It stays on your screen.</div>
+
+      <label>Equipment cost, all-in</label>
+      <div class="inp"><span class="unit l">$</span><input id="cost" type="number" min="0" step="5000" value="120000" inputmode="numeric"></div>
+      <div class="hint">Purchase price plus installation and training.</div>
+
+      <label>Extra revenue it produces per month</label>
+      <div class="inp"><span class="unit l">$</span><input id="revenue" type="number" min="0" step="500" value="8000" inputmode="numeric"></div>
+      <div class="hint">New procedures, kept-in-house referrals, higher acceptance from better visuals.</div>
+
+      <label>Extra running cost per month</label>
+      <div class="inp"><span class="unit l">$</span><input id="running" type="number" min="0" step="100" value="1000" inputmode="numeric"></div>
+      <div class="hint">Supplies, service contract, financing interest if any.</div>
+    </div>
+
+    <div class="card">
+      <h2>What it means</h2>
+      <div class="sub">Live results, updated as you type.</div>
+
+      <div class="res-big">
+        <div class="l">Payback period</div>
+        <div class="n" id="payback">17.1 months</div>
+        <div class="s" id="paybacksub">After this point the machine is paying you.</div>
+      </div>
+
+      <div class="res-row"><span>Net gain per month</span><b id="net">$7,000</b></div>
+      <div class="res-row"><span>Net return over 5 years, after the purchase</span><b id="fiveyr">+$300,000</b></div>
+      <div class="res-row"><span>Return on the purchase over 5 years</span><b id="roi">250%</b></div>
+
+      <div class="note"><b>Compare the payback to the machine's realistic service life.</b> A 17-month payback on equipment that serves you for 8 years is a very different decision from a 5-year payback on technology that will be outdated in 6.</div>
+
+      <button class="btn noprint" onclick="window.print()">Download my results (PDF)</button>
+      <div class="disclaimer">Planning estimates from your own inputs, not financial advice. Be conservative with the revenue estimate: use numbers you would bet on, not the brochure's.</div>
+    </div>
+  </div>
+
+  <div class="card howto">
+    <h2>How this tool works</h2>
+    <h3>What it does</h3>
+    <p>It tells you how many months until a piece of equipment pays for itself, and the five-year return, using your own conservative numbers instead of the sales brochure's.</p>
+    <h3>What to gather before you start</h3>
+    <ul><li><b>Equipment cost, all-in:</b> the quote including installation and training</li><li><b>Extra revenue per month:</b> procedures per month you would realistically add or keep in-house, times the fee you actually bill; be conservative</li><li><b>Extra running cost per month:</b> service contract, per-use supplies, and financing interest if any</li></ul>
+    <h3>The math, in plain English</h3>
+    <p>Net gain = extra revenue minus extra running cost. Payback = the all-in cost divided by the net gain. The five-year return = 60 months of net gain minus the purchase. Compare the payback to the machine's realistic service life before deciding.</p>
+  </div>
+
+  <div class="foot">
+    <span class="brand">DENTAL MEMBER NETWORK</span>
+    <span>Tool 08 &middot; Practice Management &middot; More tools in your member portal</span>
+    <span class="url">dentalmembernetwork.com</span>
+  </div>
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const fmt = n => '$' + Math.round(n).toLocaleString('en-US');
+  function calc(){
+    const C = parseFloat($('cost').value) || 0;
+    const R = parseFloat($('revenue').value) || 0;
+    const E = parseFloat($('running').value) || 0;
+    const net = R - E;
+    $('net').textContent = fmt(net);
+    if (net > 0){
+      const months = C / net;
+      $('payback').textContent = months.toFixed(1) + ' months';
+      $('paybacksub').textContent = 'After this point the machine is paying you.';
+      const five = net * 60 - C;
+      $('fiveyr').textContent = (five >= 0 ? '+' : '–') + fmt(Math.abs(five));
+      $('roi').textContent = C > 0 ? Math.round((five / C) * 100) + '%' : '–';
+    } else {
+      $('payback').textContent = 'never';
+      $('paybacksub').textContent = 'At these numbers the machine costs more to run than it earns.';
+      $('fiveyr').textContent = '–' + fmt(Math.abs(net * 60 - C));
+      $('roi').textContent = '–';
+    }
+  }
+  document.querySelectorAll('input').forEach(i => i.addEventListener('input', calc));
+  calc();
+</script>
+</body></html>

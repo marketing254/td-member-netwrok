@@ -96,12 +96,14 @@ const PEOPLE = [
     expert: {
       // NOTE: the account/invite email is Andrew's; the expert is named Laura.
       email: "andrew@phillipsgrouptax.com",
-      display_name: "Laura Phillips",
+      // Andrew (Jul 14): show her credential everywhere → "Laura Phillips, E.A."
+      display_name: "Laura Phillips, E.A.",
       full_name: "Laura Phillips, E.A.",
       specialty: "Tax & Accounting",
       company_name: "The Phillips Group",
       website: "https://phillipsgrouptax.com",
-      booking_link: null, // Calendly pending
+      // Typeform (Jul 14): member agrees to ToS on the form, then schedules with Laura.
+      booking_link: "https://form.typeform.com/to/Nia92ZWB",
       bio:
         "Laura Phillips, E.A. is the Co-Founder & Chief Executive Officer of The Phillips Group, a healthcare-focused and technology-driven accounting, tax, and advisory firm based in Orange County, CA, with clients across the United States. Laura began her career as an entry-level staff accountant and rose over 15 years through senior accountant, accounting manager, and accounting & tax manager roles, specializing almost exclusively in healthcare, before founding The Phillips Group with her husband Andrew, who serves as its Chief Growth Officer.",
       // Square headshot from the canonical directory-data set.
@@ -113,12 +115,12 @@ const PEOPLE = [
       display_name: "The Phillips Group",
       category: "Tax & Accounting",
       website: "https://phillipsgrouptax.com",
-      calendar_link: null, // Calendly pending
+      calendar_link: "https://form.typeform.com/to/Nia92ZWB", // Typeform (Jul 14)
       description:
         "The Phillips Group is a healthcare-focused, technology-driven accounting, tax, and advisory firm based in Orange County, CA, serving clients nationwide.",
       logo: "Resources/The Phillips Group/Profile Assets/The Phillips Group - Logo (dark).svg",
       offer_note:
-        "One free 30-minute consultation with Laura Phillips per year; 15% off monthly services for the first year.",
+        "One free 30-min consultation with Laura Phillips, E.A. per year; 15% off all new monthly plan services; $500 off a Financial Due Diligence (normally $2,500).",
     },
   },
 ];
