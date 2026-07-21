@@ -387,7 +387,7 @@ export async function requirePaidExpert(): Promise<ExpertContext | Failure> {
   const admin = getSupabaseAdmin();
   const { data: billing } = await admin
     .from("experts")
-    .select("months_in_program, subscription_status, stripe_subscription_id")
+    .select("months_in_program, subscription_status, stripe_subscription_id, billing_exempt")
     .eq("id", guard.expertId)
     .maybeSingle();
 
@@ -395,6 +395,7 @@ export async function requirePaidExpert(): Promise<ExpertContext | Failure> {
     monthsInProgram: billing?.months_in_program ?? 0,
     subscriptionStatus: billing?.subscription_status ?? null,
     hasSubscription: !!billing?.stripe_subscription_id,
+    billingExempt: !!billing?.billing_exempt,
   });
 
   if (!access.allowed) {

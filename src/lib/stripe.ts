@@ -41,6 +41,22 @@ import Stripe from "stripe";
 export const FOUNDING_MEMBER_CAP = 100;
 export const EARLY_MEMBER_CAP = 400; // members 101–500 inclusive
 
+/**
+ * Lifetime-free founding EXPERTS. The first 20 real experts (test /
+ * internal accounts excluded) are never charged — `experts.billing_exempt`.
+ * Expert 21 onward goes on the normal ladder ($0 months 1-6 → $49 months
+ * 7-12 → $199 month 13+), same as partners.
+ *
+ * This constant is for labels and pre-flight checks only. The cap is
+ * ENFORCED in the database (0043_founding_expert_cap.sql) because the
+ * flag can be set from the repair script, the admin console, or a future
+ * onboarding step — a trigger is the one place all of them must pass.
+ *
+ * Expert-side only: a founding expert who also runs a company still pays
+ * through their `vendors` row.
+ */
+export const FOUNDING_EXPERT_CAP = 20;
+
 let _client: Stripe | null = null;
 
 export function getStripe(): Stripe {
@@ -286,8 +302,19 @@ export function checkBillingAccess(opts: {
    * portal access until they add a card and start the trial.
    */
   hasSubscription: boolean;
+  /**
+   * Lifetime-free founding expert (`experts.billing_exempt`). These
+   * people are never charged and are never asked for a card, so every
+   * check below is skipped. Note this is expert-side only — a person
+   * who also runs a company still pays through their `vendors` row.
+   */
+  billingExempt?: boolean;
 }): BillingAccess {
-  const { monthsInProgram, subscriptionStatus, hasSubscription } = opts;
+  const { monthsInProgram, subscriptionStatus, hasSubscription, billingExempt } = opts;
+
+  // Lifetime-free cohort — always allowed, no card, no subscription.
+  // Checked first so a stale/absent Stripe status can never lock them out.
+  if (billingExempt) return { allowed: true };
 
   // No subscription at all — regardless of where they are in the
   // program timeline, they need to add a card first. Fresh signups

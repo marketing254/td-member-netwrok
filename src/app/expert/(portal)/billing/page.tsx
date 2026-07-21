@@ -118,6 +118,8 @@ export default function ExpertBillingPage() {
   const currentPrice = priceLabelForPhase(phase);
   const monthsLeftInWaiver = Math.max(0, 6 - monthsInProgram);
   const hasSubscription = !!expert?.stripe_subscription_id;
+  // Founding cohort — lifetime free. No card, no subscription, no invoices.
+  const billingExempt = !!expert?.billing_exempt;
 
   const planLabel = useMemo(() => {
     const phaseLabel = phase === "launch" ? "Launch" : phase === "growth" ? "Growth" : "Standard";
@@ -188,13 +190,36 @@ export default function ExpertBillingPage() {
           Plan &amp; billing
         </Typography>
         <Typography sx={{ color: "#5C6770", fontSize: "0.92rem", lineHeight: 1.55, mt: 0.5, maxWidth: 560 }}>
-          Manage your subscription, payment method, and invoices. Everything is handled
-          securely through Stripe.
+          {billingExempt
+            ? "Your founding expert membership is free for life — there's nothing to manage here."
+            : "Manage your subscription, payment method, and invoices. Everything is handled securely through Stripe."}
         </Typography>
       </Box>
 
+      {/* ---- Lifetime-free founding expert ----
+          Takes precedence over every other state: no card prompt, no
+          plan card, no invoices. Their company (if they run one) bills
+          separately through the partner portal. */}
+      {billingExempt && (
+        <SectionCard
+          title="Founding expert · free for life"
+          subtitle="You're part of the founding bench. We never charge you and we don't keep a card on file."
+        >
+          <Box sx={{ p: { xs: 2, md: 2.5 } }}>
+            <Typography sx={{ fontSize: "0.92rem", color: "#3B4A55", lineHeight: 1.65 }}>
+              Your expert membership costs nothing, now or later — no trial, no renewal, no
+              payment method required. Everything in your portal stays unlocked.
+            </Typography>
+            <Typography sx={{ fontSize: "0.86rem", color: "#5C6770", lineHeight: 1.65, mt: 1.5 }}>
+              If you also list a company as a partner, that company is billed separately in the
+              partner portal — this page only covers your expert membership.
+            </Typography>
+          </Box>
+        </SectionCard>
+      )}
+
       {/* ---- Trial-start (no subscription yet) ---- */}
-      {!hasSubscription && (
+      {!billingExempt && !hasSubscription && (
         <TrialStartCard
           prepareEndpoint="/api/expert/billing/trial/prepare"
           startEndpoint="/api/expert/billing/trial/start"
@@ -203,7 +228,7 @@ export default function ExpertBillingPage() {
       )}
 
       {/* ---- Current plan ---- */}
-      {hasSubscription && (
+      {!billingExempt && hasSubscription && (
         <SectionCard title="Current plan" subtitle="Managed by Stripe. Changes take effect at the next renewal.">
           <Box sx={{ p: { xs: 2, md: 2.5 } }}>
             <Stack
@@ -295,7 +320,7 @@ export default function ExpertBillingPage() {
       )}
 
       {/* ---- Payment method ---- */}
-      {hasSubscription && (
+      {!billingExempt && hasSubscription && (
         <SectionCard title="Payment method" subtitle="Update or replace your card in the Stripe portal.">
           <Stack
             direction={{ xs: "column", sm: "row" }}
@@ -356,7 +381,8 @@ export default function ExpertBillingPage() {
         </SectionCard>
       )}
 
-      {/* ---- Pricing ladder ---- */}
+      {/* ---- Pricing ladder ---- (never shown to lifetime-free experts) */}
+      {!billingExempt && (
       <SectionCard
         title="Pricing ladder"
         subtitle={
@@ -377,8 +403,10 @@ export default function ExpertBillingPage() {
           </Typography>
         </Box>
       </SectionCard>
+      )}
 
-      {/* ---- Invoices ---- */}
+      {/* ---- Invoices ---- (lifetime-free experts are never invoiced) */}
+      {!billingExempt && (
       <SectionCard title="Invoices" subtitle="Receipts for every charge. Download for your records.">
         {effectiveInvoices === null ? (
           <Stack sx={{ alignItems: "center", py: 4 }}>
@@ -415,6 +443,7 @@ export default function ExpertBillingPage() {
           </Box>
         )}
       </SectionCard>
+      )}
     </Stack>
   );
 }

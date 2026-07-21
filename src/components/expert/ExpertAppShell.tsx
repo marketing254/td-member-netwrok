@@ -62,6 +62,7 @@ type CurrentExpert = Pick<
   | "months_in_program"
   | "subscription_status"
   | "stripe_subscription_id"
+  | "billing_exempt"
 >;
 
 function useCurrentExpert(): { expert: CurrentExpert | null; loading: boolean } {
@@ -81,7 +82,7 @@ function useCurrentExpert(): { expert: CurrentExpert | null; loading: boolean } 
       const { data } = await supabase
         .from("experts")
         .select(
-          "id, email, full_name, display_name, specialty, status, headshot_url, months_in_program, subscription_status, stripe_subscription_id",
+          "id, email, full_name, display_name, specialty, status, headshot_url, months_in_program, subscription_status, stripe_subscription_id, billing_exempt",
         )
         .eq("email", email)
         .maybeSingle();
@@ -207,11 +208,17 @@ function NavTabs({
   pathname,
   expanded,
   onNavigate,
+  hideBilling,
 }: {
   pathname: string;
   expanded?: boolean;
   onNavigate?: () => void;
+  /** Lifetime-free founding experts have no billing — hide the tab entirely. */
+  hideBilling?: boolean;
 }) {
+  const items = hideBilling
+    ? navItems.filter((i) => i.href !== "/expert/billing")
+    : navItems;
   return (
     <Stack
       direction={expanded ? "column" : "row"}
@@ -225,7 +232,7 @@ function NavTabs({
         "&::-webkit-scrollbar": { display: "none" },
       }}
     >
-      {navItems.map((item) => {
+      {items.map((item) => {
         const Icon = item.icon;
         const active = isActive(item.href, pathname);
         return (
@@ -342,7 +349,7 @@ export default function ExpertAppShell({ children }: { children: React.ReactNode
             {/* CENTER — desktop nav */}
             {showDesktopNav && (
               <Box sx={{ flex: 1, minWidth: 0, display: "flex", justifyContent: "center", overflow: "hidden" }}>
-                <NavTabs pathname={pathname} />
+                <NavTabs pathname={pathname} hideBilling={!!expert?.billing_exempt} />
               </Box>
             )}
 
@@ -518,7 +525,12 @@ export default function ExpertAppShell({ children }: { children: React.ReactNode
           <Box sx={{ mb: 3 }}>
             <WorkspaceMark href="/expert" />
           </Box>
-          <NavTabs pathname={pathname} expanded onNavigate={() => setDrawerOpen(false)} />
+          <NavTabs
+            pathname={pathname}
+            expanded
+            onNavigate={() => setDrawerOpen(false)}
+            hideBilling={!!expert?.billing_exempt}
+          />
           <Divider sx={{ my: 2.5 }} />
           <Stack spacing={0.5}>
             <Chip
@@ -551,6 +563,8 @@ export default function ExpertAppShell({ children }: { children: React.ReactNode
                   monthsInProgram: expert.months_in_program ?? 0,
                   subscriptionStatus: expert.subscription_status ?? null,
                   hasSubscription: !!expert.stripe_subscription_id,
+                  // Lifetime-free founding experts are never gated.
+                  billingExempt: !!expert.billing_exempt,
                 })
               : { allowed: true as const };
             // Always let the billing page render so the user can add

@@ -443,10 +443,11 @@ export type AdminUsersRow = {
 
 export type ReviewActionsRow = {
   id: string;
-  // Extend this union whenever a new target gets audited. The DB column is
-  // free-form text; the union is a TypeScript-only safety net so callers
-  // don't typo a target_type. `expert_application` is used by the expert
-  // application + admin add-expert flows in /api/admin/experts.
+  // Extend this union whenever a new target gets audited — AND extend the
+  // DB CHECK constraint to match. The column is NOT free-form text: it
+  // carries `review_actions_target_type_check`, and an unlisted value is
+  // rejected at insert time. (That mismatch silently dropped the entire
+  // expert audit trail until 0044 added the two expert targets.)
   target_type:
     | "vendor_application"
     | "catalog_item"
@@ -454,7 +455,8 @@ export type ReviewActionsRow = {
     | "redemption"
     | "vendor"
     | "member"
-    | "expert_application";
+    | "expert_application"
+    | "expert";
   target_id: string;
   action: string;
   admin_id: string | null;
@@ -555,6 +557,11 @@ export type ExpertsRow = {
   card_last4: string | null;
   months_in_program: number;
   founding_expert_locked: boolean;
+  // Added in 0042_expert_billing_exempt.sql — lifetime-free founding
+  // expert. Expert-side only; their company still bills via `vendors`.
+  billing_exempt: boolean;
+  billing_exempt_reason: string | null;
+  billing_exempt_granted_at: string | null;
   // Added in 0034_agreement_esign.sql.
   agreement_signed_at: string | null;
   agreement_version: string | null;

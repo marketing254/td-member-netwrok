@@ -2,7 +2,12 @@ import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { getStripe, appOrigin } from "@/lib/stripe";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { applySubscriptionToMember, memberIdForCustomer } from "@/lib/billing";
+import {
+  applySubscriptionToBusiness,
+  applySubscriptionToMember,
+  businessForCustomer,
+  memberIdForCustomer,
+} from "@/lib/billing";
 import { notifyTeam } from "@/lib/email/teamNotify";
 import { sendTrialEndingReminder } from "@/lib/email/trialEndingReminder";
 
@@ -198,8 +203,6 @@ async function handleEvent(event: Stripe.Event, stripe: Stripe): Promise<string 
   ) {
     const sub = event.data.object as Stripe.Subscription;
     const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
-    const memberId = await memberIdForCustomer(sb, customerId, sub.metadata?.member_id);
-    if (!memberId) return null;
 
     // Hydrate default_payment_method on the way through so we can store
     // brand + last4. The webhook payload doesn't always include it expanded.
@@ -207,8 +210,24 @@ async function handleEvent(event: Stripe.Event, stripe: Stripe): Promise<string 
       ? sub
       : await stripe.subscriptions.retrieve(sub.id, { expand: ["default_payment_method"] });
 
-    await applySubscriptionToMember(sb, memberId, hydrated, stripe);
-    return memberId;
+    const memberId = await memberIdForCustomer(sb, customerId, sub.metadata?.member_id);
+    if (memberId) {
+      await applySubscriptionToMember(sb, memberId, hydrated, stripe);
+      return memberId;
+    }
+
+    // Not a member — mirror onto the partner (vendor) or expert row.
+    // Without this, a cancellation or card change made in the Stripe
+    // Dashboard never reached the DB and `subscription_status` drifted.
+    // applySubscriptionToBusiness refuses to write to a billing-exempt
+    // expert, so the lifetime-free founding cohort can never have a
+    // paywall resurrected by a stray Stripe event.
+    const business = await businessForCustomer(sb, customerId);
+    if (business) {
+      await applySubscriptionToBusiness(sb, business, hydrated, stripe);
+      return business.id;
+    }
+    return null;
   }
 
   // ---- customer.subscription.trial_will_end -------------------------
@@ -255,10 +274,14 @@ async function handleEvent(event: Stripe.Event, stripe: Stripe): Promise<string 
     if (audience === "expert") {
       const { data: expert } = await sb
         .from("experts")
-        .select("id, full_name, email")
+        .select("id, full_name, email, billing_exempt")
         .eq("stripe_customer_id", customerId)
         .maybeSingle();
       if (expert) {
+        // Lifetime-free founding experts are never charged — never warn
+        // them about a trial ending. (Their expert row shouldn't carry a
+        // Stripe customer at all; this is a belt-and-braces guard.)
+        if (expert.billing_exempt) return null;
         void sendTrialEndingReminder({
           role: "expert",
           to: expert.email,
@@ -266,6 +289,27 @@ async function handleEvent(event: Stripe.Event, stripe: Stripe): Promise<string 
           daysLeft,
           trialEndDate: trialEnd,
           portalUrl: `${appOrigin()}/expert/billing`,
+        });
+        return null;
+      }
+      // No expert matched. Dual-role people share ONE subscription across
+      // their expert + company rows, and once the expert side is detached
+      // (founding experts are free) only the company row still points at
+      // this customer. Fall back to it so the company — which IS billed —
+      // still gets its trial-ending warning instead of silence.
+      const { data: vendorFallback } = await sb
+        .from("vendors")
+        .select("id, contact_name, contact_email, billing_email")
+        .eq("stripe_customer_id", customerId)
+        .maybeSingle();
+      if (vendorFallback) {
+        void sendTrialEndingReminder({
+          role: "partner",
+          to: vendorFallback.billing_email ?? vendorFallback.contact_email,
+          contactName: vendorFallback.contact_name ?? "there",
+          daysLeft,
+          trialEndDate: trialEnd,
+          portalUrl: `${appOrigin()}/vendor/account`,
         });
       }
       return null;
