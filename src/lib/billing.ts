@@ -169,3 +169,144 @@ export async function applySubscriptionToMember(
     }
   }
 }
+
+// =====================================================================
+// BUSINESS AUDIENCES — partners (vendors) + experts
+// =====================================================================
+//
+// Historically the webhook only mirrored MEMBER subscriptions; vendor and
+// expert rows were written once at checkout and never updated again. That
+// meant a cancellation or card change made in the Stripe Dashboard never
+// reached the DB, so `subscription_status` silently drifted from reality.
+// These two helpers close that gap using the same column set 0033 added
+// to both tables.
+
+export type BusinessRef = {
+  table: "vendors" | "experts";
+  id: string;
+  /** experts only — lifetime-free founding expert. */
+  billingExempt: boolean;
+};
+
+/**
+ * Resolve a Stripe customer to the vendor or expert row that owns it.
+ *
+ * Vendors are checked first: a dual-role person (expert + company) shares
+ * ONE customer/subscription across both roles, and the company is the
+ * side that actually pays — the expert row is detached once they're in
+ * the lifetime-free founding cohort.
+ *
+ * Returns null when nothing matches, or when the only match is a
+ * billing-exempt expert (see applySubscriptionToBusiness).
+ */
+export async function businessForCustomer(
+  sb: SupabaseClient,
+  customerId: string,
+): Promise<BusinessRef | null> {
+  const { data: vendor } = await sb
+    .from("vendors")
+    .select("id")
+    .eq("stripe_customer_id", customerId)
+    .maybeSingle();
+  if (vendor) return { table: "vendors", id: vendor.id, billingExempt: false };
+
+  const { data: expert } = await sb
+    .from("experts")
+    .select("id, billing_exempt")
+    .eq("stripe_customer_id", customerId)
+    .maybeSingle();
+  if (expert) {
+    return { table: "experts", id: expert.id, billingExempt: !!expert.billing_exempt };
+  }
+  return null;
+}
+
+/**
+ * Mirror a Stripe subscription onto a vendors / experts row.
+ *
+ * Two deliberate safety properties:
+ *
+ *  1. A billing-exempt expert is NEVER written to. Founding experts are
+ *     free for life; re-attaching a customer/subscription to their row
+ *     would resurrect the paywall and the trial-ending emails.
+ *
+ *  2. Card brand/last4 are only written when we actually resolved them.
+ *     If hydration fails we leave whatever is already on the row rather
+ *     than nulling it — losing a live partner's card details on a
+ *     transient Stripe hiccup would be a real regression.
+ */
+export async function applySubscriptionToBusiness(
+  sb: SupabaseClient,
+  ref: BusinessRef,
+  sub: Stripe.Subscription,
+  stripe?: Stripe,
+): Promise<void> {
+  if (ref.table === "experts" && ref.billingExempt) return;
+
+  const firstItem = sub.items.data[0];
+  const price = firstItem?.price;
+  const periodEnd = firstItem?.current_period_end
+    ? new Date(firstItem.current_period_end * 1000).toISOString()
+    : null;
+
+  let cardBrand: string | null = null;
+  let cardLast4: string | null = null;
+  if (sub.default_payment_method && typeof sub.default_payment_method !== "string") {
+    const pm = sub.default_payment_method;
+    if (pm.card) {
+      cardBrand = pm.card.brand ?? null;
+      cardLast4 = pm.card.last4 ?? null;
+    }
+  }
+  if ((!cardBrand || !cardLast4) && stripe) {
+    const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer?.id ?? null;
+    if (customerId) {
+      try {
+        const customer = await stripe.customers.retrieve(customerId, {
+          expand: ["invoice_settings.default_payment_method"],
+        });
+        if (!customer.deleted) {
+          const pm = customer.invoice_settings?.default_payment_method;
+          if (pm && typeof pm !== "string" && pm.card) {
+            cardBrand = pm.card.brand ?? null;
+            cardLast4 = pm.card.last4 ?? null;
+          }
+        }
+      } catch {
+        /* best-effort hydration — keep whatever is already stored */
+      }
+    }
+  }
+
+  // Both `vendors` and `experts` carry this identical column set (0033).
+  const patch: {
+    stripe_subscription_id: string | null;
+    stripe_price_id: string | null;
+    subscription_status: string | null;
+    subscription_interval: string | null;
+    current_period_end: string | null;
+    cancel_at_period_end: boolean;
+    canceled_at: string | null;
+    card_brand?: string | null;
+    card_last4?: string | null;
+  } = {
+    stripe_subscription_id: sub.id,
+    stripe_price_id: price?.id ?? null,
+    subscription_status: sub.status,
+    subscription_interval: price?.recurring?.interval ?? null,
+    current_period_end: periodEnd,
+    cancel_at_period_end: !!sub.cancel_at_period_end,
+    canceled_at: sub.canceled_at ? new Date(sub.canceled_at * 1000).toISOString() : null,
+  };
+  // Only touch card columns when we resolved real values (see note 2).
+  if (cardBrand) patch.card_brand = cardBrand;
+  if (cardLast4) patch.card_last4 = cardLast4;
+
+  // Branch explicitly rather than `sb.from(ref.table)` — a union table
+  // name collapses the generated row types to `never`.
+  if (ref.table === "vendors") {
+    await sb.from("vendors").update(patch).eq("id", ref.id);
+  } else {
+    await sb.from("experts").update(patch).eq("id", ref.id);
+  }
+}

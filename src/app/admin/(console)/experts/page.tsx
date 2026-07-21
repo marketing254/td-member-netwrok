@@ -26,6 +26,7 @@ import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
 import RateReviewOutlinedIcon from "@mui/icons-material/RateReviewOutlined";
 import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
 import RestartAltOutlinedIcon from "@mui/icons-material/RestartAltOutlined";
+import WorkspacePremiumOutlinedIcon from "@mui/icons-material/WorkspacePremiumOutlined";
 
 // Shape mirrors the columns selected by /api/admin/experts (a Pick of
 // ExpertApplicationsRow, not the full row).
@@ -68,6 +69,27 @@ function Inner() {
   const [toast, setToast] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  // Founding-expert billing exemption: the first 20 real experts are free
+  // for life. `exemptEmails` marks who already has it; `slots` drives the
+  // "N of 20 left" counter. Keyed by email because this page lists
+  // expert_applications while the flag lives on the `experts` row.
+  const [slots, setSlots] = useState<{ cap: number; used: number; remaining: number } | null>(null);
+  const [exemptEmails, setExemptEmails] = useState<Set<string>>(new Set());
+
+  const loadSlots = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/experts/billing", { cache: "no-store" });
+      if (!res.ok) return;
+      const body = (await res.json()) as {
+        cap: number; used: number; remaining: number;
+        experts?: { email: string }[];
+      };
+      setSlots({ cap: body.cap, used: body.used, remaining: body.remaining });
+      setExemptEmails(new Set((body.experts ?? []).map((e) => e.email.toLowerCase())));
+    } catch {
+      /* counter is informational — never block the page on it */
+    }
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -91,7 +113,41 @@ function Inner() {
 
   useEffect(() => {
     void load();
-  }, [load]);
+    void loadSlots();
+  }, [load, loadSlots]);
+
+  /**
+   * Grant the lifetime-free founding exemption. Expert-side only — if
+   * they also run a company, that company keeps paying normally. The
+   * cap of 20 is enforced by a DB trigger, so a 409 here is expected
+   * once the slots run out and is shown as a normal message.
+   */
+  const grantFree = async (email: string, name: string) => {
+    if (
+      !confirm(
+        `Make ${name} a lifetime-free founding expert?\n\nThey will never be charged and never asked for a card. This cannot be undone.\n\nIf they also list a company, that company keeps paying normally.`,
+      )
+    ) {
+      return;
+    }
+    try {
+      const res = await fetch("/api/admin/experts/billing", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, action: "grant_free" }),
+      });
+      const body = (await res.json().catch(() => ({}))) as { message?: string; error?: string };
+      if (!res.ok) {
+        setError(body.error ?? `Could not grant (${res.status})`);
+        return;
+      }
+      setToast(body.message ?? `${name} is now free for life.`);
+      setError(null);
+      await loadSlots();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not grant the exemption.");
+    }
+  };
 
   const runAction = async (expertId: string, action: ActionKey) => {
     setActingId(expertId);
@@ -169,6 +225,29 @@ function Inner() {
             Expert Bench. Triage new applications and onboard the ones you
             want — onboarding activates the portal and sends the welcome email.
           </Typography>
+          {/* Founding-expert slots. The first 20 real experts are free for
+              life; once these run out every new expert is billed on the
+              normal ladder ($0 months 1-6 → $49 → $199). */}
+          {slots && (
+            <Stack direction="row" spacing={1} sx={{ alignItems: "center", mt: 1.5 }}>
+              <WorkspacePremiumOutlinedIcon fontSize="small" sx={{ color: slots.remaining > 0 ? "#A07823" : "text.disabled" }} />
+              <Typography sx={{ fontSize: "0.86rem", color: "text.secondary" }}>
+                {slots.remaining > 0 ? (
+                  <>
+                    <Box component="strong" sx={{ color: "text.primary" }}>
+                      {slots.remaining} of {slots.cap}
+                    </Box>{" "}
+                    lifetime-free founding slots left ({slots.used} granted)
+                  </>
+                ) : (
+                  <>
+                    All {slots.cap} founding slots used — new experts are billed on the
+                    normal ladder.
+                  </>
+                )}
+              </Typography>
+            </Stack>
+          )}
         </Box>
         <Button
           variant="contained"
@@ -386,6 +465,9 @@ function Inner() {
                       <RowActions
                         status={v.status}
                         onAction={(a) => runAction(v.id, a)}
+                        isExempt={exemptEmails.has(v.email.toLowerCase())}
+                        slotsLeft={slots?.remaining ?? null}
+                        onGrantFree={() => grantFree(v.email, v.full_name || v.email)}
                       />
                     )}
                   </Stack>
@@ -656,9 +738,17 @@ function AddExpertDialog({
 function RowActions({
   status,
   onAction,
+  isExempt,
+  slotsLeft,
+  onGrantFree,
 }: {
   status: ExpertRow["status"];
   onAction: (a: ActionKey) => void;
+  /** Already a lifetime-free founding expert. */
+  isExempt?: boolean;
+  /** Founding slots left (null while loading). 0 hides the grant button. */
+  slotsLeft?: number | null;
+  onGrantFree?: () => void;
 }) {
   // Workflow transitions (simplified — no more `invite` step):
   //   new       → start_review, decline
@@ -700,11 +790,33 @@ function RowActions({
   }
   // declined | onboarded
   return (
-    <Tooltip title="Reset to new (undo)">
-      <IconButton size="small" sx={{ color: "text.secondary" }} onClick={() => onAction("reset")}>
-        <RestartAltOutlinedIcon fontSize="small" />
-      </IconButton>
-    </Tooltip>
+    <>
+      {/* Lifetime-free founding expert. Only offered once they're
+          onboarded, because the flag lives on the provisioned `experts`
+          row, not on the application. Hidden when the 20 slots are gone —
+          from then on every new expert goes on the paid ladder. */}
+      {status === "onboarded" &&
+        (isExempt ? (
+          <Tooltip title="Founding expert — free for life. Never charged, never asked for a card. (Their company, if any, still pays.)">
+            <WorkspacePremiumOutlinedIcon fontSize="small" sx={{ color: "#2C7A52" }} />
+          </Tooltip>
+        ) : slotsLeft == null || slotsLeft > 0 ? (
+          <Tooltip
+            title={`Make free for life — founding expert, never charged${
+              slotsLeft == null ? "" : ` (${slotsLeft} of 20 slots left)`
+            }. Their company keeps paying normally. Cannot be undone.`}
+          >
+            <IconButton size="small" sx={{ color: "#A07823" }} onClick={() => onGrantFree?.()}>
+              <WorkspacePremiumOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        ) : null)}
+      <Tooltip title="Reset to new (undo)">
+        <IconButton size="small" sx={{ color: "text.secondary" }} onClick={() => onAction("reset")}>
+          <RestartAltOutlinedIcon fontSize="small" />
+        </IconButton>
+      </Tooltip>
+    </>
   );
 }
 
