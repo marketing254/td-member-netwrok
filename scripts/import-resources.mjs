@@ -114,7 +114,11 @@ const EXPERT_EMAIL = (args["expert-email"] || "").trim().toLowerCase() || null;
 const VENDOR_EMAIL = (args["vendor-email"] || "").trim().toLowerCase() || null;
 // Force the square social cover ("Cover - Square (social).png") as the kit
 // thumbnail instead of the default "Card - Portal Grid".
-const SQUARE_COVER = !!args["square-cover"];
+// The square social cover is now the DEFAULT portal card (it matches the
+// 1:1 grid tile). `--portrait-cover` opts back into the 3:4 "Card - Portal
+// Grid" image. `--square-cover` is accepted as a no-op so older documented
+// commands keep working.
+const PORTRAIT_COVER = !!args["portrait-cover"];
 
 // Resolved once at startup from the emails above.
 let ORIGINATING_EXPERT_ID = null;
@@ -151,6 +155,12 @@ const COVER_PORTAL_RE = /^Card - Portal Grid.*\.png$/i;
 const COVER_SQUARE_RE = /^Cover - Square \(social\)\.png$/i;
 const COVER_HERO_RE = /^Cover - Detail Hero \(wide\)\.png$/i;
 const SHORT_RE = /^Short (\d+) \(9x16\) - (.+?)\.mp4$/i;
+// Landscape (16x9) video types shipped by newer expert kits. These are NOT
+// video_short — that kind drives the portal's vertical 9x16 shorts rail.
+//   "Expert Spotlight - Connect Before You Treat.mp4"
+//   "Highlight 2 (16x9) - Know the End Goal.mp4"
+const SPOTLIGHT_RE = /^Expert Spotlight - (.+?)\.mp4$/i;
+const HIGHLIGHT_RE = /^Highlight (\d+) \(16x9\) - (.+?)\.mp4$/i;
 
 const MIME = {
   ".pdf": "application/pdf",
@@ -312,7 +322,11 @@ async function kitSlugExists(slug) {
     ORIGINATING_VENDOR_ID = data.id;
     console.log(`Attributing kits to PARTNER: ${data.company_name} <${VENDOR_EMAIL}> (${data.id})`);
   }
-  if (SQUARE_COVER) console.log("Thumbnail: forcing 'Cover - Square (social)'.");
+  console.log(
+    PORTRAIT_COVER
+      ? "Thumbnail: 'Card - Portal Grid' (3:4 portrait — opted in via --portrait-cover)."
+      : "Thumbnail: 'Cover - Square (social)' 2160x2160 (default, matches the 1:1 grid tile).",
+  );
   if (ORIGINATING_EXPERT_ID || ORIGINATING_VENDOR_ID) {
     console.log("→ These kits are MEMBER-PORTAL ONLY (excluded from the public resources page).\n");
   }
@@ -390,11 +404,17 @@ async function runOneKit(folderName, parentDir) {
     return { skipped: true, reason: "exists" };
   }
 
-  // Default: prefer the "Card - Portal Grid" cover, fall back to the square
-  // social cover. With --square-cover, force the square social cover.
-  const portalCardName = SQUARE_COVER
-    ? (filenames.find((n) => COVER_SQUARE_RE.test(n)) || filenames.find((n) => COVER_PORTAL_RE.test(n)))
-    : (filenames.find((n) => COVER_PORTAL_RE.test(n)) || filenames.find((n) => COVER_SQUARE_RE.test(n)));
+  // Portal card = the SQUARE social cover (2160x2160).
+  //
+  // The portal grid renders a 1:1 tile, so a square source lands exactly.
+  // "Card - Portal Grid (topic-led).png" is 3:4 portrait — cropping that
+  // into the square tile zooms in and cuts the kit title off, which is
+  // what happened to the Jul 2026 expert kits before this was flipped.
+  // Every kit in the library uses the square cover; --portrait-cover is
+  // kept only as an escape hatch if a future design needs the tall one.
+  const portalCardName = PORTRAIT_COVER
+    ? (filenames.find((n) => COVER_PORTAL_RE.test(n)) || filenames.find((n) => COVER_SQUARE_RE.test(n)))
+    : (filenames.find((n) => COVER_SQUARE_RE.test(n)) || filenames.find((n) => COVER_PORTAL_RE.test(n)));
   const heroName = filenames.find((n) => COVER_HERO_RE.test(n));
 
   let portalCardUrl = null;
@@ -439,6 +459,42 @@ async function runOneKit(folderName, parentDir) {
       mime_type: mimeFor(match),
       file_size_bytes: stats.size,
       position: slot.position,
+    });
+  }
+
+  // Landscape 16x9 extras: the Expert Spotlight and the Highlight Moments.
+  // Uploaded before the 9x16 shorts so they sit directly after the main
+  // training video in the portal ordering.
+  for (const filename of filenames) {
+    const spot = SPOTLIGHT_RE.exec(filename);
+    const high = HIGHLIGHT_RE.exec(filename);
+    if (!spot && !high) continue;
+
+    // Underscores appear in some source names ("You Can_t") — the title
+    // shown to members comes from the kit, not the filename, so keep the
+    // captured label but restore the apostrophe form where it's obvious.
+    const label = (spot ? spot[1] : high[2]).replace(/_/g, "'").trim();
+    const kind = spot ? "video_spotlight" : "video_highlight";
+    const title = spot ? "Expert Spotlight" : `Highlight ${high[1]} — ${label}`;
+    const position = spot ? 12 : 80 + Number(high[1]);
+
+    const safeName = filename.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9._-]/g, "");
+    const storagePath = `${slug}/${safeName}`;
+    const stats = await fs.stat(path.join(abs, filename));
+    const publicLink = await uploadFile(
+      "member-resources",
+      storagePath,
+      path.join(abs, filename),
+      mimeFor(filename),
+    );
+    rows.push({
+      title,
+      kind,
+      storage_path: storagePath,
+      external_url: publicLink,
+      mime_type: mimeFor(filename),
+      file_size_bytes: stats.size,
+      position,
     });
   }
 
