@@ -322,6 +322,8 @@ export type StripeEventRow = {
   processed_at: string;
 };
 
+// Mirrors the `resource_kind` Postgres enum. Keep in sync with the
+// migrations that extend it — an unlisted value fails at insert time.
 export type ResourceKind =
   | "video_intro"
   | "video_full"
@@ -334,6 +336,16 @@ export type ResourceKind =
   | "worksheet"
   | "slide_deck"
   | "email_sequence"
+  // Added in 0029_resource_kind_book_club.sql.
+  | "book_study_guide"
+  | "discussion_questions"
+  | "infographic"
+  | "infographic_image"
+  | "video_short"
+  // Added in 0045_resource_kind_spotlight_highlight.sql — landscape 16x9
+  // extras from the newer expert kits (NOT the 9x16 shorts rail).
+  | "video_spotlight"
+  | "video_highlight"
   | "other";
 
 export type ResourceSubmissionStatus =

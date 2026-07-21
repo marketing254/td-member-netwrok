@@ -123,6 +123,48 @@ const PEOPLE = [
         "One free 30-min consultation with Laura Phillips, E.A. per year; 15% off all new monthly plan services; $500 off a Financial Due Diligence (normally $2,500).",
     },
   },
+  {
+    label: "Callie Ward / Dash Dental Consulting (EXPERT ONLY)",
+    // LISTING INFO.md is explicit: "No partner listing... Do not create a
+    // partner entry." Dash Dental Consulting as a partner is still undecided.
+    expert: {
+      email: "dashdentalconsulting@gmail.com",
+      display_name: "Callie Ward",
+      full_name: "Callie Ward",
+      // Her three kits span Practice Management, Patient Experience and
+      // Team & Culture; `topics` carries all three, `specialty` is the
+      // single tagline shown on the directory card.
+      specialty: "Team & Culture",
+      topics: "Practice Management, Patient Experience, Team & Culture",
+      company_name: "Dash Dental Consulting",
+      // Calendly — member-portal only. The public profile + directory
+      // deliberately never receive booking_link.
+      booking_link: "https://calendly.com/dashdental/20",
+      bio:
+        "Callie Ward is a dental professional with over 34 years of experience, dedicated to helping dentists enhance patient care and practice management. As the Founder and CEO of Dash Dental Consulting, she focuses on strengthening leadership and communication, vital for a successful practice.\n\nMany dental practitioners struggle to balance excellent patient experiences with effective business operations, often facing issues like low case acceptance and missed appointments. Callie understands these challenges and employs proven strategies to foster relationship-driven results, helping practices achieve greater fulfillment and success. Committed to authenticity and care, Callie empowers dental professionals to thrive with their teams and deliver exceptional patient experiences.",
+      headshot: "Resources/Callie Ward/Profile Assets/Callie Ward - Headshot.jpg",
+    },
+  },
+  {
+    label: "Monica Watson / Blossom Dental Consulting (EXPERT ONLY)",
+    // LISTING INFO.md: "No partner listing... Do not create a partner entry."
+    expert: {
+      email: "monica@blossomdentalconsulting.com",
+      display_name: "Monica Watson",
+      full_name: "Monica Watson",
+      specialty: "Team & Culture",
+      topics: "Administrative Organization, Team Building, Goal Setting, Practice Growth",
+      company_name: "Blossom Dental Consulting",
+      website: "https://www.blossomdentalconsulting.com",
+      // Google Calendar appointment schedule ("Consult with Monica") —
+      // member-portal only, same as every other scheduler.
+      booking_link:
+        "https://calendar.google.com/appointments/schedules/AcZssZ3CFSFH5EZOZQiHwFfbgn-23WjI6orifR_zqNM7e0fShxHCVLHXi9TppyYI1nBYqx-tNUddzBYJ",
+      bio:
+        "Monica Watson is the founder and principal consultant of Blossom Dental Consulting, where she empowers dental practices to maximize their operational potential and build high-performing teams. With over twenty five years of experience in the dental industry and a background in dental administration and management, Monica combines deep subject matter expertise with a passion for developing efficient systems and strong workplace cultures. She launched Blossom Dental Consulting in 2019 to create a platform focused on growth, learning, and support for dental office administrators and managers. Monica specializes in administrative organization, team building, goal setting, and practice growth, helping practices streamline systems so clinicians can focus on patient care. She also facilitates a monthly Dental Office Manager Study Club to foster peer learning and professional development. Monica's commitment to collaboration and continuous improvement drives measurable success for the practices she serves.",
+      headshot: "Resources/Monica Watson/Profile Assets/Monica Watson - Headshot.jpg",
+    },
+  },
 ];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────
@@ -196,9 +238,13 @@ async function updateRow(table, matchCol, matchVal, patch) {
         specialty: e.specialty,
         company_name: e.company_name,
         bio: e.bio,
-        website: e.website,
-        booking_link: e.booking_link,
       };
+      // Optional fields — only send the ones this person actually has, so
+      // an omitted key never blanks an existing value (e.g. Callie has no
+      // website; writing undefined would wipe one if it were ever set).
+      if (e.website !== undefined) patch.website = e.website;
+      if (e.booking_link !== undefined) patch.booking_link = e.booking_link;
+      if (e.topics !== undefined) patch.topics = e.topics;
       if (headshotUrl) { patch.headshot_url = headshotUrl; patch.avatar_url = headshotUrl; }
       try {
         (await updateRow("experts", "email", e.email, patch)) ? ok++ : warn++;

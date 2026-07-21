@@ -93,6 +93,11 @@ const KIND_META: Record<
   infographic: { icon: SlideshowOutlinedIcon, defaultMeta: "PDF · one-page visual summary", actionLabel: "Download", badge: "PDF" },
   infographic_image: { icon: SlideshowOutlinedIcon, defaultMeta: "PNG · printable visual summary", actionLabel: "Download", badge: "Image" },
   video_short: { icon: PlayArrowRoundedIcon, defaultMeta: "Key principle · 9×16 short", actionLabel: "Watch", badge: "Short" },
+  // Landscape 16×9 extras from the newer expert kits. They play in the
+  // normal wide player alongside the training video — only video_short
+  // belongs in the vertical shorts rail.
+  video_spotlight: { icon: PlayArrowRoundedIcon, defaultMeta: "The expert's signature answer", actionLabel: "Watch", badge: "Spotlight" },
+  video_highlight: { icon: PlayArrowRoundedIcon, defaultMeta: "Key moment · 16×9", actionLabel: "Watch", badge: "Highlight" },
   other: { icon: InsertDriveFileOutlinedIcon, defaultMeta: "File", actionLabel: "Open", badge: "File" },
 };
 
@@ -289,6 +294,10 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
       // Main training first — same as a standard kit.
       "video_intro",
       "video_full",
+      // The expert's signature answer sits right behind the training
+      // video, then the individual highlight moments.
+      "video_spotlight",
+      "video_highlight",
       "video_explainer",
       "video_trailer",
       "audio",
