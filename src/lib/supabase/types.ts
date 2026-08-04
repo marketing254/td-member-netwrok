@@ -774,6 +774,8 @@ export type ReferralCodesRow = {
   expert_id: string | null;
   vendor_id: string | null;
   code: string;
+  // Added in 0046 — vanity handle for dentalmembernetwork.com/<slug>.
+  slug: string | null;
   active: boolean;
   created_at: string;
 };
@@ -785,6 +787,11 @@ export type ReferralSignupsRow = {
   code_id: string;
   member_id: string;
   converted_at: string | null;
+  // Added in 0046 — admin-only revenue attribution (what this member has
+  // actually paid DMN, summed from invoice.paid). 0 during the free trial.
+  revenue_cents: number;
+  currency: string | null;
+  last_payment_at: string | null;
   created_at: string;
 };
 

@@ -165,6 +165,45 @@ const PEOPLE = [
       headshot: "Resources/Monica Watson/Profile Assets/Monica Watson - Headshot.jpg",
     },
   },
+  {
+    label: "Dr. Parul Dua Makkar / Dua Good Job (EXPERT + PARTNER, one fee)",
+    // Both rows already exist from her accepted "both" founding invite; this
+    // fills the profile fields. She is on the STANDARD paid ramp — NOT a
+    // founding comp, NOT billing_exempt — so nothing here touches billing.
+    expert: {
+      email: "paruldmakkar@gmail.com",
+      display_name: "Dr. Parul Dua Makkar",
+      full_name: "Dr. Parul Dua Makkar",
+      // Her two real lanes lead the profile (her words); the live kit sits in
+      // Patient Experience. specialty = the card tagline, topics = full range.
+      specialty: "Oral Cancer & Resilience",
+      topics: "Oral Cancer Detection, Grief & Resilience in Dentistry, Patient Experience",
+      company_name: "Dua Good Job",
+      website: "https://www.duagoodjob.com",
+      // duagoodjob.com/schedulecall — member-portal only, like every scheduler.
+      booking_link: "https://www.duagoodjob.com/schedulecall",
+      // VERBATIM from her Jul 21 reply — em-dashes and the ™ are HERS; do not "fix".
+      bio:
+        "Dr. Parul Dua Makkar is a practicing dentist in NY, and the founder of Dua Good Job™ (duagoodjob.com), an oral cancer education platform built on one core belief: early detection saves lives, and every patient deserves a provider who looks closely and listens fully. She also created Healing the Healers, a grief and resilience program for dentistry and healthcare, born from a truth no one prepares clinicians for — that we're never taught how to carry loss, only how to keep working through it. Parul speaks as a sister who lost her brother, Dr. Manu Dua, to oral cancer, a loss that didn't just break her heart, it rebuilt her purpose. She carries every part of that journey into the room with her — daughter, sister, survivor, thriver — and blends clinical expertise with lived experience to offer audiences practical, evidence-informed tools alongside the kind of honesty that only comes from someone who has walked through what she's teaching others to recognize.",
+      headshot: "Resources/Dr. Makkar/Profile Assets/Dr Parul Dua Makkar - Headshot.jpg",
+    },
+    partner: {
+      contact_email: "paruldmakkar@gmail.com",
+      company_name: "Dua Good Job", // NOT "PDM Family Dental" (her private practice)
+      display_name: "Dua Good Job",
+      category: "Continuing education", // education/wellness lane — closest registry match
+      website: "https://www.duagoodjob.com",
+      calendar_link: "https://www.duagoodjob.com/schedulecall", // member-portal only
+      description:
+        "Oral cancer awareness and early-detection education for dental teams, plus grief and resilience support for people working in dentistry.",
+      // Logo supplied Jul 27 — uploading it sets logo_url, which clears the
+      // publish-ready gate so Dua Good Job now shows in the public + member
+      // directories. Uploaded as-is (no recolor/resize).
+      logo: "Resources/Dr. Makkar/Profile Assets/company logo.png",
+      // Still NO offer — member-offer TERMS remain pending her reply
+      // (numbers known: 50% off first grief session, 20% off oral cancer).
+    },
+  },
 ];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────

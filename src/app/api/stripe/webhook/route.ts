@@ -329,8 +329,45 @@ async function handleEvent(event: Stripe.Event, stripe: Stripe): Promise<string 
     if (event.type === "invoice.payment_failed") {
       await sb.from("members").update({ subscription_status: "past_due" }).eq("id", memberId);
     }
-    // invoice.paid is a confirmation; subscription.updated also fires
-    // and carries the canonical state, so we don't double-write here.
+
+    // Referral revenue attribution (admin-only analytics). On a real
+    // payment, add what this member paid to their referral_signups row so
+    // admin can see how much each referred member has paid. Safe from
+    // double-counting: the whole webhook de-dupes on stripe_events (top of
+    // this file), so each invoice.paid is processed exactly once. $0 trial
+    // invoices simply add nothing.
+    if (event.type === "invoice.paid") {
+      const amountPaid = invoice.amount_paid ?? 0;
+      if (amountPaid > 0) {
+        const { data: member } = await sb
+          .from("members")
+          .select("referral_code_id")
+          .eq("id", memberId)
+          .maybeSingle();
+        if (member?.referral_code_id) {
+          // Fetch the current total, add this invoice, write it back.
+          // (referral_signups is unique per (code_id, member_id).)
+          const { data: signup } = await sb
+            .from("referral_signups")
+            .select("id, revenue_cents")
+            .eq("code_id", member.referral_code_id)
+            .eq("member_id", memberId)
+            .maybeSingle();
+          if (signup) {
+            await sb
+              .from("referral_signups")
+              .update({
+                revenue_cents: (signup.revenue_cents ?? 0) + amountPaid,
+                currency: invoice.currency ?? null,
+                last_payment_at: new Date().toISOString(),
+              })
+              .eq("id", signup.id);
+          }
+        }
+      }
+    }
+    // invoice.paid is otherwise a confirmation; subscription.updated also
+    // fires and carries the canonical state, so we don't double-write here.
     return memberId;
   }
 

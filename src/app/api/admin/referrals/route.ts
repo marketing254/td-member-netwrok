@@ -9,8 +9,10 @@ export const dynamic = "force-dynamic";
 /**
  * GET /api/admin/referrals
  *
- * Returns every referral code with owner info + signups / conversions.
- * Powers the admin `/admin/referrals` analytics page.
+ * Every referral code with owner, vanity handle, signup/conversion counts,
+ * total revenue attributed, AND a per-member breakdown (which member each
+ * expert/partner brought in and how much they've paid). Admin-only —
+ * revenue is never exposed to the experts/partners themselves.
  */
 export async function GET() {
   const guard = await requireAdmin();
@@ -21,7 +23,7 @@ export async function GET() {
 
     const { data: codes, error } = await admin
       .from("referral_codes")
-      .select("id, code, expert_id, vendor_id, active, created_at")
+      .select("id, code, slug, expert_id, vendor_id, active, created_at")
       .order("created_at", { ascending: false });
     if (error) throw error;
 
@@ -40,44 +42,85 @@ export async function GET() {
     const expertMap = new Map((experts ?? []).map((e) => [e.id, e.display_name || e.full_name || ""]));
     const vendorMap = new Map((vendors ?? []).map((v) => [v.id, v.display_name || v.company_name || ""]));
 
-    // One round-trip for all signup rows (cheap at this scale).
+    // All signup rows in one round-trip (cheap at this scale).
     const codeIds = (codes ?? []).map((c) => c.id);
-    let signupsByCode = new Map<string, { signups: number; conversions: number }>();
+    type Member = {
+      member_id: string;
+      name: string;
+      email: string | null;
+      status: string | null;
+      joined_at: string;
+      converted: boolean;
+      revenue_cents: number;
+      currency: string | null;
+    };
+    const membersByCode = new Map<string, Member[]>();
+
     if (codeIds.length > 0) {
       const { data: signups } = await admin
         .from("referral_signups")
-        .select("code_id, converted_at")
-        .in("code_id", codeIds);
-      const m = new Map<string, { signups: number; conversions: number }>();
+        .select("code_id, member_id, converted_at, revenue_cents, currency, created_at")
+        .in("code_id", codeIds)
+        .order("created_at", { ascending: false });
+
+      const memberIds = Array.from(new Set((signups ?? []).map((s) => s.member_id)));
+      const { data: memberRows } = memberIds.length
+        ? await admin.from("members").select("id, first_name, last_name, email, status").in("id", memberIds)
+        : { data: [] as { id: string; first_name: string | null; last_name: string | null; email: string | null; status: string | null }[] };
+      const memberMap = new Map((memberRows ?? []).map((m) => [m.id, m]));
+
       for (const s of signups ?? []) {
-        const cur = m.get(s.code_id) ?? { signups: 0, conversions: 0 };
-        cur.signups += 1;
-        if (s.converted_at) cur.conversions += 1;
-        m.set(s.code_id, cur);
+        const m = memberMap.get(s.member_id);
+        const name = m ? `${m.first_name ?? ""} ${m.last_name ?? ""}`.trim() || m.email || "(member)" : "(member)";
+        const entry: Member = {
+          member_id: s.member_id,
+          name,
+          email: m?.email ?? null,
+          status: m?.status ?? null,
+          joined_at: s.created_at,
+          converted: !!s.converted_at,
+          revenue_cents: s.revenue_cents ?? 0,
+          currency: s.currency ?? null,
+        };
+        const list = membersByCode.get(s.code_id) ?? [];
+        list.push(entry);
+        membersByCode.set(s.code_id, list);
       }
-      signupsByCode = m;
     }
 
     const enriched = (codes ?? []).map((c) => {
       const owner = c.expert_id
         ? { kind: "expert" as const, id: c.expert_id, name: expertMap.get(c.expert_id) || "(unnamed expert)" }
         : { kind: "vendor" as const, id: c.vendor_id!, name: vendorMap.get(c.vendor_id!) || "(unnamed partner)" };
-      const stats = signupsByCode.get(c.id) ?? { signups: 0, conversions: 0 };
+      const members = membersByCode.get(c.id) ?? [];
+      const conversions = members.filter((m) => m.converted).length;
+      const revenue_cents = members.reduce((sum, m) => sum + (m.revenue_cents || 0), 0);
+      const currency = members.find((m) => m.currency)?.currency ?? null;
       return {
         id: c.id,
         code: c.code,
+        slug: c.slug ?? null,
         active: c.active,
         created_at: c.created_at,
         owner,
-        signups: stats.signups,
-        conversions: stats.conversions,
+        signups: members.length,
+        conversions,
+        revenue_cents,
+        currency,
+        members,
       };
     });
 
-    // Sort by signups desc so the table opens with the highest impact.
-    enriched.sort((a, b) => b.signups - a.signups);
+    // Highest revenue first (then signups) so the biggest drivers lead.
+    enriched.sort((a, b) => b.revenue_cents - a.revenue_cents || b.signups - a.signups);
 
-    return NextResponse.json({ codes: enriched });
+    const totals = {
+      signups: enriched.reduce((s, c) => s + c.signups, 0),
+      conversions: enriched.reduce((s, c) => s + c.conversions, 0),
+      revenue_cents: enriched.reduce((s, c) => s + c.revenue_cents, 0),
+    };
+
+    return NextResponse.json({ codes: enriched, totals });
   } catch (err) {
     return serverError(err, { route: "GET /api/admin/referrals" });
   }
