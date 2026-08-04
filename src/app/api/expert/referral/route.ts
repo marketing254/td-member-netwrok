@@ -26,7 +26,7 @@ export async function GET() {
       .eq("id", guard.expertId)
       .maybeSingle();
     const name = expert?.display_name || expert?.full_name || "DMN";
-    const { code } = await getOrCreateExpertReferral(guard.expertId, name);
+    const { code, slug } = await getOrCreateExpertReferral(guard.expertId, name);
 
     const { data: row } = await admin
       .from("referral_codes")
@@ -49,6 +49,7 @@ export async function GET() {
 
     return NextResponse.json({
       code,
+      slug, // vanity handle → dentalmembernetwork.com/<slug>
       signupsLifetime,
       signupsLast30,
       conversions,

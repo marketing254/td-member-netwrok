@@ -28,6 +28,7 @@ export default function ReferralCard({
   accent?: string;
 }) {
   const [code, setCode] = useState<string | null>(null);
+  const [slug, setSlug] = useState<string | null>(null);
   const [signupsLifetime, setSignupsLifetime] = useState(0);
   const [signupsLast30, setSignupsLast30] = useState(0);
   const [conversions, setConversions] = useState(0);
@@ -38,9 +39,10 @@ export default function ReferralCard({
     let active = true;
     fetch(endpoint, { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
-      .then((body: { code?: string; signupsLifetime?: number; signupsLast30?: number; conversions?: number } | null) => {
+      .then((body: { code?: string; slug?: string; signupsLifetime?: number; signupsLast30?: number; conversions?: number } | null) => {
         if (!active || !body) return;
         setCode(body.code ?? null);
+        setSlug(body.slug ?? null);
         setSignupsLifetime(body.signupsLifetime ?? 0);
         setSignupsLast30(body.signupsLast30 ?? 0);
         setConversions(body.conversions ?? 0);
@@ -49,11 +51,14 @@ export default function ReferralCard({
     return () => { active = false; };
   }, [endpoint]);
 
-  const joinUrl = code
-    ? typeof window !== "undefined"
-      ? `${window.location.origin}/join?ref=${code}`
-      : `/join?ref=${code}`
-    : "";
+  // Prefer the name-based vanity link (dentalmembernetwork.com/drparul);
+  // fall back to the ?ref=CODE form if a handle hasn't been allocated.
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://dentalmembernetwork.com";
+  const joinUrl = slug
+    ? `${origin}/${slug}`
+    : code
+      ? `${origin}/join?ref=${code}`
+      : "";
 
   const copy = async (kind: "code" | "link", text: string) => {
     try {

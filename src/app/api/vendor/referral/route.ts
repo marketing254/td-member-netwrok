@@ -24,7 +24,7 @@ export async function GET() {
       .eq("id", guard.vendorId)
       .maybeSingle();
     const name = vendor?.display_name || vendor?.company_name || "DMN";
-    const { code } = await getOrCreateVendorReferral(guard.vendorId, name);
+    const { code, slug } = await getOrCreateVendorReferral(guard.vendorId, name);
 
     const { data: row } = await admin
       .from("referral_codes")
@@ -45,7 +45,7 @@ export async function GET() {
       conversions = (signups ?? []).filter((s) => !!s.converted_at).length;
     }
 
-    return NextResponse.json({ code, signupsLifetime, signupsLast30, conversions });
+    return NextResponse.json({ code, slug, signupsLifetime, signupsLast30, conversions });
   } catch (err) {
     return serverError(err, { route: "GET /api/vendor/referral" });
   }
