@@ -90,13 +90,27 @@ export async function PATCH(req: Request) {
           { status: 400 },
         );
       }
-      const { error: createErr } = await supabase.auth.admin.createUser({
+      const { data: created, error: createErr } = await supabase.auth.admin.createUser({
         email,
         email_confirm: true,
         user_metadata: { user_type: "vendor", company: existing.company_name, covered_company: true },
       });
       if (createErr && !/already.*registered|exists/i.test(createErr.message)) {
         return NextResponse.json({ error: createErr.message }, { status: 500 });
+      }
+      // Link auth_user_id so the portal middleware's own-row check resolves
+      // this covered company on their first /vendor navigation.
+      let authUserId = created?.user?.id ?? null;
+      if (!authUserId) {
+        for (let page = 1; page <= 5; page += 1) {
+          const { data: list } = await supabase.auth.admin.listUsers({ page, perPage: 200 });
+          const u = (list?.users ?? []).find((x) => (x.email ?? "").toLowerCase() === email);
+          if (u) { authUserId = u.id; break; }
+          if ((list?.users ?? []).length < 200) break;
+        }
+      }
+      if (authUserId) {
+        await supabase.from("vendors").update({ auth_user_id: authUserId }).eq("id", existing.id);
       }
       await supabase.from("review_actions").insert({
         target_type: "vendor",
@@ -439,13 +453,26 @@ export async function POST(req: Request) {
     }
 
     // Pre-create the auth user so they can request a magic link.
-    const { error: createErr } = await supabase.auth.admin.createUser({
+    const { data: createdInvite, error: createErr } = await supabase.auth.admin.createUser({
       email,
       email_confirm: true,
       user_metadata: { company: companyName, user_type: "vendor", invited_by_admin: true },
     });
     if (createErr && !/already.*registered|exists/i.test(createErr.message)) {
       console.error("[admin:vendors:invite] auth user create failed:", createErr);
+    }
+    // Link auth_user_id so the portal middleware's own-row check resolves them.
+    let invitedAuthId = createdInvite?.user?.id ?? null;
+    if (!invitedAuthId) {
+      for (let page = 1; page <= 5; page += 1) {
+        const { data: list } = await supabase.auth.admin.listUsers({ page, perPage: 200 });
+        const u = (list?.users ?? []).find((x) => (x.email ?? "").toLowerCase() === email);
+        if (u) { invitedAuthId = u.id; break; }
+        if ((list?.users ?? []).length < 200) break;
+      }
+    }
+    if (invitedAuthId) {
+      await supabase.from("vendors").update({ auth_user_id: invitedAuthId }).eq("id", vendorId);
     }
 
     // Send the magic-link sign-in email — they log in with THIS email.

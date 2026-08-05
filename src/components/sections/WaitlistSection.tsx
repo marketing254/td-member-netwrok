@@ -288,12 +288,12 @@ export default function WaitlistSection({ lockedRole, sectionId }: WaitlistSecti
         setSubmitting(false);
         return;
       }
-      // Hand off straight to the OTP step on /member/login. The page
-      // detects ?email=… and renders the code input pre-focused, so the
-      // user goes form → email → code in one continuous flow without a
-      // thanks-page detour.
-      const emailRaw = String(fd.get("email") ?? "").trim().toLowerCase();
-      router.push(`/member/login?email=${encodeURIComponent(emailRaw)}`);
+      // Pay-first flow: go straight to the plan picker + Stripe checkout.
+      // No login/code yet — signup set a short-lived dmn_checkout cookie that
+      // lets /upgrade + checkout run without a session. They log in AFTER
+      // paying. (data.next is "/upgrade".)
+      const next = (data as { next?: string })?.next ?? "/upgrade";
+      router.push(next);
     } catch {
       setError("Network error. Check your connection and try again.");
       setSubmitting(false);

@@ -218,14 +218,25 @@ export async function POST(req: Request, ctx: { params: Promise<{ code: string }
   }
 
   // Pre-create the auth user so they can log into the portal later.
+  let authUserId: string | null = null;
   try {
-    await sb.auth.admin.createUser({
+    const { data: created } = await sb.auth.admin.createUser({
       email,
       email_confirm: true,
       user_metadata: { user_type: invite.role, invited_founding: true },
     });
+    authUserId = created?.user?.id ?? null;
   } catch {
     /* already exists */
+  }
+  if (!authUserId) {
+    // Already registered — find the existing id so we can link the rows.
+    for (let page = 1; page <= 5; page += 1) {
+      const { data: list } = await sb.auth.admin.listUsers({ page, perPage: 200 });
+      const u = (list?.users ?? []).find((x) => (x.email ?? "").toLowerCase() === email);
+      if (u) { authUserId = u.id; break; }
+      if ((list?.users ?? []).length < 200) break;
+    }
   }
 
   const agreementFields = {
@@ -320,6 +331,14 @@ export async function POST(req: Request, ctx: { params: Promise<{ code: string }
         .single();
       vendorId = ins?.id ?? null;
     }
+  }
+
+  // Link auth_user_id on the provisioned rows so the portal middleware's
+  // own-row check resolves them on their first /vendor or /expert navigation
+  // (RLS only lets an authenticated user read their own row).
+  if (authUserId) {
+    if (vendorId) await sb.from("vendors").update({ auth_user_id: authUserId } as never).eq("id", vendorId);
+    if (expertId) await sb.from("experts").update({ auth_user_id: authUserId } as never).eq("id", expertId);
   }
 
   // Fan out the EXTRA companies (companies[1..]) into covered listings under

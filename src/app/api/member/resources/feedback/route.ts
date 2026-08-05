@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { requireMember } from "@/lib/auth/guards";
+import { requirePaidMember } from "@/lib/auth/guards";
 import { apiError, serverError } from "@/lib/api/errorResponse";
 
 export const runtime = "nodejs";
@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
  * pop the mid-kit feedback prompt at 50%.
  */
 export async function GET(req: Request) {
-  const guard = await requireMember();
+  const guard = await requirePaidMember();
   if (!guard.ok) return guard.response;
   const url = new URL(req.url);
   const topicSlug = url.searchParams.get("topic_slug");
@@ -39,7 +39,7 @@ export async function GET(req: Request) {
  * one; we don't let users walk theirs back.
  */
 export async function POST(req: Request) {
-  const guard = await requireMember();
+  const guard = await requirePaidMember();
   if (!guard.ok) return guard.response;
 
   let body: { topic_slug?: string; rating?: number; comment?: string; progress_pct?: number };

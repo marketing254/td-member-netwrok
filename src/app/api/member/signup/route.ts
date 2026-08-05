@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { createServerSupabase } from "@/lib/supabase/server-ssr";
+import { cookies } from "next/headers";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { validateWaitlist } from "@/lib/waitlist/validate";
 import { checkRateLimit } from "@/lib/waitlist/rateLimit";
 import { notifySignup } from "@/lib/email/teamNotify";
 import { apiError, serverError } from "@/lib/api/errorResponse";
 import { resolveReferralCode } from "@/lib/referral";
+import { SIGNUP_CHECKOUT_COOKIE, signCheckoutToken } from "@/lib/auth/guards";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -108,11 +109,19 @@ export async function POST(req: Request) {
           ? (payload.utm as Record<string, string>)
           : null;
 
-      // Capture ?ref=CODE if present. Looked up from the payload first
-      // (set client-side by the signup form), then from a `ref` UTM field.
+      // Capture the referral. Priority:
+      //   1. payload.ref     — the form read ?ref straight off the URL
+      //   2. utm.ref         — legacy path
+      //   3. dmn_ref cookie  — set by middleware when they FIRST arrived via
+      //      a referral link, so attribution survives them browsing around
+      //      and registering from any page. This is the robust fallback that
+      //      fixes the "lost the referral" leak.
+      const cookieStore = await cookies();
+      const cookieRef = cookieStore.get("dmn_ref")?.value;
       const refCandidate =
         (payload as { ref?: string }).ref ??
-        (utm && typeof utm === "object" ? utm.ref : undefined);
+        (utm && typeof utm === "object" ? utm.ref : undefined) ??
+        cookieRef;
       const referralCodeId = await resolveReferralCode(refCandidate ?? null);
 
       const { data: inserted, error: insErr } = await sb
@@ -171,18 +180,11 @@ export async function POST(req: Request) {
       // Continue — magic-link send will give us the real error if any.
     }
 
-    // 4. Send the OTP sign-in email. We deliberately DO NOT pass
-    //    emailRedirectTo here — the Supabase email template uses
-    //    {{ .Token }} so the user sees a 6-digit code to type, not a
-    //    clickable URL. Verification happens at /api/member/verify-otp.
-    const cookieClient = await createServerSupabase();
-    const { error: otpErr } = await cookieClient.auth.signInWithOtp({
-      email,
-      options: { shouldCreateUser: false },
-    });
-    if (otpErr) {
-      return serverError(otpErr, { route, extra: { stage: "send_otp" } });
-    }
+    // 4. NO OTP is sent at signup anymore. Pay-first flow: the member goes
+    //    straight to the plan picker + Stripe checkout (identified by the
+    //    dmn_checkout cookie set below), and only logs in — with a fresh
+    //    code — AFTER paying. Sending a code here would just expire during
+    //    checkout and confuse them.
 
     // 5. Audit trail.
     await sb.from("auth_audit").insert({
@@ -194,14 +196,6 @@ export async function POST(req: Request) {
         existed: alreadyExisted,
         source: payload.source ?? null,
       },
-    });
-
-    await sb.from("email_events").insert({
-      template: "member_signup_otp",
-      recipient: email,
-      provider: "supabase_auth",
-      status: "queued",
-      subject: "Your DMN sign-in code",
     });
 
     // Alert the team on brand-new members only — a resend/re-login
@@ -231,13 +225,30 @@ export async function POST(req: Request) {
       });
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       ok: true,
       member_id: memberId,
       existed: alreadyExisted,
-      message:
-        "Check your email for a 6-digit code. Enter it to finish signing in.",
+      // Client redirects to /upgrade (the plan picker) next — no code yet.
+      next: "/upgrade",
+      message: "You're signed up — choose a plan to activate your membership.",
     });
+    // Pay-first: a short-lived cookie lets this brand-new member reach the
+    // plan picker + Stripe checkout before logging in. It only unlocks the
+    // checkout surface; the portal stays OTP-gated. 2 hours is plenty to
+    // finish a checkout, and the login step (after paying) supersedes it.
+    response.cookies.set(SIGNUP_CHECKOUT_COOKIE, signCheckoutToken(memberId), {
+      maxAge: 60 * 60 * 2,
+      path: "/",
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    });
+    // Referral has been recorded (or wasn't present) — clear the cookie so a
+    // later, unrelated signup from the same browser isn't mis-attributed.
+    // Harmless when no cookie was set (single-use attribution).
+    response.cookies.delete("dmn_ref");
+    return response;
   } catch (err) {
     return serverError(err, { route });
   }

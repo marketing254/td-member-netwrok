@@ -286,7 +286,7 @@ export async function POST(req: Request) {
   //    and continue, since the user can still sign in.
   try {
     const supabase = getSupabaseAdmin();
-    const { error: createErr } = await supabase.auth.admin.createUser({
+    const { data: created, error: createErr } = await supabase.auth.admin.createUser({
       email: data.contactEmail,
       email_confirm: true, // Skip the "confirm your email" step. Magic-link verifies the address anyway.
       user_metadata: {
@@ -299,6 +299,23 @@ export async function POST(req: Request) {
       console.error("[vendor:signup] auth user create failed:", createErr);
       // Not a hard fail — the application is saved. We'll surface a softer
       // error so the team can fix it manually.
+    }
+    // Link auth_user_id NOW so the portal middleware's own-row check resolves
+    // this vendor on their very first /vendor navigation (before requireVendor
+    // ever runs). On "already registered" we page for the existing user id.
+    let authUserId = created?.user?.id ?? null;
+    if (!authUserId) {
+      for (let page = 1; page <= 5; page += 1) {
+        const { data: list } = await supabase.auth.admin.listUsers({ page, perPage: 200 });
+        const u = (list?.users ?? []).find(
+          (x) => (x.email ?? "").toLowerCase() === data.contactEmail.toLowerCase(),
+        );
+        if (u) { authUserId = u.id; break; }
+        if ((list?.users ?? []).length < 200) break;
+      }
+    }
+    if (authUserId) {
+      await supabase.from("vendors").update({ auth_user_id: authUserId }).eq("id", vendorId);
     }
   } catch (err) {
     console.error("[vendor:signup] auth user create threw:", err);

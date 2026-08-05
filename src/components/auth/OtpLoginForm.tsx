@@ -77,7 +77,7 @@ export default function OtpLoginForm({ config }: { config: OtpLoginConfig }) {
   const [err, setErr] = useState<string | null>(initialError);
   const [info, setInfo] = useState<string | null>(
     prefilledEmail
-      ? `We sent a 6-digit code to ${prefilledEmail}.`
+      ? `Sending a 6-digit code to ${prefilledEmail}…`
       : isWelcome
         ? "Payment confirmed. Check your inbox for your confirmation email, then enter your email below and we'll send you a 6-digit sign-in code."
         : null,
@@ -126,6 +126,20 @@ export default function OtpLoginForm({ config }: { config: OtpLoginConfig }) {
       setBusy(false);
     }
   };
+
+  // Auto-send when arriving with ?email= (the pay-first flow sends members
+  // here after checkout). We know the email, so fire the code immediately —
+  // they land straight on the code entry with a code already on the way. The
+  // ref guards against React's double-invoke and any re-render re-firing it.
+  const autoSentRef = useRef(false);
+  useEffect(() => {
+    if (prefilledEmail && !autoSentRef.current) {
+      autoSentRef.current = true;
+      void sendCode();
+    }
+    // sendCode is stable for this purpose; we intentionally run this once.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefilledEmail]);
 
   const verifyCode = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
