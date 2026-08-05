@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { requireMemberOrAdminPreview } from "@/lib/auth/guards";
 import { serverError } from "@/lib/api/errorResponse";
+import { fetchPublishedSpotlights } from "@/lib/spotlights";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -71,6 +72,8 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
       });
     }
 
+    const spotlights = await fetchPublishedSpotlights(admin, { expertId: id });
+
     return NextResponse.json({
       expert: {
         id: expert.id,
@@ -83,6 +86,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
         company_name: expert.company_name,
         headshot_url: expert.headshot_url,
       },
+      spotlights,
       kits,
     });
   } catch (err) {

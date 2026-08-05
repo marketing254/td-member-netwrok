@@ -10,6 +10,7 @@ import CalendarMonthRoundedIcon from "@mui/icons-material/CalendarMonthRounded";
 import LanguageRoundedIcon from "@mui/icons-material/LanguageRounded";
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
+import SpotlightSection, { type Spotlight } from "@/components/member/SpotlightSection";
 
 const INK = "#0A1A2F";
 const INK_SOFT = "#3B4A55";
@@ -44,6 +45,7 @@ export default function PartnerProfilePage() {
   const id = params?.id;
   const [partner, setPartner] = useState<PartnerProfile | null>(null);
   const [offers, setOffers] = useState<Offer[]>([]);
+  const [spotlights, setSpotlights] = useState<Spotlight[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
@@ -58,13 +60,14 @@ export default function PartnerProfilePage() {
           setNotFound(true);
           return;
         }
-        const body = (await res.json()) as { partner?: PartnerProfile; offers?: Offer[] };
+        const body = (await res.json()) as { partner?: PartnerProfile; offers?: Offer[]; spotlights?: Spotlight[] };
         if (!body.partner) {
           setNotFound(true);
           return;
         }
         setPartner(body.partner);
         setOffers(body.offers ?? []);
+        setSpotlights(body.spotlights ?? []);
       } catch {
         if (active) setNotFound(true);
       } finally {
@@ -171,6 +174,9 @@ export default function PartnerProfilePage() {
               )}
             </Stack>
           )}
+
+          {/* Spotlight / What's New — admin-curated news & events */}
+          <SpotlightSection spotlights={spotlights} />
 
           {/* About */}
           {partner.description && (

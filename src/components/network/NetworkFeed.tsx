@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import {
@@ -60,7 +61,8 @@ type PreviewComment = {
 
 export type FeedPost = {
   id: string;
-  expert_id: string;
+  expert_id: string | null;
+  vendor_id: string | null;
   content: string;
   image_url: string | null;
   link_url: string | null;
@@ -68,10 +70,12 @@ export type FeedPost = {
   reaction_count: number;
   comment_count: number;
   created_at: string;
-  author_kind: "expert";
+  author_kind: "expert" | "partner";
   author_display_name: string;
   author_subtitle: string | null;
   author_headshot_url: string | null;
+  /** Link to the author's member-portal profile, or null. */
+  profile_href: string | null;
   my_reaction: ReactionKind | null;
   preview_comments: PreviewComment[];
 };
@@ -587,6 +591,7 @@ function PostCard({
       {/* Header */}
       <Stack direction="row" spacing={1.25} sx={{ alignItems: "flex-start", px: 1.75, pt: 1.5 }}>
         <Avatar
+          {...(post.profile_href ? { component: Link, href: post.profile_href } : {})}
           src={post.author_headshot_url ?? undefined}
           sx={{
             width: 36,
@@ -597,16 +602,20 @@ function PostCard({
             fontSize: "0.8rem",
             border: `1px solid ${GREEN}22`,
             flexShrink: 0,
+            textDecoration: "none",
           }}
         >
           {initials(post.author_display_name)}
         </Avatar>
         <Box sx={{ minWidth: 0, flex: 1 }}>
           <Stack direction="row" spacing={0.6} sx={{ alignItems: "center", flexWrap: "wrap" }}>
-            <Typography sx={{ fontWeight: 700, color: INK, fontSize: "0.84rem", lineHeight: 1.2 }}>
+            <Typography
+              {...(post.profile_href ? { component: Link, href: post.profile_href } : {})}
+              sx={{ fontWeight: 700, color: INK, fontSize: "0.84rem", lineHeight: 1.2, textDecoration: "none", "&:hover": post.profile_href ? { color: GREEN_DARK } : {} }}
+            >
               {post.author_display_name}
             </Typography>
-            <KindChip kind="expert" />
+            <KindChip kind={post.author_kind} />
           </Stack>
           <Typography sx={{ fontSize: "0.72rem", color: INK_MUTED, lineHeight: 1.35, mt: 0.1 }}>
             {post.author_subtitle ? `${post.author_subtitle} · ` : ""}
