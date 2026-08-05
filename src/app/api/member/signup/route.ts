@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { createServerSupabase } from "@/lib/supabase/server-ssr";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { validateWaitlist } from "@/lib/waitlist/validate";
@@ -108,11 +109,19 @@ export async function POST(req: Request) {
           ? (payload.utm as Record<string, string>)
           : null;
 
-      // Capture ?ref=CODE if present. Looked up from the payload first
-      // (set client-side by the signup form), then from a `ref` UTM field.
+      // Capture the referral. Priority:
+      //   1. payload.ref     — the form read ?ref straight off the URL
+      //   2. utm.ref         — legacy path
+      //   3. dmn_ref cookie  — set by middleware when they FIRST arrived via
+      //      a referral link, so attribution survives them browsing around
+      //      and registering from any page. This is the robust fallback that
+      //      fixes the "lost the referral" leak.
+      const cookieStore = await cookies();
+      const cookieRef = cookieStore.get("dmn_ref")?.value;
       const refCandidate =
         (payload as { ref?: string }).ref ??
-        (utm && typeof utm === "object" ? utm.ref : undefined);
+        (utm && typeof utm === "object" ? utm.ref : undefined) ??
+        cookieRef;
       const referralCodeId = await resolveReferralCode(refCandidate ?? null);
 
       const { data: inserted, error: insErr } = await sb
@@ -231,13 +240,18 @@ export async function POST(req: Request) {
       });
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       ok: true,
       member_id: memberId,
       existed: alreadyExisted,
       message:
         "Check your email for a 6-digit code. Enter it to finish signing in.",
     });
+    // Referral has been recorded (or wasn't present) — clear the cookie so a
+    // later, unrelated signup from the same browser isn't mis-attributed.
+    // Harmless when no cookie was set (single-use attribution).
+    response.cookies.delete("dmn_ref");
+    return response;
   } catch (err) {
     return serverError(err, { route });
   }

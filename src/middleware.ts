@@ -124,6 +124,26 @@ export async function middleware(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
   const res = NextResponse.next({ request: req });
 
+  // Referral attribution — persist ?ref=CODE as a cookie the MOMENT a
+  // visitor arrives via a referral link (e.g. /rushdhaakbar redirects to
+  // /join?ref=RUSHLXN6). Without this the credit lives only in the URL and
+  // is lost as soon as they browse to another page before registering.
+  //
+  // First-touch: the first referrer keeps the credit — we don't overwrite
+  // an existing cookie, so a later link can't steal an earlier referral.
+  // 90-day window, read server-side at /api/member/signup. Set on `res`
+  // before any early return so every path carries it.
+  const refParam = req.nextUrl.searchParams.get("ref");
+  if (refParam && /^[A-Za-z0-9]{4,16}$/.test(refParam) && !req.cookies.get("dmn_ref")) {
+    res.cookies.set("dmn_ref", refParam.toUpperCase(), {
+      maxAge: 60 * 60 * 24 * 90,
+      path: "/",
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    });
+  }
+
   // Member tools render inside the portal's own <iframe>. The global
   // frame-ancestors 'none' would make the browser refuse to frame them —
   // even by our own page — so this one path gets a same-origin framing
