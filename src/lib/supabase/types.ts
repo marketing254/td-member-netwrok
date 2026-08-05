@@ -609,7 +609,9 @@ export type ExpertResourcesRow = {
 
 export type ExpertPostsRow = {
   id: string;
-  expert_id: string;
+  // Exactly one of expert_id / vendor_id is set (0047 added partner authors).
+  expert_id: string | null;
+  vendor_id: string | null;
   content: string;
   image_url: string | null;
   link_url: string | null;
@@ -626,6 +628,30 @@ export type ExpertPostsRow = {
   composed_by_admin_id: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type SpotlightKind = "update" | "event" | "news" | "feature";
+
+// Added in 0047_profile_spotlights.sql. Admin-authored "What's New" items
+// shown on an expert/partner profile in the member portal. Exactly one of
+// expert_id / vendor_id is set.
+export type ProfileSpotlightsRow = {
+  id: string;
+  expert_id: string | null;
+  vendor_id: string | null;
+  kind: SpotlightKind;
+  title: string;
+  body: string;
+  link_url: string | null;
+  link_label: string | null;
+  image_url: string | null;
+  event_date: string | null;
+  is_published: boolean;
+  posted_to_feed: boolean;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+  published_at: string | null;
 };
 
 export type PostReactionsRow = {
@@ -890,6 +916,7 @@ export type Database = {
       experts: Table<ExpertsRow>;
       expert_resources: Table<ExpertResourcesRow>;
       expert_posts: Table<ExpertPostsRow>;
+      profile_spotlights: Table<ProfileSpotlightsRow>;
       post_reactions: Table<PostReactionsRow>;
       post_comments: Table<PostCommentsRow>;
       chatbot_conversations: Table<ChatbotConversationsRow>;

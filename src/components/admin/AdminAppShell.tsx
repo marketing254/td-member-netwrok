@@ -36,6 +36,7 @@ import MarkEmailReadOutlinedIcon from "@mui/icons-material/MarkEmailReadOutlined
 import ChatBubbleOutlineOutlinedIcon from "@mui/icons-material/ChatBubbleOutlineOutlined";
 import StarOutlineRoundedIcon from "@mui/icons-material/StarOutlineRounded";
 import CampaignOutlinedIcon from "@mui/icons-material/CampaignOutlined";
+import AutoAwesomeOutlinedIcon from "@mui/icons-material/AutoAwesomeOutlined";
 import LinkRoundedIcon from "@mui/icons-material/LinkRounded";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
@@ -135,6 +136,7 @@ const navSections: { label: string; items: NavItem[] }[] = [
     items: [
       { href: "/admin/inquiries", label: "Inquiries", icon: ChatBubbleOutlineOutlinedIcon },
       { href: "/admin/feedback", label: "Kit feedback", icon: StarOutlineRoundedIcon },
+      { href: "/admin/spotlights", label: "Spotlights", icon: AutoAwesomeOutlinedIcon },
       { href: "/admin/broadcast", label: "Broadcast", icon: CampaignOutlinedIcon },
       { href: "/admin/hotline", label: "Hotline triage", icon: SupportAgentOutlinedIcon },
     ],

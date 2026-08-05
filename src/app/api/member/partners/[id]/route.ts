@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { requireMemberOrAdminPreview } from "@/lib/auth/guards";
 import { serverError } from "@/lib/api/errorResponse";
+import { fetchPublishedSpotlights } from "@/lib/spotlights";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -55,6 +56,8 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
       .eq("review_status", "approved")
       .order("created_at", { ascending: false });
 
+    const spotlights = await fetchPublishedSpotlights(admin, { vendorId: id });
+
     return NextResponse.json({
       partner: {
         id: v.id,
@@ -65,6 +68,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
         website: v.website,
         calendar_link: v.calendar_link,
       },
+      spotlights,
       offers: (offerRows ?? []).map((o) => ({
         id: o.id,
         headline: o.headline,

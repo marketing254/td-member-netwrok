@@ -16,6 +16,7 @@ import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import CalendarMonthRoundedIcon from "@mui/icons-material/CalendarMonthRounded";
 import LanguageRoundedIcon from "@mui/icons-material/LanguageRounded";
+import SpotlightSection, { type Spotlight } from "@/components/member/SpotlightSection";
 
 const INK = "#0A1A2F";
 const INK_SOFT = "#3B4A55";
@@ -48,6 +49,7 @@ export default function ExpertProfilePage() {
   const id = params?.id;
   const [expert, setExpert] = useState<ExpertProfile | null>(null);
   const [kits, setKits] = useState<Kit[]>([]);
+  const [spotlights, setSpotlights] = useState<Spotlight[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
@@ -62,13 +64,14 @@ export default function ExpertProfilePage() {
           setNotFound(true);
           return;
         }
-        const body = (await res.json()) as { expert?: ExpertProfile; kits?: Kit[] };
+        const body = (await res.json()) as { expert?: ExpertProfile; kits?: Kit[]; spotlights?: Spotlight[] };
         if (!body.expert) {
           setNotFound(true);
           return;
         }
         setExpert(body.expert);
         setKits(body.kits ?? []);
+        setSpotlights(body.spotlights ?? []);
       } catch {
         if (active) setNotFound(true);
       } finally {
@@ -246,6 +249,9 @@ export default function ExpertProfilePage() {
             )}
           </Stack>
 
+          {/* Spotlight / What's New — admin-curated news & events */}
+          <SpotlightSection spotlights={spotlights} />
+
           {/* Bio */}
           {expert.bio && (
             <Section title="About">
@@ -344,9 +350,12 @@ function KitCard({ kit }: { kit: Kit }) {
         },
       }}
     >
-      <Box sx={{ position: "relative", aspectRatio: "16 / 9", bgcolor: "#FBF8F1" }}>
+      {/* Portal card artwork is square (2160×2160) with the title baked in —
+          render it at 1/1 so nothing is cropped. Only the no-image fallback
+          shows a separate title below. */}
+      <Box sx={{ position: "relative", aspectRatio: "1 / 1", bgcolor: "#FBF8F1" }}>
         {kit.card_url ? (
-          <Image src={kit.card_url} alt={kit.title} fill sizes="320px" style={{ objectFit: "cover" }} />
+          <Image src={kit.card_url} alt={kit.title} fill sizes="(max-width:600px) 100vw, (max-width:900px) 50vw, 320px" style={{ objectFit: "cover" }} />
         ) : (
           <Box sx={{ width: "100%", height: "100%", display: "grid", placeItems: "center", color: GOLD, fontFamily: "var(--font-display)", fontWeight: 700 }}>
             DMN
@@ -356,23 +365,25 @@ function KitCard({ kit }: { kit: Kit }) {
           <Chip
             label="Book Club"
             size="small"
-            sx={{ position: "absolute", top: 8, left: 8, height: 20, fontSize: "0.62rem", fontWeight: 700, bgcolor: "rgba(110,51,70,0.9)", color: "#fff" }}
+            sx={{ position: "absolute", top: 8, left: 8, height: 20, fontSize: "0.62rem", fontWeight: 700, bgcolor: "rgba(110,51,70,0.9)", color: "#fff", zIndex: 1 }}
           />
         )}
       </Box>
-      <Box sx={{ p: 1.75 }}>
-        <Typography
-          sx={{
-            fontFamily: "var(--font-display)",
-            fontSize: "1rem",
-            fontWeight: 600,
-            color: INK,
-            lineHeight: 1.25,
-          }}
-        >
-          {kit.title}
-        </Typography>
-      </Box>
+      {!kit.card_url && (
+        <Box sx={{ p: 1.75 }}>
+          <Typography
+            sx={{
+              fontFamily: "var(--font-display)",
+              fontSize: "1rem",
+              fontWeight: 600,
+              color: INK,
+              lineHeight: 1.25,
+            }}
+          >
+            {kit.title}
+          </Typography>
+        </Box>
+      )}
     </Box>
   );
 }

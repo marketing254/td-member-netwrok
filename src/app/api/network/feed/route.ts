@@ -61,7 +61,7 @@ export async function GET(req: Request) {
     let query = admin
       .from("expert_posts")
       .select(
-        "id, expert_id, content, image_url, link_url, published_at, reaction_count, comment_count, created_at",
+        "id, expert_id, vendor_id, content, image_url, link_url, published_at, reaction_count, comment_count, created_at",
       )
       .eq("status", "published")
       .order("published_at", { ascending: false, nullsFirst: false })
@@ -79,16 +79,20 @@ export async function GET(req: Request) {
     }
 
     const postIds = posts.map((p) => p.id);
-    const expertIds = Array.from(new Set(posts.map((p) => p.expert_id)));
+    const expertIds = Array.from(new Set(posts.map((p) => p.expert_id).filter(Boolean) as string[]));
+    const vendorIds = Array.from(new Set(posts.map((p) => p.vendor_id).filter(Boolean) as string[]));
 
-    // 2. Hydrate expert metadata once for the batch.
-    const { data: experts } = await admin
-      .from("experts")
-      .select("id, display_name, full_name, specialty, headshot_url")
-      .in("id", expertIds);
-    const expertMap = new Map(
-      (experts ?? []).map((e) => [e.id, e]),
-    );
+    // 2. Hydrate expert + partner metadata once for the batch.
+    const [{ data: experts }, { data: vendors }] = await Promise.all([
+      expertIds.length
+        ? admin.from("experts").select("id, display_name, full_name, specialty, headshot_url").in("id", expertIds)
+        : Promise.resolve({ data: [] as { id: string; display_name: string | null; full_name: string | null; specialty: string | null; headshot_url: string | null }[] }),
+      vendorIds.length
+        ? admin.from("vendors").select("id, company_name, display_name, category, logo_url, avatar_url").in("id", vendorIds)
+        : Promise.resolve({ data: [] as { id: string; company_name: string | null; display_name: string | null; category: string | null; logo_url: string | null; avatar_url: string | null }[] }),
+    ]);
+    const expertMap = new Map((experts ?? []).map((e) => [e.id, e]));
+    const vendorMap = new Map((vendors ?? []).map((v) => [v.id, v]));
 
     // 3. Viewer's own reactions (so the UI knows what's already pressed).
     const { data: myReactions } = await admin
@@ -120,16 +124,30 @@ export async function GET(req: Request) {
       commentsByPost.set(c.post_id, bucket);
     }
 
-    // 5. Assemble.
+    // 5. Assemble. A post is authored by an expert OR a partner (0047).
     const enriched = posts.map((p) => {
-      const expert = expertMap.get(p.expert_id);
       const preview = (commentsByPost.get(p.id) ?? []).slice().reverse();
+      if (p.vendor_id) {
+        const v = vendorMap.get(p.vendor_id);
+        return {
+          ...p,
+          author_kind: "partner" as const,
+          author_display_name: v?.display_name || v?.company_name || "Partner",
+          author_subtitle: v?.category ?? null,
+          author_headshot_url: v?.logo_url ?? v?.avatar_url ?? null,
+          profile_href: `/dashboard/partners/${p.vendor_id}`,
+          my_reaction: myReactionMap.get(p.id) ?? null,
+          preview_comments: preview,
+        };
+      }
+      const expert = p.expert_id ? expertMap.get(p.expert_id) : undefined;
       return {
         ...p,
         author_kind: "expert" as const,
         author_display_name: expert?.display_name || expert?.full_name || "Expert",
         author_subtitle: expert?.specialty ?? null,
         author_headshot_url: expert?.headshot_url ?? null,
+        profile_href: p.expert_id ? `/dashboard/experts/${p.expert_id}` : null,
         my_reaction: myReactionMap.get(p.id) ?? null,
         preview_comments: preview,
       };
