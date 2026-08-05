@@ -191,15 +191,38 @@ export async function middleware(req: NextRequest) {
   // VENDOR PORTAL
   // ─────────────────────────────────────────────────────────────────
   if (isVendor) {
-    const legacySession = req.cookies.get(VENDOR_LEGACY_COOKIE)?.value;
-    if (legacySession) {
+    // Dev-only preview shortcut (the test/test stand-in). NEVER honored in
+    // production — the old code allowed ANY `vendor_session` cookie value,
+    // which let a forged cookie reach the partner portal shell.
+    if (
+      process.env.NODE_ENV !== "production" &&
+      req.cookies.get(VENDOR_LEGACY_COOKIE)?.value === "test-preview"
+    ) {
       return applySecurityHeaders(res);
     }
 
     try {
       const supabase = createMiddlewareSupabase(req, res);
-      const { data } = await supabase.auth.getUser();
-      if (data.user) return applySecurityHeaders(res);
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData.user) {
+        // Confirm the session actually belongs to a vendor — an own-row read
+        // (RLS-allowed for any status via auth_user_id) so a member/expert/
+        // admin session can't reach the partner portal shell. auth_user_id is
+        // backfilled + linked at signup, so this resolves for every vendor
+        // including pending_review ones.
+        const { data: vendorRow } = await supabase
+          .from("vendors")
+          .select("id, status")
+          .eq("auth_user_id", userData.user.id)
+          .maybeSingle();
+        if (
+          vendorRow &&
+          vendorRow.status !== "suspended" &&
+          vendorRow.status !== "churned"
+        ) {
+          return applySecurityHeaders(res);
+        }
+      }
     } catch (err) {
       console.error("[middleware:vendor] auth check failed:", err);
     }
@@ -302,6 +325,16 @@ export async function middleware(req: NextRequest) {
   // ─────────────────────────────────────────────────────────────────
   if (isMember || isUpgrade) {
     try {
+      // Pay-first flow: the dmn_checkout cookie means THIS browser just
+      // signed up and needs to pick a plan + pay. Honor it for /upgrade
+      // FIRST — before any session check — so a leftover/stale login from
+      // earlier can't hijack the flow and bounce a new signup to "not
+      // active". The page + checkout API resolve the member from the cookie.
+      // /dashboard is never allowed on this cookie; it still needs a session.
+      if (isUpgrade && req.cookies.get("dmn_checkout")?.value) {
+        return applySecurityHeaders(res);
+      }
+
       const supabase = createMiddlewareSupabase(req, res);
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) {
@@ -337,7 +370,10 @@ export async function middleware(req: NextRequest) {
         return applySecurityHeaders(NextResponse.redirect(target));
       }
 
-      const isPaid = memberRow.subscription_status === "active";
+      // Paid = active OR trialing (card on file for both).
+      const isPaid =
+        memberRow.subscription_status === "active" ||
+        memberRow.subscription_status === "trialing";
 
       // /dashboard/* → must be paid. Bounce unpaid members to /upgrade.
       if (isMember && !isPaid) {

@@ -185,10 +185,16 @@ export async function POST(req: Request) {
     }
 
     // Decide where to send them. NOT trusted from any client parameter.
-    const isPaid = resolvedMember.subscription_status === "active";
+    const isPaid =
+      resolvedMember.subscription_status === "active" ||
+      resolvedMember.subscription_status === "trialing";
     const next = isPaid ? "/dashboard" : "/upgrade";
 
-    return NextResponse.json({ ok: true, next });
+    // They now have a real session — retire the pay-first signup cookie so it
+    // can't linger and take precedence over the session on a later /upgrade.
+    const response = NextResponse.json({ ok: true, next });
+    response.cookies.delete("dmn_checkout");
+    return response;
   } catch (err) {
     return serverError(err, { route });
   }

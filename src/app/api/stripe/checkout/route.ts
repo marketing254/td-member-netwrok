@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { requireMember } from "@/lib/auth/guards";
+import { resolveCheckoutMember } from "@/lib/auth/guards";
 import { apiError, serverError } from "@/lib/api/errorResponse";
 import {
   ALL_PLAN_KEYS,
@@ -37,7 +37,9 @@ function isValidPlan(p: unknown): p is SubscriptionPlanKey {
 }
 
 export async function POST(req: Request) {
-  const guard = await requireMember();
+  // Session OR the short-lived signup cookie — a just-signed-up member can
+  // pay before logging in (pay-first flow). The portal stays OTP-gated.
+  const guard = await resolveCheckoutMember();
   if (!guard.ok) return guard.response;
 
   const route = "POST /api/stripe/checkout";

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { requireMember } from "@/lib/auth/guards";
+import { requirePaidMember } from "@/lib/auth/guards";
 import {
   ASSISTANT_MAX_TOKENS,
   ASSISTANT_MODEL,
@@ -28,7 +28,7 @@ const MAX_USER_MESSAGE_CHARS = 4000;
  * member left off across sessions.
  */
 export async function GET() {
-  const guard = await requireMember();
+  const guard = await requirePaidMember();
   if (!guard.ok) return guard.response;
 
   const sb = getSupabaseAdmin();
@@ -54,7 +54,7 @@ export async function GET() {
  * stream completes.
  */
 export async function POST(req: Request) {
-  const guard = await requireMember();
+  const guard = await requirePaidMember();
   if (!guard.ok) return guard.response;
 
   const body = (await req.json().catch(() => ({}))) as { content?: string };

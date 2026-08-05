@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { requireMember } from "@/lib/auth/guards";
+import { requirePaidMember } from "@/lib/auth/guards";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
  *   - 'complete' → set completed_at = now() and last_viewed_at = now()
  */
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
-  const guard = await requireMember();
+  const guard = await requirePaidMember();
   if (!guard.ok) return guard.response;
 
   const { id: resourceId } = await ctx.params;

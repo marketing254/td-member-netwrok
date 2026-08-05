@@ -16,7 +16,6 @@ import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import Logo from "@/components/brand/Logo";
 import { SubscribeCard } from "@/components/member/SubscribeCard";
-import { useCurrentMember } from "@/lib/hooks/useCurrentMember";
 import { useSignOut } from "@/lib/auth/identity";
 
 /**
@@ -40,80 +39,118 @@ export default function UpgradePage() {
   );
 }
 
+type Ctx = {
+  firstName: string | null;
+  email: string | null;
+  subscriptionStatus: string | null;
+  authed: boolean;
+};
+
 function UpgradeInner() {
-  const { member, loading } = useCurrentMember();
   const params = useSearchParams();
   const router = useRouter();
   const signOut = useSignOut();
   const justSubscribed = params.get("subscribed") === "1";
   const checkoutCanceled = params.get("subscribed") === "0";
+
+  const [ctx, setCtx] = useState<Ctx | null>(null);
+  const [loading, setLoading] = useState(true);
   const [pollExhausted, setPollExhausted] = useState(false);
+  const [paidReady, setPaidReady] = useState(false); // cookie flow: payment landed, prompt login
 
-  const isActive = member?.subscription_status === "active";
-
-  // If the member already has an active sub, they don't belong here —
-  // bounce them straight to the dashboard.
+  // Works for BOTH a logged-in member (session) and a just-signed-up member
+  // who hasn't logged in yet (dmn_checkout cookie). Returns null when neither.
   useEffect(() => {
-    if (!loading && isActive && !justSubscribed) {
+    let active = true;
+    fetch("/api/member/checkout-context", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((body: Ctx | null) => { if (active) setCtx(body); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, []);
+
+  const isActive =
+    ctx?.subscriptionStatus === "active" || ctx?.subscriptionStatus === "trialing";
+
+  // Already active + logged in → they belong in the portal, not here.
+  useEffect(() => {
+    if (!loading && ctx?.authed && isActive && !justSubscribed) {
       router.replace("/dashboard");
     }
-  }, [loading, isActive, justSubscribed, router]);
+  }, [loading, ctx?.authed, isActive, justSubscribed, router]);
 
-  // Post-payment: poll /api/member/me for up to ~30s, then either redirect
-  // to /dashboard (once webhook lands) or surface a manual refresh.
+  // Post-payment polling. Two tails:
+  //  • Logged-in: once the webhook flips status→active, go to /dashboard.
+  //  • Cookie flow (no session): once it's active, prompt them to LOG IN
+  //    (they can't be sent to the portal without a session).
   useEffect(() => {
-    if (!justSubscribed) return;
+    if (!justSubscribed || !ctx) return;
     let attempts = 0;
     let cancelled = false;
     const tick = setInterval(async () => {
       attempts += 1;
       try {
-        const res = await fetch("/api/member/me", { cache: "no-store" });
+        const res = await fetch("/api/member/checkout-context", { cache: "no-store" });
         if (res.ok) {
-          const body = (await res.json()) as {
-            member?: { subscription_status?: string | null };
-          };
-          if (body.member?.subscription_status === "active") {
+          const body = (await res.json()) as Ctx;
+          if (body.subscriptionStatus === "active" || body.subscriptionStatus === "trialing") {
             clearInterval(tick);
-            if (!cancelled) router.replace("/dashboard");
+            if (cancelled) return;
+            if (body.authed) router.replace("/dashboard");
+            else setPaidReady(true);
             return;
           }
         }
       } catch {
-        /* try again next tick */
+        /* retry next tick */
       }
       if (attempts >= 15) {
         clearInterval(tick);
         if (!cancelled) setPollExhausted(true);
       }
     }, 2000);
-    return () => {
-      cancelled = true;
-      clearInterval(tick);
-    };
-  }, [justSubscribed, router]);
+    return () => { cancelled = true; clearInterval(tick); };
+  }, [justSubscribed, ctx, router]);
 
   if (loading) return <PageSkeleton />;
 
-  if (!member) {
+  const authed = !!ctx?.authed;
+  const shellSignOut = authed ? signOut : () => router.push("/");
+
+  if (!ctx) {
     return (
-      <PageShell signOut={() => router.push("/member/login")}>
-        <Alert severity="error" sx={{ mt: 4 }}>
-          Your session expired.{" "}
+      <PageShell signOut={() => router.push("/join")}>
+        <Alert severity="info" sx={{ mt: 4 }}>
+          To choose a plan, start by{" "}
+          <Link href="/join" style={{ color: "inherit", fontWeight: 700 }}>
+            signing up
+          </Link>
+          . Already a member?{" "}
           <Link href="/member/login" style={{ color: "inherit", fontWeight: 700 }}>
-            Sign in again
-          </Link>{" "}
-          to continue.
+            Log in
+          </Link>
+          .
         </Alert>
       </PageShell>
     );
   }
 
+  // Cookie-flow member who is already paid (post-payment, or a re-signup of
+  // an existing paid member) — they can't be sent to the portal without a
+  // session, so prompt them to log in.
+  if (!authed && (isActive || paidReady)) {
+    return (
+      <PageShell signOut={shellSignOut}>
+        <PaymentDoneLogIn email={ctx.email} />
+      </PageShell>
+    );
+  }
+
   return (
-    <PageShell signOut={signOut}>
+    <PageShell signOut={shellSignOut}>
       {justSubscribed && (
         <Box sx={{ mb: 3 }}>
-          <ProcessingBanner variant={pollExhausted ? "stuck" : "pending"} />
+          <ProcessingBanner variant={pollExhausted ? "stuck" : "pending"} authed={authed} email={ctx.email} />
         </Box>
       )}
       {checkoutCanceled && (
@@ -121,7 +158,7 @@ function UpgradeInner() {
           <CheckoutCanceledNote />
         </Box>
       )}
-      <SubscribeCard firstName={member.first_name} />
+      <SubscribeCard firstName={ctx.firstName ?? "there"} />
     </PageShell>
   );
 }
@@ -170,7 +207,7 @@ function PageShell({
           </Stack>
         </Container>
       </Box>
-      <Container maxWidth="lg" sx={{ py: { xs: 4, md: 6 } }}>
+      <Container maxWidth="lg" sx={{ py: { xs: 2.5, md: 3.5 } }}>
         {children}
       </Container>
     </Box>
@@ -192,8 +229,17 @@ function PageSkeleton() {
   );
 }
 
-function ProcessingBanner({ variant }: { variant: "pending" | "stuck" }) {
+function ProcessingBanner({
+  variant,
+  authed,
+  email,
+}: {
+  variant: "pending" | "stuck";
+  authed: boolean;
+  email: string | null;
+}) {
   const isStuck = variant === "stuck";
+  const loginHref = email ? `/member/login?email=${encodeURIComponent(email)}` : "/member/login";
   return (
     <Box
       sx={{
@@ -205,34 +251,74 @@ function ProcessingBanner({ variant }: { variant: "pending" | "stuck" }) {
       }}
     >
       <Stack direction="row" spacing={1.5} sx={{ alignItems: "flex-start" }}>
-        {isStuck ? (
-          <CircularProgress size={22} sx={{ color: "#A07823" }} />
-        ) : (
-          <CircularProgress size={22} sx={{ color: "#1F5C40" }} />
-        )}
+        <CircularProgress size={22} sx={{ color: isStuck ? "#A07823" : "#1F5C40" }} />
         <Box sx={{ flex: 1 }}>
           <Typography sx={{ fontWeight: 700, fontSize: "0.95rem", color: "#0A1A2F" }}>
             {isStuck
               ? "Payment received — still confirming"
-              : "Payment received — activating your portal…"}
+              : "Payment received — activating your membership…"}
           </Typography>
           <Typography sx={{ fontSize: "0.85rem", color: "text.secondary", mt: 0.5 }}>
             {isStuck
               ? "Stripe is taking a little longer than usual to confirm. Refresh in a moment — if it doesn't clear within 5 minutes, email hello@joindmn.com."
-              : "Stripe just confirmed your payment. We're flipping the switch on your portal. You'll be redirected automatically."}
+              : authed
+                ? "Stripe just confirmed your payment. We're flipping the switch on your portal. You'll be redirected automatically."
+                : "Stripe just confirmed your payment. As soon as it's active you'll be able to log in to your portal."}
           </Typography>
-          {isStuck && (
-            <Button
-              variant="outlined"
-              size="small"
-              sx={{ mt: 1.25, textTransform: "none", fontWeight: 600 }}
-              onClick={() => window.location.reload()}
-            >
-              Refresh now
-            </Button>
-          )}
+          {isStuck &&
+            (authed ? (
+              <Button
+                variant="outlined"
+                size="small"
+                sx={{ mt: 1.25, textTransform: "none", fontWeight: 600 }}
+                onClick={() => window.location.reload()}
+              >
+                Refresh now
+              </Button>
+            ) : (
+              <Button
+                component={Link}
+                href={loginHref}
+                variant="outlined"
+                size="small"
+                sx={{ mt: 1.25, textTransform: "none", fontWeight: 600 }}
+              >
+                Log in to your portal
+              </Button>
+            ))}
         </Box>
       </Stack>
+    </Box>
+  );
+}
+
+/**
+ * Pay-first flow: the member has paid but has no session yet. Send them to
+ * log in — they're now a paid member, so login lands them on /dashboard.
+ */
+function PaymentDoneLogIn({ email }: { email: string | null }) {
+  const loginHref = email ? `/member/login?email=${encodeURIComponent(email)}` : "/member/login";
+  return (
+    <Box sx={{ maxWidth: 520, mx: "auto", textAlign: "center", py: { xs: 4, md: 8 } }}>
+      <CheckCircleRoundedIcon sx={{ fontSize: 56, color: "#1F5C40", mb: 1.5 }} />
+      <Typography
+        sx={{ fontFamily: "var(--font-display)", fontSize: { xs: "1.7rem", md: "2.1rem" }, fontWeight: 500, color: "#0A1A2F", letterSpacing: "-0.01em", mb: 1 }}
+      >
+        You&apos;re in. Payment complete.
+      </Typography>
+      <Typography sx={{ fontSize: "1rem", color: "text.secondary", lineHeight: 1.6, mb: 3 }}>
+        Your founding membership is active. Log in to enter your portal — we&apos;ll
+        email you a 6-digit code{email ? ` at ${email}` : ""}.
+      </Typography>
+      <Button
+        component={Link}
+        href={loginHref}
+        variant="contained"
+        size="large"
+        sx={{ bgcolor: "#0A1A2F", textTransform: "none", fontWeight: 700, borderRadius: 999, px: 4, py: 1.25, "&:hover": { bgcolor: "#132a44" } }}
+      >
+        Log in to your portal →
+      </Button>
     </Box>
   );
 }
@@ -250,7 +336,7 @@ function CheckoutCanceledNote() {
         "& .MuiAlert-icon": { color: "#0A1A2F" },
       }}
     >
-      No payment was taken. Whenever you're ready, pick a plan below.
+      No payment was taken. Whenever you&apos;re ready, pick a plan below.
     </Alert>
   );
 }

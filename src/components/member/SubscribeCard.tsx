@@ -151,26 +151,14 @@ export function SubscribeCard({ firstName }: { firstName: string }) {
     <Box>
       <Stack
         direction={{ xs: "column", sm: "row" }}
-        spacing={2}
-        sx={{ alignItems: { sm: "center" }, justifyContent: "space-between", mb: 3 }}
+        spacing={1.5}
+        sx={{ alignItems: { sm: "center" }, justifyContent: "space-between", mb: 2 }}
       >
         <Box>
           <Typography
             sx={{
-              fontSize: "0.72rem",
-              letterSpacing: "0.18em",
-              textTransform: "uppercase",
-              fontWeight: 700,
-              color: COLORS.accentDeep,
-              mb: 0.5,
-            }}
-          >
-            Activate your membership
-          </Typography>
-          <Typography
-            sx={{
               fontFamily: "var(--font-display)",
-              fontSize: { xs: "1.6rem", md: "2rem" },
+              fontSize: { xs: "1.35rem", md: "1.6rem" },
               fontWeight: 500,
               color: COLORS.ink,
               lineHeight: 1.2,
@@ -179,7 +167,7 @@ export function SubscribeCard({ firstName }: { firstName: string }) {
           >
             Welcome, {firstName}. Pick your plan.
           </Typography>
-          <Typography sx={{ color: COLORS.muted, mt: 1, maxWidth: 560, fontSize: "0.92rem" }}>
+          <Typography sx={{ color: COLORS.muted, mt: 0.5, fontSize: "0.85rem" }}>
             Your portal unlocks the moment payment is confirmed.
           </Typography>
         </Box>
@@ -193,8 +181,8 @@ export function SubscribeCard({ firstName }: { firstName: string }) {
         sx={{
           display: "grid",
           gridTemplateColumns: { xs: "1fr", md: "repeat(3, 1fr)" },
-          gap: 2.5,
-          mt: 3,
+          gap: 1.5,
+          mt: 2,
         }}
       >
         <PlanCard
@@ -274,28 +262,28 @@ export function SubscribeCard({ firstName }: { firstName: string }) {
 
       <Box
         sx={{
-          mt: 3,
-          px: { xs: 2, md: 3 },
-          py: 1.75,
+          mt: 2,
+          px: { xs: 1.5, md: 2 },
+          py: 1.1,
           borderRadius: 2,
           bgcolor: COLORS.surfaceAlt,
           border: `1px dashed ${COLORS.accent}`,
           textAlign: "center",
         }}
       >
-        <Typography sx={{ fontSize: "0.85rem", color: COLORS.accentDeep, fontWeight: 600 }}>
+        <Typography sx={{ fontSize: "0.78rem", color: COLORS.accentDeep, fontWeight: 600 }}>
           ★ Coming in Phase 2 — Premium: 1-on-1 coaching · practice audit &amp; review · priority Hotline (24–48h) · advanced masterclasses · whole-team seats
         </Typography>
       </Box>
 
       {error && (
-        <Typography sx={{ mt: 2, fontSize: "0.85rem", color: "#8C1D1D", textAlign: "center" }}>
+        <Typography sx={{ mt: 1.5, fontSize: "0.85rem", color: "#8C1D1D", textAlign: "center" }}>
           {error}
         </Typography>
       )}
 
       <Typography
-        sx={{ mt: 2.5, fontSize: "0.78rem", color: COLORS.muted, textAlign: "center" }}
+        sx={{ mt: 1.5, fontSize: "0.75rem", color: COLORS.muted, textAlign: "center" }}
       >
         Cancel anytime · 30-day money-back guarantee on Founding &amp; Early · Secure checkout via Stripe
       </Typography>
@@ -318,18 +306,18 @@ function UniversalPerksBanner({ perks }: { perks: string[] }) {
         borderRadius: 2,
         bgcolor: COLORS.surfaceAlt,
         border: `1px solid ${COLORS.line}`,
-        px: { xs: 2.5, md: 3 },
-        py: { xs: 2, md: 2.25 },
+        px: { xs: 2, md: 2.25 },
+        py: { xs: 1.25, md: 1.5 },
       }}
     >
       <Typography
         sx={{
-          fontSize: "0.72rem",
-          letterSpacing: "0.18em",
+          fontSize: "0.68rem",
+          letterSpacing: "0.16em",
           textTransform: "uppercase",
           fontWeight: 800,
           color: COLORS.accentDeep,
-          mb: 1.25,
+          mb: 0.75,
         }}
       >
         Every membership includes
@@ -338,14 +326,14 @@ function UniversalPerksBanner({ perks }: { perks: string[] }) {
         sx={{
           display: "grid",
           gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", md: "1fr 1fr", lg: "1fr 1fr 1fr 1fr" },
-          gap: 1,
-          rowGap: 1,
+          columnGap: 1.5,
+          rowGap: 0.5,
         }}
       >
         {perks.map((p) => (
-          <Stack key={p} direction="row" spacing={1} sx={{ alignItems: "flex-start" }}>
-            <CheckRoundedIcon sx={{ fontSize: 16, color: COLORS.primary, mt: 0.25, flexShrink: 0 }} />
-            <Typography sx={{ fontSize: "0.86rem", color: COLORS.ink, lineHeight: 1.5 }}>
+          <Stack key={p} direction="row" spacing={0.75} sx={{ alignItems: "flex-start" }}>
+            <CheckRoundedIcon sx={{ fontSize: 14, color: COLORS.primary, mt: 0.2, flexShrink: 0 }} />
+            <Typography sx={{ fontSize: "0.8rem", color: COLORS.ink, lineHeight: 1.4 }}>
               {p}
             </Typography>
           </Stack>
@@ -495,11 +483,11 @@ function PlanCard({
           {ribbon}
         </Box>
       )}
-      <Box sx={{ bgcolor: COLORS.primary, color: "#FFFFFF", px: 3, pt: 3, pb: 2.25 }}>
+      <Box sx={{ bgcolor: COLORS.primary, color: "#FFFFFF", px: 2.25, pt: 1.75, pb: 1.5 }}>
         <Typography
           sx={{
             fontFamily: "var(--font-display)",
-            fontSize: "1.5rem",
+            fontSize: "1.2rem",
             fontWeight: 500,
             lineHeight: 1.2,
             letterSpacing: "-0.01em",
@@ -508,17 +496,17 @@ function PlanCard({
         >
           {title}
         </Typography>
-        <Typography sx={{ fontSize: "0.84rem", color: "rgba(255,255,255,0.72)", mt: 0.5 }}>
+        <Typography sx={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.72)", mt: 0.25 }}>
           {subtitle}
         </Typography>
       </Box>
 
-      <Box sx={{ px: 3, py: 3, borderBottom: `1px solid ${COLORS.line}`, textAlign: "center", bgcolor: "#FFFFFF" }}>
+      <Box sx={{ px: 2.25, py: 1.75, borderBottom: `1px solid ${COLORS.line}`, textAlign: "center", bgcolor: "#FFFFFF" }}>
         <Stack direction="row" spacing={0.5} sx={{ justifyContent: "center", alignItems: "baseline" }}>
           <Typography
             sx={{
               fontFamily: "var(--font-display)",
-              fontSize: { xs: "2.6rem", md: "3rem" },
+              fontSize: { xs: "2rem", md: "2.15rem" },
               fontWeight: 600,
               color: COLORS.ink,
               lineHeight: 1,
@@ -528,13 +516,13 @@ function PlanCard({
             {price}
           </Typography>
           {per && (
-            <Typography sx={{ fontSize: "0.95rem", color: COLORS.muted, fontWeight: 500 }}>
+            <Typography sx={{ fontSize: "0.9rem", color: COLORS.muted, fontWeight: 500 }}>
               /{per}
             </Typography>
           )}
         </Stack>
         {sub && (
-          <Typography sx={{ fontSize: "0.85rem", color: COLORS.muted, mt: 0.75 }}>
+          <Typography sx={{ fontSize: "0.78rem", color: COLORS.muted, mt: 0.4 }}>
             {sub}
           </Typography>
         )}
@@ -543,49 +531,49 @@ function PlanCard({
             label={save}
             size="small"
             sx={{
-              mt: 1.25,
+              mt: 0.75,
               bgcolor: "rgba(217,168,75,0.18)",
               color: COLORS.accentDeep,
               fontWeight: 700,
-              fontSize: "0.72rem",
-              height: 24,
+              fontSize: "0.68rem",
+              height: 20,
             }}
           />
         )}
       </Box>
 
-      <Box sx={{ px: 3, py: 2.5, flex: 1 }}>
+      <Box sx={{ px: 2.25, py: 1.75, flex: 1 }}>
         <Typography
           sx={{
-            fontSize: "0.72rem",
-            letterSpacing: "0.14em",
+            fontSize: "0.66rem",
+            letterSpacing: "0.12em",
             textTransform: "uppercase",
             color: COLORS.muted,
             fontWeight: 800,
-            mb: 1.25,
+            mb: 0.85,
           }}
         >
           {sectionTitle}
         </Typography>
-        <Stack spacing={1.1}>
+        <Stack spacing={0.7}>
           {perks.map((p) => {
             const Icon = isStarTier ? StarRoundedIcon : CheckRoundedIcon;
             return (
-              <Stack key={p} direction="row" spacing={1.25} sx={{ alignItems: "flex-start" }}>
+              <Stack key={p} direction="row" spacing={1} sx={{ alignItems: "flex-start" }}>
                 <Icon
                   sx={{
-                    fontSize: 18,
+                    fontSize: 16,
                     color: isStarTier ? COLORS.accentDeep : COLORS.primary,
-                    mt: 0.15,
+                    mt: 0.1,
                     flexShrink: 0,
                   }}
                 />
                 <Typography
                   sx={{
-                    fontSize: "0.88rem",
+                    fontSize: "0.82rem",
                     color: COLORS.ink,
                     fontWeight: isStarTier ? 700 : 500,
-                    lineHeight: 1.45,
+                    lineHeight: 1.4,
                   }}
                 >
                   {p}
@@ -596,13 +584,13 @@ function PlanCard({
         </Stack>
       </Box>
 
-      <Box sx={{ px: 3, py: 1.5, textAlign: "center", borderTop: `1px solid ${COLORS.line}`, bgcolor: COLORS.surfaceAlt }}>
-        <Typography sx={{ fontSize: "0.78rem", color: COLORS.inkSoft, lineHeight: 1.5 }}>
+      <Box sx={{ px: 2.25, py: 1.1, textAlign: "center", borderTop: `1px solid ${COLORS.line}`, bgcolor: COLORS.surfaceAlt }}>
+        <Typography sx={{ fontSize: "0.72rem", color: COLORS.inkSoft, lineHeight: 1.45 }}>
           {footnote}
         </Typography>
       </Box>
 
-      <Box sx={{ px: 3, py: 2.5 }}>
+      <Box sx={{ px: 2.25, py: 1.75 }}>
         <Button
           fullWidth
           variant={tier === "standard" ? "outlined" : "contained"}
@@ -612,7 +600,7 @@ function PlanCard({
           startIcon={busy ? <CircularProgress size={14} sx={{ color: "inherit" }} /> : null}
           sx={{
             borderRadius: 999,
-            py: 1.15,
+            py: 0.9,
             // Stronger disabled state so it's obvious the button is dead
             // (default MUI disabled is quite faint on a dim-saturate card).
             "&.Mui-disabled": {
