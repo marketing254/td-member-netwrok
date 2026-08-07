@@ -80,7 +80,7 @@ function applySecurityHeaders(res: NextResponse): NextResponse {
   res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   res.headers.set(
     "Permissions-Policy",
-    // microphone=(self): Pearl's voice input (Web Speech API) needs mic
+    // microphone=(self): Beacon's voice input (Web Speech API) needs mic
     // access on our own origin. Everything else stays fully denied.
     "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(self), payment=(), usb=()",
   );

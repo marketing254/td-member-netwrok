@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { requireMemberOrAdminPreview } from "@/lib/auth/guards";
 import { serverError } from "@/lib/api/errorResponse";
+import { sortExpertsHouseFirst } from "@/lib/houseOrder";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -59,16 +60,16 @@ export async function GET() {
       }
     }
 
-    return NextResponse.json({
-      experts: (experts ?? []).map((e) => ({
-        id: e.id,
-        name: e.display_name || e.full_name || "(unnamed expert)",
-        specialty: e.specialty,
-        headshot_url: e.headshot_url,
-        bio: e.bio,
-        kit_count: kitCounts.get(e.id) ?? 0,
-      })),
-    });
+    const shaped = (experts ?? []).map((e) => ({
+      id: e.id,
+      name: e.display_name || e.full_name || "(unnamed expert)",
+      specialty: e.specialty,
+      headshot_url: e.headshot_url,
+      bio: e.bio,
+      kit_count: kitCounts.get(e.id) ?? 0,
+    }));
+
+    return NextResponse.json({ experts: sortExpertsHouseFirst(shaped, (e) => e.name) });
   } catch (err) {
     return serverError(err, { route: "GET /api/member/experts" });
   }

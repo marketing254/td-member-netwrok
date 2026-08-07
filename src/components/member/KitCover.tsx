@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Box, Stack, Typography } from "@mui/material";
 import PlayArrowRoundedIcon from "@mui/icons-material/PlayArrowRounded";
 import { visualForTopic } from "@/components/member/topicVisuals";
@@ -57,6 +58,26 @@ export function KitCover({
   const showProgress = progressPct > 0;
   const hasCover = !!portalCardUrl;
 
+  // The library is mid-migration from square (2160×2160 social) covers to
+  // the 3:4 topic-led portal cards. The tile is 3:4; portrait cards fill
+  // it edge-to-edge, while legacy square covers letterbox on the navy
+  // backdrop instead of being zoom-cropped (which cut their baked titles).
+  const [coverFit, setCoverFit] = useState<"cover" | "contain">("cover");
+  useEffect(() => {
+    if (!portalCardUrl) return;
+    let alive = true;
+    const img = new window.Image();
+    img.onload = () => {
+      if (!alive) return;
+      const ratio = img.naturalWidth / img.naturalHeight;
+      setCoverFit(Math.abs(ratio - 0.75) < 0.08 ? "cover" : "contain");
+    };
+    img.src = portalCardUrl;
+    return () => {
+      alive = false;
+    };
+  }, [portalCardUrl]);
+
   // Typography for the painted-gradient fallback
   const titleFontSize = size === "sm"
     ? { xs: "0.92rem" }
@@ -66,12 +87,13 @@ export function KitCover({
     <Box
       sx={{
         position: "relative",
-        // Portal cards are square (Cover - Square (social).png at 2160x2160).
-        // Match the source aspect exactly so the artwork renders edge-to-edge
-        // with zero cropping; the painted gradient fallback also works square.
-        aspectRatio: "1 / 1",
+        // 3:4 portrait — matches the topic-led portal cards (1600×2134).
+        // Legacy square covers render `contain` on the navy backdrop (see
+        // coverFit above) so their baked-in titles never get cropped.
+        aspectRatio: "3 / 4",
         backgroundImage: hasCover ? `url("${portalCardUrl}")` : visual.gradient,
-        backgroundSize: "cover",
+        backgroundSize: hasCover ? coverFit : "cover",
+        backgroundRepeat: "no-repeat",
         backgroundPosition: "center",
         bgcolor: "var(--ink, #0A1A2F)",
         overflow: "hidden",

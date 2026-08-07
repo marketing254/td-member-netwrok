@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { serverError } from "@/lib/api/errorResponse";
+import { sortPartnersHouseFirst } from "@/lib/houseOrder";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -36,7 +37,10 @@ export async function GET(req: Request) {
     if (error) throw error;
 
     const liveIds = new Set((data ?? []).map((v) => v.id));
-    const visible = (data ?? []).filter((v) => !v.billing_parent_id || liveIds.has(v.billing_parent_id));
+    const visible = sortPartnersHouseFirst(
+      (data ?? []).filter((v) => !v.billing_parent_id || liveIds.has(v.billing_parent_id)),
+      (v) => v.display_name || v.company_name,
+    );
 
     const from = (page - 1) * pageSize;
     const pageRows = visible.slice(from, from + pageSize);

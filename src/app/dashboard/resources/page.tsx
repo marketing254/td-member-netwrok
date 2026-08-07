@@ -61,7 +61,7 @@ type SortKey = "latest" | "oldest" | "alpha" | "most-resources";
 // Filter key — either a special slot or a literal category name from the DB.
 type FilterKey = "all" | "free" | string;
 
-const PAGE_SIZE = 9;
+const PAGE_SIZE = 12;
 
 export default function ResourceLibraryPage() {
   const [resources, setResources] = useState<ResourceItem[]>([]);
@@ -386,13 +386,16 @@ export default function ResourceLibraryPage() {
           <Box
             sx={{
               display: "grid",
+              // 12 kits per page → 4-up on desktop (3 clean rows), 3-up on
+              // tablet (4 rows), 2-up on phones (6 rows). Smaller cards,
+              // no ragged last row at any breakpoint.
               gridTemplateColumns: {
-                xs: "1fr",
-                sm: "repeat(2, 1fr)",
-                lg: "repeat(3, 1fr)",
+                xs: "repeat(2, 1fr)",
+                md: "repeat(3, 1fr)",
+                lg: "repeat(4, 1fr)",
               },
-              gap: { xs: 3, md: 3.5 },
-              rowGap: { xs: 3.5, md: 4 },
+              gap: { xs: 2, md: 2.5 },
+              rowGap: { xs: 2.5, md: 3 },
             }}
           >
             {pageItems.map((t) => (
@@ -627,10 +630,11 @@ function Pagination({
       spacing={1.5}
       sx={{
         mt: 4,
-        pt: 2,
+        pt: 2.5,
         borderTop: "1px solid var(--paper-rule)",
         alignItems: "center",
-        justifyContent: "space-between",
+        justifyContent: "center",
+        columnGap: 3,
       }}
     >
       <Typography sx={editorialText.meta}>

@@ -15,7 +15,8 @@ type RouteParams = Promise<{ slug: string }>;
  *
  * Body:
  *   { action: "approve" } | { action: "reject", reason?: string } |
- *   { action: "publish" } | { action: "unpublish" }
+ *   { action: "publish" } | { action: "unpublish" } |
+ *   { action: "set_thumbnail", portalCardUrl: string }
  */
 export async function PATCH(req: Request, { params }: { params: RouteParams }) {
   const guard = await requireAdmin();
@@ -23,8 +24,9 @@ export async function PATCH(req: Request, { params }: { params: RouteParams }) {
 
   const { slug } = await params;
   const body = (await req.json().catch(() => ({}))) as {
-    action?: "approve" | "reject" | "publish" | "unpublish";
+    action?: "approve" | "reject" | "publish" | "unpublish" | "set_thumbnail";
     reason?: string;
+    portalCardUrl?: string;
   };
 
   if (!body.action) {
@@ -41,10 +43,22 @@ export async function PATCH(req: Request, { params }: { params: RouteParams }) {
     approved_by?: string | null;
     rejected_reason?: string | null;
     is_published?: boolean;
+    portal_card_url?: string;
   };
   let update: Patch;
 
   switch (body.action) {
+    case "set_thumbnail": {
+      // The member-portal card image. Only accept files that live in OUR
+      // kit-thumbnails bucket — never an arbitrary external URL.
+      const prefix = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/kit-thumbnails/`;
+      const url = (body.portalCardUrl ?? "").trim();
+      if (!url.startsWith(prefix)) {
+        return NextResponse.json({ error: "Thumbnail must be uploaded to the kit-thumbnails bucket first." }, { status: 400 });
+      }
+      update = { portal_card_url: url };
+      break;
+    }
     case "approve":
       update = {
         submission_status: "approved",

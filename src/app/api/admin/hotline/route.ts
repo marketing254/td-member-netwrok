@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Admin triage for Pearl inquiries (member escalations from the portal
+ * Admin triage for Beacon inquiries (member escalations from the portal
  * assistant). Backs /admin/hotline.
  *   GET   → all inquiries, newest first, with the member's name resolved.
  *   PATCH → { id, action } to move status / add a note.

@@ -47,11 +47,9 @@ export async function GET() {
   const sb = getSupabaseAdmin();
 
   // Public landing page only — exclude ANY resource attributed to a specific
-  // expert OR partner so they never appear on /resources. Those belong inside
-  // the gated member portal (members see them via /api/member/resources).
-  // Only fully admin-curated kits (no expert AND no vendor link) are public —
-  // e.g. Gary's house kits and Book Club. Expert/partner-attributed kits are
-  // member-only.
+  // PUBLIC = the FREE kits only (Gary's house set). Everything else —
+  // paid kits, Book Club, expert/partner kits — is member-portal-only and
+  // never appears on /resources.
   const { data: rows, error } = await sb
     .from("resources")
     .select(
@@ -59,8 +57,7 @@ export async function GET() {
     )
     .eq("is_published", true)
     .eq("submission_status", "approved")
-    .is("originating_expert_id", null)
-    .is("originating_vendor_id", null)
+    .eq("is_free", true)
     .order("topic_slug", { ascending: true });
 
   if (error) {

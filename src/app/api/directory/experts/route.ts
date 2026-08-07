@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { serverError } from "@/lib/api/errorResponse";
+import { sortExpertsHouseFirst } from "@/lib/houseOrder";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,20 +26,23 @@ export async function GET(req: Request) {
     // internal test rows (no profile assets) never reach the public site.
     // booking_link deliberately excluded — schedulers are a member benefit
     // and never surface on the public site.
-    const { data, error, count } = await sb
+    // Fetch the whole (small) bench once, sort house-first, then slice the
+    // page in memory — a DB range can't express the house-anchor ordering.
+    const { data, error } = await sb
       .from("experts")
-      .select("id, display_name, full_name, specialty, company_name, bio, headshot_url, website", {
-        count: "exact",
-      })
+      .select("id, display_name, full_name, specialty, company_name, bio, headshot_url, website")
       .eq("status", "active")
       .not("headshot_url", "is", null)
       .not("bio", "is", null)
-      .order("display_name", { ascending: true, nullsFirst: false })
-      .range(from, from + pageSize - 1);
+      .order("display_name", { ascending: true, nullsFirst: false });
     if (error) throw error;
 
+    const sorted = sortExpertsHouseFirst(data ?? [], (e) => e.display_name || e.full_name);
+    const count = sorted.length;
+    const pageRows = sorted.slice(from, from + pageSize);
+
     return NextResponse.json({
-      experts: (data ?? []).map((e) => ({
+      experts: pageRows.map((e) => ({
         id: e.id,
         name: e.display_name || e.full_name || "(unnamed expert)",
         specialty: e.specialty,
