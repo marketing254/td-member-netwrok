@@ -240,7 +240,7 @@ export default function NotificationsBell({
               <Typography sx={{ fontSize: "0.78rem", color: "text.secondary", maxWidth: 240 }}>
                 {audience === "vendor"
                   ? "Updates about your approvals, offers, and redemptions will show up here."
-                  : "New vendor applications, offer submissions, and team actions will land here."}
+                  : "New partner applications, offer submissions, and team actions will land here."}
               </Typography>
             </Stack>
           ) : (

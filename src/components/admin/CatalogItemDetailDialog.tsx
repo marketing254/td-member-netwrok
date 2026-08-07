@@ -395,7 +395,7 @@ export default function CatalogItemDetailDialog({
                   bgcolor: "common.white",
                 }}
               >
-                <SectionTitle>Vendor</SectionTitle>
+                <SectionTitle>Partner</SectionTitle>
                 <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", mb: 1.5 }}>
                   {item.vendors?.logo_url ? (
                     <Box
@@ -553,7 +553,7 @@ export default function CatalogItemDetailDialog({
                     fullWidth
                     multiline
                     rows={2}
-                    placeholder="Tell the vendor what to change. They'll see this in their portal + a notification."
+                    placeholder="Tell the partner what to change. They'll see this in their portal + a notification."
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
                     autoFocus

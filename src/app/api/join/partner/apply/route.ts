@@ -22,6 +22,8 @@ type Body = {
   contactEmail?: string;
   companyName?: string;
   agreementVersion?: string;
+  /** Standard invite-link code (/invite/<code>) — marks it accepted. */
+  inviteCode?: string;
 };
 
 function clientIp(req: Request): string {
@@ -113,6 +115,17 @@ export async function POST(req: Request) {
       );
     }
     vendorId = inserted.id;
+  }
+
+  // Came through a personalized invite link? Mark it accepted (best-effort).
+  const inviteCode = (body.inviteCode ?? "").trim();
+  if (inviteCode) {
+    await sb
+      .from("invite_links")
+      .update({ status: "accepted", accepted_at: signedAt.toISOString(), vendor_id: vendorId })
+      .eq("code", inviteCode)
+      .eq("kind", "partner")
+      .in("status", ["active", "viewed"]);
   }
 
   // Render + upload PDF. Best-effort — the acceptance columns are

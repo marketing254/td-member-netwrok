@@ -571,7 +571,7 @@ export type AdminUser = {
 
 export const adminUsers: AdminUser[] = [
   { id: "ad_lester", name: "Lester Carrington", email: "lester@thrivingdentist.com", role: "lester", workstream: "Hotline · Resources · Directory · Pricing · Legal", status: "active", lastActive: "2 hrs ago" },
-  { id: "ad_reshani", name: "Reshani Wijesuriya", email: "reshani@thrivingdentist.com", role: "reshani", workstream: "Vendor Network", status: "active", lastActive: "30 min ago" },
+  { id: "ad_reshani", name: "Reshani Wijesuriya", email: "reshani@thrivingdentist.com", role: "reshani", workstream: "Partner Network", status: "active", lastActive: "30 min ago" },
   { id: "ad_rushda", name: "Rushdha Fathima", email: "rushda@thrivingdentist.com", role: "rushda", workstream: "Tech Build", status: "active", lastActive: "Active now" },
   { id: "ad_chamika", name: "Chamika Perera", email: "chamika@thrivingdentist.com", role: "chamika", workstream: "Pre-Launch · Marketing", status: "active", lastActive: "5 hrs ago" },
 ];

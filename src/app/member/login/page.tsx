@@ -16,7 +16,7 @@ export default function MemberLoginPage() {
           emailStepSubtitle:
             "We'll email you a 6-digit code. No password to remember.",
           codeStepSubtitle:
-            "Check your inbox for a 6-digit code from hello@joindmn.com.",
+            "Check your inbox for a 6-digit code from noreply@dentalmembernetwork.com.",
           accentColor: "#A07823",
           accentTint: "rgba(217,168,75,0.16)",
           signupHref: "/join",

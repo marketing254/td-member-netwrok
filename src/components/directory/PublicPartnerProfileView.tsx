@@ -5,15 +5,16 @@ import Image from "next/image";
 import { Box, Button, Container, Stack, Typography } from "@mui/material";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import LanguageRoundedIcon from "@mui/icons-material/LanguageRounded";
-import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import Header from "@/components/sections/Header";
 import Footer from "@/components/sections/Footer";
+import LockedTeaserList, { type LockedTeaserRow } from "@/components/directory/LockedTeaserList";
 import { COLORS } from "@/theme";
 
 // Public-safe profile only. Booking/contact schedulers are deliberately NOT
 // part of the public page — direct booking is a member benefit, so the
-// calendar lives inside the member portal only.
+// calendar lives inside the member portal only. Offers + spotlights render
+// as blurred locked teasers (ids/kinds only — content never ships).
 export type PublicPartnerProfile = {
   name: string;
   category: string | null;
@@ -22,8 +23,6 @@ export type PublicPartnerProfile = {
   website: string | null;
 };
 
-export type PublicPartnerOffer = { id: string; headline: string; discount_value: string | null };
-
 /**
  * Client view for the public partner profile page. The server page fetches
  * + gates the data and passes plain props here (MUI + next/link can't be
@@ -31,10 +30,12 @@ export type PublicPartnerOffer = { id: string; headline: string; discount_value:
  */
 export default function PublicPartnerProfileView({
   partner,
-  offers,
+  offerTeasers = [],
+  spotlights = [],
 }: {
   partner: PublicPartnerProfile;
-  offers: PublicPartnerOffer[];
+  offerTeasers?: LockedTeaserRow[];
+  spotlights?: LockedTeaserRow[];
 }) {
   const name = partner.name;
   return (
@@ -119,34 +120,32 @@ export default function PublicPartnerProfileView({
           </Box>
         )}
 
-        <Box sx={{ borderRadius: 2.5, border: `1px solid ${COLORS.line}`, bgcolor: "#FFFFFF", p: { xs: 2.5, md: 3 } }}>
-          <Typography sx={{ fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: COLORS.muted, mb: 1.5 }}>
-            Member-exclusive offer
-          </Typography>
-          {offers.length > 0 ? (
-            <Stack spacing={1} sx={{ mb: 2 }}>
-              {offers.map((o) => (
-                <Stack key={o.id} direction="row" spacing={1} sx={{ alignItems: "center" }}>
-                  <LocalOfferOutlinedIcon sx={{ fontSize: 16, color: COLORS.accent }} />
-                  <Typography sx={{ color: COLORS.ink, fontWeight: 600, fontSize: "0.95rem" }}>
-                    {o.headline}
-                    {o.discount_value ? ` — ${o.discount_value}` : ""}
-                  </Typography>
-                </Stack>
-              ))}
-            </Stack>
-          ) : (
+        {/* Members-only spotlight teaser — blurred decoys + lock. */}
+        <LockedTeaserList
+          label="Spotlight — news & events"
+          rows={spotlights}
+          footnote={`${name} shares events, news, and member perks in the portal.`}
+        />
+
+        {offerTeasers.length > 0 ? (
+          <LockedTeaserList
+            label="Member-exclusive offers"
+            rows={offerTeasers}
+            footnote="Offer details and promo codes unlock inside the member portal."
+          />
+        ) : (
+          <Box sx={{ borderRadius: 2.5, border: `1px solid ${COLORS.line}`, bgcolor: "#FFFFFF", p: { xs: 2.5, md: 3 } }}>
+            <Typography sx={{ fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: COLORS.muted, mb: 1.5 }}>
+              Member-exclusive offer
+            </Typography>
             <Typography sx={{ color: COLORS.muted, fontSize: "0.92rem", mb: 2 }}>
               {name} gives Dental Member Network members an exclusive offer — see it inside the portal.
             </Typography>
-          )}
-          <Typography sx={{ color: COLORS.muted, fontSize: "0.88rem", mb: 2 }}>
-            Offers are redeemable by Dental Member Network members only.
-          </Typography>
-          <Button component={Link} href="/pricing" variant="contained" sx={{ textTransform: "none", borderRadius: 999, bgcolor: COLORS.accent, color: "#FFFFFF", "&:hover": { bgcolor: COLORS.accent } }}>
-            Become a member
-          </Button>
-        </Box>
+            <Button component={Link} href="/pricing" variant="contained" sx={{ textTransform: "none", borderRadius: 999, bgcolor: COLORS.accent, color: "#FFFFFF", "&:hover": { bgcolor: COLORS.accent } }}>
+              Become a member
+            </Button>
+          </Box>
+        )}
       </Container>
       <Footer />
     </Box>

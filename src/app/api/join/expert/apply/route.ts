@@ -21,6 +21,8 @@ type Body = {
   contactEmail?: string;
   focusArea?: string;
   agreementVersion?: string;
+  /** Standard invite-link code (/invite/<code>) — marks it accepted. */
+  inviteCode?: string;
 };
 
 function clientIp(req: Request): string {
@@ -110,6 +112,17 @@ export async function POST(req: Request) {
       );
     }
     expertId = inserted.id;
+  }
+
+  // Came through a personalized invite link? Mark it accepted (best-effort).
+  const inviteCode = (body.inviteCode ?? "").trim();
+  if (inviteCode) {
+    await sb
+      .from("invite_links")
+      .update({ status: "accepted", accepted_at: signedAt.toISOString(), expert_id: expertId })
+      .eq("code", inviteCode)
+      .eq("kind", "expert")
+      .in("status", ["active", "viewed"]);
   }
 
   let pdfBuffer: Buffer | null = null;

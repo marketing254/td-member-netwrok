@@ -38,6 +38,7 @@ export default function AdminSpotlightsPage() {
   // form
   const [ownerKind, setOwnerKind] = useState<"expert" | "partner">("expert");
   const [ownerId, setOwnerId] = useState("");
+  const [linkedOwnerId, setLinkedOwnerId] = useState("");
   const [kind, setKind] = useState<Kind>("update");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
@@ -88,7 +89,7 @@ export default function AdminSpotlightsPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          owner_kind: ownerKind, owner_id: ownerId, kind, title, body,
+          owner_kind: ownerKind, owner_id: ownerId, linked_owner_id: linkedOwnerId || null, kind, title, body,
           link_url: linkUrl || null, link_label: linkLabel || null, image_url: imageUrl || null,
           event_date: kind === "event" ? (eventDate || null) : null,
           publish, post_to_feed: postToFeed,
@@ -97,7 +98,7 @@ export default function AdminSpotlightsPage() {
       const b = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) { setError(b.error ?? "Couldn't save."); return; }
       setToast(publish ? "Published" + (postToFeed ? " + posted to feed" : "") : "Saved as draft");
-      setTitle(""); setBody(""); setLinkUrl(""); setLinkLabel(""); setImageUrl(""); setEventDate("");
+      setTitle(""); setBody(""); setLinkUrl(""); setLinkLabel(""); setImageUrl(""); setEventDate(""); setLinkedOwnerId("");
       await load();
     } finally { setSaving(false); }
   };
@@ -166,7 +167,7 @@ export default function AdminSpotlightsPage() {
         <Stack spacing={2}>
           <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
             <TextField select size="small" label="For" value={ownerKind}
-              onChange={(e) => { setOwnerKind(e.target.value as "expert" | "partner"); setOwnerId(""); }}
+              onChange={(e) => { setOwnerKind(e.target.value as "expert" | "partner"); setOwnerId(""); setLinkedOwnerId(""); }}
               sx={{ minWidth: 140 }}>
               <MenuItem value="expert">Expert</MenuItem>
               <MenuItem value="partner">Partner</MenuItem>
@@ -174,6 +175,14 @@ export default function AdminSpotlightsPage() {
             <TextField select size="small" label="Who" value={ownerId} onChange={(e) => setOwnerId(e.target.value)} sx={{ flex: 1, minWidth: 200 }}>
               <MenuItem value="" disabled>Select…</MenuItem>
               {owners.map((o) => <MenuItem key={o.id} value={o.id}>{o.name}</MenuItem>)}
+            </TextField>
+            <TextField select size="small"
+              label={ownerKind === "expert" ? "Also show on partner (optional)" : "Also show on expert (optional)"}
+              value={linkedOwnerId} onChange={(e) => setLinkedOwnerId(e.target.value)} sx={{ flex: 1, minWidth: 220 }}>
+              <MenuItem value="">— None —</MenuItem>
+              {(ownerKind === "expert" ? partners : experts).map((o) => (
+                <MenuItem key={o.id} value={o.id}>{o.name}</MenuItem>
+              ))}
             </TextField>
             <TextField select size="small" label="Type" value={kind} onChange={(e) => setKind(e.target.value as Kind)} sx={{ minWidth: 130 }}>
               {KINDS.map((k) => <MenuItem key={k} value={k} sx={{ textTransform: "capitalize" }}>{k}</MenuItem>)}

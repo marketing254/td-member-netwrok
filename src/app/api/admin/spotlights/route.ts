@@ -29,18 +29,24 @@ async function postSpotlightToFeed(
 ): Promise<void> {
   if (spot.posted_to_feed) return;
   const content = `📣 ${ownerName} just shared a ${kindLabel(spot.kind)}: "${spot.title}". Take a look at their profile.`;
+  // expert_posts enforces exactly ONE author — for dual-owner spotlights
+  // the expert fronts the feed nudge.
   const { error } = await sb.from("expert_posts").insert({
     expert_id: spot.expert_id,
-    vendor_id: spot.vendor_id,
+    vendor_id: spot.expert_id ? null : spot.vendor_id,
     content,
     link_url: spot.link_url,
     status: "published",
     published_at: new Date().toISOString(),
     composed_by_admin_id: adminId,
   });
-  if (!error) {
-    await sb.from("profile_spotlights").update({ posted_to_feed: true }).eq("id", spot.id);
+  if (error) {
+    // Surface it — a silent skip here looks like "publish worked but no
+    // feed post appeared", which is painful to debug.
+    console.error("[spotlights] feed post insert failed", { spotlightId: spot.id, error: error.message });
+    return;
   }
+  await sb.from("profile_spotlights").update({ posted_to_feed: true }).eq("id", spot.id);
 }
 
 async function ownerName(sb: SB, expertId: string | null, vendorId: string | null): Promise<string> {
@@ -108,6 +114,9 @@ export async function GET(req: Request) {
 type CreateBody = {
   owner_kind?: "expert" | "partner";
   owner_id?: string;
+  /** Optional second owner of the OTHER kind — shows the spotlight on
+   *  both the expert and the partner profile (0050). */
+  linked_owner_id?: string | null;
   kind?: SpotlightKind;
   title?: string;
   body?: string;
@@ -140,9 +149,10 @@ export async function POST(req: Request) {
 
   const sb = getSupabaseAdmin();
   const publish = !!b.publish;
+  const linked = b.linked_owner_id?.trim() || null;
   const insert = {
-    expert_id: b.owner_kind === "expert" ? b.owner_id : null,
-    vendor_id: b.owner_kind === "partner" ? b.owner_id : null,
+    expert_id: b.owner_kind === "expert" ? b.owner_id : linked,
+    vendor_id: b.owner_kind === "partner" ? b.owner_id : linked,
     kind,
     title,
     body,

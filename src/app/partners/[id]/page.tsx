@@ -35,13 +35,30 @@ export default async function PublicPartnerProfilePage({
     if (!parent || parent.status !== "approved" || !parent.verified) notFound();
   }
 
-  // Approved offer headlines as a public teaser (no promo codes).
+  // Offers as a LOCKED teaser — ids only. Headlines, discounts, and promo
+  // codes stay members-only; the public view paints blurred decoy text.
   const { data: offerRows } = await sb
     .from("offers")
-    .select("id, headline, discount_value")
+    .select("id")
     .eq("vendor_id", id)
     .eq("review_status", "approved")
     .order("created_at", { ascending: false });
+
+  // Spotlight teaser — kind + date only, same rule.
+  const { data: spotRows } = await sb
+    .from("profile_spotlights")
+    .select("id, kind, event_date")
+    .eq("vendor_id", id)
+    .eq("is_published", true)
+    .order("published_at", { ascending: false, nullsFirst: false })
+    .limit(5);
+  const spotlights = (spotRows ?? []).map((s) => ({
+    id: s.id,
+    kind: s.kind.charAt(0).toUpperCase() + s.kind.slice(1),
+    dateLabel: s.event_date
+      ? new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(new Date(s.event_date))
+      : null,
+  }));
 
   return (
     <PublicPartnerProfileView
@@ -53,7 +70,8 @@ export default async function PublicPartnerProfilePage({
         website: v.website,
         // calendar_link intentionally NOT passed — member-portal-only benefit.
       }}
-      offers={(offerRows ?? []).map((o) => ({ id: o.id, headline: o.headline, discount_value: o.discount_value }))}
+      offerTeasers={(offerRows ?? []).map((o) => ({ id: o.id, kind: "Offer" }))}
+      spotlights={spotlights}
     />
   );
 }

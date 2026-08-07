@@ -263,7 +263,7 @@ export default function OfferDetailDialog({
           <Grid size={{ xs: 12, md: 5 }}>
             <Stack spacing={2}>
               <Box sx={{ p: 2, borderRadius: 2, border: "1px solid", borderColor: "divider", bgcolor: "common.white" }}>
-                <SectionTitle>Vendor</SectionTitle>
+                <SectionTitle>Partner</SectionTitle>
                 <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", mb: 1.5 }}>
                   {offer.vendors?.logo_url ? (
                     <Box
@@ -385,7 +385,7 @@ export default function OfferDetailDialog({
                     fullWidth
                     multiline
                     rows={2}
-                    placeholder="Tell the vendor what to change. They'll see this in their portal + a notification."
+                    placeholder="Tell the partner what to change. They'll see this in their portal + a notification."
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
                     autoFocus
