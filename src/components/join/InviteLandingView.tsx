@@ -109,7 +109,7 @@ export default function InviteLandingView({
               <JoinApplicationForm
                 role={kind}
                 inviteCode={code}
-                agreementHref={`/api/invite/${encodeURIComponent(code)}/agreement`}
+                agreementHref={kind === "partner" ? "/agreements/dmn-partner-agreement.pdf" : "/agreements/dmn-expert-agreement.pdf"}
                 initial={{ contactName: fullName, contactEmail: email ?? "", focus: companyName ?? "" }}
               />
             )}
@@ -135,9 +135,9 @@ function ProfileAcceptCard({ kind, code, loginHref, cardRequired = true }: { kin
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // The personalized standard-agreement PDF (prepared-for copy), same
-  // document they'll receive on acceptance.
-  const agreementHref = `/api/invite/${encodeURIComponent(code)}/agreement`;
+  // Non-founding invites use the GENERIC agreement PDFs — personalized
+  // agreements are a founding-invite-only thing.
+  const agreementHref = kind === "partner" ? "/agreements/dmn-partner-agreement.pdf" : "/agreements/dmn-expert-agreement.pdf";
   const accent = kind === "partner" ? "#A07823" : "#2C7A52";
 
   const accept = async () => {
