@@ -31,6 +31,7 @@ import SupportAgentOutlinedIcon from "@mui/icons-material/SupportAgentOutlined";
 import LibraryBooksOutlinedIcon from "@mui/icons-material/LibraryBooksOutlined";
 import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
 import WorkspacePremiumOutlinedIcon from "@mui/icons-material/WorkspacePremiumOutlined";
+import LinkOutlinedIcon from "@mui/icons-material/LinkOutlined";
 import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
 import MarkEmailReadOutlinedIcon from "@mui/icons-material/MarkEmailReadOutlined";
 import ChatBubbleOutlineOutlinedIcon from "@mui/icons-material/ChatBubbleOutlineOutlined";
@@ -120,6 +121,7 @@ const navSections: { label: string; items: NavItem[] }[] = [
       // everywhere in the UI.
       { href: "/admin/vendors", label: "Partners", icon: StoreOutlinedIcon, badgeKey: "vendorsPending" },
       { href: "/admin/founding", label: "Founding invites", icon: WorkspacePremiumOutlinedIcon },
+      { href: "/admin/invites", label: "Invite links", icon: LinkOutlinedIcon },
       { href: "/admin/admins", label: "Admin team", icon: AdminPanelSettingsOutlinedIcon },
     ],
   },
@@ -640,7 +642,7 @@ export default function AdminAppShell({ children }: { children: React.ReactNode 
 
         <Divider />
         <Box sx={{ px: 3, py: 2.5, color: "text.secondary", fontSize: "0.8rem" }}>
-          © 2026 Thriving Dentist Network · Admin console · v0.1 prototype
+          © 2026 Thriving Dentist Network · Admin console
         </Box>
       </Box>
     </Box>

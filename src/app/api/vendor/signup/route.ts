@@ -372,7 +372,7 @@ export async function POST(req: Request) {
       audience: "admin",
       admin_id: null,
       kind: "new_vendor_application",
-      title: `New vendor application: ${data.companyName}`,
+      title: `New partner application: ${data.companyName}`,
       body: `${data.contactName} (${data.contactEmail}) just applied.${data.memberOffer ? ` Member offer: "${data.memberOffer}".` : ""}${data.alsoExpert ? " Also an individual expert." : ""} Review when ready.`,
       link: "/admin/vendors?filter=pending_review",
       metadata: { vendor_id: vendorId, application_id: applicationId },

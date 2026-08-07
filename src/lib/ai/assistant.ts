@@ -18,6 +18,15 @@ import { getSupabaseAdmin } from "@/lib/supabase/server";
 export const ASSISTANT_MODEL = "gpt-4o-mini";
 export const ASSISTANT_MAX_TOKENS = 800;
 
+/**
+ * Sentinel the model emits as the FIRST line when a question can't be
+ * answered from the portal context (experts / offers / resources /
+ * membership basics) and should be handed to the team. The client strips
+ * this line and shows the "call the hotline / email me the DMN pack"
+ * escalation card.
+ */
+export const ESCALATE_MARKER = "[[ESCALATE]]";
+
 let _client: OpenAI | null = null;
 
 export function getOpenAI(): OpenAI {
@@ -44,7 +53,13 @@ type CatalogKit = {
   itemCount: number;
   videoCount: number;
   isFree: boolean;
+  /** Titles of the individual items inside the kit (capped) — lets the
+   *  bot answer "do you have a checklist for X?" with the exact kit. */
+  itemTitles: string[];
+  expertId: string | null;
 };
+
+const MAX_ITEM_TITLES = 10;
 
 /**
  * Fetches every approved, published resource kit and groups by slug.
@@ -55,7 +70,7 @@ export async function loadResourceCatalog(): Promise<CatalogKit[]> {
   const sb = getSupabaseAdmin();
   const { data, error } = await sb
     .from("resources")
-    .select("topic_slug, topic_title, topic_summary, category, kind, is_free")
+    .select("topic_slug, topic_title, topic_summary, category, kind, is_free, title, originating_expert_id")
     .eq("is_published", true)
     .eq("submission_status", "approved");
 
@@ -73,6 +88,8 @@ export async function loadResourceCatalog(): Promise<CatalogKit[]> {
       existing.itemCount += 1;
       if (isVideo) existing.videoCount += 1;
       if (!r.is_free) existing.isFree = false;
+      if (r.title && existing.itemTitles.length < MAX_ITEM_TITLES) existing.itemTitles.push(r.title);
+      if (!existing.expertId && r.originating_expert_id) existing.expertId = r.originating_expert_id;
     } else {
       byKit.set(r.topic_slug, {
         slug: r.topic_slug,
@@ -82,6 +99,8 @@ export async function loadResourceCatalog(): Promise<CatalogKit[]> {
         itemCount: 1,
         videoCount: isVideo ? 1 : 0,
         isFree: r.is_free,
+        itemTitles: r.title ? [r.title] : [],
+        expertId: r.originating_expert_id ?? null,
       });
     }
   }
@@ -93,7 +112,7 @@ export async function loadResourceCatalog(): Promise<CatalogKit[]> {
  * Render the live catalog as a compact text block the model can scan.
  * Grouped by category for fast cross-reference.
  */
-function renderCatalogForPrompt(kits: CatalogKit[]): string {
+function renderCatalogForPrompt(kits: CatalogKit[], expertNameById: Map<string, string>): string {
   if (kits.length === 0) {
     return "(No approved resource kits in the library yet — direct members to /dashboard/resources to check the latest.)";
   }
@@ -114,12 +133,167 @@ function renderCatalogForPrompt(kits: CatalogKit[]): string {
       meta.push(`${k.itemCount} ${k.itemCount === 1 ? "item" : "items"}`);
       if (k.videoCount > 0) meta.push(`${k.videoCount} video${k.videoCount === 1 ? "" : "s"}`);
       if (k.isFree) meta.push("free");
+      const by = k.expertId ? expertNameById.get(k.expertId) : null;
+      if (by) meta.push(`by ${by}`);
       const summary = k.summary?.trim() ?? "";
       lines.push(`- **${k.title}** (/dashboard/resources/${k.slug}) — ${summary}`);
       lines.push(`  [${meta.join(" · ")}]`);
+      if (k.itemTitles.length > 0) {
+        lines.push(`  Inside: ${k.itemTitles.join("; ")}${k.itemCount > k.itemTitles.length ? "; …" : ""}`);
+      }
     }
   }
   return lines.join("\n").trim();
+}
+
+// ─── Spotlights (events / news / features on profiles + network feed) ──
+type CatalogSpotlight = {
+  kind: string;
+  title: string;
+  body: string;
+  eventDate: string | null;
+  linkUrl: string | null;
+  ownerName: string;
+  ownerPath: string;
+};
+
+/** Published profile spotlights, newest first — the events/news layer. */
+export async function loadSpotlights(): Promise<CatalogSpotlight[]> {
+  const sb = getSupabaseAdmin();
+  const { data, error } = await sb
+    .from("profile_spotlights")
+    .select("kind, title, body, event_date, link_url, expert_id, vendor_id")
+    .eq("is_published", true)
+    .order("published_at", { ascending: false, nullsFirst: false })
+    .limit(20);
+  if (error || !data || data.length === 0) return [];
+
+  const expertIds = Array.from(new Set(data.map((s) => s.expert_id).filter(Boolean) as string[]));
+  const vendorIds = Array.from(new Set(data.map((s) => s.vendor_id).filter(Boolean) as string[]));
+  const [{ data: experts }, { data: vendors }] = await Promise.all([
+    expertIds.length
+      ? sb.from("experts").select("id, display_name, full_name").in("id", expertIds)
+      : Promise.resolve({ data: [] as { id: string; display_name: string | null; full_name: string | null }[] }),
+    vendorIds.length
+      ? sb.from("vendors").select("id, display_name, company_name").in("id", vendorIds)
+      : Promise.resolve({ data: [] as { id: string; display_name: string | null; company_name: string | null }[] }),
+  ]);
+  const em = new Map((experts ?? []).map((e) => [e.id, e.display_name || e.full_name || "an expert"]));
+  const vm = new Map((vendors ?? []).map((v) => [v.id, v.display_name || v.company_name || "a partner"]));
+
+  return data.map((s) => ({
+    kind: s.kind,
+    title: s.title,
+    body: (s.body ?? "").replace(/\s+/g, " ").trim().slice(0, 200),
+    eventDate: s.event_date,
+    linkUrl: s.link_url,
+    ownerName: s.expert_id ? em.get(s.expert_id) ?? "an expert" : vm.get(s.vendor_id ?? "") ?? "a partner",
+    ownerPath: s.expert_id ? `/dashboard/experts/${s.expert_id}` : `/dashboard/partners/${s.vendor_id}`,
+  }));
+}
+
+function renderSpotlightsForPrompt(spotlights: CatalogSpotlight[]): string {
+  if (spotlights.length === 0) {
+    return "(No published spotlights right now — for the latest events and updates point members to /dashboard/network.)";
+  }
+  return spotlights
+    .map((s) => {
+      const date = s.eventDate ? ` on ${s.eventDate}` : "";
+      const link = s.linkUrl ? ` — external link: ${s.linkUrl}` : "";
+      return `- [${s.kind}] **${s.title}**${date} — from ${s.ownerName} (${s.ownerPath}): ${s.body}${link}`;
+    })
+    .join("\n");
+}
+
+// ─── Experts ──────────────────────────────────────────────────────────
+type CatalogExpert = { id: string; name: string; specialty: string | null; bio: string | null };
+
+/** Active, publish-ready experts (same gate as the member directory). */
+export async function loadExperts(): Promise<CatalogExpert[]> {
+  const sb = getSupabaseAdmin();
+  const { data, error } = await sb
+    .from("experts")
+    .select("id, display_name, full_name, specialty, bio")
+    .neq("status", "archived")
+    .neq("status", "suspended")
+    .not("headshot_url", "is", null)
+    .not("bio", "is", null)
+    .order("display_name", { ascending: true, nullsFirst: false });
+  if (error) return [];
+  return (data ?? []).map((e) => ({
+    id: e.id,
+    name: e.display_name || e.full_name || "(unnamed expert)",
+    specialty: e.specialty,
+    bio: e.bio,
+  }));
+}
+
+function renderExpertsForPrompt(experts: CatalogExpert[]): string {
+  if (experts.length === 0) return "(No experts published yet — point members to /dashboard/experts.)";
+  return experts
+    .map((e) => {
+      const bio = (e.bio ?? "").replace(/\s+/g, " ").trim().slice(0, 160);
+      const spec = e.specialty ? ` — ${e.specialty}` : "";
+      return `- **${e.name}**${spec} (/dashboard/experts/${e.id})${bio ? `: ${bio}` : ""}`;
+    })
+    .join("\n");
+}
+
+// ─── Partners + offers ────────────────────────────────────────────────
+type CatalogOffer = { headline: string; discount: string | null; promo: string | null; terms: string | null };
+type CatalogPartner = { id: string; name: string; category: string | null; description: string | null; offers: CatalogOffer[] };
+
+/** Live partners (same gate as the directory) with their approved offers. */
+export async function loadPartnerOffers(): Promise<CatalogPartner[]> {
+  const sb = getSupabaseAdmin();
+  const { data: vendors, error } = await sb
+    .from("vendors")
+    .select("id, company_name, display_name, category, description, logo_url, billing_parent_id, verified, status")
+    .eq("status", "approved")
+    .eq("verified", true)
+    .not("logo_url", "is", null)
+    .not("description", "is", null)
+    .order("display_name", { ascending: true, nullsFirst: false });
+  if (error || !vendors) return [];
+
+  const liveIds = new Set(vendors.map((v) => v.id));
+  const visible = vendors.filter((v) => !v.billing_parent_id || liveIds.has(v.billing_parent_id));
+  const ids = visible.map((v) => v.id);
+  const offersByVendor = new Map<string, CatalogOffer[]>();
+  if (ids.length > 0) {
+    const { data: offers } = await sb
+      .from("offers")
+      .select("vendor_id, headline, discount_value, promo_code, terms")
+      .in("vendor_id", ids)
+      .eq("review_status", "approved");
+    for (const o of offers ?? []) {
+      const bucket = offersByVendor.get(o.vendor_id) ?? [];
+      bucket.push({ headline: o.headline, discount: o.discount_value, promo: o.promo_code, terms: o.terms });
+      offersByVendor.set(o.vendor_id, bucket);
+    }
+  }
+
+  return visible.map((v) => ({
+    id: v.id,
+    name: v.display_name || v.company_name || "(unnamed partner)",
+    category: v.category,
+    description: v.description,
+    offers: offersByVendor.get(v.id) ?? [],
+  }));
+}
+
+function renderPartnersForPrompt(partners: CatalogPartner[]): string {
+  if (partners.length === 0) return "(No partners published yet — point members to /dashboard/partners.)";
+  const lines: string[] = [];
+  for (const p of partners) {
+    const cat = p.category ? ` [${p.category}]` : "";
+    lines.push(`- **${p.name}**${cat} (/dashboard/partners/${p.id})`);
+    for (const o of p.offers) {
+      const bits = [o.discount, o.promo ? `code ${o.promo}` : null].filter(Boolean).join(", ");
+      lines.push(`  • ${o.headline}${bits ? ` — ${bits}` : ""}`);
+    }
+  }
+  return lines.join("\n");
 }
 
 /**
@@ -130,14 +304,23 @@ export async function buildAssistantSystemPrompt(input: {
   tier: string | null;
   status: string;
 }): Promise<string> {
-  const kits = await loadResourceCatalog();
-  const catalog = renderCatalogForPrompt(kits);
+  const [kits, experts, partners, spotlights] = await Promise.all([
+    loadResourceCatalog(),
+    loadExperts(),
+    loadPartnerOffers(),
+    loadSpotlights(),
+  ]);
+  const expertNameById = new Map(experts.map((e) => [e.id, e.name]));
+  const catalog = renderCatalogForPrompt(kits, expertNameById);
+  const expertList = renderExpertsForPrompt(experts);
+  const partnerList = renderPartnersForPrompt(partners);
+  const spotlightList = renderSpotlightsForPrompt(spotlights);
   const tierLine =
     input.tier === "founding"
-      ? "founding member (first 1,000 cohort, rate locked for the lifetime of the current product)"
+      ? "founding member (rate locked for the lifetime of the current product)"
       : "member";
 
-  return `You are the concierge AI for the Dental Member Network (DMN) — a learning + community network for US dental practice owners. Think of yourself as the friendly course-network bot a student finds inside their portal: warm, knowledgeable about every resource in the library, and a great signpost to the right page.
+  return `You are **Pearl**, the AI expert inside the Dental Member Network (DMN) member portal — a learning + community network for US dental practice owners. You're warm, sharp, and know every expert, partner offer, and resource in the portal. You're also the front door to the hotline: when something is beyond what's in the portal, you hand members to the team gracefully.
 
 # Who you're talking to
 ${input.firstName} is signed in as a ${tierLine}. Account status: "${input.status}".
@@ -145,40 +328,69 @@ ${input.firstName} is signed in as a ${tierLine}. Account status: "${input.statu
 # Portal map (always link to specific pages)
 - /dashboard — overview, recent kits, member stats
 - /dashboard/resources — full kit library with category + search filters
-- /dashboard/resources/<slug> — kit detail page (video player + curriculum + downloads + "Book a 30-min session with Gary Takacs")
+- /dashboard/resources/<slug> — kit detail page (video player + curriculum + downloads)
+- /dashboard/experts — expert directory; /dashboard/experts/<id> — an expert's profile + their kits + their Spotlight (news/events)
+- /dashboard/partners — partner directory; /dashboard/partners/<id> — a partner's profile + member offers + their Spotlight
+- /dashboard/network — the community feed where new events, news, and spotlight updates are announced
 - /dashboard/account — profile, membership info, Documents card (Member Agreement, Refund Policy, Privacy Policy)
+
+# Live experts (auto-refreshed every turn)
+${expertList}
+
+# Live partner offers (auto-refreshed every turn)
+${partnerList}
+
+# Live spotlights — current events, news & announcements (auto-refreshed every turn)
+${spotlightList}
 
 # Live resource catalog (auto-refreshed every turn)
 ${catalog}
 
-# How to recommend kits
-When a member describes a problem ("my front desk keeps losing patients", "I want to raise case acceptance"), pick the most relevant kit from the catalog above and link to it with its full path: \`/dashboard/resources/<slug>\`. If two or three kits are relevant, suggest them in order of fit.
+# How to help (routing — always land the member on the exact page)
+- Problem → resource: when a member describes a problem ("my front desk keeps losing patients", "I want to raise case acceptance"), pick the best-fit kit(s) from the catalog and link with the full path \`/dashboard/resources/<slug>\`.
+- Specific content ("do you have a checklist / video / guide on X?") → scan the "Inside:" item lists in the catalog, name the exact item AND the kit that contains it, and link that kit's \`/dashboard/resources/<slug>\`.
+- Who → expert: when they ask who can help with a topic, name the most relevant expert(s) and link \`/dashboard/experts/<id>\`.
+- Discounts / deals / promo codes → check the partner offers AND the spotlights list. Quote the offer (discount, promo code) and link the partner's \`/dashboard/partners/<id>\`. If a spotlight covers it, mention it too.
+- Events / news / "what's happening" / webinars / courses → answer from the spotlights list: name the event, its date, whose it is, and link that owner's profile page. For a general "what's new" question, point to **/dashboard/network** where all events and updates are posted.
+
+# Relevance rules (IMPORTANT — quality over quantity)
+- Recommend **at most 2–3 items total** per answer, ranked best-fit first. **Never enumerate the whole directory** — a member can browse /dashboard/experts or /dashboard/partners themselves; your job is to shortlist.
+- Only recommend an expert/partner/kit whose specialty, description, or summary **genuinely matches** the member's question. If nothing is a strong match, say so honestly and point them to the directory page — or escalate if it needs the team.
+- For every expert or partner you name, ALWAYS link their profile as a markdown link whose label is their NAME (using the real ids from the lists above) — e.g. [Expert Name](/dashboard/experts/<real-id>) or [Partner Name](/dashboard/partners/<real-id>) — never show a raw path when you know the name. Same for kits: [Kit Title](/dashboard/resources/<real-slug>).
+- When you mention an OFFER, the link goes to the SPECIFIC partner that owns it, labeled with that partner's real name from the partner list above. Never invent or reuse example partner names — only names that appear in the lists.
+- When a question is broad or ambiguous, ask ONE short clarifying question instead of guessing with a list.
+- Lead with the single best recommendation and one sentence on WHY it fits their situation — then alternatives, only if genuinely relevant.
 
 # Common tasks (canonical answers)
 - "Update my profile / phone / practice name" → /dashboard/account → edit → Save changes
-- "Change my email or password" → No password (sign-in is via magic link). For email changes, email members@joindmn.com
-- "Download an action guide / worksheet / slide deck" → open the kit → click the item in the Curriculum sidebar → use the Download button
-- "Book a coaching session" → open any kit → scroll to the bottom → click "Book a 30-min session with Gary Takacs" (free with founding membership)
+- "Change my email or password" → No password (sign-in is via a one-time code). For email changes, email support@dentalmembernetwork.com
+- "Download an action guide / worksheet / slide deck" → open the kit → click the item in the Curriculum sidebar → Download
 - "Where's the Member Agreement / Refund Policy / Privacy Policy" → /dashboard/account → Documents card
 - "What's the refund policy" → 30-day money-back guarantee. Full policy at /legal/refund
 
-# Pricing & payments (general info only — never process)
-- Founding member rate is **$49/month**, locked for the lifetime of the current product (first 1,000 members).
-- Standard rate kicks in after the founding cap. Annual billing may be available — direct them to checkout for current pricing.
-- For specific billing questions ("when did I last get charged", "update my card", "cancel my subscription"), point to the **Stripe Customer Portal** which they can open from /dashboard/account. Do not try to fetch billing details — you don't have access to that data.
+# Billing (general info only — never process)
+For specific billing questions ("when was I charged", "update my card", "cancel"), point to the **Stripe Customer Portal** from /dashboard/account. You cannot see billing data — don't try.
+
+# When to hand off to the team (ESCALATION)
+If a question **cannot be answered from the experts, partner offers, resources, or membership basics above** — e.g. it's clinical/specific advice, an account-specific issue you can't see, a request for something DMN doesn't list, or the member explicitly wants a person — then DO NOT guess. Respond with **exactly** \`${ESCALATE_MARKER}\` on the very first line, then ONE warm sentence saying you'll connect them with the team. Example:
+${ESCALATE_MARKER}
+That's a great one for our team — let me get you connected so they can help directly.
+
+Only escalate when you genuinely can't help from the portal. Prefer answering with a link when you can.
 
 # Hard rules (don't violate)
-- **Never ask for or accept**: passwords, full card numbers, CVVs, SSNs, EINs, bank account numbers, or any patient health information (PHI / HIPAA-protected). If a member volunteers any of this, gently ask them to remove it and route them to support.
-- **Never claim to take an action you can't take.** You can guide; you can't update profiles, mark resources viewed, file hotline requests, book sessions, change billing, or send emails.
-- **Never invent kits, features, prices, or policies.** If something isn't in this prompt or the catalog above, say "I don't have that information — email members@joindmn.com and the team will help."
-- **Never summarise the contents of a PDF or video.** You don't have access to the contents — only the title + summary. If asked "what does this kit cover", point them at the kit URL and quote the summary.
-- **No legal, medical, clinical, tax, or HR advice.** Defer to qualified professionals.
+- **Never ask for or accept**: passwords, full card numbers, CVVs, SSNs, EINs, bank account numbers, or any patient health information (PHI / HIPAA). If volunteered, gently ask them to remove it.
+- **Never claim to take an action you can't take.** You guide and link; you don't update profiles, book sessions, change billing, or send emails yourself. (The escalation flow handles hand-offs.)
+- **Never invent experts, partners, offers, kits, features, prices, or policies.** If it isn't above, escalate.
+- **Never summarise the contents of a PDF or video** — you only have titles + summaries. Point to the kit URL.
+- **No legal, medical, clinical, tax, or HR advice.** Defer to qualified professionals (escalate if pressed).
 
-# Tone + formatting
-- Warm, concise, professional. 2-4 sentences for most answers.
-- When you reference a page, include the path verbatim (e.g. "Open **/dashboard/account**").
-- Use **bold** sparingly for paths and important keywords.
-- No emoji. No markdown headers. No tables.
-- If you don't know, say so and route to members@joindmn.com.
+# Tone + formatting (polish matters)
+- Write like a sharp, warm membership concierge at a premium club: confident, specific, zero filler. Never open with "Great question!" or restate the question back.
+- Structure: direct answer first → why it fits them → the link. 2–4 sentences for most answers.
+- Speak to THEIR situation ("for a front-desk turnover problem, start with…") rather than describing the portal generically.
+- Link with markdown labels: [Dr. Jane Doe](/dashboard/experts/<id>), [the Library](/dashboard/resources), [your account](/dashboard/account) — the app renders these as tappable links. Only fall back to a bare path when there's no natural label.
+- Use **bold** sparingly for names and promo codes. No emoji, no markdown headers, no tables, no bullet lists longer than 3.
+- End with a light next step when natural ("want me to point you to the checklist inside it?") — never a generic "let me know if you have questions."
 `;
 }

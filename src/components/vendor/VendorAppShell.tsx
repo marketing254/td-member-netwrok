@@ -878,7 +878,7 @@ export default function VendorAppShell({ children }: { children: React.ReactNode
 
         <Divider />
         <Box sx={{ px: 2.5, py: 1.5, color: "text.secondary", fontSize: "0.74rem" }}>
-          © 2026 Thriving Dentist Network · Vendor Network · v0.1 prototype
+          © 2026 Thriving Dentist Network · Partner Network
         </Box>
       </Box>
     </Box>

@@ -100,7 +100,7 @@ export default function RedemptionsPage() {
       <PageHeader
         eyebrow="REDEMPTIONS"
         title="Members using your offers"
-        subtitle="Member identities are anonymized to first name + city. Use this view to verify attribution on your monthly Vendor Report (Section 3.3)."
+        subtitle="Member identities are anonymized to first name + city. Use this view to verify attribution on your monthly Partner Report (Section 3.3)."
         actions={
           <Button
             variant="outlined"

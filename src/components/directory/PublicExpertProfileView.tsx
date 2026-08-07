@@ -8,6 +8,7 @@ import LanguageRoundedIcon from "@mui/icons-material/LanguageRounded";
 import LockRoundedIcon from "@mui/icons-material/LockRounded";
 import Header from "@/components/sections/Header";
 import Footer from "@/components/sections/Footer";
+import LockedTeaserList, { type LockedTeaserRow } from "@/components/directory/LockedTeaserList";
 import { COLORS } from "@/theme";
 
 // Public-safe profile only. Booking/scheduler links are deliberately NOT
@@ -31,10 +32,12 @@ export default function PublicExpertProfileView({
   expert,
   topics,
   kits,
+  spotlights = [],
 }: {
   expert: PublicExpertProfile;
   topics: string[];
   kits: string[];
+  spotlights?: LockedTeaserRow[];
 }) {
   const name = expert.name;
   return (
@@ -130,6 +133,14 @@ export default function PublicExpertProfileView({
             </Stack>
           </Box>
         )}
+
+        {/* Members-only spotlight teaser — blurred decoys + lock, real
+            content never leaves the portal. */}
+        <LockedTeaserList
+          label="Spotlight — news & events"
+          rows={spotlights}
+          footnote={`${name.split(/\s+/)[0]} shares events, news, and member perks in the portal.`}
+        />
 
         {kits.length > 0 && (
           <Box sx={{ borderRadius: 2.5, border: `1px solid ${COLORS.line}`, bgcolor: "#FFFFFF", p: { xs: 2.5, md: 3 } }}>

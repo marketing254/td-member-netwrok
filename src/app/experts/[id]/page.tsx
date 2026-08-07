@@ -36,6 +36,23 @@ export default async function PublicExpertProfilePage({
     .eq("submission_status", "approved");
   const kits = [...new Map((kitRows ?? []).map((r) => [r.topic_slug, r.topic_title])).values()];
 
+  // Spotlight teaser — kind + date ONLY. Titles/bodies stay members-only;
+  // the public view paints blurred decoy text (real content never ships).
+  const { data: spotRows } = await sb
+    .from("profile_spotlights")
+    .select("id, kind, event_date")
+    .eq("expert_id", id)
+    .eq("is_published", true)
+    .order("published_at", { ascending: false, nullsFirst: false })
+    .limit(5);
+  const spotlights = (spotRows ?? []).map((s) => ({
+    id: s.id,
+    kind: s.kind.charAt(0).toUpperCase() + s.kind.slice(1),
+    dateLabel: s.event_date
+      ? new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(new Date(s.event_date))
+      : null,
+  }));
+
   const topics = (expert.topics ?? "")
     .split(/[,\n;]+/)
     .map((t: string) => t.trim())
@@ -54,6 +71,7 @@ export default async function PublicExpertProfilePage({
       }}
       topics={topics}
       kits={kits}
+      spotlights={spotlights}
     />
   );
 }

@@ -22,7 +22,7 @@ export default function VendorLoginPage() {
           emailStepSubtitle:
             "We'll email you a 6-digit code. No password to remember.",
           codeStepSubtitle:
-            "Check your inbox for a 6-digit code from hello@joindmn.com.",
+            "Check your inbox for a 6-digit code from noreply@dentalmembernetwork.com.",
           accentColor: "#6E3346",
           accentTint: "rgba(110,51,70,0.12)",
           signupHref: "/partners#apply",

@@ -96,18 +96,25 @@ type FormState = {
 export default function JoinApplicationForm({
   role,
   compact,
+  initial,
+  inviteCode,
 }: {
   role: JoinRole;
   /** compact=true drops the eyebrow header — used when the form sits
    *  inside another marketing section that already has its own heading. */
   compact?: boolean;
+  /** Prefill for personalized invite links (/invite/[code]). */
+  initial?: { contactName?: string; contactEmail?: string; focus?: string };
+  /** Invite-link code — posted with the application so the admin list
+   *  shows the invite as accepted. */
+  inviteCode?: string;
 }) {
   const config = CONFIG_BY_ROLE[role];
   const router = useRouter();
   const [form, setForm] = useState<FormState>({
-    contactName: "",
-    contactEmail: "",
-    focus: "",
+    contactName: initial?.contactName ?? "",
+    contactEmail: initial?.contactEmail ?? "",
+    focus: initial?.focus ?? "",
     agreed: false,
   });
   const [busy, setBusy] = useState(false);
@@ -134,6 +141,7 @@ export default function JoinApplicationForm({
           contactEmail: email,
           [config.focusFieldKey]: form.focus.trim(),
           agreementVersion: AGREEMENT_VERSION,
+          ...(inviteCode ? { inviteCode } : {}),
         }),
       });
       const body = (await res.json().catch(() => ({}))) as {
@@ -281,7 +289,7 @@ export default function JoinApplicationForm({
           <Typography sx={{ fontSize: "0.9rem", color: COLORS.ink }}>
             I agree to the{" "}
             <Box component="strong" sx={{ color: config.accent }}>
-              DMN Founding Agreement ({AGREEMENT_VERSION})
+              DMN {role === "partner" ? "Partner" : "Expert"} Agreement ({AGREEMENT_VERSION})
             </Box>
             .
           </Typography>

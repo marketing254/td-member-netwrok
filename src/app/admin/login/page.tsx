@@ -21,7 +21,7 @@ export default function AdminLoginPage() {
           emailStepSubtitle:
             "Only allow-listed admin emails can sign in. Codes expire in 5 minutes.",
           codeStepSubtitle:
-            "Check your inbox for a 6-digit code from hello@joindmn.com.",
+            "Check your inbox for a 6-digit code from noreply@dentalmembernetwork.com.",
           accentColor: "#0A1A2F",
           accentTint: "rgba(14,42,61,0.10)",
           unknownEmailMessage:

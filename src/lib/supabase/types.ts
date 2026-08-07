@@ -654,6 +654,47 @@ export type ProfileSpotlightsRow = {
   published_at: string | null;
 };
 
+export type InviteLinkStatus = "active" | "viewed" | "accepted" | "revoked";
+
+export type InviteLinksRow = {
+  id: string;
+  code: string;
+  kind: "expert" | "partner";
+  full_name: string;
+  email: string | null;
+  company_name: string | null;
+  notes: string | null;
+  status: InviteLinkStatus;
+  viewed_at: string | null;
+  accepted_at: string | null;
+  expert_id: string | null;
+  vendor_id: string | null;
+  expires_at: string;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type MemberInquiryStatus = "pending" | "emailed" | "in_progress" | "resolved" | "closed";
+
+export type MemberInquiriesRow = {
+  id: string;
+  member_id: string;
+  email: string;
+  question: string;
+  status: MemberInquiryStatus;
+  source: string;
+  pdf_url: string | null;
+  pdf_sent_at: string | null;
+  slack_ts: string | null;
+  admin_note: string | null;
+  resolved_by: string | null;
+  resolved_at: string | null;
+  member_seen_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type PostReactionsRow = {
   id: string;
   post_id: string;
@@ -917,6 +958,8 @@ export type Database = {
       expert_resources: Table<ExpertResourcesRow>;
       expert_posts: Table<ExpertPostsRow>;
       profile_spotlights: Table<ProfileSpotlightsRow>;
+      member_inquiries: Table<MemberInquiriesRow>;
+      invite_links: Table<InviteLinksRow>;
       post_reactions: Table<PostReactionsRow>;
       post_comments: Table<PostCommentsRow>;
       chatbot_conversations: Table<ChatbotConversationsRow>;

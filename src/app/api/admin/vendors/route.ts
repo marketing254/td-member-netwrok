@@ -4,6 +4,7 @@ import { createServerSupabase } from "@/lib/supabase/server-ssr";
 import { requireAdmin } from "@/lib/auth/guards";
 import { sendVendorApprovalEmail } from "@/lib/waitlist/confirmationEmail";
 import { notifyTeamEvent } from "@/lib/email/teamNotify";
+import { createOrReuseInviteLink } from "@/lib/inviteLinks";
 import type { VendorStatus } from "@/lib/supabase/types";
 
 export const runtime = "nodejs";
@@ -183,7 +184,7 @@ export async function PATCH(req: Request) {
           audience: "admin",
           admin_id: null,
           kind: "vendor_approved",
-          title: `Vendor approved: ${existing.company_name}`,
+          title: `Partner approved: ${existing.company_name}`,
           body: `${existing.contact_name} is now verified and can publish.`,
           link: "/admin/vendors?filter=approved",
           metadata: { vendor_id: body.id },
@@ -194,7 +195,7 @@ export async function PATCH(req: Request) {
         audience: "admin",
         admin_id: null,
         kind: "vendor_rejected",
-        title: `Vendor rejected: ${existing.company_name}`,
+        title: `Partner rejected: ${existing.company_name}`,
         body: body.note ?? null,
         link: "/admin/vendors?filter=rejected",
         metadata: { vendor_id: body.id },
@@ -536,7 +537,18 @@ export async function POST(req: Request) {
       ],
     });
 
-    return NextResponse.json({ ok: true, vendor_id: vendorId, magicLinkSent });
+    // Standard invite link for this fresh profile — shows in /admin/invites
+    // and comes back in the response so it can be copied straight away.
+    const inviteLink = await createOrReuseInviteLink(supabase, {
+      kind: "partner",
+      vendorId,
+      fullName: contactName || companyName,
+      email,
+      companyName,
+      createdBy: guard.adminId,
+    });
+
+    return NextResponse.json({ ok: true, vendor_id: vendorId, magicLinkSent, invite_url: inviteLink?.invite_url ?? null });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to invite partner.";
     return NextResponse.json({ error: message }, { status: 500 });

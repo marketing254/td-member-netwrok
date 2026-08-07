@@ -254,7 +254,7 @@ export async function requireVendor(): Promise<VendorContext | Failure> {
   if (!row) {
     return {
       ok: false,
-      response: NextResponse.json({ error: "No vendor profile linked to this account." }, { status: 403 }),
+      response: NextResponse.json({ error: "No partner profile linked to this account." }, { status: 403 }),
     };
   }
 

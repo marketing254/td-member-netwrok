@@ -156,7 +156,7 @@ export default function VendorProfilePage() {
   if (!vendor) {
     return (
       <SectionCard padding="default">
-        <Typography sx={portalText.sectionTitle}>No vendor profile found.</Typography>
+        <Typography sx={portalText.sectionTitle}>No partner profile found.</Typography>
       </SectionCard>
     );
   }

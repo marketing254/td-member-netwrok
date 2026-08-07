@@ -28,6 +28,7 @@ import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined
 import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import CalculateOutlinedIcon from "@mui/icons-material/CalculateOutlined";
+import InboxOutlinedIcon from "@mui/icons-material/InboxOutlined";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import KeyboardArrowDownOutlinedIcon from "@mui/icons-material/KeyboardArrowDownOutlined";
@@ -48,6 +49,7 @@ const navItems = [
   { href: "/dashboard/partners", label: "Partners", icon: StorefrontOutlinedIcon },
   { href: "/dashboard/tools", label: "Tools", icon: CalculateOutlinedIcon },
   { href: "/dashboard/network", label: "Network", icon: HubOutlinedIcon },
+  { href: "/dashboard/inbox", label: "Inbox", icon: InboxOutlinedIcon },
   { href: "/dashboard/account", label: "Profile", icon: PersonOutlineOutlinedIcon },
 ];
 

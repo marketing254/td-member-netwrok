@@ -32,7 +32,7 @@ export const CONCIERGE_NODES: Record<string, ConciergeNode> = {
   root: {
     id: "root",
     reply:
-      "Hi! I'm your portal Concierge. Pick what you'd like to do and I'll point you at the right place.",
+      "Hi, I'm Pearl — your DMN expert. Tell me what you need and I'll point you to the right place, or connect you with the team.",
     options: [
       { label: "Find a resource", next: "resources", tone: "primary" },
       { label: "Talk to an expert", next: "experts" },
@@ -52,7 +52,6 @@ export const CONCIERGE_NODES: Record<string, ConciergeNode> = {
       { label: "Filter by an expert", href: "/dashboard/experts" },
       { label: "Continue where I left off", href: "/dashboard" },
       { label: "Show me a Book Club kit", next: "bookclub" },
-      { label: "Back", next: "root" },
     ],
   },
   bookclub: {
@@ -61,7 +60,6 @@ export const CONCIERGE_NODES: Record<string, ConciergeNode> = {
       "Book Club kits are designed to be read alongside the book — a training video, named key principles as 9×16 shorts, plus a study guide, discussion questions, and an infographic.",
     options: [
       { label: "Open the Library and filter by Book Club", href: "/dashboard/resources", tone: "primary" },
-      { label: "Back", next: "resources" },
     ],
   },
 
@@ -73,8 +71,7 @@ export const CONCIERGE_NODES: Record<string, ConciergeNode> = {
     options: [
       { label: "Browse experts", href: "/dashboard/experts", tone: "primary" },
       { label: "Open the Hotline", href: "tel:+18556334707" },
-      { label: "Email the team", href: "mailto:hello@joindmn.com" },
-      { label: "Back", next: "root" },
+      { label: "Email the team", href: "mailto:support@dentalmembernetwork.com" },
     ],
   },
 
@@ -86,7 +83,6 @@ export const CONCIERGE_NODES: Record<string, ConciergeNode> = {
     options: [
       { label: "How does a discount work?", next: "partner_how" },
       { label: "Browse partners", href: "/dashboard/resources", tone: "primary" },
-      { label: "Back", next: "root" },
     ],
   },
   partner_how: {
@@ -95,7 +91,6 @@ export const CONCIERGE_NODES: Record<string, ConciergeNode> = {
       "Pick a partner, request the discount, and we forward your details to them so you skip the funnel. Most deals are stackable with existing partnerships; no per-deal commissions to DMN.",
     options: [
       { label: "Got it — browse partners", href: "/dashboard/resources", tone: "primary" },
-      { label: "Back", next: "partners" },
     ],
   },
 
@@ -108,7 +103,6 @@ export const CONCIERGE_NODES: Record<string, ConciergeNode> = {
       { label: "Open my account", href: "/dashboard/account", tone: "primary" },
       { label: "How do I cancel?", next: "cancel" },
       { label: "Refund policy", href: "/legal/refund" },
-      { label: "Back", next: "root" },
     ],
   },
   cancel: {
@@ -117,7 +111,6 @@ export const CONCIERGE_NODES: Record<string, ConciergeNode> = {
       "You can cancel in two clicks from the Account page — Manage subscription → Cancel. No retention call. Your founding rate stays locked while you're a member; once you cancel, it's released.",
     options: [
       { label: "Open Account", href: "/dashboard/account", tone: "primary" },
-      { label: "Back", next: "billing" },
     ],
   },
 
@@ -128,9 +121,8 @@ export const CONCIERGE_NODES: Record<string, ConciergeNode> = {
       "Three ways to reach the team. Pick whichever's easiest.",
     options: [
       { label: "Hotline — (855) 633-4707", href: "tel:+18556334707", tone: "primary" },
-      { label: "Email hello@joindmn.com", href: "mailto:hello@joindmn.com" },
+      { label: "Email support@dentalmembernetwork.com", href: "mailto:support@dentalmembernetwork.com" },
       { label: "Submit a written question", next: "written" },
-      { label: "Back", next: "root" },
     ],
   },
   written: {
@@ -139,7 +131,6 @@ export const CONCIERGE_NODES: Record<string, ConciergeNode> = {
       "Open an inquiry on any resource page and the team will reply in 2–3 business days. Your inquiry shows up in your dashboard once we respond.",
     options: [
       { label: "Open the Library", href: "/dashboard/resources", tone: "primary" },
-      { label: "Back", next: "support" },
     ],
   },
 };

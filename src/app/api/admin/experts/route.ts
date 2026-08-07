@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/guards";
 import { sendExpertApprovalEmail } from "@/lib/waitlist/confirmationEmail";
 import { notifyTeamEvent } from "@/lib/email/teamNotify";
+import { createOrReuseInviteLink } from "@/lib/inviteLinks";
 import type { ExpertApplicationStatus } from "@/lib/supabase/types";
 
 export const runtime = "nodejs";
@@ -628,6 +629,19 @@ async function provisionExpert(args: {
       sent: false,
       error: err instanceof Error ? err.message : "Failed to send approval email.",
     };
+  }
+
+  // Standard invite link for the fresh expert profile — appears in
+  // /admin/invites ready to copy into a manually written email.
+  if (expertId) {
+    await createOrReuseInviteLink(supabase, {
+      kind: "expert",
+      expertId,
+      fullName: application.full_name,
+      email,
+      companyName: application.company_name ?? null,
+      createdBy: adminId,
+    });
   }
 
   return out;

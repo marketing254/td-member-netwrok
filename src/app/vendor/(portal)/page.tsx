@@ -91,7 +91,7 @@ export default function VendorOverview() {
     return (
       <SectionCard padding="default">
         <Stack spacing={1.5} sx={{ alignItems: "center", textAlign: "center", py: 4 }}>
-          <Typography sx={portalText.sectionTitle}>No vendor profile found.</Typography>
+          <Typography sx={portalText.sectionTitle}>No partner profile found.</Typography>
           {signedInEmail ? (
             <>
               <Typography sx={{ color: "#5C6770", fontSize: "0.88rem", maxWidth: 540 }}>
