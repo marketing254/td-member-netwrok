@@ -79,10 +79,10 @@ export default function AdminHotlinePage() {
           Hotline triage
         </Typography>
         <Typography component="h1" sx={{ fontFamily: "var(--font-display)", fontSize: { xs: "1.9rem", md: "2.4rem" }, fontWeight: 500, color: INK, lineHeight: 1.1, mb: 1 }}>
-          Pearl inquiries
+          Beacon inquiries
         </Typography>
         <Typography sx={{ fontSize: "0.95rem", color: INK_SOFT, maxWidth: 640 }}>
-          Questions members handed to the team through Pearl. Each member already got the DMN pack by email — reply from
+          Questions members handed to the team through Beacon. Each member already got the DMN pack by email — reply from
           support@dentalmembernetwork.com within the 2–3 business-day SLA, then mark it resolved.
         </Typography>
       </Box>
@@ -109,7 +109,7 @@ export default function AdminHotlinePage() {
             {tab === "open" ? "No open inquiries" : "No inquiries yet"}
           </Typography>
           <Typography sx={{ fontSize: "0.9rem", color: INK_MUTED, maxWidth: 460, mx: "auto" }}>
-            When Pearl hands a question to the team, it lands here with the member&apos;s details.
+            When Beacon hands a question to the team, it lands here with the member&apos;s details.
           </Typography>
         </Box>
       ) : (

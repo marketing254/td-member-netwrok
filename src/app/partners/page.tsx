@@ -100,23 +100,10 @@ const FIT_NO = [
   "You want a passive ad you never follow up on",
 ];
 
-// The two companies anchoring the partner roster at launch.
-// No logo files yet — rendered as wordmarks; swap to <Image> once we have
-// brand-approved assets.
-const FOUNDING_PARTNERS = [
-  {
-    name: "Thriving Dentist Coaching",
-    tag: "Coaching · Practice growth",
-    body: "Gary Takacs's coaching program — 30+ years guiding practice owners through KPIs, case acceptance, and team operations.",
-    logo: "/td-logo.png",
-  },
-  {
-    name: "Ekwa Marketing",
-    tag: "Marketing · Patient acquisition",
-    body: "Full-service dental marketing — SEO, website, ads, and Google ranking systems trusted by hundreds of US practices.",
-    logo: "/ekwa-logo.png",
-  },
-];
+// Thriving Dentist + Ekwa used to be static "anchor" cards here. They now
+// live in the vendors table like every other partner (with full profiles
+// and offers), so the DB-driven directory below renders them — no static
+// duplicates.
 
 export default function PartnersPage() {
   return (
@@ -316,13 +303,6 @@ export default function PartnersPage() {
         eyebrow="Founding partners"
         title="Meet the DMN partners"
         subtitle="The companies behind the member-exclusive offers — our anchor partners and every hand-picked founding partner."
-        house={FOUNDING_PARTNERS.map((p) => ({
-          name: p.name,
-          category: p.tag,
-          description: p.body,
-          logo_url: p.logo,
-          badge: "Anchor Partner",
-        }))}
       />
 
       {/* How it works */}

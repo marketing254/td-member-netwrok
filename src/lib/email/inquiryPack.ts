@@ -1,7 +1,7 @@
 import nodemailer from "nodemailer";
 
 /**
- * Sends the Pearl inquiry pack email. Transactional-first: if the
+ * Sends the Beacon inquiry pack email. Transactional-first: if the
  * dedicated dentalmembernetwork.com mailbox is configured (SMTP_TX_*) it
  * sends From noreply@dentalmembernetwork.com; otherwise it falls back to
  * the existing marketing mailbox so From stays SPF-aligned with whatever

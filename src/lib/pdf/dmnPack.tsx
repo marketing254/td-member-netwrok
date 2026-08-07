@@ -3,7 +3,7 @@ import { loadExperts, loadPartnerOffers, loadResourceCatalog } from "@/lib/ai/as
 
 /**
  * The "everything DMN offers" pack — a branded PDF built live from the
- * database, sent to a member after Pearl escalates a question.
+ * database, sent to a member after Beacon escalates a question.
  *
  * Design: navy cover page with gold accents, then content pages with a
  * gold-ruled section system and bordered entry cards. Runs on
@@ -201,7 +201,7 @@ function PackDocument({ memberName, question, dateLabel, experts, partners, kits
         <View style={s.closing} wrap={false}>
           <Text style={s.closingTitle}>Getting the most from your membership</Text>
           <Text style={s.closingText}>
-            Ask <Text style={s.closingGold}>Pearl</Text> inside your portal for a shortlist matched to any problem, call the
+            Ask <Text style={s.closingGold}>Beacon</Text> inside your portal for a shortlist matched to any problem, call the
             hotline on <Text style={s.closingGold}>(855) 633-4707</Text>, or reply to the email this pack arrived with — it
             reaches <Text style={s.closingGold}>support@dentalmembernetwork.com</Text> directly.
           </Text>

@@ -92,23 +92,9 @@ const FIT_NO = [
   "You can't be reachable when we send you a member who fits",
 ];
 
-// Listed alongside any other expert — no "founder of DMN" framing.
-// Their roles describe external credentials so members understand the
-// expertise, not internal DMN titles.
-const EXPERTS = [
-  {
-    name: "Gary Takacs",
-    role: "Practice growth · Host of the Thriving Dentist Show",
-    body: "30+ years coaching dental practice owners. Host of the Thriving Dentist Show, downloaded in 192 countries.",
-    photo: "/team/gary-takacs.jpg",
-  },
-  {
-    name: "Naren Arulrajah",
-    role: "Marketing strategy · Founder & CEO, Ekwa Marketing",
-    body: "Founder & CEO of Ekwa Marketing. Co-host of Less Insurance Dependence.",
-    photo: "/team/naren-arulrajah.jpg",
-  },
-];
+// Gary + Naren used to be static "house" anchor cards here. They now live
+// in the experts table like everyone else (with full profiles), so the
+// DB-driven directory below renders them — no static duplicates.
 
 export default function ExpertsPage() {
   return (
@@ -207,13 +193,6 @@ export default function ExpertsPage() {
         eyebrow="The bench"
         title="Meet the DMN experts"
         subtitle="The people behind the resource library — our house experts and every hand-picked founding expert, all live inside the member portal."
-        house={EXPERTS.map((f) => ({
-          name: f.name,
-          specialty: f.role,
-          bio: f.body,
-          headshot_url: f.photo,
-          badge: "DMN Expert",
-        }))}
       />
 
       {/* Cream band quote */}

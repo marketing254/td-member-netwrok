@@ -19,7 +19,7 @@ function buildBlocks(input: { memberName: string; email: string; question: strin
     { type: "header", text: { type: "plain_text", text: "New Member Inquiry", emoji: false } },
     {
       type: "context",
-      elements: [{ type: "mrkdwn", text: "*Pearl* · Dental Member Network · Member portal" }],
+      elements: [{ type: "mrkdwn", text: "*Beacon* · Dental Member Network · Member portal" }],
     },
     { type: "divider" },
     {
@@ -60,7 +60,7 @@ export async function notifyInquirySlack(input: {
   const channel = process.env.SLACK_INQUIRIES_CHANNEL_ID;
   const webhook = process.env.SLACK_INQUIRIES_WEBHOOK_URL;
   const blocks = buildBlocks(input);
-  const text = `New Pearl inquiry from ${input.memberName}`;
+  const text = `New Beacon inquiry from ${input.memberName}`;
 
   try {
     if (token && channel) {

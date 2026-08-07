@@ -52,7 +52,7 @@ function parseAiReply(raw: string): { display: string; escalate: boolean } {
 }
 
 /**
- * Render Pearl's reply with standard-looking links and **bold** emphasis.
+ * Render Beacon's reply with standard-looking links and **bold** emphasis.
  * Preferred form is markdown [Label](/dashboard/...): renders as a gold
  * link showing the LABEL (e.g. an expert's name), navigating in-app.
  * Bare /dashboard/... paths still linkify as a fallback.
@@ -111,7 +111,7 @@ function renderRichText(text: string): React.ReactNode {
 }
 
 /**
- * MemberAssistant — "Pearl", the guided expert for the member portal.
+ * MemberAssistant — "Beacon", the guided expert for the member portal.
  *
  * It's a button-driven option tree (no LLM, no backend) defined in
  * lib/conciergeScript.ts. Each turn the bot shows a message + a row of
@@ -182,7 +182,7 @@ export function MemberAssistant() {
     ]);
   };
 
-  // ─── Free-text "Ask Pearl" (AI) ─────────────────────────────────────
+  // ─── Free-text "Ask Beacon" (AI) ─────────────────────────────────────
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -350,7 +350,7 @@ export function MemberAssistant() {
       if (!res.ok || !res.body) {
         const j = (await res.json().catch(() => ({}))) as { error?: string };
         updateLastAi({
-          text: j.error || `Pearl is unavailable right now — try the hotline at ${HOTLINE_DISPLAY}.`,
+          text: j.error || `Beacon is unavailable right now — try the hotline at ${HOTLINE_DISPLAY}.`,
           streaming: false,
         });
         return;
@@ -411,7 +411,7 @@ export function MemberAssistant() {
           }}
         >
           <AutoAwesomeRoundedIcon sx={{ fontSize: 16, color: "#F0C16E" }} />
-          Ask Pearl
+          Ask Beacon
         </Box>
       )}
 
@@ -476,7 +476,7 @@ export function MemberAssistant() {
             </Box>
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Typography sx={{ fontSize: "0.88rem", fontWeight: 700, lineHeight: 1 }}>
-                Pearl
+                Beacon
               </Typography>
               <Typography sx={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.6)", mt: 0.25 }}>
                 Your DMN expert — answers or the hotline
@@ -535,7 +535,7 @@ export function MemberAssistant() {
             </Stack>
           </Box>
 
-          {/* Ask Pearl — free-text input */}
+          {/* Ask Beacon — free-text input */}
           <Box
             sx={{
               px: 1.5,
@@ -572,7 +572,7 @@ export function MemberAssistant() {
                     void send();
                   }
                 }}
-                placeholder={listening ? "Listening… speak your question" : "Ask Pearl anything…"}
+                placeholder={listening ? "Listening… speak your question" : "Ask Beacon anything…"}
                 rows={1}
                 disabled={sending}
                 sx={{
@@ -715,7 +715,7 @@ function UserTurn({ text }: { text: string }) {
   );
 }
 
-/** A free-text answer from Pearl, with a hand-off card when it escalates. */
+/** A free-text answer from Beacon, with a hand-off card when it escalates. */
 function AiTurn({ turn }: { turn: Extract<Turn, { kind: "ai" }> }) {
   const showTyping = turn.streaming && turn.text.length === 0;
   return (
@@ -749,7 +749,7 @@ function AiTurn({ turn }: { turn: Extract<Turn, { kind: "ai" }> }) {
           >
             {showTyping ? (
               <Typography sx={{ fontSize: "0.88rem", color: "#7A8590", lineHeight: 1.55 }}>
-                Pearl is thinking…
+                Beacon is thinking…
               </Typography>
             ) : (
               <Typography sx={{ fontSize: "0.88rem", color: "#0A1A2F", lineHeight: 1.55, whiteSpace: "pre-wrap" }}>

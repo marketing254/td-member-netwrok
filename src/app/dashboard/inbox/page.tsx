@@ -74,7 +74,7 @@ export default function MemberInboxPage() {
         Your requests &amp; packs
       </Typography>
       <Typography sx={{ fontSize: "0.95rem", color: INK_SOFT, mb: 3.5, maxWidth: 620 }}>
-        When you ask Pearl something the team needs to handle, it lands here — along with the DMN pack we send you.
+        When you ask Beacon something the team needs to handle, it lands here — along with the DMN pack we send you.
       </Typography>
 
       {loading ? (
@@ -88,7 +88,7 @@ export default function MemberInboxPage() {
           </Box>
           <Typography sx={{ fontSize: "1.05rem", fontWeight: 600, color: INK, mb: 0.5 }}>Nothing here yet</Typography>
           <Typography sx={{ fontSize: "0.9rem", color: INK_MUTED, maxWidth: 420, mx: "auto" }}>
-            Ask Pearl (bottom-right) anything. If it needs the team, your request and pack will show up here.
+            Ask Beacon (bottom-right) anything. If it needs the team, your request and pack will show up here.
           </Typography>
         </Box>
       ) : (

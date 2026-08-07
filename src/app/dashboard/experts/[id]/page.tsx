@@ -329,6 +329,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 function KitCard({ kit }: { kit: Kit }) {
+  // 3:4 tile matching the topic-led portal cards; legacy square covers
+  // letterbox (contain) instead of being zoom-cropped.
+  const [fit, setFit] = useState<"cover" | "contain">("cover");
   return (
     <Box
       component={Link}
@@ -350,12 +353,25 @@ function KitCard({ kit }: { kit: Kit }) {
         },
       }}
     >
-      {/* Portal card artwork is square (2160×2160) with the title baked in —
-          render it at 1/1 so nothing is cropped. Only the no-image fallback
-          shows a separate title below. */}
-      <Box sx={{ position: "relative", aspectRatio: "1 / 1", bgcolor: "#FBF8F1" }}>
+      {/* 3:4 tile (topic-led portal cards). Legacy square covers letterbox
+          on navy instead of cropping their baked titles. Only the no-image
+          fallback shows a separate title below. */}
+      <Box sx={{ position: "relative", aspectRatio: "3 / 4", bgcolor: "#0A1A2F" }}>
         {kit.card_url ? (
-          <Image src={kit.card_url} alt={kit.title} fill sizes="(max-width:600px) 100vw, (max-width:900px) 50vw, 320px" style={{ objectFit: "cover" }} />
+          <Image
+            src={kit.card_url}
+            alt={kit.title}
+            fill
+            sizes="(max-width:600px) 100vw, (max-width:900px) 50vw, 320px"
+            style={{ objectFit: fit }}
+            onLoad={(e) => {
+              const el = e.currentTarget;
+              if (el.naturalWidth && el.naturalHeight) {
+                const ratio = el.naturalWidth / el.naturalHeight;
+                setFit(Math.abs(ratio - 0.75) < 0.08 ? "cover" : "contain");
+              }
+            }}
+          />
         ) : (
           <Box sx={{ width: "100%", height: "100%", display: "grid", placeItems: "center", color: GOLD, fontFamily: "var(--font-display)", fontWeight: 700 }}>
             DMN

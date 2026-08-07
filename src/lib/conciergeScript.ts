@@ -32,7 +32,7 @@ export const CONCIERGE_NODES: Record<string, ConciergeNode> = {
   root: {
     id: "root",
     reply:
-      "Hi, I'm Pearl — your DMN expert. Tell me what you need and I'll point you to the right place, or connect you with the team.",
+      "Hi, I'm Beacon — your DMN expert. Tell me what you need and I'll point you to the right place, or connect you with the team.",
     options: [
       { label: "Find a resource", next: "resources", tone: "primary" },
       { label: "Talk to an expert", next: "experts" },

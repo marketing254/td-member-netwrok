@@ -26,6 +26,7 @@ import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
+import PhotoCameraOutlinedIcon from "@mui/icons-material/PhotoCameraOutlined";
 
 type SubmissionStatus = "draft" | "pending_review" | "approved" | "rejected";
 
@@ -135,6 +136,62 @@ export default function AdminResourcesPage() {
     await callAction(rejectKit.slug, "reject", { reason: rejectReason });
     setRejectKit(null);
     setRejectReason("");
+  };
+
+  const [thumbBusy, setThumbBusy] = useState<string | null>(null);
+
+  // Change the member-portal thumbnail (portal card) for a kit: upload the
+  // image to kit-thumbnails via a signed URL, then point every row of the
+  // kit at the new file.
+  const onChangeThumbnail = async (kit: AdminKit, file: File) => {
+    if (!file.type.startsWith("image/")) {
+      setToast("Pick an image file (PNG/JPG/WebP).");
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      setToast("Image is too large — keep it under 8MB.");
+      return;
+    }
+    setThumbBusy(kit.slug);
+    try {
+      const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+      const path = `${kit.slug}/portal-card-${Date.now()}.${ext}`;
+      const urlRes = await fetch("/api/admin/resources/upload-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bucket: "kit-thumbnails", path }),
+      });
+      const urlBody = (await urlRes.json().catch(() => ({}))) as { signedUrl?: string; publicUrl?: string; error?: string };
+      if (!urlRes.ok || !urlBody.signedUrl || !urlBody.publicUrl) {
+        setToast(urlBody.error ?? "Couldn't prepare the upload.");
+        return;
+      }
+      const put = await fetch(urlBody.signedUrl, {
+        method: "PUT",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      if (!put.ok) {
+        setToast(`Upload failed (${put.status}).`);
+        return;
+      }
+      const patch = await fetch(`/api/admin/resources/${kit.slug}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "set_thumbnail", portalCardUrl: urlBody.publicUrl }),
+      });
+      const pb = (await patch.json().catch(() => ({}))) as { error?: string };
+      if (!patch.ok) {
+        setToast(pb.error ?? "Couldn't save the new thumbnail.");
+        return;
+      }
+      setToast("Thumbnail updated — live in the member portal.");
+      void load();
+    } catch (err) {
+      setToast(err instanceof Error ? err.message : "Thumbnail update failed.");
+    } finally {
+      setThumbBusy(null);
+    }
   };
 
   const onDelete = async (slug: string) => {
@@ -274,6 +331,7 @@ export default function AdminResourcesPage() {
               key={k.slug}
               kit={k}
               deleting={deleting === k.slug}
+              thumbBusy={thumbBusy === k.slug}
               onApprove={() => callAction(k.slug, "approve")}
               onReject={() => {
                 setRejectKit(k);
@@ -282,6 +340,7 @@ export default function AdminResourcesPage() {
               onPublish={() => callAction(k.slug, "publish")}
               onUnpublish={() => callAction(k.slug, "unpublish")}
               onDelete={() => onDelete(k.slug)}
+              onChangeThumbnail={(file) => onChangeThumbnail(k, file)}
             />
           ))}
         </Stack>
@@ -341,19 +400,23 @@ export default function AdminResourcesPage() {
 function KitRow({
   kit,
   deleting,
+  thumbBusy,
   onApprove,
   onReject,
   onPublish,
   onUnpublish,
   onDelete,
+  onChangeThumbnail,
 }: {
   kit: AdminKit;
   deleting: boolean;
+  thumbBusy: boolean;
   onApprove: () => void;
   onReject: () => void;
   onPublish: () => void;
   onUnpublish: () => void;
   onDelete: () => void;
+  onChangeThumbnail: (file: File) => void;
 }) {
   return (
     <Box
@@ -370,9 +433,12 @@ function KitRow({
         "&:hover": { borderColor: "rgba(14,42,61,0.18)" },
       }}
     >
-      {/* Thumbnail */}
+      {/* Thumbnail — click to replace the member-portal card image */}
       <Box
+        component="label"
+        title="Change the member-portal thumbnail"
         sx={{
+          position: "relative",
           width: { xs: "100%", sm: 90 },
           aspectRatio: "1 / 1",
           flexShrink: 0,
@@ -384,8 +450,49 @@ function KitRow({
             : "linear-gradient(135deg, #061322 0%, #0A1A2F 50%, #1F3850 100%)",
           backgroundSize: "cover",
           backgroundPosition: "center",
+          cursor: thumbBusy ? "wait" : "pointer",
+          "&:hover .thumb-overlay": { opacity: 1 },
         }}
-      />
+      >
+        <input
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          hidden
+          disabled={thumbBusy}
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            e.target.value = "";
+            if (f) onChangeThumbnail(f);
+          }}
+        />
+        <Box
+          className="thumb-overlay"
+          sx={{
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 0.25,
+            bgcolor: "rgba(10,26,47,0.62)",
+            color: "#fff",
+            opacity: thumbBusy ? 1 : 0,
+            transition: "opacity 160ms ease",
+          }}
+        >
+          {thumbBusy ? (
+            <CircularProgress size={18} sx={{ color: "#F0C16E" }} />
+          ) : (
+            <>
+              <PhotoCameraOutlinedIcon sx={{ fontSize: 20 }} />
+              <Typography sx={{ fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                Change
+              </Typography>
+            </>
+          )}
+        </Box>
+      </Box>
 
       {/* Title + meta */}
       <Box sx={{ flex: 1, minWidth: 0 }}>

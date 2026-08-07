@@ -13,7 +13,7 @@ export const maxDuration = 60;
 /**
  * POST /api/member/pearl/inquiry
  *
- * Files a member inquiry when Pearl escalates a question to the team.
+ * Files a member inquiry when Beacon escalates a question to the team.
  * Records the question + the email to reach the member at, at status
  * "pending". The team works it within the 2–3 business-day SLA.
  *

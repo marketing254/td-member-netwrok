@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * GET  /api/member/inbox  → the member's Pearl inquiries + packs, newest
+ * GET  /api/member/inbox  → the member's Beacon inquiries + packs, newest
  *                            first, plus an unread count (member_seen_at null).
  * PATCH /api/member/inbox → { action: "mark_seen" } marks them all seen.
  */
