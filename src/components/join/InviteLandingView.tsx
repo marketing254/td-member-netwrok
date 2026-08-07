@@ -32,6 +32,7 @@ export default function InviteLandingView({
   companyName,
   code,
   profileInvite = false,
+  cardRequired = true,
 }: {
   state: "valid" | "accepted" | "invalid";
   kind: "expert" | "partner";
@@ -40,6 +41,8 @@ export default function InviteLandingView({
   companyName: string | null;
   code: string;
   profileInvite?: boolean;
+  /** false when the profile already has billing set up — card messaging hidden. */
+  cardRequired?: boolean;
 }) {
   const firstName = fullName.split(/\s+/)[0] ?? "";
   const roleLabel = kind === "expert" ? "Expert" : "Partner";
@@ -84,9 +87,11 @@ export default function InviteLandingView({
               <Typography sx={{ color: COLORS.inkSoft, fontSize: "1rem", lineHeight: 1.65 }}>
                 {profileInvite ? (
                   <>
-                    Your {roleLabel.toLowerCase()} profile{companyName ? <> for <Box component="strong">{companyName}</Box></> : ""} is
-                    ready in the Dental Member Network. Accept the standard agreement below, then sign in — you&apos;ll add
-                    your card in the portal to activate your free trial.
+                    Your {roleLabel.toLowerCase()} profile
+                    {companyName ? <> for <Box component="strong">{companyName}</Box></> : null}
+                    {cardRequired
+                      ? " is ready in the Dental Member Network. Accept the standard agreement below, then sign in — you'll add your card in the portal to activate your free trial."
+                      : " is ready in the Dental Member Network. Accept the standard agreement below, then sign in — your billing is already set up, so the portal is one login away."}
                   </>
                 ) : (
                   <>
@@ -99,7 +104,7 @@ export default function InviteLandingView({
             </Box>
 
             {profileInvite ? (
-              <ProfileAcceptCard kind={kind} code={code} loginHref={loginHref} />
+              <ProfileAcceptCard kind={kind} code={code} loginHref={loginHref} cardRequired={cardRequired} />
             ) : (
               <JoinApplicationForm
                 role={kind}
@@ -124,12 +129,12 @@ export default function InviteLandingView({
 }
 
 /** Agreement acceptance for invites tied to an existing profile. */
-function ProfileAcceptCard({ kind, code, loginHref }: { kind: "expert" | "partner"; code: string; loginHref: string }) {
+function ProfileAcceptCard({ kind, code, loginHref, cardRequired = true }: { kind: "expert" | "partner"; code: string; loginHref: string; cardRequired?: boolean }) {
   const [agreed, setAgreed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const agreementHref = kind === "partner" ? "/agreement/vendor" : "/experts";
+  const agreementHref = kind === "partner" ? "/agreement/vendor" : "/agreement/expert";
   const accent = kind === "partner" ? "#A07823" : "#2C7A52";
 
   const accept = async () => {
@@ -161,8 +166,9 @@ function ProfileAcceptCard({ kind, code, loginHref }: { kind: "expert" | "partne
           Agreement accepted
         </Typography>
         <Typography sx={{ color: COLORS.inkSoft, fontSize: "0.95rem", lineHeight: 1.6, mb: 2.5 }}>
-          Next step: sign in with your email — a 6-digit code, no password. Inside the portal you&apos;ll add your card to
-          activate your free trial (nothing is charged today).
+          {cardRequired
+            ? "Next step: sign in with your email — a 6-digit code, no password. Inside the portal you'll add your card to activate your free trial (nothing is charged today)."
+            : "Next step: sign in with your email — a 6-digit code, no password. Your billing is already set up, so you're straight into the portal."}
         </Typography>
         <Button component={Link} href={loginHref} variant="contained" endIcon={<ArrowForwardRoundedIcon />}
           sx={{ textTransform: "none", fontWeight: 700, borderRadius: 999, px: 3, bgcolor: accent, color: "#fff", "&:hover": { bgcolor: accent } }}>
@@ -176,7 +182,11 @@ function ProfileAcceptCard({ kind, code, loginHref }: { kind: "expert" | "partne
     <Box sx={{ p: { xs: 3, md: 4 }, borderRadius: 2.5, bgcolor: "#FFFFFF", border: `1px solid ${COLORS.line}`, maxWidth: 620, mx: "auto" }}>
       <Typography sx={{ fontSize: "0.82rem", color: COLORS.muted, mb: 1.25 }}>What you&apos;re agreeing to</Typography>
       <Stack spacing={1} sx={{ mb: 2 }}>
-        {["Standard DMN membership terms — no bespoke founding agreement", "Cancel anytime, 30-day written notice", "Free trial activates once you add a card in the portal"].map((line) => (
+        {[
+          "Standard DMN membership terms — no bespoke founding agreement",
+          "Cancel anytime, 30-day written notice",
+          cardRequired ? "Free trial activates once you add a card in the portal" : "Your billing is already set up — nothing more to add",
+        ].map((line) => (
           <Stack key={line} direction="row" spacing={1} sx={{ alignItems: "flex-start" }}>
             <Box sx={{ width: 16, height: 16, borderRadius: "50%", bgcolor: "rgba(217,168,75,0.12)", color: accent, display: "grid", placeItems: "center", fontSize: "0.7rem", fontWeight: 800, flexShrink: 0, mt: 0.25 }}>✓</Box>
             <Typography sx={{ fontSize: "0.9rem", color: COLORS.ink, lineHeight: 1.5 }}>{line}</Typography>
@@ -184,11 +194,12 @@ function ProfileAcceptCard({ kind, code, loginHref }: { kind: "expert" | "partne
         ))}
       </Stack>
       <Box component={Link} href={agreementHref} target="_blank" rel="noopener noreferrer"
-        sx={{ display: "inline-block", color: accent, fontSize: "0.85rem", fontWeight: 600, textDecoration: "underline", textUnderlineOffset: 3, mb: 2 }}>
+        sx={{ display: "block", width: "fit-content", color: accent, fontSize: "0.85rem", fontWeight: 600, textDecoration: "underline", textUnderlineOffset: 3, mb: 2.5 }}>
         Read the full agreement →
       </Box>
       <FormControlLabel
-        control={<Checkbox checked={agreed} onChange={(e) => setAgreed(e.target.checked)} sx={{ color: accent, "&.Mui-checked": { color: accent } }} />}
+        sx={{ display: "flex", alignItems: "flex-start", ml: 0, mr: 0 }}
+        control={<Checkbox checked={agreed} onChange={(e) => setAgreed(e.target.checked)} sx={{ color: accent, "&.Mui-checked": { color: accent }, mt: -1, ml: -1.25 }} />}
         label={
           <Typography sx={{ fontSize: "0.9rem", color: COLORS.ink }}>
             I agree to the <Box component="strong" sx={{ color: accent }}>DMN {kind === "partner" ? "Partner" : "Expert"} Agreement ({AGREEMENT_VERSION})</Box>.
@@ -202,7 +213,9 @@ function ProfileAcceptCard({ kind, code, loginHref }: { kind: "expert" | "partne
       </Button>
       {error && <Alert severity="error" sx={{ mt: 2, fontSize: "0.82rem" }}>{error}</Alert>}
       <Typography sx={{ fontSize: "0.78rem", color: COLORS.muted, mt: 2, textAlign: "center" }}>
-        No card needed on this page · You&apos;ll add it inside the portal to start your free trial
+        {cardRequired
+          ? "No card needed on this page · You'll add it inside the portal to start your free trial"
+          : "Nothing to pay here — your billing is already in place"}
       </Typography>
     </Box>
   );

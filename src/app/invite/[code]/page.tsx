@@ -55,6 +55,31 @@ export default async function InviteLandingPage({
   // go through the application form.
   const isProfileInvite = !!(invite.kind === "expert" ? invite.expert_id : invite.vendor_id);
 
+  // If the profile already has billing set up (card added / exempted),
+  // don't tell them to add a card — they just sign in.
+  let cardRequired = true;
+  if (isProfileInvite) {
+    try {
+      if (invite.kind === "expert" && invite.expert_id) {
+        const { data: e } = await sb
+          .from("experts")
+          .select("stripe_subscription_id, billing_exempt")
+          .eq("id", invite.expert_id)
+          .maybeSingle();
+        cardRequired = !e?.billing_exempt && !e?.stripe_subscription_id;
+      } else if (invite.vendor_id) {
+        const { data: v } = await sb
+          .from("vendors")
+          .select("stripe_subscription_id")
+          .eq("id", invite.vendor_id)
+          .maybeSingle();
+        cardRequired = !v?.stripe_subscription_id;
+      }
+    } catch {
+      // Fall back to the safe default (card messaging shown).
+    }
+  }
+
   return (
     <InviteLandingView
       state="valid"
@@ -64,6 +89,7 @@ export default async function InviteLandingPage({
       companyName={invite.company_name}
       code={invite.code}
       profileInvite={isProfileInvite}
+      cardRequired={cardRequired}
     />
   );
 }
