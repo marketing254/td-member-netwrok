@@ -1,5 +1,6 @@
 import "server-only";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
+import { checkBillingAccess } from "@/lib/stripe";
 import type { NetworkAuthorKind } from "@/lib/supabase/types";
 
 export type NetworkAuthor = {
@@ -33,28 +34,41 @@ export async function resolveNetworkAuthor(
   const lowerEmail = (email ?? "").toLowerCase();
 
   // 1. Expert? — primary identity for anyone in the experts table.
+  //    Billing-gated: an expert with no active subscription (and no
+  //    founding waiver) has no network identity until they add a card.
   {
     const { data } = await admin
       .from("experts")
-      .select("id, display_name, full_name, specialty, status")
+      .select("id, display_name, full_name, specialty, status, billing_exempt, months_in_program, subscription_status, stripe_subscription_id")
       .eq("auth_user_id", authUserId)
       .maybeSingle();
     if (data && data.status !== "archived" && data.status !== "suspended") {
-      return {
-        authUserId,
-        kind: "expert",
-        displayName: data.display_name || data.full_name,
-        subtitle: data.specialty,
-        roleId: data.id,
-      };
+      const access = checkBillingAccess({
+        monthsInProgram: data.months_in_program ?? 0,
+        subscriptionStatus: data.subscription_status ?? null,
+        hasSubscription: !!data.stripe_subscription_id,
+        billingExempt: !!data.billing_exempt,
+      });
+      // Unpaid expert: no expert identity — fall through in case they're
+      // also a paying member/partner under the same account.
+      if (access.allowed) {
+        return {
+          authUserId,
+          kind: "expert",
+          displayName: data.display_name || data.full_name,
+          subtitle: data.specialty,
+          roleId: data.id,
+        };
+      }
     }
   }
 
-  // 2. Partner (vendor)?
+  // 2. Partner (vendor)? — billing-gated like experts; covered companies
+  //    (billing_parent_id) inherit the paying parent's subscription.
   if (lowerEmail) {
     const { data } = await admin
       .from("vendors")
-      .select("id, display_name, company_name, category, status")
+      .select("id, display_name, company_name, category, status, billing_parent_id, months_in_program, subscription_status, stripe_subscription_id")
       .eq("contact_email", lowerEmail)
       .maybeSingle();
     if (
@@ -63,13 +77,33 @@ export async function resolveNetworkAuthor(
       data.status !== "suspended" &&
       data.status !== "churned"
     ) {
-      return {
-        authUserId,
-        kind: "partner",
-        displayName: data.display_name || data.company_name,
-        subtitle: data.category,
-        roleId: data.id,
+      let billing = {
+        monthsInProgram: data.months_in_program ?? 0,
+        subscriptionStatus: data.subscription_status ?? null,
+        hasSubscription: !!data.stripe_subscription_id,
       };
+      if (data.billing_parent_id) {
+        const { data: parent } = await admin
+          .from("vendors")
+          .select("months_in_program, subscription_status, stripe_subscription_id")
+          .eq("id", data.billing_parent_id)
+          .maybeSingle();
+        billing = {
+          monthsInProgram: parent?.months_in_program ?? 0,
+          subscriptionStatus: parent?.subscription_status ?? null,
+          hasSubscription: !!parent?.stripe_subscription_id,
+        };
+      }
+      // Unpaid partner: fall through in case they're also an active member.
+      if (checkBillingAccess(billing).allowed) {
+        return {
+          authUserId,
+          kind: "partner",
+          displayName: data.display_name || data.company_name,
+          subtitle: data.category,
+          roleId: data.id,
+        };
+      }
     }
   }
 

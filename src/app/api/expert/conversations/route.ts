@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { requireExpert } from "@/lib/auth/guards";
+import { requirePaidExpert } from "@/lib/auth/guards";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
  * once the expert clicks in.
  */
 export async function GET() {
-  const guard = await requireExpert();
+  const guard = await requirePaidExpert();
   if (!guard.ok) return guard.response;
 
   try {

@@ -98,6 +98,7 @@ export default function JoinApplicationForm({
   compact,
   initial,
   inviteCode,
+  agreementHref,
 }: {
   role: JoinRole;
   /** compact=true drops the eyebrow header — used when the form sits
@@ -108,6 +109,9 @@ export default function JoinApplicationForm({
   /** Invite-link code — posted with the application so the admin list
    *  shows the invite as accepted. */
   inviteCode?: string;
+  /** Override for the "Read the full agreement" link (e.g. the invite's
+   *  personalized agreement PDF). */
+  agreementHref?: string;
 }) {
   const config = CONFIG_BY_ROLE[role];
   const router = useRouter();
@@ -258,7 +262,7 @@ export default function JoinApplicationForm({
       </Stack>
       <Box
         component={Link}
-        href={config.agreementLinkHref}
+        href={agreementHref ?? config.agreementLinkHref}
         target="_blank"
         rel="noopener noreferrer"
         sx={{

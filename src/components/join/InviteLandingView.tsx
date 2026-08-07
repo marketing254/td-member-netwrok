@@ -109,6 +109,7 @@ export default function InviteLandingView({
               <JoinApplicationForm
                 role={kind}
                 inviteCode={code}
+                agreementHref={`/api/invite/${encodeURIComponent(code)}/agreement`}
                 initial={{ contactName: fullName, contactEmail: email ?? "", focus: companyName ?? "" }}
               />
             )}
@@ -134,7 +135,9 @@ function ProfileAcceptCard({ kind, code, loginHref, cardRequired = true }: { kin
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const agreementHref = kind === "partner" ? "/agreement/vendor" : "/agreement/expert";
+  // The personalized standard-agreement PDF (prepared-for copy), same
+  // document they'll receive on acceptance.
+  const agreementHref = `/api/invite/${encodeURIComponent(code)}/agreement`;
   const accent = kind === "partner" ? "#A07823" : "#2C7A52";
 
   const accept = async () => {

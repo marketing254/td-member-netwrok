@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { requireExpert } from "@/lib/auth/guards";
+import { requirePaidExpert } from "@/lib/auth/guards";
 import { apiError, serverError } from "@/lib/api/errorResponse";
 
 export const runtime = "nodejs";
@@ -21,7 +21,7 @@ const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
  * headshot_url (the public-facing big headshot stays untouched).
  */
 export async function PATCH(req: Request) {
-  const guard = await requireExpert();
+  const guard = await requirePaidExpert();
   if (!guard.ok) return guard.response;
 
   let form: FormData;
