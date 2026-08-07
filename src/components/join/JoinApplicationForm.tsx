@@ -75,7 +75,7 @@ const CONFIG_BY_ROLE: Record<JoinRole, Config> = {
     focusFieldLabel: "Your topic or firm",
     focusFieldPlaceholder: "e.g. Practice growth · Ekwa Marketing",
     focusFieldKey: "focusArea",
-    agreementLinkHref: "/experts",
+    agreementLinkHref: "/agreement/expert",
     appliedRedirect: "/expert/applied",
     endpoint: "/api/join/expert/apply",
     bullets: [
