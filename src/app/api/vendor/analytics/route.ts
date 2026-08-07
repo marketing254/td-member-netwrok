@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { requireVendor } from "@/lib/auth/guards";
+import { requirePaidVendor } from "@/lib/auth/guards";
 import { serverError } from "@/lib/api/errorResponse";
 
 export const runtime = "nodejs";
@@ -19,7 +19,7 @@ export const dynamic = "force-dynamic";
  * Y inquiries this month, Z.Z avg rating".
  */
 export async function GET() {
-  const guard = await requireVendor();
+  const guard = await requirePaidVendor();
   if (!guard.ok) return guard.response;
 
   try {

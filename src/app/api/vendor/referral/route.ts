@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { requireVendor } from "@/lib/auth/guards";
+import { requirePaidVendor } from "@/lib/auth/guards";
 import { getOrCreateVendorReferral } from "@/lib/referral";
 import { serverError } from "@/lib/api/errorResponse";
 
@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
  * Same shape as the expert endpoint, scoped to the signed-in partner.
  */
 export async function GET() {
-  const guard = await requireVendor();
+  const guard = await requirePaidVendor();
   if (!guard.ok) return guard.response;
 
   try {

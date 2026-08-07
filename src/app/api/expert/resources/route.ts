@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { requireExpert } from "@/lib/auth/guards";
+import { requirePaidExpert } from "@/lib/auth/guards";
 import type { ExpertResourceKind } from "@/lib/supabase/types";
 
 export const runtime = "nodejs";
@@ -30,7 +30,7 @@ const VALID_KINDS: ReadonlyArray<ExpertResourceKind> = [
  * of what's live (and what's awaiting publish).
  */
 export async function GET() {
-  const guard = await requireExpert();
+  const guard = await requirePaidExpert();
   if (!guard.ok) return guard.response;
 
   try {
@@ -64,7 +64,7 @@ export async function GET() {
  * then inserts a row in expert_resources with status='pending_review'.
  */
 export async function POST(req: Request) {
-  const guard = await requireExpert();
+  const guard = await requirePaidExpert();
   if (!guard.ok) return guard.response;
 
   let form: FormData;
@@ -170,7 +170,7 @@ export async function POST(req: Request) {
  * library and need an admin to archive instead.
  */
 export async function DELETE(req: Request) {
-  const guard = await requireExpert();
+  const guard = await requirePaidExpert();
   if (!guard.ok) return guard.response;
 
   const url = new URL(req.url);

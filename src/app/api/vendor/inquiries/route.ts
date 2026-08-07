@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { requireVendor } from "@/lib/auth/guards";
+import { requirePaidVendor } from "@/lib/auth/guards";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
  * /api/expert/inquiries — same shape, same join, just scoped to vendor.
  */
 export async function GET(req: Request) {
-  const guard = await requireVendor();
+  const guard = await requirePaidVendor();
   if (!guard.ok) return guard.response;
 
   const url = new URL(req.url);

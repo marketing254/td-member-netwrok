@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { requireExpert } from "@/lib/auth/guards";
+import { requirePaidExpert } from "@/lib/auth/guards";
 import { apiError, serverError } from "@/lib/api/errorResponse";
 
 export const runtime = "nodejs";
@@ -20,7 +20,7 @@ const URL_RE = /^https?:\/\/[^\s/$.?#].[^\s]*$/i;
  */
 export async function GET() {
   const route = "GET /api/expert/posts";
-  const guard = await requireExpert();
+  const guard = await requirePaidExpert();
   if (!guard.ok) return guard.response;
 
   try {
@@ -50,7 +50,7 @@ export async function GET() {
  */
 export async function POST(req: Request) {
   const route = "POST /api/expert/posts";
-  const guard = await requireExpert();
+  const guard = await requirePaidExpert();
   if (!guard.ok) return guard.response;
 
   let body: {
@@ -117,7 +117,7 @@ export async function POST(req: Request) {
  */
 export async function DELETE(req: Request) {
   const route = "DELETE /api/expert/posts";
-  const guard = await requireExpert();
+  const guard = await requirePaidExpert();
   if (!guard.ok) return guard.response;
 
   const url = new URL(req.url);
