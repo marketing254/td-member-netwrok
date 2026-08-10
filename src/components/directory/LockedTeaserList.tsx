@@ -131,8 +131,9 @@ export default function LockedTeaserList({
             Members only
           </Typography>
           <Button
-            component={Link}
-            href={ctaHref}
+            {...(ctaHref.startsWith("http")
+              ? { component: "a" as const, href: ctaHref, target: "_blank", rel: "noopener noreferrer" }
+              : { component: Link, href: ctaHref })}
             variant="contained"
             startIcon={<LockRoundedIcon sx={{ fontSize: 15 }} />}
             sx={{

@@ -974,6 +974,10 @@ export type Database = {
       founding_invites: Table<FoundingInvitesRow>;
     };
     Views: {
+      kit_access_counts: View<{
+        slug: string;
+        views: number;
+      }>;
       waitlist_counts: View<{
         total: number;
         members: number;

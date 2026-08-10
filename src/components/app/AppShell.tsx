@@ -29,6 +29,8 @@ import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import CalculateOutlinedIcon from "@mui/icons-material/CalculateOutlined";
 import InboxOutlinedIcon from "@mui/icons-material/InboxOutlined";
+import PodcastsIcon from "@mui/icons-material/Podcasts";
+import EventAvailableOutlinedIcon from "@mui/icons-material/EventAvailableOutlined";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import KeyboardArrowDownOutlinedIcon from "@mui/icons-material/KeyboardArrowDownOutlined";
@@ -40,7 +42,7 @@ import { useCurrentMember } from "@/lib/hooks/useCurrentMember";
 import { MemberAssistant } from "@/components/member/MemberAssistant";
 import ProfileEditDialog from "@/components/shared/ProfileEditDialog";
 
-const SIDEBAR_W = 220;
+const SIDEBAR_W = 240;
 
 const navItems = [
   { href: "/dashboard", label: "Overview", icon: DashboardOutlinedIcon },
@@ -89,11 +91,11 @@ function SidebarContent({
           "radial-gradient(120% 60% at 50% -20%, rgba(217,168,75,0.10) 0%, transparent 60%)",
       }}
     >
-      <Box sx={{ px: 2.5, pt: 2.5, pb: 2 }}>
-        <Logo dark height={32} href="/dashboard" />
+      <Box sx={{ px: 2.5, pt: 2.5, pb: 1.75 }}>
+        <Logo dark height={64} href="/dashboard" />
         <Typography
           sx={{
-            mt: 1,
+            mt: 0.75,
             color: "rgba(255,255,255,0.45)",
             fontSize: "0.6rem",
             letterSpacing: "0.2em",
@@ -155,7 +157,21 @@ function SidebarContent({
         </Box>
       </Box>
 
-      <Box sx={{ px: 1.5, py: 1, flex: 1, overflowY: "auto" }}>
+      <Box
+        sx={{
+          px: 1.5,
+          py: 1,
+          flex: 1,
+          overflowY: "auto",
+          // Slim, surface-matched scrollbar — the default chrome bar reads
+          // as a bright white stripe against the navy sidebar.
+          scrollbarWidth: "thin",
+          scrollbarColor: "rgba(255,255,255,0.18) transparent",
+          "&::-webkit-scrollbar": { width: 6 },
+          "&::-webkit-scrollbar-thumb": { bgcolor: "rgba(255,255,255,0.14)", borderRadius: 3 },
+          "&::-webkit-scrollbar-track": { bgcolor: "transparent" },
+        }}
+      >
         <Typography
           sx={{
             color: "rgba(255,255,255,0.32)",
@@ -186,7 +202,7 @@ function SidebarContent({
                   alignItems: "center",
                   gap: 1.25,
                   px: 1.25,
-                  py: 0.85,
+                  py: 0.7,
                   borderRadius: 1.25,
                   color: active ? "common.white" : "rgba(255,255,255,0.62)",
                   bgcolor: active ? "rgba(217,168,75,0.12)" : "transparent",
@@ -214,85 +230,130 @@ function SidebarContent({
             );
           })}
         </Stack>
-      </Box>
 
-      {/* Support — hotline + email reachable from every dashboard page */}
-      <Box sx={{ px: 1.5, pb: 1.5, flexShrink: 0 }}>
-        <Box sx={{ borderTop: "1px solid rgba(255,255,255,0.06)", pt: 1, mb: 0.75 }}>
+        {/* Coming soon — upcoming member features, highlighted so members
+            notice what's on the way. */}
+        <Box
+          sx={{
+            mt: 1.75,
+            p: 1,
+            borderRadius: 1.5,
+            bgcolor: "rgba(217,168,75,0.08)",
+            border: "1px solid rgba(217,168,75,0.25)",
+          }}
+        >
           <Typography
             sx={{
-              color: "rgba(255,255,255,0.32)",
+              color: "#D9A84B",
               fontSize: "0.58rem",
               letterSpacing: "0.18em",
-              fontWeight: 700,
-              textTransform: "uppercase",
-              px: 1,
+              fontWeight: 800,
+              mb: 0.75,
+              px: 0.5,
             }}
           >
-            Support
+            ✦ COMING SOON
           </Typography>
+          <Stack spacing={0.25}>
+            {[
+              { label: "Chairside", sub: "Podcast", icon: PodcastsIcon },
+              { label: "Office Hours", sub: "Live events", icon: EventAvailableOutlinedIcon },
+            ].map((item) => {
+              const Icon = item.icon;
+              return (
+                <Box
+                  key={item.label}
+                  aria-disabled
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1.25,
+                    px: 0.75,
+                    py: 0.7,
+                    borderRadius: 1.25,
+                    color: "rgba(255,255,255,0.75)",
+                    fontSize: "0.78rem",
+                    fontWeight: 600,
+                    cursor: "default",
+                    userSelect: "none",
+                  }}
+                >
+                  <Icon sx={{ fontSize: 16, flexShrink: 0, color: "#D9A84B", opacity: 0.85 }} />
+                  <Box sx={{ minWidth: 0, flex: 1, lineHeight: 1.15 }}>
+                    {item.label}
+                    <Typography component="span" sx={{ display: "block", fontSize: "0.6rem", color: "rgba(255,255,255,0.45)" }}>
+                      {item.sub}
+                    </Typography>
+                  </Box>
+                  <Box
+                    sx={{
+                      px: 0.7,
+                      py: 0.2,
+                      borderRadius: 999,
+                      bgcolor: "rgba(217,168,75,0.18)",
+                      border: "1px solid rgba(217,168,75,0.45)",
+                      color: "#F0C16E",
+                      fontSize: "0.55rem",
+                      fontWeight: 800,
+                      letterSpacing: "0.08em",
+                      flexShrink: 0,
+                    }}
+                  >
+                    SOON
+                  </Box>
+                </Box>
+              );
+            })}
+          </Stack>
         </Box>
-        <Box
-          component="a"
-          href="tel:+18556334707"
+      </Box>
+
+      {/* Support — hotline + email reachable from every dashboard page.
+          Compact single-line rows so the footer stays short and the nav
+          gets the vertical space. */}
+      <Box sx={{ px: 1.5, pt: 1, pb: 1.25, flexShrink: 0, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+        <Typography
           sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 1.25,
+            color: "rgba(255,255,255,0.32)",
+            fontSize: "0.58rem",
+            letterSpacing: "0.18em",
+            fontWeight: 700,
+            textTransform: "uppercase",
             px: 1.25,
-            py: 0.85,
-            borderRadius: 1.25,
-            color: "rgba(255,255,255,0.62)",
-            textDecoration: "none",
-            "&:hover": { bgcolor: "rgba(255,255,255,0.05)", color: "common.white" },
+            mb: 0.5,
           }}
         >
-          <PhoneRoundedIcon sx={{ fontSize: 16, color: "rgba(255,255,255,0.55)" }} />
-          <Box sx={{ minWidth: 0, flex: 1 }}>
-            <Typography sx={{ fontSize: "0.62rem", color: "rgba(255,255,255,0.42)", lineHeight: 1 }}>
-              Hotline
-            </Typography>
-            <Typography sx={{ fontSize: "0.76rem", fontWeight: 600, color: "inherit", lineHeight: 1.2, mt: 0.2 }}>
-              (855) 633-4707
-            </Typography>
+          Support
+        </Typography>
+        {[
+          { href: "tel:+18556334707", Icon: PhoneRoundedIcon, label: "(855) 633-4707" },
+          { href: "mailto:hello@joindmn.com", Icon: EmailOutlinedIcon, label: "hello@joindmn.com" },
+        ].map(({ href, Icon, label }) => (
+          <Box
+            key={href}
+            component="a"
+            href={href}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1.25,
+              px: 1.25,
+              py: 0.6,
+              borderRadius: 1.25,
+              color: "rgba(255,255,255,0.68)",
+              textDecoration: "none",
+              fontSize: "0.76rem",
+              fontWeight: 600,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              "&:hover": { bgcolor: "rgba(255,255,255,0.05)", color: "common.white" },
+            }}
+          >
+            <Icon sx={{ fontSize: 15, color: "rgba(255,255,255,0.5)", flexShrink: 0 }} />
+            {label}
           </Box>
-        </Box>
-        <Box
-          component="a"
-          href="mailto:hello@joindmn.com"
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 1.25,
-            px: 1.25,
-            py: 0.85,
-            borderRadius: 1.25,
-            color: "rgba(255,255,255,0.62)",
-            textDecoration: "none",
-            "&:hover": { bgcolor: "rgba(255,255,255,0.05)", color: "common.white" },
-          }}
-        >
-          <EmailOutlinedIcon sx={{ fontSize: 16, color: "rgba(255,255,255,0.55)" }} />
-          <Box sx={{ minWidth: 0, flex: 1 }}>
-            <Typography sx={{ fontSize: "0.62rem", color: "rgba(255,255,255,0.42)", lineHeight: 1 }}>
-              Email
-            </Typography>
-            <Typography
-              sx={{
-                fontSize: "0.76rem",
-                fontWeight: 600,
-                color: "inherit",
-                lineHeight: 1.2,
-                mt: 0.2,
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
-            >
-              hello@joindmn.com
-            </Typography>
-          </Box>
-        </Box>
+        ))}
       </Box>
     </Box>
   );

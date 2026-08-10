@@ -1,20 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
   Box,
   CircularProgress,
   Container,
-  Pagination,
+  IconButton,
   Stack,
   Typography,
 } from "@mui/material";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
+import ChevronLeftRoundedIcon from "@mui/icons-material/ChevronLeftRounded";
+import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 import { COLORS } from "@/theme";
 
-const PAGE_SIZE = 6;
+// One API page — we loop pages client-side so EVERYONE is on the rail.
+const PAGE_SIZE = 24;
+
 
 export type DirectoryRow = {
   /** DB rows have an id (→ profile page); house/anchor rows have null (no link). */
@@ -35,10 +39,10 @@ export type DirectoryRow = {
 /**
  * FoundingDirectory — ONE unified public roster of experts / partners.
  *
- * Renders the `house` anchors (Gary, Naren, Thriving Dentist, Ekwa — static,
- * no profile page) and the DB-driven accepted members (Ashley, Laura, …)
- * together under a single title. House cards show on page 1; the DB set
- * paginates below them. Accepted cards link to their public profile.
+ * Every member renders on a continuously gliding marquee rail — nobody is
+ * relegated to "page 2". The rail pauses on hover, each card clicks
+ * through to the public profile, and with few cards (or reduced-motion
+ * users) it falls back to a static centered row.
  */
 export default function FoundingDirectory({
   kind,
@@ -54,23 +58,82 @@ export default function FoundingDirectory({
   subtitle?: string;
 }) {
   const [rows, setRows] = useState<DirectoryRow[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [reduceMotion, setReduceMotion] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const apply = () => setReduceMotion(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
+
+  // Auto-glide: the rail is a real scroll container (so the arrows and
+  // touch swipes work), advanced a fraction of a pixel per frame. The
+  // card list is doubled, and the loop resets at the halfway point where
+  // the content repeats — invisible to the eye.
+  const railRef = useRef<HTMLDivElement | null>(null);
+  const pausedRef = useRef(false);
+
+  useEffect(() => {
+    if (reduceMotion || loading) return;
+    const el = railRef.current;
+    if (!el) return;
+    let raf = 0;
+    const step = () => {
+      if (!pausedRef.current && el.scrollWidth > el.clientWidth + 40) {
+        el.scrollLeft += 0.55;
+        const half = el.scrollWidth / 2;
+        if (el.scrollLeft >= half) el.scrollLeft -= half;
+      }
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [reduceMotion, loading, rows.length]);
+
+  const resumeTimerRef = useRef<number | null>(null);
+  const nudge = (dir: 1 | -1) => {
+    const el = railRef.current;
+    if (!el) return;
+    // Hold the auto-glide while the smooth scroll animates — the rAF loop
+    // writes scrollLeft every frame, which cancels scrollBy() mid-flight
+    // and makes the arrows appear dead.
+    pausedRef.current = true;
+    if (resumeTimerRef.current) window.clearTimeout(resumeTimerRef.current);
+    resumeTimerRef.current = window.setTimeout(() => {
+      pausedRef.current = false;
+    }, 1600);
+    const half = el.scrollWidth / 2;
+    // Stay inside the doubled content so smooth scrolling never hits an edge.
+    if (dir === -1 && el.scrollLeft < 360) el.scrollLeft += half;
+    if (dir === 1 && el.scrollLeft > half - 360) el.scrollLeft -= half;
+    el.scrollBy({ left: dir * 330, behavior: "smooth" });
+  };
 
   useEffect(() => {
     let active = true;
     setLoading(true);
     (async () => {
       try {
-        const res = await fetch(`/api/directory/${kind}?page=${page}&pageSize=${PAGE_SIZE}`, {
-          cache: "no-store",
-        });
-        if (!active || !res.ok) return;
-        const body = (await res.json()) as { experts?: DirectoryRow[]; partners?: DirectoryRow[]; total?: number };
+        // Page through the whole roster so every member is on the rail.
+        const all: DirectoryRow[] = [];
+        let page = 1;
+        for (;;) {
+          const res = await fetch(`/api/directory/${kind}?page=${page}&pageSize=${PAGE_SIZE}`, {
+            cache: "no-store",
+          });
+          if (!res.ok) break;
+          const body = (await res.json()) as { experts?: DirectoryRow[]; partners?: DirectoryRow[]; total?: number };
+          const batch = (kind === "experts" ? body.experts : body.partners) ?? [];
+          all.push(...batch);
+          const total = body.total ?? all.length;
+          if (all.length >= total || batch.length === 0 || page >= 20) break;
+          page += 1;
+        }
         if (!active) return;
-        setRows((kind === "experts" ? body.experts : body.partners) ?? []);
-        setTotal(body.total ?? 0);
+        setRows(all);
       } catch {
         /* DB set stays empty on error; house anchors still render */
       } finally {
@@ -80,15 +143,14 @@ export default function FoundingDirectory({
     return () => {
       active = false;
     };
-  }, [kind, page]);
+  }, [kind]);
 
   const isExperts = kind === "experts";
   // Nothing to show at all → render nothing.
-  if (!loading && total === 0 && house.length === 0) return null;
+  if (!loading && rows.length === 0 && house.length === 0) return null;
 
-  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  // House anchors lead the roster on page 1 only, so they don't repeat.
-  const cards: DirectoryRow[] = [...(page === 1 ? house : []), ...rows];
+  const cards: DirectoryRow[] = [...house, ...rows];
+  const useMarquee = cards.length > 3;
 
   return (
     <Box sx={{ py: { xs: 6, md: 8 }, bgcolor: COLORS.surfaceAlt, borderTop: `1px solid ${COLORS.line}`, borderBottom: `1px solid ${COLORS.line}` }}>
@@ -115,35 +177,98 @@ export default function FoundingDirectory({
           <Stack sx={{ alignItems: "center", py: 5 }}>
             <CircularProgress size={22} sx={{ color: COLORS.accent }} />
           </Stack>
-        ) : (
+        ) : useMarquee ? (
+          // Auto-gliding rail with manual arrows. Pauses while hovered so
+          // every card is easy to click; the list is doubled for a
+          // seamless loop.
           <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(3, 1fr)" },
-              gap: 2.5,
-              maxWidth: 1000,
-              mx: "auto",
-            }}
+            // Pause on the WRAPPER so hovering the arrow buttons (siblings of
+            // the rail, not children) also stops the auto-glide.
+            onMouseEnter={() => { pausedRef.current = true; }}
+            onMouseLeave={() => { pausedRef.current = false; }}
+            sx={{ position: "relative" }}
           >
+            <Box
+              ref={railRef}
+              onTouchStart={() => { pausedRef.current = true; }}
+              onTouchEnd={() => { window.setTimeout(() => { pausedRef.current = false; }, 1500); }}
+              sx={{
+                display: "flex",
+                gap: 2.5,
+                overflowX: "auto",
+                mx: { xs: -2, md: -3 },
+                px: { xs: 2, md: 3 },
+                pb: 1,
+                maskImage: "linear-gradient(90deg, transparent 0, black 4%, black 96%, transparent 100%)",
+                "&::-webkit-scrollbar": { display: "none" },
+                scrollbarWidth: "none",
+              }}
+            >
+              {cards.map((r) => (
+                <Box key={`a-${r.id ?? r.name}`} sx={{ width: { xs: 264, md: 300 }, flexShrink: 0, display: "flex" }}>
+                  <DirectoryCard row={r} kind={kind} />
+                </Box>
+              ))}
+              {cards.map((r) => (
+                <Box key={`b-${r.id ?? r.name}`} aria-hidden sx={{ width: { xs: 264, md: 300 }, flexShrink: 0, display: "flex" }}>
+                  <DirectoryCard row={r} kind={kind} />
+                </Box>
+              ))}
+            </Box>
+
+            {/* Manual scroll arrows */}
+            <IconButton
+              aria-label="Scroll left"
+              onClick={() => nudge(-1)}
+              sx={{
+                position: "absolute",
+                left: { xs: -6, md: -18 },
+                top: "42%",
+                zIndex: 3,
+                width: 40,
+                height: 40,
+                bgcolor: "#FFFFFF",
+                border: `1px solid ${COLORS.line}`,
+                color: COLORS.ink,
+                boxShadow: "0 8px 20px -8px rgba(10,26,47,0.35)",
+                "&:hover": { bgcolor: "#FFFFFF", borderColor: COLORS.accent, color: COLORS.accent },
+              }}
+            >
+              <ChevronLeftRoundedIcon />
+            </IconButton>
+            <IconButton
+              aria-label="Scroll right"
+              onClick={() => nudge(1)}
+              sx={{
+                position: "absolute",
+                right: { xs: -6, md: -18 },
+                top: "42%",
+                zIndex: 3,
+                width: 40,
+                height: 40,
+                bgcolor: "#FFFFFF",
+                border: `1px solid ${COLORS.line}`,
+                color: COLORS.ink,
+                boxShadow: "0 8px 20px -8px rgba(10,26,47,0.35)",
+                "&:hover": { bgcolor: "#FFFFFF", borderColor: COLORS.accent, color: COLORS.accent },
+              }}
+            >
+              <ChevronRightRoundedIcon />
+            </IconButton>
+          </Box>
+        ) : (
+          <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 2.5 }}>
             {cards.map((r) => (
-              <DirectoryCard key={r.id ?? r.name} row={r} kind={kind} />
+              <Box key={r.id ?? r.name} sx={{ width: { xs: "100%", sm: 300 }, display: "flex" }}>
+                <DirectoryCard row={r} kind={kind} />
+              </Box>
             ))}
           </Box>
         )}
 
-        {pageCount > 1 && (
-          <Stack sx={{ alignItems: "center", mt: 4 }}>
-            <Pagination
-              count={pageCount}
-              page={page}
-              onChange={(_, v) => setPage(v)}
-              sx={{
-                "& .MuiPaginationItem-root": { color: COLORS.inkSoft, fontWeight: 600 },
-                "& .Mui-selected": { bgcolor: `${COLORS.accent} !important`, color: "#FFFFFF" },
-              }}
-            />
-          </Stack>
-        )}
+        <Typography sx={{ textAlign: "center", mt: 2, fontSize: "0.74rem", color: COLORS.muted }}>
+          Hover to pause · use the arrows to browse · click any card for the full profile
+        </Typography>
       </Container>
     </Box>
   );
@@ -165,6 +290,7 @@ function DirectoryCard({ row, kind }: { row: DirectoryRow; kind: "experts" | "pa
       sx={{
         display: "flex",
         flexDirection: "column",
+        flex: 1,
         textDecoration: "none",
         color: "inherit",
         borderRadius: 3,

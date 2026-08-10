@@ -68,7 +68,8 @@ export default async function PublicPartnerProfilePage({
         description: v.description,
         logo_url: v.logo_url ?? v.avatar_url ?? null,
         website: v.website,
-        // calendar_link intentionally NOT passed — member-portal-only benefit.
+        // calendar_link intentionally NOT passed for regular partners —
+        // member-portal-only benefit.
       }}
       offerTeasers={(offerRows ?? []).map((o) => ({ id: o.id, kind: "Offer" }))}
       spotlights={spotlights}

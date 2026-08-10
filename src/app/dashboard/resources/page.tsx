@@ -252,7 +252,7 @@ export default function ResourceLibraryPage() {
     <Box sx={{ color: ink.primary }}>
       <EditorialHeader
         eyebrow="Resource library"
-        title="Kits for practice owners"
+        title="Done for you, ready to use"
         standfirst="Each kit is a topic pack — training video, action guide, worksheets, checklist, and ready-to-use templates. Stream the video, download the rest."
       />
 

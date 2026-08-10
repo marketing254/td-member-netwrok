@@ -130,7 +130,7 @@ export default function MemberPartnersPage() {
             </Typography>
           </Box>
         ) : (
-          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }, gap: 2.5 }}>
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }, gridAutoRows: "1fr", gap: 2.5 }}>
             {filtered.map((p) => (
               <PartnerCard key={p.id} partner={p} />
             ))}
@@ -196,11 +196,11 @@ function PartnerCard({ partner }: { partner: Partner }) {
           )}
         </Box>
       </Stack>
-      {partner.description && (
-        <Typography sx={{ fontSize: "0.86rem", color: INK_SOFT, lineHeight: 1.55, mb: 1.25, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-          {partner.description}
-        </Typography>
-      )}
+      {/* Fixed 3-line slot (even when text is shorter or missing) so every
+          card in the grid is exactly the same height. */}
+      <Typography sx={{ fontSize: "0.86rem", color: INK_SOFT, lineHeight: 1.55, mb: 1.25, minHeight: "calc(3 * 1.55 * 0.86rem)", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+        {partner.description ?? ""}
+      </Typography>
       <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between", mt: "auto", pt: 1, borderTop: `1px solid ${LINE}` }}>
         <Typography sx={{ fontSize: "0.74rem", color: INK_MUTED, fontWeight: 600 }}>
           {partner.offer_count === 0 ? "Profile" : `${partner.offer_count} offer${partner.offer_count === 1 ? "" : "s"}`}

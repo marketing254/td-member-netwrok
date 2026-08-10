@@ -11,12 +11,14 @@ import {
   FormControlLabel,
   FormHelperText,
   Grid,
+  IconButton,
   MenuItem,
   Stack,
   Switch,
   TextField,
   Typography,
 } from "@mui/material";
+import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
@@ -75,6 +77,27 @@ const BOOK_CLUB_CONTENT_FIELDS: FileField[] = [
   { field: "short_3", label: "Principle 3 — Short (9×16)", accept: "video/mp4", description: "MP4 — vertical short for the third key principle." },
 ];
 
+/** Kinds an admin can assign to a flexible "additional resource" row —
+ *  mirrors EXTRA_KINDS on the API side. */
+const EXTRA_KIND_OPTIONS: { value: string; label: string }[] = [
+  { value: "video_spotlight", label: "Expert Spotlight (16:9 video)" },
+  { value: "video_highlight", label: "Highlight (16:9 video)" },
+  { value: "video_short", label: "Short (9:16 video)" },
+  { value: "video_full", label: "Full-length video" },
+  { value: "action_guide", label: "Action Guide (PDF)" },
+  { value: "checklist", label: "Checklist (PDF)" },
+  { value: "worksheet", label: "Worksheet (PDF)" },
+  { value: "key_takeaways", label: "Key Takeaways (PDF)" },
+  { value: "slide_deck", label: "Slide Deck" },
+  { value: "infographic", label: "Infographic (PDF)" },
+  { value: "infographic_image", label: "Infographic (image)" },
+  { value: "book_study_guide", label: "Book Study Guide (PDF)" },
+  { value: "discussion_questions", label: "Discussion Questions (PDF)" },
+  { value: "other", label: "Other" },
+];
+
+type ExtraResource = { id: number; title: string; kind: string; file: File | null };
+
 const CATEGORIES = [
   "Practice Management",
   "Front Desk",
@@ -118,6 +141,18 @@ export default function NewKitPage() {
   };
   const [approveOnSubmit, setApproveOnSubmit] = useState(false);
   const [files, setFiles] = useState<Record<string, File | null>>({});
+  // Flexible extra resources beyond the fixed slots — any count, each with
+  // its own title + kind (e.g. an Expert Spotlight, a second worksheet).
+  const [extras, setExtras] = useState<ExtraResource[]>([]);
+  const [nextExtraId, setNextExtraId] = useState(1);
+  const addExtra = () => {
+    setExtras((prev) => [...prev, { id: nextExtraId, title: "", kind: "other", file: null }]);
+    setNextExtraId((n) => n + 1);
+  };
+  const updateExtra = (id: number, patch: Partial<ExtraResource>) => {
+    setExtras((prev) => prev.map((e) => (e.id === id ? { ...e, ...patch } : e)));
+  };
+  const removeExtra = (id: number) => setExtras((prev) => prev.filter((e) => e.id !== id));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -178,7 +213,8 @@ export default function NewKitPage() {
       ? [...CONTENT_FIELDS.filter((f) => f.field !== "action_guide" && f.field !== "checklist"), ...BOOK_CLUB_CONTENT_FIELDS]
       : CONTENT_FIELDS;
 
-  const contentFileCount = activeContentFields.filter((c) => files[c.field]).length;
+  const readyExtras = extras.filter((e) => e.file && e.title.trim());
+  const contentFileCount = activeContentFields.filter((c) => files[c.field]).length + readyExtras.length;
   const canSubmit =
     title.trim().length > 0 &&
     effectiveSlug.length > 0 &&
@@ -190,8 +226,11 @@ export default function NewKitPage() {
     for (const f of Object.values(files)) {
       if (f) bytes += f.size;
     }
+    for (const e of extras) {
+      if (e.file) bytes += e.file.size;
+    }
     return bytes;
-  }, [files]);
+  }, [files, extras]);
 
   // Upload progress, keyed by field. 0..1 per file, null = not started.
   const [progress, setProgress] = useState<Record<string, number | null>>({});
@@ -281,6 +320,8 @@ export default function NewKitPage() {
         publicUrl: string;
         mime: string;
         sizeBytes: number;
+        title?: string;
+        kind?: string;
       }> = [];
 
       for (const c of activeContentFields) {
@@ -291,6 +332,16 @@ export default function NewKitPage() {
         const storagePath = `${effectiveSlug}/${safeName}`;
         const up = await uploadOne("member-resources", c.field, file, storagePath);
         uploaded.push({ fieldKey: c.field, ...up });
+      }
+
+      // 2b. Upload the flexible extra resources.
+      for (const ex of extras) {
+        if (!ex.file || !ex.title.trim()) continue;
+        setProgressLabel(`Uploading ${ex.title.trim()}…`);
+        const safeName = ex.file.name.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9._-]/g, "");
+        const storagePath = `${effectiveSlug}/${safeName}`;
+        const up = await uploadOne("member-resources", `extra_${ex.id}`, ex.file, storagePath);
+        uploaded.push({ fieldKey: `extra_${ex.id}`, title: ex.title.trim(), kind: ex.kind, ...up });
       }
 
       // 3. Tell our server to insert the DB rows now that storage is loaded
@@ -563,6 +614,67 @@ export default function NewKitPage() {
                     onChange={(file) => setFile(f.field, file)}
                   />
                 ))}
+              </Stack>
+            </SectionCard>
+          </Box>
+
+          <Box sx={{ mt: 2.5 }}>
+            <SectionCard
+              title="Additional resources"
+              subtitle="Anything beyond the fixed slots — add as many as you need, each with its own title and type."
+            >
+              <Stack spacing={1.25}>
+                {extras.map((ex) => (
+                  <Stack key={ex.id} direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ alignItems: { sm: "center" }, border: "1px solid rgba(14,42,61,0.1)", borderRadius: 1.25, p: 1.25 }}>
+                    <TextField
+                      size="small"
+                      label="Title"
+                      value={ex.title}
+                      onChange={(e) => updateExtra(ex.id, { title: e.target.value })}
+                      sx={{ flex: 1.2, minWidth: 160 }}
+                      placeholder="e.g. Expert Spotlight (Full)"
+                    />
+                    <TextField
+                      select
+                      size="small"
+                      label="Type"
+                      value={ex.kind}
+                      onChange={(e) => updateExtra(ex.id, { kind: e.target.value })}
+                      sx={{ flex: 1, minWidth: 170 }}
+                    >
+                      {EXTRA_KIND_OPTIONS.map((o) => (
+                        <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
+                      ))}
+                    </TextField>
+                    <Button
+                      component="label"
+                      size="small"
+                      variant="outlined"
+                      startIcon={ex.file ? <CheckRoundedIcon sx={{ fontSize: 15 }} /> : <CloudUploadOutlinedIcon sx={{ fontSize: 15 }} />}
+                      sx={{ textTransform: "none", whiteSpace: "nowrap", borderColor: "rgba(14,42,61,0.2)", color: ex.file ? "#1F5C40" : "#0A1A2F", maxWidth: 220, overflow: "hidden" }}
+                    >
+                      {ex.file ? ex.file.name.slice(0, 22) + (ex.file.name.length > 22 ? "…" : "") : "Choose file"}
+                      <input
+                        hidden
+                        type="file"
+                        onChange={(e) => updateExtra(ex.id, { file: e.target.files?.[0] ?? null })}
+                      />
+                    </Button>
+                    {typeof progress[`extra_${ex.id}`] === "number" && (progress[`extra_${ex.id}`] ?? 0) < 1 && (
+                      <CircularProgress size={16} sx={{ color: "#A07823" }} />
+                    )}
+                    <IconButton size="small" onClick={() => removeExtra(ex.id)} aria-label="Remove resource">
+                      <DeleteOutlineRoundedIcon sx={{ fontSize: 18, color: "#8C1D1D" }} />
+                    </IconButton>
+                  </Stack>
+                ))}
+                <Button
+                  onClick={addExtra}
+                  startIcon={<AddRoundedIcon sx={{ fontSize: 16 }} />}
+                  sx={{ textTransform: "none", alignSelf: "flex-start", color: "#A07823", fontWeight: 700 }}
+                >
+                  Add another resource
+                </Button>
               </Stack>
             </SectionCard>
           </Box>

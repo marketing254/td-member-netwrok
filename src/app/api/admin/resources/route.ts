@@ -146,12 +146,35 @@ const FILE_FIELD_MAP: Record<
 
 const SLUG_RE = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
 
+/** Kinds an admin may assign to a flexible "additional resource". Must stay
+ *  within the resources.kind values the portal player knows how to render. */
+const EXTRA_KINDS = new Set([
+  "video_full",
+  "video_spotlight",
+  "video_highlight",
+  "video_short",
+  "action_guide",
+  "checklist",
+  "worksheet",
+  "key_takeaways",
+  "slide_deck",
+  "infographic",
+  "infographic_image",
+  "book_study_guide",
+  "discussion_questions",
+  "other",
+]);
+
 type FileSubmission = {
   fieldKey: string;
   storagePath: string;
   publicUrl: string;
   mime: string;
   sizeBytes: number;
+  /** Flexible extras only — the admin-entered row title. */
+  title?: string;
+  /** Flexible extras only — one of EXTRA_KINDS. */
+  kind?: string;
 };
 
 type SubmissionBody = {
@@ -232,17 +255,43 @@ export async function POST(req: Request) {
   };
 
   const rowsToInsert: RowInput[] = [];
+  let extraIndex = 0;
   for (const f of files) {
+    if (!f.storagePath || !f.publicUrl) {
+      return NextResponse.json(
+        { error: `Missing storagePath/publicUrl on "${f.fieldKey}".` },
+        { status: 400 },
+      );
+    }
+
+    // Flexible extras: fieldKey "extra_*" carries its own title + kind so
+    // admins aren't limited to the fixed slots (e.g. an Expert Spotlight,
+    // a second worksheet, extra highlight videos…).
+    if (f.fieldKey.startsWith("extra")) {
+      const extraTitle = (f.title ?? "").trim();
+      const extraKind = (f.kind ?? "").trim();
+      if (!extraTitle) {
+        return NextResponse.json({ error: "Each additional resource needs a title." }, { status: 400 });
+      }
+      if (!EXTRA_KINDS.has(extraKind)) {
+        return NextResponse.json({ error: `Invalid kind "${extraKind}" for additional resource "${extraTitle}".` }, { status: 400 });
+      }
+      rowsToInsert.push({
+        title: extraTitle.slice(0, 160),
+        kind: extraKind,
+        storagePath: f.storagePath,
+        externalUrl: f.publicUrl,
+        mime: f.mime || "application/octet-stream",
+        sizeBytes: f.sizeBytes || 0,
+        position: 200 + extraIndex++,
+      });
+      continue;
+    }
+
     const meta = FILE_FIELD_MAP[f.fieldKey];
     if (!meta) {
       return NextResponse.json(
         { error: `Unknown file field "${f.fieldKey}".` },
-        { status: 400 },
-      );
-    }
-    if (!f.storagePath || !f.publicUrl) {
-      return NextResponse.json(
-        { error: `Missing storagePath/publicUrl on "${f.fieldKey}".` },
         { status: 400 },
       );
     }

@@ -175,9 +175,6 @@ export default function PartnerProfilePage() {
             </Stack>
           )}
 
-          {/* Spotlight / What's New — admin-curated news & events */}
-          <SpotlightSection spotlights={spotlights} />
-
           {/* About */}
           {partner.description && (
             <Section title="About">
@@ -187,9 +184,11 @@ export default function PartnerProfilePage() {
             </Section>
           )}
 
-          {/* Offers */}
+          {/* Offers — real offer rows plus the spotlight carousel (offers,
+              events, news). The carousel lives HERE, under Member offers,
+              rather than duplicated at the top of the page. */}
           <Section title="Member offers">
-            {offers.length === 0 ? (
+            {offers.length === 0 && spotlights.length === 0 ? (
               <Typography sx={{ color: INK_MUTED, fontSize: "0.92rem" }}>
                 No published offers yet — check back soon.
               </Typography>
@@ -198,6 +197,7 @@ export default function PartnerProfilePage() {
                 {offers.map((o) => (
                   <OfferCard key={o.id} offer={o} />
                 ))}
+                <SpotlightSection spotlights={spotlights} />
               </Stack>
             )}
           </Section>
