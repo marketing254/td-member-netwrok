@@ -43,7 +43,13 @@ export function BookCoachingCard({ topicTitle, expert }: { topicTitle?: string; 
 
   const featured = expert ?? null;
   const displayName = featured?.name ?? "Gary Takacs";
-  const firstName = displayName.split(/\s+/)[0] ?? displayName;
+  // Short address form for buttons/copy: "Dr. Parul Dua Makkar" → "Dr. Makkar",
+  // "Laura Phillips, E.A." → "Laura", "James DeLuca" → "James".
+  const baseName = (displayName.split(",")[0] ?? displayName).trim();
+  const nameParts = baseName.split(/\s+/);
+  const firstName = /^dr\.?$/i.test(nameParts[0] ?? "")
+    ? `Dr. ${nameParts[nameParts.length - 1]}`
+    : (nameParts[0] ?? baseName);
   const avatarSrc = featured ? (featured.headshot_url ?? undefined) : "/team/gary-takacs.jpg";
   const initials = displayName
     .split(/\s+/)
@@ -205,7 +211,7 @@ export function BookCoachingCard({ topicTitle, expert }: { topicTitle?: string; 
                   },
                 }}
               >
-                {featured ? `Book with ${firstName}` : "Book a 30-min session"}
+                {featured ? `Book with ${firstName}` : "Book with Gary"}
               </Button>
             )}
           </Box>

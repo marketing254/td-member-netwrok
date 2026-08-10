@@ -159,7 +159,7 @@ const SHORT_RE = /^Short (\d+) \(9x16\) - (.+?)\.mp4$/i;
 // video_short — that kind drives the portal's vertical 9x16 shorts rail.
 //   "Expert Spotlight - Connect Before You Treat.mp4"
 //   "Highlight 2 (16x9) - Know the End Goal.mp4"
-const SPOTLIGHT_RE = /^Expert Spotlight - (.+?)\.mp4$/i;
+const SPOTLIGHT_RE = /^Expert Spotlight( \(Full\))? - (.+?)\.mp4$/i;
 const HIGHLIGHT_RE = /^Highlight (\d+) \(16x9\) - (.+?)\.mp4$/i;
 
 const MIME = {
@@ -473,10 +473,11 @@ async function runOneKit(folderName, parentDir) {
     // Underscores appear in some source names ("You Can_t") — the title
     // shown to members comes from the kit, not the filename, so keep the
     // captured label but restore the apostrophe form where it's obvious.
-    const label = (spot ? spot[1] : high[2]).replace(/_/g, "'").trim();
+    const label = (spot ? spot[2] : high[2]).replace(/_/g, "'").trim();
+    const isFullSpot = !!(spot && spot[1]);
     const kind = spot ? "video_spotlight" : "video_highlight";
-    const title = spot ? "Expert Spotlight" : `Highlight ${high[1]} — ${label}`;
-    const position = spot ? 12 : 80 + Number(high[1]);
+    const title = spot ? (isFullSpot ? "Expert Spotlight (Full)" : "Expert Spotlight") : `Highlight ${high[1]} — ${label}`;
+    const position = spot ? (isFullSpot ? 13 : 12) : 80 + Number(high[1]);
 
     const safeName = filename.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9._-]/g, "");
     const storagePath = `${slug}/${safeName}`;

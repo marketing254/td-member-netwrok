@@ -249,8 +249,14 @@ export default function ExpertProfilePage() {
             )}
           </Stack>
 
-          {/* Spotlight / What's New — admin-curated news & events */}
-          <SpotlightSection spotlights={spotlights} />
+          {/* Member offers — the spotlight carousel (offers, events, news)
+              lives here under one heading, mirroring partner profiles,
+              instead of being duplicated at the top of the page. */}
+          {spotlights.length > 0 && (
+            <Section title="Member offers">
+              <SpotlightSection spotlights={spotlights} />
+            </Section>
+          )}
 
           {/* Bio */}
           {expert.bio && (

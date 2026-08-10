@@ -55,6 +55,20 @@ export async function GET() {
       for (const o of offers ?? []) {
         offerCounts.set(o.vendor_id, (offerCounts.get(o.vendor_id) ?? 0) + 1);
       }
+      // Offers published as "feature" spotlights — the standard format on
+      // profile pages (SpotlightOfferCard) — count too, so the card's offer
+      // count matches what the member actually sees on the profile.
+      const { data: spots } = await admin
+        .from("profile_spotlights")
+        .select("vendor_id")
+        .in("vendor_id", ids)
+        .eq("kind", "feature")
+        .eq("is_published", true);
+      for (const s of spots ?? []) {
+        if (s.vendor_id) {
+          offerCounts.set(s.vendor_id, (offerCounts.get(s.vendor_id) ?? 0) + 1);
+        }
+      }
     }
 
     const shaped = visible.map((v) => ({

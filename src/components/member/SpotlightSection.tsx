@@ -19,7 +19,7 @@ const INK_MUTED = "#7A8590";
 const GOLD = "#A07823";
 const LINE = "#E6DDCF";
 
-const ROTATE_MS = 5500;
+const ROTATE_MS = 4000;
 
 export type Spotlight = {
   id: string;
@@ -57,7 +57,15 @@ function fmtDate(iso: string | null): string {
  * crossfading carousel. Fixed footprint so the sections below never
  * shift. Renders nothing when empty.
  */
-export default function SpotlightSection({ spotlights }: { spotlights: Spotlight[] }) {
+export default function SpotlightSection({
+  spotlights,
+  hideHeader = false,
+}: {
+  spotlights: Spotlight[];
+  /** Skip the built-in "Spotlight" header — for nesting under another
+   *  section title (e.g. "Member offers" on profile pages). */
+  hideHeader?: boolean;
+}) {
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
   const [reduce, setReduce] = useState(false);
@@ -99,6 +107,7 @@ export default function SpotlightSection({ spotlights }: { spotlights: Spotlight
   return (
     <Box sx={{ maxWidth: { xs: "100%", sm: 560 } }}>
       {/* Header */}
+      {!hideHeader && (
       <Stack direction="row" spacing={1.25} sx={{ alignItems: "center", mb: 1.5 }}>
         <Box sx={{ width: 30, height: 30, borderRadius: "50%", bgcolor: "rgba(160,120,35,0.12)", display: "grid", placeItems: "center", flexShrink: 0 }}>
           <AutoAwesomeRoundedIcon sx={{ fontSize: 16, color: GOLD }} />
@@ -117,6 +126,7 @@ export default function SpotlightSection({ spotlights }: { spotlights: Spotlight
           </Typography>
         )}
       </Stack>
+      )}
 
       {/* Stage */}
       <Box
@@ -317,6 +327,43 @@ function SpotlightCard({ s }: { s: Spotlight }) {
           )}
         </Box>
       </Box>
+    </Box>
+  );
+}
+
+/**
+ * SpotlightOfferCard — renders a "feature"-kind spotlight as an offer row
+ * under a profile's "Member offers" heading, so spotlight-only offers
+ * (e.g. promo codes announced via spotlights) don't leave that section
+ * blank. The carousel above stays untouched.
+ */
+export function SpotlightOfferCard({ s }: { s: Spotlight }) {
+  return (
+    <Box sx={{ border: `1px solid ${LINE}`, borderRadius: 2, bgcolor: "#FFFFFF", p: { xs: 2, sm: 2.5 } }}>
+      <Stack direction="row" spacing={1.25} sx={{ alignItems: "flex-start" }}>
+        <Box sx={{ width: 34, height: 34, borderRadius: "50%", bgcolor: "rgba(110,51,70,0.12)", display: "grid", placeItems: "center", flexShrink: 0, mt: 0.25 }}>
+          <AutoAwesomeRoundedIcon sx={{ fontSize: 17, color: "#6E3346" }} />
+        </Box>
+        <Box sx={{ minWidth: 0, flex: 1 }}>
+          <Typography sx={{ fontSize: "1rem", fontWeight: 700, color: INK }}>{s.title}</Typography>
+          <Typography sx={{ fontSize: "0.88rem", color: INK_SOFT, lineHeight: 1.55, mt: 0.5, whiteSpace: "pre-line" }}>
+            {s.body}
+          </Typography>
+          {s.link_url && (
+            <Button
+              component="a"
+              href={s.link_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              variant="text"
+              endIcon={<OpenInNewRoundedIcon sx={{ fontSize: 14 }} />}
+              sx={{ mt: 0.75, px: 0, textTransform: "none", fontWeight: 700, color: GOLD, "&:hover": { bgcolor: "transparent", textDecoration: "underline" } }}
+            >
+              {s.link_label || "Claim this offer"}
+            </Button>
+          )}
+        </Box>
+      </Stack>
     </Box>
   );
 }

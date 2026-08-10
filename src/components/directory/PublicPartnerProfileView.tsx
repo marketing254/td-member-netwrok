@@ -32,10 +32,13 @@ export default function PublicPartnerProfileView({
   partner,
   offerTeasers = [],
   spotlights = [],
+  offerCtaHref = null,
 }: {
   partner: PublicPartnerProfile;
   offerTeasers?: LockedTeaserRow[];
   spotlights?: LockedTeaserRow[];
+  /** House partners only — public scheduler the offers click through to. */
+  offerCtaHref?: string | null;
 }) {
   const name = partner.name;
   return (
@@ -127,7 +130,17 @@ export default function PublicPartnerProfileView({
           footnote={`${name} shares events, news, and member perks in the portal.`}
         />
 
-        {offerTeasers.length > 0 ? (
+        {offerTeasers.length > 0 && offerCtaHref ? (
+          // House partner: offers are claimable publicly — the CTA clicks
+          // through to their scheduler instead of the membership page.
+          <LockedTeaserList
+            label="Member-exclusive offers"
+            rows={offerTeasers}
+            footnote="Book a strategy meeting to claim these offers."
+            ctaLabel="Book a strategy meeting"
+            ctaHref={offerCtaHref}
+          />
+        ) : offerTeasers.length > 0 ? (
           <LockedTeaserList
             label="Member-exclusive offers"
             rows={offerTeasers}
