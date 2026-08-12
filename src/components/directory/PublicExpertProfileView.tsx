@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { isSupabaseImage } from "@/lib/images";
 import { Box, Button, Chip, Container, Stack, Typography } from "@mui/material";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import LanguageRoundedIcon from "@mui/icons-material/LanguageRounded";
@@ -76,7 +77,7 @@ export default function PublicExpertProfileView({
             }}
           >
             {expert.headshot_url ? (
-              <Image src={expert.headshot_url} alt={name} fill sizes="140px" style={{ objectFit: "cover", objectPosition: "center top" }} />
+              <Image src={expert.headshot_url} alt={name} fill sizes="140px" unoptimized={!isSupabaseImage(expert.headshot_url)} style={{ objectFit: "cover", objectPosition: "center top" }} />
             ) : (
               <Box sx={{ width: "100%", height: "100%", display: "grid", placeItems: "center", color: COLORS.accent, fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "2.2rem" }}>
                 {name.split(/\s+/).map((p) => p[0]).slice(0, 2).join("").toUpperCase()}

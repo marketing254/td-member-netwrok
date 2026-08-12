@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { isSupabaseImage } from "@/lib/images";
 import { useParams } from "next/navigation";
 import {
   Box,
@@ -150,6 +151,7 @@ export default function ExpertProfilePage() {
                   alt={expert.name}
                   fill
                   sizes="116px"
+                  unoptimized={!isSupabaseImage(expert.headshot_url)}
                   style={{ objectFit: "cover", objectPosition: "center top" }}
                 />
               ) : (
@@ -369,6 +371,7 @@ function KitCard({ kit }: { kit: Kit }) {
             alt={kit.title}
             fill
             sizes="(max-width:600px) 100vw, (max-width:900px) 50vw, 320px"
+            unoptimized={!isSupabaseImage(kit.card_url)}
             style={{ objectFit: fit }}
             onLoad={(e) => {
               const el = e.currentTarget;

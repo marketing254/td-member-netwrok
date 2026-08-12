@@ -328,7 +328,7 @@ export default function Header() {
               NOW LIVE
             </Typography>
             <Typography variant="body2" sx={{ color: "#3B4A55", fontSize: "0.86rem", lineHeight: 1.55 }}>
-              Expert helpline, vendor savings, exclusive content, and a network of 500+ practice owners.
+              Expert helpline, vendor savings, exclusive content, and a growing network of practice owners.
             </Typography>
           </Box>
 

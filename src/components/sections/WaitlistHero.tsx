@@ -1,13 +1,15 @@
 "use client";
-import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Box,
   Button,
   Container,
   Stack,
+  TextField,
   Typography,
 } from "@mui/material";
-import { ArrowRight, Check, Sparkles } from "lucide-react";
+import { Check, Play, Sparkles } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import HeroFlowingCurves from "@/components/effects/HeroFlowingCurves";
 
@@ -15,6 +17,16 @@ const MotionBox = motion.create(Box);
 
 export default function WaitlistHero() {
   const reduced = useReducedMotion();
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+
+  // ONE ask: capture the email here, land on the 3-step member signup with
+  // it prefilled. No validation gate — an empty email just means the first
+  // step of the flow asks for it.
+  const start = () => {
+    const q = email.trim() ? `?email=${encodeURIComponent(email.trim())}` : "";
+    router.push(`/join/member${q}`);
+  };
 
   return (
     <Box
@@ -99,13 +111,13 @@ export default function WaitlistHero() {
               sx={{
                 color: "#1A1A1A",
                 fontFamily: "var(--font-display)",
-                fontSize: { xs: "2rem", sm: "2.4rem", md: "2.9rem" },
+                fontSize: { xs: "2.1rem", sm: "2.5rem", md: "3rem" },
                 lineHeight: 1.05,
                 letterSpacing: "-0.03em",
                 fontWeight: 500,
               }}
             >
-              The only network where every practice problem gets a{" "}
+              Never solve a practice problem{" "}
               <Box
                 component="span"
                 sx={{
@@ -117,7 +129,7 @@ export default function WaitlistHero() {
                   WebkitTextFillColor: "transparent",
                 }}
               >
-                written action plan in 2–3 business days.
+                alone again.
               </Box>
             </Typography>
           </MotionBox>
@@ -136,69 +148,92 @@ export default function WaitlistHero() {
                 mx: "auto",
               }}
             >
-              Submit any practice problem — a real expert routes you to the exact
-              people and proven playbooks within 3 business days. Plus $6,000+/yr
-              in vendor savings and 500+ peer owners. One membership.
+              Send us any problem and get a written action plan in 2–3 business
+              days, plus a growing library of done-for-you resources from vetted
+              experts. One membership.
             </Typography>
           </MotionBox>
 
+          {/* ONE ask — email + Start your membership. Stacks full-width on
+              phones (mobile is the primary layout for paid traffic). */}
           <MotionBox
             initial={reduced ? false : { opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.45, ease: [0.16, 1, 0.3, 1] }}
-            sx={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 1.25,
-              alignItems: "center",
-              justifyContent: "center",
-              pt: 0.5,
-            }}
+            sx={{ width: "100%", pt: 0.5 }}
           >
-            <Button
-              component={Link}
-              href="/join"
-              endIcon={<ArrowRight size={16} />}
-              sx={{
-                py: 1.35,
-                px: 2.5,
-                fontSize: "0.92rem",
-                fontWeight: 600,
-                textTransform: "none",
-                borderRadius: 2,
-                bgcolor: "#1A1A1A !important",
-                backgroundImage: "none !important",
-                color: "#FFFFFF !important",
-                "&:hover": {
-                  bgcolor: "#2A2A2A !important",
+            <Stack
+              component="form"
+              onSubmit={(e) => {
+                e.preventDefault();
+                start();
+              }}
+              direction={{ xs: "column", sm: "row" }}
+              spacing={1.25}
+              sx={{ justifyContent: "center", maxWidth: 560, mx: "auto" }}
+            >
+              <TextField
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
+                autoComplete="email"
+                fullWidth
+                slotProps={{ htmlInput: { "aria-label": "Email address" } }}
+                sx={{
+                  flex: 1,
+                  "& .MuiOutlinedInput-root": {
+                    bgcolor: "#FFFFFF",
+                    borderRadius: 2,
+                    fontSize: "1rem",
+                  },
+                }}
+              />
+              <Button
+                type="submit"
+                sx={{
+                  py: 1.5,
+                  px: 3,
+                  fontSize: "1rem",
+                  fontWeight: 800,
+                  textTransform: "none",
+                  borderRadius: 2,
+                  whiteSpace: "nowrap",
+                  flexShrink: 0,
+                  bgcolor: "#D9A84B !important",
                   backgroundImage: "none !important",
-                  color: "#FFFFFF !important",
-                  transform: "translateY(-1px)",
-                },
-                transition: "transform 150ms ease, background 150ms ease",
-              }}
-            >
-              Become a member
-            </Button>
-            <Button
-              component={Link}
-              href="#helpline"
+                  color: "#0A1A2F !important",
+                  "&:hover": {
+                    bgcolor: "#E5BA63 !important",
+                    backgroundImage: "none !important",
+                    transform: "translateY(-1px)",
+                  },
+                  transition: "transform 150ms ease, background 150ms ease",
+                }}
+              >
+                Start your membership ›
+              </Button>
+            </Stack>
+            <Typography sx={{ mt: 1.5, fontSize: "0.84rem", color: "#71717A" }}>
+              Founding 100 · $49 a month, locked for life · cancel anytime
+            </Typography>
+            <Box
+              component="a"
+              href="#tour"
               sx={{
-                py: 1.35,
-                px: 2.25,
-                fontSize: "0.9rem",
-                fontWeight: 600,
-                textTransform: "none",
-                borderRadius: 2,
-                color: "#1A1A1A",
-                border: "1.5px solid #E7E2D6",
-                bgcolor: "rgba(255,255,255,0.6)",
-                backdropFilter: "blur(8px)",
-                "&:hover": { borderColor: "#9B7B3A", bgcolor: "rgba(255,255,255,0.85)" },
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 0.75,
+                mt: 2,
+                color: "#9B7B3A",
+                fontWeight: 700,
+                fontSize: "0.95rem",
+                textDecoration: "none",
+                "&:hover": { color: "#7A5F2A" },
               }}
             >
-              See how the helpline works
-            </Button>
+              <Play size={14} fill="#9B7B3A" /> Watch the 2-minute tour
+            </Box>
           </MotionBox>
 
           <Stack
@@ -284,7 +319,7 @@ export default function WaitlistHero() {
               <Box component="span" sx={{ fontWeight: 700, color: "#1A1A1A" }}>
                 Now live —
               </Box>{" "}
-              500+ practice owners on the network
+              a growing network of practice owners
             </Typography>
           </Box>
         </Stack>

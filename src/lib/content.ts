@@ -46,7 +46,7 @@ export const marqueeBadges = [
   "Exclusive Partner Discounts",
   "Exclusive Content Library",
   "Proven Systems & SOPs",
-  "500+ Practice Owner Network",
+  "A Growing Practice Owner Network",
   "Vendor Savings Averaging $6K+",
 ];
 
@@ -155,9 +155,9 @@ export const faqs = [
       "An Expert Hotline — leave a voicemail with your question, get a written action plan plus the right experts to contact, by text and email, within 2–3 business days.",
       "Exclusive partner discounts averaging $6,000+ per year on supplies, labs, equipment, and services.",
       "An exclusive content library with recorded expert panels, training, and knowledge resources.",
-      "DMN exclusive expert podcasts — full-length conversations with the people running the most profitable practices.",
+      "A growing library of expert kits, each built from a real session.",
     ],
-    aClose: "Plus proven systems, SOPs, and monthly live AMAs with specialists.",
+    aClose: "Plus proven systems, SOPs, and templates.",
   },
   {
     q: "How do the partner savings work?",
@@ -282,9 +282,9 @@ export const pricing = [
       "Expert Hotline — written action plan from business coaches and practice advisors within 2–3 business days",
       "Exclusive partner discounts, negotiated vendor savings averaging $6,000+/year",
       "Exclusive content library, recorded expert panels, training, and knowledge resources",
-      "Member directory,500+ practice owners searchable by city, specialty, revenue",
+      "Member directory — practice owners searchable by city, specialty, revenue",
       "Proven systems, battle-tested templates, checklists, and SOPs",
-      "Monthly live AMAs with specialists",
+      "A growing library of expert kits from real sessions",
     ],
     cta: "Claim founding spot",
     ctaHref: "/#waitlist",
@@ -358,7 +358,7 @@ export const libraryPreviewSection = {
   eyebrow: "A LOOK INSIDE THE MEMBER LIBRARY",
   title: "What you actually see after you sign in.",
   subtitle:
-    "Practice management, marketing, team training, and insurance independence — taught by the operators who built it. Plus the helpline, the vendor savings ledger, and the directory of 500+ practice owners.",
+    "Practice management, marketing, team training, and insurance independence — taught by the operators who built it. Plus the helpline, the vendor savings ledger, and a growing directory of practice owners.",
 };
 
 // Library topics — single-presenter, single-palette (on-brand navy) for a
@@ -402,7 +402,7 @@ export const portalNavItems = [
   { label: "Helpline", badge: "2hr" },
   { label: "Library", badge: "Live" },
   { label: "Vendor Deals", badge: "$6.4K" },
-  { label: "Directory", badge: "500+" },
-  { label: "Live AMAs", badge: "Monthly" },
+  { label: "Directory", badge: "Growing" },
+  { label: "Kits", badge: "Weekly" },
 ];
 

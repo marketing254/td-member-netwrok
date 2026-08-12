@@ -32,7 +32,7 @@ const PRICING_JSONLD = {
       "@type": "Product",
       name: "Dental Member Network — Founding Membership",
       description:
-        "Membership for US + Canadian dental practice owners. 24/7 expert hotline returning a written action plan in 2–3 business days, partner-network discounts averaging $6,400/year, and a curated kit library.",
+        "Membership for US + Canadian dental practice owners. Expert hotline returning a written action plan in 2–3 business days, partner-network discounts averaging $6,400/year, and a curated kit library.",
       brand: { "@type": "Brand", name: "Dental Member Network" },
       image: "https://dentalmembernetwork.com/td-logo-horizontal-dark.svg",
       url: "https://dentalmembernetwork.com/pricing",
@@ -93,12 +93,13 @@ const PRICING_JSONLD = {
   ],
 };
 
+// Honesty pass (2026-08): podcasts/AMAs don't exist yet — only what a
+// member actually gets today is listed.
 const UNIVERSAL_PERKS = [
   "Expert Hotline — written action plan in 2–3 days",
   "Full video course library",
   "New resources every week",
-  "Exclusive DMN expert podcasts",
-  "Live webinars, events & roundtables (CE)",
+  "Exclusive partner offers & vendor savings",
   "Templates & worksheets",
   "Community access",
   "A growing bench of experts",

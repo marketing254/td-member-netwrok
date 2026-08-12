@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { isSupabaseImage } from "@/lib/images";
 import {
   Box,
   CircularProgress,
@@ -211,6 +212,7 @@ function ExpertCard({ expert }: { expert: Expert }) {
               alt={expert.name}
               fill
               sizes="56px"
+              unoptimized={!isSupabaseImage(expert.headshot_url)}
               style={{ objectFit: "cover", objectPosition: "center top" }}
             />
           ) : (
