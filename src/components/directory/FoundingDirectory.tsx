@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { isSupabaseImage } from "@/lib/images";
 import {
   Box,
   CircularProgress,
@@ -327,7 +328,10 @@ function DirectoryCard({ row, kind }: { row: DirectoryRow; kind: "experts" | "pa
             alt={row.name}
             fill
             sizes="(max-width: 600px) 100vw, 320px"
-            unoptimized={!isExperts}
+            // Only Supabase-hosted images go through the optimizer — these
+            // URLs are expert/partner-supplied data, and next/image THROWS
+            // on any hostname not in next.config remotePatterns.
+            unoptimized={!isExperts || !isSupabaseImage(img)}
             style={isExperts ? { objectFit: "cover", objectPosition: "center top" } : { objectFit: "contain", padding: 26 }}
           />
         ) : (

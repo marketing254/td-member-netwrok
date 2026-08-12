@@ -1,18 +1,14 @@
 import { redirect } from "next/navigation";
 import Header from "@/components/sections/Header";
 import WaitlistHero from "@/components/sections/WaitlistHero";
-import PoweredByStrip from "@/components/sections/PoweredByStrip";
+import JustDropped from "@/components/sections/JustDropped";
 import HelplineDemo from "@/components/sections/HelplineDemo";
+import TourVideo from "@/components/sections/TourVideo";
 import SocialProof from "@/components/sections/SocialProof";
-import Features from "@/components/sections/Features";
-import OneNetworkThreeWays from "@/components/sections/OneNetworkThreeWays";
-import MemberLibraryPreview from "@/components/sections/MemberLibraryPreview";
-import ROICalculator from "@/components/sections/ROICalculator";
 import Pricing from "@/components/sections/Pricing";
-import WhoItsFor from "@/components/sections/WhoItsFor";
-import FreeKitMagnet from "@/components/sections/FreeKitMagnet";
 import FAQ from "@/components/sections/FAQ";
 import Footer from "@/components/sections/Footer";
+import StickyMobileCTA from "@/components/sections/StickyMobileCTA";
 import ScrollProgressBar from "@/components/effects/ScrollProgressBar";
 import JsonLd from "@/components/seo/JsonLd";
 import { faqs } from "@/lib/content";
@@ -82,32 +78,24 @@ export default async function HomePage({ searchParams }: { searchParams: HomeSea
       <ScrollProgressBar />
       <Header />
       <main>
-        {/* Hero — left copy + right launch-card with countdown + CTA */}
+        {/* Hero — ONE ask: email + Start your membership (2026-08 restructure) */}
         <WaitlistHero />
-        {/* Connected communities behind DMN */}
-        <PoweredByStrip />
+        {/* "Just dropped." — auto-scrolling shelf of real kit cards, newest first */}
+        <JustDropped />
         {/* The differentiator — Helpline demo */}
         <HelplineDemo />
+        {/* "See inside the member area." — click-to-play 2-minute tour */}
+        <TourVideo />
         {/* Trust — testimonials + podcast credits */}
         <SocialProof />
-        {/* What you get */}
-        <Features />
-        {/* Inside the member portal */}
-        <MemberLibraryPreview />
-        {/* Do the math */}
-        <ROICalculator />
         {/* Pricing + value stack */}
         <Pricing />
-        {/* Honest fit check */}
-        <WhoItsFor />
-        {/* Free kit lead magnet */}
-        <FreeKitMagnet />
-        {/* One network. Three ways in. — Members / Experts / Partners */}
-        <OneNetworkThreeWays />
         {/* Objections */}
         <FAQ />
       </main>
       <Footer />
+      {/* Mobile: hero CTA stays one glance away past the hero */}
+      <StickyMobileCTA />
     </>
   );
 }

@@ -14,12 +14,13 @@ import { motion, useReducedMotion } from "framer-motion";
 
 const MotionBox = motion.create(Box);
 
+// Honesty pass (2026-08): the helpline is written replies in 2–3 business
+// days — never "24/7" or "live". Podcasts and AMAs don't exist yet, so
+// their rows are gone and the total is the sum of what's real.
 const VALUE_STACK = [
-  { label: "24/7 expert helpline", value: "$2,400/yr" },
+  { label: "Expert helpline — written replies in 2–3 business days", value: "$2,400/yr" },
   { label: "Vendor savings access", value: "$6,000+/yr" },
   { label: "Content & kit library", value: "$1,200/yr" },
-  { label: "DMN exclusive expert podcasts", value: "$1,500/yr" },
-  { label: "Monthly live AMAs", value: "$1,800/yr" },
   { label: "Systems, SOPs & templates", value: "$900/yr" },
 ];
 
@@ -227,7 +228,7 @@ export default function Pricing() {
                   Total value
                 </Typography>
                 <Typography sx={{ color: "#1A1A1A", fontWeight: 800, fontSize: "1rem" }}>
-                  $12,300/yr
+                  $10,500+/yr
                 </Typography>
               </Stack>
             </MotionBox>
@@ -337,7 +338,7 @@ export default function Pricing() {
 
               <Button
                 component={Link}
-                href={`/join?intent=${activeTier}`}
+                href="/join/member"
                 fullWidth
                 endIcon={<ArrowRight size={16} />}
                 sx={{

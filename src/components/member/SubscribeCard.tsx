@@ -27,7 +27,7 @@ const UNIVERSAL_PERKS = [
   "Expert Hotline — written action plan in 2–3 days",
   "Full video course library",
   "New resources every week",
-  "Live webinars, events & roundtables (CE)",
+  "Exclusive partner offers & vendor savings",
   "Templates & worksheets",
   "Community access",
   "A growing bench of experts",
@@ -141,11 +141,56 @@ export function SubscribeCard({ firstName }: { firstName: string }) {
     }
   };
 
-  const foundingPlan: PlanKey = interval === "monthly" ? "founding_monthly" : "founding_annual";
-  const earlyPlan: PlanKey = interval === "monthly" ? "early_monthly" : "early_annual";
-  const standardPlan: PlanKey = interval === "monthly" ? "standard_monthly" : "standard_annual";
-  const foundingOpen = avail?.founding.isOpen ?? true;
-  const earlyOpen = avail?.early.isOpen ?? true;
+  // The tier is decided by availability, not by the member: everyone pays
+  // the CURRENT rate ($49 for the first 100, then $99 to member 500, then
+  // $199). So we show exactly ONE card — the rate they can get right now.
+  const activeTier: "founding" | "early" | "standard" =
+    (avail?.founding.isOpen ?? true) ? "founding" : (avail?.early.isOpen ?? true) ? "early" : "standard";
+
+  const activePlan: PlanKey = `${activeTier}_${interval}` as PlanKey;
+
+  const card =
+    activeTier === "founding"
+      ? {
+          title: "Founding",
+          subtitle: "First 100 members",
+          ribbon: `★ ${avail?.founding.remaining ?? 100} OF 100 LEFT`,
+          price: interval === "monthly" ? "$49" : "$490",
+          sub: interval === "monthly" ? "or $490/year" : "$40.83/mo equivalent",
+          save: interval === "annual" ? "Save $98" : undefined,
+          sectionTitle: "WHAT MAKES IT SPECIAL",
+          perks: FOUNDING_PERKS,
+          footnote: "No trial — 30-day money-back guarantee · Cancel anytime",
+          cta: "Claim your founding rate",
+          ladder: "Your rate is locked for life. Once the first 100 seats fill, membership is $99, then $199.",
+        }
+      : activeTier === "early"
+        ? {
+            title: "Early Member",
+            subtitle: "Members 101–500",
+            ribbon: `${avail?.early.remaining ?? 400} OF 400 LEFT`,
+            price: interval === "monthly" ? "$99" : "$990",
+            sub: interval === "monthly" ? "or $990/year" : "$82.50/mo equivalent",
+            save: interval === "annual" ? "Save $198" : undefined,
+            sectionTitle: "WHAT MAKES IT SPECIAL",
+            perks: EARLY_PERKS,
+            footnote: "30-day money-back guarantee · Cancel anytime",
+            cta: "Claim your early rate",
+            ladder: "The founding 100 have filled. Your rate is locked for life; at member 500 the price becomes $199.",
+          }
+        : {
+            title: "Standard",
+            subtitle: "Full membership",
+            ribbon: undefined,
+            price: interval === "monthly" ? "$199" : "$1,990",
+            sub: interval === "monthly" ? "or $1,990/year" : "$165.83/mo equivalent",
+            save: interval === "annual" ? "Save $398" : undefined,
+            sectionTitle: "DETAILS",
+            perks: STANDARD_PERKS,
+            footnote: "14-day free trial · Cancel anytime",
+            cta: "Start membership",
+            ladder: null,
+          };
 
   return (
     <Box>
@@ -165,7 +210,7 @@ export function SubscribeCard({ firstName }: { firstName: string }) {
               letterSpacing: "-0.01em",
             }}
           >
-            Welcome, {firstName}. Pick your plan.
+            Welcome, {firstName}. Lock in your rate.
           </Typography>
           <Typography sx={{ color: COLORS.muted, mt: 0.5, fontSize: "0.85rem" }}>
             Your portal unlocks the moment payment is confirmed.
@@ -177,87 +222,28 @@ export function SubscribeCard({ firstName }: { firstName: string }) {
 
       <UniversalPerksBanner perks={UNIVERSAL_PERKS} />
 
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: { xs: "1fr", md: "repeat(3, 1fr)" },
-          gap: 1.5,
-          mt: 2,
-        }}
-      >
+      <Box sx={{ maxWidth: 430, mx: "auto", mt: 2 }}>
         <PlanCard
-          tier="founding"
-          title="Founding"
-          subtitle="First 100 members"
-          ribbon={
-            foundingOpen
-              ? `★ BEST VALUE — ${avail?.founding.remaining ?? 100} OF 100 LEFT`
-              : "SOLD OUT"
-          }
-          price={interval === "monthly" ? "$49" : "$490"}
+          tier={activeTier}
+          title={card.title}
+          subtitle={card.subtitle}
+          ribbon={card.ribbon}
+          price={card.price}
           per={interval === "monthly" ? "mo" : "yr"}
-          sub={interval === "monthly" ? "or $490/year" : "$40.83/mo equivalent"}
-          save={interval === "annual" ? "Save $98" : undefined}
-          sectionTitle="WHAT MAKES IT SPECIAL"
-          perks={FOUNDING_PERKS}
-          footnote="No trial — 30-day money-back guarantee · Cancel anytime"
-          cta={
-            !foundingOpen
-              ? "Sold out — pick Early or Standard"
-              : busy === foundingPlan
-                ? "Opening Stripe…"
-                : "Claim founding seat"
-          }
-          busy={busy === foundingPlan}
-          soldOut={!foundingOpen}
-          onClick={() => startCheckout(foundingPlan)}
+          sub={card.sub}
+          save={card.save}
+          sectionTitle={card.sectionTitle}
+          perks={card.perks}
+          footnote={card.footnote}
+          cta={busy === activePlan ? "Opening Stripe…" : card.cta}
+          busy={busy === activePlan}
+          onClick={() => startCheckout(activePlan)}
         />
-
-        <PlanCard
-          tier="early"
-          title="Early Member"
-          subtitle="Members 101–500"
-          ribbon={
-            !earlyOpen
-              ? "SOLD OUT"
-              : !foundingOpen
-                ? `${avail?.early.remaining ?? 400} OF 400 LEFT`
-                : undefined
-          }
-          price={interval === "monthly" ? "$99" : "$990"}
-          per={interval === "monthly" ? "mo" : "yr"}
-          sub={interval === "monthly" ? "or $990/year" : "$82.50/mo equivalent"}
-          save={interval === "annual" ? "Save $198" : undefined}
-          sectionTitle="WHAT MAKES IT SPECIAL"
-          perks={EARLY_PERKS}
-          footnote="30-day money-back guarantee · Cancel anytime"
-          cta={
-            !earlyOpen
-              ? "Sold out — Standard available"
-              : busy === earlyPlan
-                ? "Opening Stripe…"
-                : "Join as Early Member"
-          }
-          busy={busy === earlyPlan}
-          soldOut={!earlyOpen}
-          onClick={() => startCheckout(earlyPlan)}
-        />
-
-        <PlanCard
-          tier="standard"
-          title="Standard"
-          subtitle="Regular membership"
-          price={interval === "monthly" ? "$199" : "$1,990"}
-          per={interval === "monthly" ? "mo" : "yr"}
-          sub={interval === "monthly" ? "or $1,990/year" : "$165.83/mo equivalent"}
-          save={interval === "annual" ? "Save $398" : undefined}
-          sectionTitle="DETAILS"
-          perks={STANDARD_PERKS}
-          footnote="14-day free trial · Cancel anytime"
-          cta={busy === standardPlan ? "Opening Stripe…" : "Start membership"}
-          busy={busy === standardPlan}
-          onClick={() => startCheckout(standardPlan)}
-        />
+        {card.ladder && (
+          <Typography sx={{ mt: 1.25, fontSize: "0.78rem", color: COLORS.muted, textAlign: "center", lineHeight: 1.5 }}>
+            {card.ladder}
+          </Typography>
+        )}
       </Box>
 
       <Box
