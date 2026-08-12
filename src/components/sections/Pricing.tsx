@@ -338,7 +338,7 @@ export default function Pricing() {
 
               <Button
                 component={Link}
-                href={`/join?intent=${activeTier}`}
+                href="/join/member"
                 fullWidth
                 endIcon={<ArrowRight size={16} />}
                 sx={{

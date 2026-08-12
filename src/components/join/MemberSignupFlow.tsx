@@ -121,7 +121,13 @@ export default function MemberSignupFlow() {
         setSubmitting(false);
         return;
       }
-      router.push(data?.next ?? "/upgrade");
+      // Carry an annual pre-selection (from /pricing) through to the
+      // /upgrade billing toggle.
+      const next = data?.next ?? "/upgrade";
+      const interval = params.get("interval");
+      router.push(
+        interval === "annual" ? `${next}${next.includes("?") ? "&" : "?"}interval=annual` : next,
+      );
     } catch {
       setError("Network error. Check your connection and try again.");
       setSubmitting(false);

@@ -388,70 +388,67 @@ export default function PricingPage() {
             </Box>
           </Stack>
 
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: { xs: "1fr", md: "repeat(3, 1fr)" },
-              gap: 2.5,
-              mt: 3,
-            }}
-          >
-            <MemberPlanCard
-              tier="founding"
-              title="Founding"
-              subtitle="First 100 members"
-              ribbon={
-                foundingOpen
-                  ? `★ BEST VALUE — ${avail?.founding.remaining ?? 100} OF 100 LEFT`
-                  : "SOLD OUT"
-              }
-              price={billing.founding[interval].price}
-              per={billing.founding[interval].per}
-              sub={billing.founding[interval].sub}
-              save={interval === "annual" ? billing.founding.annual.save : undefined}
-              sectionTitle="WHAT MAKES IT SPECIAL"
-              perks={FOUNDING_PERKS}
-              footnote="No trial — 30-day money-back guarantee · Cancel anytime"
-              ctaLabel={foundingOpen ? "Join as Founding Member" : "Sold out"}
-              ctaHref={`/join?intent=founding&interval=${interval}`}
-              soldOut={!foundingOpen}
-            />
-            <MemberPlanCard
-              tier="early"
-              title="Early Member"
-              subtitle="Members 101–500"
-              ribbon={
-                !earlyOpen
-                  ? "SOLD OUT"
-                  : !foundingOpen
-                    ? `${avail?.early.remaining ?? 400} OF 400 LEFT`
-                    : undefined
-              }
-              price={billing.early[interval].price}
-              per={billing.early[interval].per}
-              sub={billing.early[interval].sub}
-              save={interval === "annual" ? billing.early.annual.save : undefined}
-              sectionTitle="WHAT MAKES IT SPECIAL"
-              perks={EARLY_PERKS}
-              footnote="30-day money-back guarantee · Cancel anytime"
-              ctaLabel={earlyOpen ? "Become an Early Member" : "Sold out"}
-              ctaHref={`/join?intent=early&interval=${interval}`}
-              soldOut={!earlyOpen}
-            />
-            <MemberPlanCard
-              tier="standard"
-              title="Standard"
-              subtitle="Regular membership"
-              price={billing.standard[interval].price}
-              per={billing.standard[interval].per}
-              sub={billing.standard[interval].sub}
-              save={interval === "annual" ? billing.standard.annual.save : undefined}
-              sectionTitle="DETAILS"
-              perks={STANDARD_PERKS}
-              footnote="14-day free trial · Cancel anytime"
-              ctaLabel="Start Standard Membership"
-              ctaHref={`/join?intent=standard&interval=${interval}`}
-            />
+          {/* ONE card — the rate available right now. The tier is decided
+              by seat availability ($49 first 100 → $99 to 500 → $199), so
+              there's nothing for the member to choose between. */}
+          <Box sx={{ maxWidth: 430, mx: "auto", mt: 3 }}>
+            {foundingOpen ? (
+              <MemberPlanCard
+                tier="founding"
+                title="Founding"
+                subtitle="First 100 members"
+                ribbon={`★ ${avail?.founding.remaining ?? 100} OF 100 LEFT`}
+                price={billing.founding[interval].price}
+                per={billing.founding[interval].per}
+                sub={billing.founding[interval].sub}
+                save={interval === "annual" ? billing.founding.annual.save : undefined}
+                sectionTitle="WHAT MAKES IT SPECIAL"
+                perks={FOUNDING_PERKS}
+                footnote="No trial — 30-day money-back guarantee · Cancel anytime"
+                ctaLabel="Join as Founding Member"
+                ctaHref={`/join/member?interval=${interval}`}
+              />
+            ) : earlyOpen ? (
+              <MemberPlanCard
+                tier="early"
+                title="Early Member"
+                subtitle="Members 101–500"
+                ribbon={`${avail?.early.remaining ?? 400} OF 400 LEFT`}
+                price={billing.early[interval].price}
+                per={billing.early[interval].per}
+                sub={billing.early[interval].sub}
+                save={interval === "annual" ? billing.early.annual.save : undefined}
+                sectionTitle="WHAT MAKES IT SPECIAL"
+                perks={EARLY_PERKS}
+                footnote="30-day money-back guarantee · Cancel anytime"
+                ctaLabel="Become an Early Member"
+                ctaHref={`/join/member?interval=${interval}`}
+              />
+            ) : (
+              <MemberPlanCard
+                tier="standard"
+                title="Standard"
+                subtitle="Full membership"
+                price={billing.standard[interval].price}
+                per={billing.standard[interval].per}
+                sub={billing.standard[interval].sub}
+                save={interval === "annual" ? billing.standard.annual.save : undefined}
+                sectionTitle="DETAILS"
+                perks={STANDARD_PERKS}
+                footnote="14-day free trial · Cancel anytime"
+                ctaLabel="Start Standard Membership"
+                ctaHref={`/join/member?interval=${interval}`}
+              />
+            )}
+            <Typography
+              sx={{ mt: 1.5, fontSize: "0.8rem", color: "rgba(255,255,255,0.65)", textAlign: "center", lineHeight: 1.5 }}
+            >
+              {foundingOpen
+                ? "Founding rates are locked for life. Once the first 100 seats fill, membership is $99, then $199."
+                : earlyOpen
+                  ? "The founding 100 have filled. Early rates are locked for life; at member 500 the price becomes $199."
+                  : "Open enrollment — full membership at the standard rate."}
+            </Typography>
           </Box>
 
           {/* Phase 2 — Premium */}

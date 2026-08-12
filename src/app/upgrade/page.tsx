@@ -114,6 +114,20 @@ function UpgradeInner() {
 
   if (loading) return <PageSkeleton />;
 
+  // DEV ONLY: /upgrade?preview=1 renders the plan card with a fake context
+  // so the page can be checked without doing a signup. Compiled out of
+  // production builds (NODE_ENV is inlined), so no bypass ships.
+  if (process.env.NODE_ENV !== "production" && params.get("preview") === "1" && !ctx) {
+    return (
+      <PageShell signOut={() => router.push("/")}>
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          Dev preview — fake member context, checkout will fail.
+        </Alert>
+        <SubscribeCard firstName="Preview" />
+      </PageShell>
+    );
+  }
+
   const authed = !!ctx?.authed;
   const shellSignOut = authed ? signOut : () => router.push("/");
 
