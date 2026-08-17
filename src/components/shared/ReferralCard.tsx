@@ -32,20 +32,22 @@ export default function ReferralCard({
   const [signupsLifetime, setSignupsLifetime] = useState(0);
   const [signupsLast30, setSignupsLast30] = useState(0);
   const [conversions, setConversions] = useState(0);
+  const [promo, setPromo] = useState<{ code: string; active: boolean; trialDays: number; uses: number } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [justCopied, setJustCopied] = useState<"code" | "link" | null>(null);
+  const [justCopied, setJustCopied] = useState<"code" | "link" | "promo" | null>(null);
 
   useEffect(() => {
     let active = true;
     fetch(endpoint, { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
-      .then((body: { code?: string; slug?: string; signupsLifetime?: number; signupsLast30?: number; conversions?: number } | null) => {
+      .then((body: { code?: string; slug?: string; signupsLifetime?: number; signupsLast30?: number; conversions?: number; promo?: { code: string; active: boolean; trialDays: number; uses: number } | null } | null) => {
         if (!active || !body) return;
         setCode(body.code ?? null);
         setSlug(body.slug ?? null);
         setSignupsLifetime(body.signupsLifetime ?? 0);
         setSignupsLast30(body.signupsLast30 ?? 0);
         setConversions(body.conversions ?? 0);
+        setPromo(body.promo ?? null);
       })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
@@ -60,7 +62,7 @@ export default function ReferralCard({
       ? `${origin}/join?ref=${code}`
       : "";
 
-  const copy = async (kind: "code" | "link", text: string) => {
+  const copy = async (kind: "code" | "link" | "promo", text: string) => {
     try {
       await navigator.clipboard.writeText(text);
       setJustCopied(kind);
@@ -173,6 +175,41 @@ export default function ReferralCard({
               <MiniStat label="Paid" value={conversions} />
             </Stack>
           </Stack>
+
+          {/* Promotional code — team-activated 3-months-free code. Shown
+              read-only: the owner shares it, the DMN team switches it on. */}
+          {promo && (
+            <Box sx={{ mt: 1.75, pt: 1.5, borderTop: "1px solid rgba(14,42,61,0.08)" }}>
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ alignItems: { sm: "center" } }}>
+                <Stack direction="row" spacing={1} sx={{ alignItems: "center", flex: 1, minWidth: 0 }}>
+                  <Box
+                    onClick={() => copy("promo", promo.code)}
+                    sx={{
+                      px: 1.25,
+                      py: 0.65,
+                      borderRadius: 1,
+                      bgcolor: promo.active ? "rgba(34,108,78,0.12)" : "rgba(122,133,144,0.14)",
+                      color: promo.active ? "#1F5C40" : "#7A8590",
+                      fontFamily: "var(--font-mono, ui-monospace, Menlo, monospace)",
+                      fontSize: "0.86rem",
+                      fontWeight: 800,
+                      letterSpacing: "0.06em",
+                      cursor: "pointer",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {justCopied === "promo" ? "✓ Copied" : promo.code}
+                  </Box>
+                  <Typography sx={{ fontSize: "0.78rem", color: "#3B4A55", lineHeight: 1.45 }}>
+                    {promo.active
+                      ? `Promo code LIVE — new members who enter it get ${Math.round(promo.trialDays / 30)} months free.`
+                      : "Your promo code — not currently running. The DMN team activates it for campaigns."}
+                  </Typography>
+                </Stack>
+                <MiniStat label="Joined with it" value={promo.uses} />
+              </Stack>
+            </Box>
+          )}
         </>
       ) : (
         <Typography sx={{ fontSize: "0.86rem", color: "#7A8590" }}>

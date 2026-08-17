@@ -47,12 +47,39 @@ export async function GET() {
       conversions = (signups ?? []).filter((s) => !!s.converted_at).length;
     }
 
+    // Promotional code (admin-activated 3-month-trial code) — read-only
+    // here; the team controls activation from the admin console. Absent
+    // until migration 0054 runs / the admin console generates codes.
+    let promo: { code: string; active: boolean; trialDays: number; uses: number } | null = null;
+    try {
+      const { data: promoRow } = await admin
+        .from("member_promo_codes")
+        .select("id, code, active, trial_days")
+        .eq("expert_id", guard.expertId)
+        .maybeSingle();
+      if (promoRow) {
+        const { count } = await admin
+          .from("member_promo_redemptions")
+          .select("id", { count: "exact", head: true })
+          .eq("promo_code_id", promoRow.id);
+        promo = {
+          code: promoRow.code,
+          active: promoRow.active,
+          trialDays: promoRow.trial_days,
+          uses: count ?? 0,
+        };
+      }
+    } catch {
+      /* promo tables not present yet — card simply hides */
+    }
+
     return NextResponse.json({
       code,
       slug, // vanity handle → dentalmembernetwork.com/<slug>
       signupsLifetime,
       signupsLast30,
       conversions,
+      promo,
     });
   } catch (err) {
     return serverError(err, { route: "GET /api/expert/referral" });

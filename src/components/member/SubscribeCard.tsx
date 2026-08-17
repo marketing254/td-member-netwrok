@@ -8,9 +8,12 @@ import {
   Chip,
   CircularProgress,
   Stack,
+  TextField,
   Typography,
 } from "@mui/material";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
+import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import ConfirmationNumberOutlinedIcon from "@mui/icons-material/ConfirmationNumberOutlined";
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
 import { COLORS } from "@/theme";
 
@@ -63,6 +66,48 @@ export function SubscribeCard({ firstName }: { firstName: string }) {
   const [error, setError] = useState<string | null>(null);
   const [avail, setAvail] = useState<Availability | null>(null);
 
+  // Promotional code (expert/partner/team, admin-activated → 3-month trial)
+  const [showPromo, setShowPromo] = useState(false);
+  const [promoInput, setPromoInput] = useState("");
+  const [promoApplied, setPromoApplied] = useState<{ code: string; trialDays: number } | null>(null);
+  const [promoError, setPromoError] = useState<string | null>(null);
+  const [promoBusy, setPromoBusy] = useState(false);
+
+  const applyPromo = async () => {
+    const code = promoInput.trim().toUpperCase();
+    if (!code) return;
+    setPromoBusy(true);
+    setPromoError(null);
+    try {
+      const res = await fetch("/api/member/promo-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        valid?: boolean;
+        reason?: string;
+        code?: string;
+        trialDays?: number;
+      };
+      if (data.valid && data.code) {
+        setPromoApplied({ code: data.code, trialDays: data.trialDays ?? 90 });
+        setShowPromo(false);
+        setPromoInput("");
+      } else {
+        setPromoError(
+          data.reason === "inactive"
+            ? "That code is no longer available."
+            : "That code isn't valid — check the spelling.",
+        );
+      }
+    } catch {
+      setPromoError("Couldn't check the code right now. Please try again.");
+    } finally {
+      setPromoBusy(false);
+    }
+  };
+
   useEffect(() => {
     let active = true;
     (async () => {
@@ -95,7 +140,7 @@ export function SubscribeCard({ firstName }: { firstName: string }) {
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ plan, ...(promoApplied ? { promoCode: promoApplied.code } : {}) }),
       });
       const body = (await res.json().catch(() => ({}))) as {
         url?: string;
@@ -244,6 +289,84 @@ export function SubscribeCard({ firstName }: { firstName: string }) {
             {card.ladder}
           </Typography>
         )}
+
+        {/* Promotional code — optional. A valid active code = 3 months free
+            (card on file, first charge after the trial). */}
+        <Box sx={{ mt: 1.75, textAlign: "center" }}>
+          {promoApplied ? (
+            <Chip
+              icon={<ConfirmationNumberOutlinedIcon sx={{ fontSize: 15 }} />}
+              label={`${promoApplied.code} applied — first ${Math.round(promoApplied.trialDays / 30)} months free, card charged after`}
+              onDelete={() => setPromoApplied(null)}
+              deleteIcon={<CloseRoundedIcon sx={{ fontSize: 15 }} />}
+              sx={{
+                bgcolor: "rgba(34,108,78,0.12)",
+                color: "#1F5C40",
+                fontWeight: 700,
+                fontSize: "0.78rem",
+                height: 30,
+                "& .MuiChip-deleteIcon": { color: "#1F5C40" },
+              }}
+            />
+          ) : showPromo ? (
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={1}
+              sx={{ justifyContent: "center", alignItems: { sm: "center" }, maxWidth: 380, mx: "auto" }}
+            >
+              <TextField
+                size="small"
+                autoFocus
+                placeholder="Enter code (e.g. MINT)"
+                value={promoInput}
+                onChange={(e) => {
+                  setPromoInput(e.target.value.toUpperCase());
+                  setPromoError(null);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    void applyPromo();
+                  }
+                }}
+                slotProps={{ input: { sx: { fontSize: "0.88rem", letterSpacing: "0.06em" } } }}
+                sx={{ flex: 1 }}
+              />
+              <Button
+                size="small"
+                variant="contained"
+                disableElevation
+                disabled={promoBusy || !promoInput.trim()}
+                onClick={() => void applyPromo()}
+                sx={{ bgcolor: COLORS.primary, textTransform: "none", fontWeight: 700, borderRadius: 999, px: 2.5 }}
+              >
+                {promoBusy ? "Checking…" : "Apply"}
+              </Button>
+            </Stack>
+          ) : (
+            <Box
+              component="button"
+              type="button"
+              onClick={() => setShowPromo(true)}
+              sx={{
+                all: "unset",
+                cursor: "pointer",
+                fontSize: "0.8rem",
+                fontWeight: 700,
+                color: COLORS.accentDeep,
+                borderBottom: `1px dashed ${COLORS.accent}`,
+                pb: "1px",
+                "&:hover": { color: COLORS.ink },
+                "&:focus-visible": { outline: `2px solid ${COLORS.accent}`, outlineOffset: 2 },
+              }}
+            >
+              Have a promotional code?
+            </Box>
+          )}
+          {promoError && (
+            <Typography sx={{ mt: 0.75, fontSize: "0.78rem", color: "#8C1D1D" }}>{promoError}</Typography>
+          )}
+        </Box>
       </Box>
 
       <Box

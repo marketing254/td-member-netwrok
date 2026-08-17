@@ -43,13 +43,40 @@ export async function POST(req: Request) {
   if (!guard.ok) return guard.response;
 
   const route = "POST /api/stripe/checkout";
-  const body = (await req.json().catch(() => ({}))) as { plan?: unknown };
+  const body = (await req.json().catch(() => ({}))) as { plan?: unknown; promoCode?: unknown };
   if (!isValidPlan(body.plan)) {
     return apiError.badRequest("Please pick a valid plan.", route);
   }
   const plan = body.plan;
 
   const sb = getSupabaseAdmin();
+
+  // Optional promotional code (expert/partner/team owned, admin-activated).
+  // A valid ACTIVE code turns the subscription into a free trial (default
+  // 90 days = 3 months): card collected now, first charge after the trial.
+  // Validated HERE — server-side, at the moment of checkout — so a code
+  // the team deactivated a second ago can never slip through.
+  const promoInput =
+    typeof body.promoCode === "string" ? body.promoCode.trim().toUpperCase() : "";
+  let promo: { id: string; code: string; trial_days: number } | null = null;
+  if (promoInput) {
+    try {
+      const { data: promoRow } = await sb
+        .from("member_promo_codes")
+        .select("id, code, trial_days, active")
+        .ilike("code", promoInput)
+        .maybeSingle();
+      if (!promoRow) {
+        return apiError.badRequest("That promotional code isn't valid.", route);
+      }
+      if (!promoRow.active) {
+        return apiError.badRequest("That promotional code is no longer available.", route);
+      }
+      promo = { id: promoRow.id, code: promoRow.code, trial_days: promoRow.trial_days };
+    } catch {
+      return apiError.badRequest("That promotional code isn't valid.", route);
+    }
+  }
 
   // Tier caps — Founding (100) and Early (400) are LIFETIME. Cancellations
   // do NOT free a seat. We count the {tier}_member_locked boolean which is
@@ -144,6 +171,8 @@ export async function POST(req: Request) {
     allow_promotion_codes: true,
     billing_address_collection: "auto",
     subscription_data: {
+      // Promo code → free trial: card on file now, first charge after.
+      ...(promo ? { trial_period_days: promo.trial_days } : {}),
       metadata: {
         member_id: member.id,
         plan,
@@ -151,12 +180,14 @@ export async function POST(req: Request) {
         tier,
         founding_member: isFoundingPlan(plan) ? "true" : "false",
         early_member: isEarlyPlan(plan) ? "true" : "false",
+        ...(promo ? { promo_code: promo.code, promo_code_id: promo.id } : {}),
       },
     },
     metadata: {
       member_id: member.id,
       plan,
       tier,
+      ...(promo ? { promo_code: promo.code, promo_code_id: promo.id } : {}),
     },
     success_url: `${origin}/upgrade?subscribed=1&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}/upgrade?subscribed=0`,

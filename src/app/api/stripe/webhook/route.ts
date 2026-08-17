@@ -143,6 +143,23 @@ async function handleEvent(event: Stripe.Event, stripe: Stripe): Promise<string 
 
     await applySubscriptionToMember(sb, memberId, sub, stripe);
 
+    // Promo-code attribution — one row per member per code, so the admin
+    // console and the code owner's portal can count real uses. Idempotent
+    // (unique constraint) and best-effort: a miss never blocks activation.
+    const promoCodeId = (session.metadata?.promo_code_id ?? null) as string | null;
+    if (promoCodeId) {
+      try {
+        await sb
+          .from("member_promo_redemptions")
+          .upsert(
+            { promo_code_id: promoCodeId, member_id: memberId },
+            { onConflict: "promo_code_id,member_id", ignoreDuplicates: true },
+          );
+      } catch (err) {
+        console.error("[stripe webhook] promo redemption record failed:", err);
+      }
+    }
+
     // Best-effort team alert. Pull the member's name + email + amount.
     try {
       const { data: member } = await sb
@@ -172,6 +189,7 @@ async function handleEvent(event: Stripe.Event, stripe: Stripe): Promise<string 
               <li><strong>Tier:</strong> ${member?.tier ?? "—"}</li>
               <li><strong>Interval:</strong> ${interval ?? "—"}</li>
               <li><strong>Amount:</strong> ${currency} $${amountStr}</li>
+              ${session.metadata?.promo_code ? `<li><strong>Promo code:</strong> ${session.metadata.promo_code} (3-month trial — first charge after)</li>` : ""}
               <li><strong>Stripe sub:</strong> ${sub.id}</li>
             </ul>
             <p>See it at <a href="https://www.dentalmembernetwork.com/admin/members">/admin/members</a>.</p>
