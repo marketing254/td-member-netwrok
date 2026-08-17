@@ -836,6 +836,27 @@ type View<TRow> = {
 
 // Added in 0031_referrals.sql. One row per expert / vendor — exactly
 // one of expert_id / vendor_id is set per row.
+// Added in 0054 — member-signup promo codes (3-month trial at checkout).
+export type MemberPromoCodeRow = {
+  id: string;
+  code: string;
+  label: string | null;
+  expert_id: string | null;
+  vendor_id: string | null;
+  active: boolean;
+  trial_days: number;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type MemberPromoRedemptionRow = {
+  id: string;
+  promo_code_id: string;
+  member_id: string;
+  created_at: string;
+};
+
 export type ReferralCodesRow = {
   id: string;
   expert_id: string | null;
@@ -968,6 +989,8 @@ export type Database = {
       resource_inquiry_replies: Table<ResourceInquiryRepliesRow>;
       resource_feedback: Table<ResourceFeedbackRow>;
       resource_views: Table<ResourceViewsRow>;
+      member_promo_codes: Table<MemberPromoCodeRow>;
+      member_promo_redemptions: Table<MemberPromoRedemptionRow>;
       referral_codes: Table<ReferralCodesRow>;
       referral_signups: Table<ReferralSignupsRow>;
       lead_magnet_leads: Table<LeadMagnetLeadsRow>;

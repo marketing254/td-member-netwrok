@@ -27,6 +27,7 @@ import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
 import StoreOutlinedIcon from "@mui/icons-material/StoreOutlined";
 import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
 import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
+import ConfirmationNumberOutlinedIcon from "@mui/icons-material/ConfirmationNumberOutlined";
 import SupportAgentOutlinedIcon from "@mui/icons-material/SupportAgentOutlined";
 import LibraryBooksOutlinedIcon from "@mui/icons-material/LibraryBooksOutlined";
 import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
@@ -147,6 +148,7 @@ const navSections: { label: string; items: NavItem[] }[] = [
     label: "GROWTH",
     items: [
       { href: "/admin/referrals", label: "Referrals", icon: LinkRoundedIcon },
+      { href: "/admin/promo-codes", label: "Promo codes", icon: ConfirmationNumberOutlinedIcon },
       { href: "/admin/lead-magnets", label: "Lead magnets", icon: DownloadOutlinedIcon },
       { href: "/admin/waitlist", label: "Launch waitlist", icon: MarkEmailReadOutlinedIcon },
     ],
