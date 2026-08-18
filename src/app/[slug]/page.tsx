@@ -34,6 +34,8 @@ export default async function ReferralHandlePage({
   const resolved = await resolveReferralSlug(handle);
   if (!resolved) notFound();
 
-  // Hand off to the member signup with the referral code attached.
-  redirect(`/join?ref=${encodeURIComponent(resolved.code)}`);
+  // Hand off to the member signup (the step-by-step /join/member flow)
+  // with the referral code attached. The code rides through signup to the
+  // payment page, where the owner's promo code auto-applies if active.
+  redirect(`/join/member?ref=${encodeURIComponent(resolved.code)}`);
 }
