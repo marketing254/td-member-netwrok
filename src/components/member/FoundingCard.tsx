@@ -89,6 +89,7 @@ export default function FoundingCard({
   onCta,
   ctaHref,
   promo,
+  note,
 }: {
   tier: TierKey;
   interval: "monthly" | "annual";
@@ -102,6 +103,8 @@ export default function FoundingCard({
   ctaHref?: string;
   /** Payment page only — the invitation-code module under the CTA. */
   promo?: PromoModule;
+  /** Emphasized note band above the CTA (e.g. the rate-lock promise). */
+  note?: string | null;
 }) {
   const head = TIER_HEAD[tier];
   const monthly = tier === "founding" ? "$49" : tier === "early" ? "$99" : "$199";
@@ -141,7 +144,9 @@ export default function FoundingCard({
           </Box>
           {typeof remaining === "number" && tier !== "standard" && (
             <Typography sx={{ fontSize: "0.7rem", fontWeight: 800, letterSpacing: "0.08em", color: GOLD, whiteSpace: "nowrap", textTransform: "uppercase" }}>
-              {remaining} of {tier === "founding" ? 100 : 400} left
+              {/* Founding counter displays at most 96 (team call) — real
+                  sales below that show the true number. */}
+              {tier === "founding" ? Math.min(remaining, 96) : remaining} of {tier === "founding" ? 100 : 400} left
             </Typography>
           )}
         </Stack>
@@ -231,8 +236,31 @@ export default function FoundingCard({
         </Box>
       )}
 
+      {/* Rate-lock promise — a proper in-card mention, not fine print */}
+      {note && (
+        <Box
+          sx={{
+            mx: 3,
+            mt: 2.75,
+            px: 2,
+            py: 1.25,
+            borderRadius: "10px",
+            bgcolor: "rgba(217,168,75,0.12)",
+            border: "1px solid rgba(217,168,75,0.4)",
+            display: "flex",
+            gap: 1.25,
+            alignItems: "flex-start",
+          }}
+        >
+          <StarRoundedIcon sx={{ fontSize: 17, color: GOLD, mt: 0.2, flexShrink: 0 }} />
+          <Typography sx={{ fontSize: "0.88rem", color: TXT, lineHeight: 1.55, fontWeight: 600 }}>
+            {note}
+          </Typography>
+        </Box>
+      )}
+
       {/* CTA + invitation code module */}
-      <Box sx={{ px: 3, pt: 3 }}>
+      <Box sx={{ px: 3, pt: note ? 2 : 3 }}>
         <Button
           fullWidth
           disableElevation

@@ -381,16 +381,14 @@ export default function PricingPage() {
                     : "Start membership"
               }
               ctaHref={`/join/member?interval=${interval}`}
+              note={
+                foundingOpen
+                  ? "Your rate is locked for life. Once the first 100 seats fill, membership is $199."
+                  : earlyOpen
+                    ? "The founding 100 have filled. Your rate is locked for life; at member 500 the price becomes $199."
+                    : null
+              }
             />
-            <Typography
-              sx={{ mt: 1.5, fontSize: "0.8rem", color: "rgba(255,255,255,0.65)", textAlign: "center", lineHeight: 1.5 }}
-            >
-              {foundingOpen
-                ? "Founding rates are locked for life. Once the first 100 seats fill, membership is $99, then $199."
-                : earlyOpen
-                  ? "The founding 100 have filled. Early rates are locked for life; at member 500 the price becomes $199."
-                  : "Open enrollment — full membership at the standard rate."}
-            </Typography>
           </Box>
 
           {/* Phase 2 — Premium */}

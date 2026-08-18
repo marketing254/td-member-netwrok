@@ -221,7 +221,7 @@ export function SubscribeCard({ firstName }: { firstName: string }) {
 
   const ladder =
     activeTier === "founding"
-      ? "Your rate is locked for life. Once the first 100 seats fill, membership is $99, then $199."
+      ? "Your rate is locked for life. Once the first 100 seats fill, membership is $199."
       : activeTier === "early"
         ? "The founding 100 have filled. Your rate is locked for life; at member 500 the price becomes $199."
         : null;
@@ -278,12 +278,8 @@ export function SubscribeCard({ firstName }: { firstName: string }) {
           ctaBusy={busy === activePlan}
           onCta={() => void startCheckout(activePlan)}
           promo={promo}
+          note={ladder}
         />
-        {ladder && (
-          <Typography sx={{ mt: 1.5, fontSize: "0.78rem", color: COLORS.muted, textAlign: "center", lineHeight: 1.5 }}>
-            {ladder}
-          </Typography>
-        )}
       </Box>
 
       <Box
