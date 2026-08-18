@@ -20,6 +20,7 @@ import BusinessCenterOutlinedIcon from "@mui/icons-material/BusinessCenterOutlin
 import Header from "@/components/sections/Header";
 import JsonLd from "@/components/seo/JsonLd";
 import { COLORS } from "@/theme";
+import FoundingCard from "@/components/member/FoundingCard";
 
 // Product + Offer JSON-LD — exposes all 3 audiences' pricing as
 // structured offers so Google Merchant + AI assistants can extract
@@ -105,20 +106,7 @@ const UNIVERSAL_PERKS = [
   "A growing bench of experts",
 ];
 
-const FOUNDING_PERKS = [
-  "Price locked for life",
-  "“Founding Member” status",
-  "A vote in the content roadmap",
-  "Early access to new kits",
-];
 
-const EARLY_PERKS = [
-  "Price locked for life",
-  "“Founding Member” status",
-  "Early access to new kits",
-];
-
-const STANDARD_PERKS = ["Standard rate", "Open enrollment", "Full core membership"];
 
 type TierStat = { cap: number; taken: number; remaining: number; isOpen: boolean };
 type Availability = { founding: TierStat; early: TierStat };
@@ -151,24 +139,6 @@ export default function PricingPage() {
   const earlyOpen = avail?.early.isOpen ?? true;
   const [interval, setInterval] = useState<"monthly" | "annual">("monthly");
 
-  // Per-tier billing data so the toggle just swaps numbers without
-  // touching the rest of the layout. The intent string is preserved
-  // through the CTA so /member/login → /upgrade lands the user on the
-  // SubscribeCard with the right interval pre-selected.
-  const billing = {
-    founding: {
-      monthly: { price: "$49", per: "mo", sub: "or $490/year", save: "Save $98" },
-      annual: { price: "$490", per: "yr", sub: "$40.83/mo equivalent", save: "Save $98" },
-    },
-    early: {
-      monthly: { price: "$99", per: "mo", sub: "or $990/year", save: "Save $198" },
-      annual: { price: "$990", per: "yr", sub: "$82.50/mo equivalent", save: "Save $198" },
-    },
-    standard: {
-      monthly: { price: "$199", per: "mo", sub: "or $1,990/year", save: "Save $398" },
-      annual: { price: "$1,990", per: "yr", sub: "$165.83/mo equivalent", save: "Save $398" },
-    },
-  } as const;
 
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: COLORS.surface }}>
@@ -388,58 +358,30 @@ export default function PricingPage() {
             </Box>
           </Stack>
 
-          {/* ONE card — the rate available right now. The tier is decided
-              by seat availability ($49 first 100 → $99 to 500 → $199), so
-              there's nothing for the member to choose between. */}
-          <Box sx={{ maxWidth: 430, mx: "auto", mt: 3 }}>
-            {foundingOpen ? (
-              <MemberPlanCard
-                tier="founding"
-                title="Founding"
-                subtitle="First 100 members"
-                ribbon={`★ ${avail?.founding.remaining ?? 100} OF 100 LEFT`}
-                price={billing.founding[interval].price}
-                per={billing.founding[interval].per}
-                sub={billing.founding[interval].sub}
-                save={interval === "annual" ? billing.founding.annual.save : undefined}
-                sectionTitle="WHAT MAKES IT SPECIAL"
-                perks={FOUNDING_PERKS}
-                footnote="No trial — 30-day money-back guarantee · Cancel anytime"
-                ctaLabel="Join as Founding Member"
-                ctaHref={`/join/member?interval=${interval}`}
-              />
-            ) : earlyOpen ? (
-              <MemberPlanCard
-                tier="early"
-                title="Early Member"
-                subtitle="Members 101–500"
-                ribbon={`${avail?.early.remaining ?? 400} OF 400 LEFT`}
-                price={billing.early[interval].price}
-                per={billing.early[interval].per}
-                sub={billing.early[interval].sub}
-                save={interval === "annual" ? billing.early.annual.save : undefined}
-                sectionTitle="WHAT MAKES IT SPECIAL"
-                perks={EARLY_PERKS}
-                footnote="30-day money-back guarantee · Cancel anytime"
-                ctaLabel="Become an Early Member"
-                ctaHref={`/join/member?interval=${interval}`}
-              />
-            ) : (
-              <MemberPlanCard
-                tier="standard"
-                title="Standard"
-                subtitle="Full membership"
-                price={billing.standard[interval].price}
-                per={billing.standard[interval].per}
-                sub={billing.standard[interval].sub}
-                save={interval === "annual" ? billing.standard.annual.save : undefined}
-                sectionTitle="DETAILS"
-                perks={STANDARD_PERKS}
-                footnote="14-day free trial · Cancel anytime"
-                ctaLabel="Start Standard Membership"
-                ctaHref={`/join/member?interval=${interval}`}
-              />
-            )}
+          {/* ONE card — the rate available right now, in the shared dark
+              FoundingCard design. The tier is decided by seat availability
+              ($49 first 100 → $99 to 500 → $199), so there's nothing for
+              the member to choose between. */}
+          <Box sx={{ maxWidth: 470, mx: "auto", mt: 3 }}>
+            <FoundingCard
+              tier={foundingOpen ? "founding" : earlyOpen ? "early" : "standard"}
+              interval={interval}
+              remaining={
+                foundingOpen
+                  ? avail?.founding.remaining ?? null
+                  : earlyOpen
+                    ? avail?.early.remaining ?? null
+                    : null
+              }
+              ctaLabel={
+                foundingOpen
+                  ? "Claim your founding rate"
+                  : earlyOpen
+                    ? "Claim your early rate"
+                    : "Start membership"
+              }
+              ctaHref={`/join/member?interval=${interval}`}
+            />
             <Typography
               sx={{ mt: 1.5, fontSize: "0.8rem", color: "rgba(255,255,255,0.65)", textAlign: "center", lineHeight: 1.5 }}
             >
@@ -710,344 +652,6 @@ function UniversalPerks({ perks }: { perks: string[] }) {
  *   - Ribbon: gold "BEST VALUE" badge on founding only
  * This keeps the page on-brand and lets MUI's color="secondary"/"primary"
  * variants do the differentiation rather than handpicked hexes.
- */
-function MemberPlanCard({
-  tier,
-  title,
-  subtitle,
-  ribbon,
-  price,
-  per,
-  sub,
-  save,
-  sectionTitle,
-  perks,
-  footnote,
-  ctaLabel,
-  ctaHref,
-  soldOut,
-}: {
-  tier: "founding" | "early" | "standard";
-  title: string;
-  subtitle: string;
-  ribbon?: string;
-  price: string;
-  per?: string;
-  sub?: string;
-  save?: string;
-  sectionTitle: string;
-  perks: string[];
-  footnote: string;
-  ctaLabel: string;
-  ctaHref: string;
-  soldOut?: boolean;
-}) {
-  const borderColor =
-    tier === "founding" ? COLORS.accent : tier === "early" ? COLORS.primary : COLORS.line;
-  const borderWidth = tier === "founding" ? 2 : 1;
-  const isStarTier = tier === "founding" || tier === "early";
-
-  // Border "shine" — the actual border IS the shimmer. Outer Box is the
-  // gradient-filled square; inner Box covers everything except a 2px
-  // strip at the edge, leaving just that strip visible AS the border.
-  // The conic-gradient has one bright comet on a calm base, and rotating
-  // it makes the comet travel cleanly along the perimeter.
-  const borderGradient =
-    tier === "founding"
-      ? `conic-gradient(
-          from 0deg at 50% 50%,
-          ${COLORS.accentDeep} 0deg,
-          ${COLORS.accentDeep} 270deg,
-          ${COLORS.accentBright} 305deg,
-          #FFFFFF 330deg,
-          ${COLORS.accentBright} 355deg,
-          ${COLORS.accentDeep} 360deg
-        )`
-      : tier === "early"
-        ? `conic-gradient(
-            from 0deg at 50% 50%,
-            ${COLORS.primary} 0deg,
-            ${COLORS.primary} 270deg,
-            ${COLORS.accent} 305deg,
-            ${COLORS.accentBright} 330deg,
-            ${COLORS.accent} 355deg,
-            ${COLORS.primary} 360deg
-          )`
-        : `linear-gradient(135deg, ${COLORS.line} 0%, ${COLORS.line} 100%)`;
-  const hoverGlow =
-    tier === "founding"
-      ? "0 32px 80px -28px rgba(217,168,75,0.7), 0 0 0 1px rgba(217,168,75,0.4)"
-      : tier === "early"
-        ? "0 28px 60px -24px rgba(14,42,61,0.55), 0 0 0 1px rgba(14,42,61,0.25)"
-        : "0 16px 40px -22px rgba(14,42,61,0.25)";
-
-  return (
-    <Box
-      sx={{
-        position: "relative",
-        borderRadius: 2.5,
-        // The outer Box is the gradient-filled square; the inner Box
-        // covers everything except a 2 px strip at the edge so only that
-        // strip shows AS the border. overflow:hidden keeps the rotating
-        // conic gradient inside the rounded corners.
-        overflow: "hidden",
-        background: soldOut ? "transparent" : borderGradient,
-        border: soldOut ? `1px solid ${COLORS.line}` : "none",
-        // Sold-out tier stays in the layout but dims so the eye points at
-        // the available tiers.
-        opacity: soldOut ? 0.7 : 1,
-        filter: soldOut ? "saturate(0.7)" : "none",
-        transition:
-          "opacity 220ms ease, filter 220ms ease, transform 320ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 320ms cubic-bezier(0.16, 1, 0.3, 1)",
-        boxShadow:
-          soldOut
-            ? "0 8px 20px -16px rgba(14,42,61,0.18)"
-            : tier === "founding"
-              ? "0 24px 60px -30px rgba(217,168,75,0.55)"
-              : tier === "early"
-                ? "0 18px 44px -28px rgba(14,42,61,0.4)"
-                : "0 12px 32px -24px rgba(14,42,61,0.18)",
-        // Pseudo-element holds the rotating animation. It IS the gradient
-        // (same one set on the outer Box) but rotates around the centre,
-        // so the bright comet travels along the visible border strip.
-        "&::before": soldOut
-          ? undefined
-          : {
-              content: '""',
-              position: "absolute",
-              inset: 0,
-              borderRadius: "inherit",
-              background: borderGradient,
-              animation:
-                tier === "founding"
-                  ? "tierBorderRun 4s linear infinite"
-                  : "tierBorderRun 5s linear infinite",
-              pointerEvents: "none",
-              zIndex: 0,
-            },
-        "@keyframes tierBorderRun": {
-          "0%": { transform: "rotate(0deg)" },
-          "100%": { transform: "rotate(360deg)" },
-        },
-        "@media (prefers-reduced-motion: reduce)": {
-          "&::before": { animation: "none" },
-        },
-        "&:hover": soldOut
-          ? undefined
-          : {
-              transform: "translateY(-4px)",
-              boxShadow: hoverGlow,
-            },
-      }}
-    >
-      {/* Inner card body — sits above the rotating gradient with a 2 px
-          margin so the gradient only peeks through at the edges and reads
-          AS the card's border. */}
-      <Box
-        sx={{
-          position: "relative",
-          zIndex: 1,
-          m: soldOut ? 0 : "2px",
-          borderRadius: 2.5,
-          bgcolor: "#FFFFFF",
-          overflow: "hidden",
-          display: "flex",
-          flexDirection: "column",
-          minHeight: "calc(100% - 4px)",
-          flex: 1,
-        }}
-      >
-      {ribbon && (
-        <Box
-          sx={{
-            position: "absolute",
-            top: 14,
-            right: 14,
-            zIndex: 2,
-            px: 1.5,
-            py: 0.5,
-            borderRadius: 999,
-            bgcolor: soldOut ? "rgba(14,42,61,0.10)" : COLORS.accent,
-            color: soldOut ? COLORS.inkSoft : COLORS.primaryDeep,
-            fontSize: "0.64rem",
-            fontWeight: 800,
-            letterSpacing: "0.06em",
-            textTransform: "uppercase",
-          }}
-        >
-          {ribbon}
-        </Box>
-      )}
-      <Box sx={{ bgcolor: COLORS.primary, color: "#FFFFFF", px: 3, pt: 3, pb: 2.25 }}>
-        <Typography
-          sx={{
-            fontFamily: "var(--font-display)",
-            fontSize: "1.5rem",
-            fontWeight: 500,
-            lineHeight: 1.2,
-            letterSpacing: "-0.01em",
-            color: "#FFFFFF",
-          }}
-        >
-          {title}
-        </Typography>
-        <Typography sx={{ fontSize: "0.84rem", color: "rgba(255,255,255,0.72)", mt: 0.5 }}>
-          {subtitle}
-        </Typography>
-      </Box>
-
-      <Box
-        sx={{
-          px: 3,
-          py: 3,
-          borderBottom: `1px solid ${COLORS.line}`,
-          textAlign: "center",
-          bgcolor: "#FFFFFF",
-        }}
-      >
-        <Stack direction="row" spacing={0.5} sx={{ justifyContent: "center", alignItems: "baseline" }}>
-          <Typography
-            sx={{
-              fontFamily: "var(--font-display)",
-              fontSize: { xs: "2.6rem", md: "3rem" },
-              fontWeight: 600,
-              color: COLORS.ink,
-              lineHeight: 1,
-              letterSpacing: "-0.02em",
-            }}
-          >
-            {price}
-          </Typography>
-          {per && (
-            <Typography sx={{ fontSize: "0.95rem", color: COLORS.muted, fontWeight: 500 }}>
-              /{per}
-            </Typography>
-          )}
-        </Stack>
-        {sub && (
-          <Typography sx={{ fontSize: "0.85rem", color: COLORS.muted, mt: 0.75 }}>
-            {sub}
-          </Typography>
-        )}
-        {save && (
-          <Chip
-            label={save}
-            size="small"
-            sx={{
-              mt: 1.25,
-              bgcolor: "rgba(217,168,75,0.18)",
-              color: COLORS.accentDeep,
-              fontWeight: 700,
-              fontSize: "0.72rem",
-              height: 24,
-            }}
-          />
-        )}
-      </Box>
-
-      <Box sx={{ px: 3, py: 2.5, flex: 1 }}>
-        <Typography
-          sx={{
-            fontSize: "0.72rem",
-            letterSpacing: "0.14em",
-            textTransform: "uppercase",
-            color: COLORS.muted,
-            fontWeight: 800,
-            mb: 1.25,
-          }}
-        >
-          {sectionTitle}
-        </Typography>
-        <Stack spacing={1.1}>
-          {perks.map((p) => {
-            const Icon = isStarTier ? StarRoundedIcon : CheckRoundedIcon;
-            return (
-              <Stack key={p} direction="row" spacing={1.25} sx={{ alignItems: "flex-start" }}>
-                <Icon
-                  sx={{
-                    fontSize: 18,
-                    color: isStarTier ? COLORS.accentDeep : COLORS.primary,
-                    mt: 0.15,
-                    flexShrink: 0,
-                  }}
-                />
-                <Typography
-                  sx={{
-                    fontSize: "0.88rem",
-                    color: COLORS.ink,
-                    fontWeight: isStarTier ? 700 : 500,
-                    lineHeight: 1.45,
-                  }}
-                >
-                  {p}
-                </Typography>
-              </Stack>
-            );
-          })}
-        </Stack>
-      </Box>
-
-      <Box
-        sx={{
-          px: 3,
-          py: 1.5,
-          textAlign: "center",
-          borderTop: `1px solid ${COLORS.line}`,
-          bgcolor: COLORS.surfaceAlt,
-        }}
-      >
-        <Typography sx={{ fontSize: "0.78rem", color: COLORS.inkSoft, lineHeight: 1.5 }}>
-          {footnote}
-        </Typography>
-      </Box>
-
-      <Box sx={{ px: 3, py: 2.5 }}>
-        {soldOut ? (
-          // Disabled button — sold-out tiers stay visible but can't be
-          // clicked through. The server-side cap in /api/stripe/checkout
-          // is the source of truth either way; this is the UI mirror.
-          <Button
-            fullWidth
-            variant="contained"
-            disabled
-            sx={{
-              borderRadius: 999,
-              py: 1.15,
-              "&.Mui-disabled": {
-                bgcolor: "rgba(14,42,61,0.10)",
-                color: "rgba(14,42,61,0.55)",
-                border: "1px solid rgba(14,42,61,0.12)",
-              },
-            }}
-          >
-            {ctaLabel}
-          </Button>
-        ) : (
-          <Button
-            fullWidth
-            variant={tier === "standard" ? "outlined" : "contained"}
-            color={tier === "founding" ? "secondary" : "primary"}
-            component={Link}
-            href={ctaHref}
-            sx={{ borderRadius: 999, py: 1.15 }}
-          >
-            {ctaLabel}
-          </Button>
-        )}
-      </Box>
-      </Box>
-    </Box>
-  );
-}
-
-
-/**
- * RoleRouterCard
- *
- * The three "Which are you?" cards at the very top of /pricing. Each
- * anchors down to the right section (`#members` or `#experts-partners`)
- * so the visitor self-identifies before they see prices. Without these,
- * three audiences each priced at $199 read as one confusing number.
  */
 function RoleRouterCard({
   icon,

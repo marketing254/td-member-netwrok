@@ -2,20 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import {
-  Box,
-  Button,
-  Chip,
-  CircularProgress,
-  Stack,
-  TextField,
-  Typography,
-} from "@mui/material";
-import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
-import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
-import ConfirmationNumberOutlinedIcon from "@mui/icons-material/ConfirmationNumberOutlined";
-import StarRoundedIcon from "@mui/icons-material/StarRounded";
+import { Box, Stack, Typography } from "@mui/material";
 import { COLORS } from "@/theme";
+import FoundingCard, { type PromoModule } from "@/components/member/FoundingCard";
 
 type BillingInterval = "monthly" | "annual";
 type PlanKey =
@@ -26,87 +15,35 @@ type PlanKey =
   | "standard_monthly"
   | "standard_annual";
 
-const UNIVERSAL_PERKS = [
-  "Expert Hotline — written action plan in 2–3 days",
-  "Full video course library",
-  "New resources every week",
-  "Exclusive partner offers & vendor savings",
-  "Templates & worksheets",
-  "Community access",
-  "A growing bench of experts",
-];
-
-const FOUNDING_PERKS = [
-  "Price locked for life",
-  "“Founding Member” status",
-  "A vote in the content roadmap",
-  "Early access to new kits",
-];
-
-const EARLY_PERKS = [
-  "Price locked for life",
-  "“Founding Member” status",
-  "Early access to new kits",
-];
-
-const STANDARD_PERKS = ["Standard rate", "Open enrollment", "Full core membership"];
-
 type TierStat = { cap: number; taken: number; remaining: number; isOpen: boolean };
 type Availability = { founding: TierStat; early: TierStat };
 
+type AppliedPromo = { code: string; ownerName: string | null; trialDays: number };
+
+/**
+ * /upgrade payment card. ONE card — the tier available right now
+ * ($49 founding → $99 early → $199 standard as seats fill) in the dark
+ * navy/gold FoundingCard design, with the three-state invitation-code
+ * module under the CTA. Arriving via a referral link (?ref= or the
+ * dmn_ref cookie) auto-applies the owner's promo code when it's active.
+ */
 export function SubscribeCard({ firstName }: { firstName: string }) {
-  // Honour ?interval=annual coming from the /pricing page so users land
-  // on /upgrade with the right tab already selected. Falls back to
-  // "monthly" if nothing is passed.
   const searchParams = useSearchParams();
   const initialInterval: BillingInterval =
     searchParams?.get("interval") === "annual" ? "annual" : "monthly";
+  const refParam = searchParams?.get("ref") ?? null;
+
   const [interval, setInterval] = useState<BillingInterval>(initialInterval);
   const [busy, setBusy] = useState<PlanKey | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [avail, setAvail] = useState<Availability | null>(null);
 
-  // Promotional code (expert/partner/team, admin-activated → 3-month trial)
-  const [showPromo, setShowPromo] = useState(false);
+  // Invitation-code module state
+  const [promoState, setPromoState] = useState<"idle" | "open">("idle");
   const [promoInput, setPromoInput] = useState("");
-  const [promoApplied, setPromoApplied] = useState<{ code: string; trialDays: number } | null>(null);
+  const [promoApplied, setPromoApplied] = useState<AppliedPromo | null>(null);
   const [promoError, setPromoError] = useState<string | null>(null);
   const [promoBusy, setPromoBusy] = useState(false);
-
-  const applyPromo = async () => {
-    const code = promoInput.trim().toUpperCase();
-    if (!code) return;
-    setPromoBusy(true);
-    setPromoError(null);
-    try {
-      const res = await fetch("/api/member/promo-code", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code }),
-      });
-      const data = (await res.json().catch(() => ({}))) as {
-        valid?: boolean;
-        reason?: string;
-        code?: string;
-        trialDays?: number;
-      };
-      if (data.valid && data.code) {
-        setPromoApplied({ code: data.code, trialDays: data.trialDays ?? 90 });
-        setShowPromo(false);
-        setPromoInput("");
-      } else {
-        setPromoError(
-          data.reason === "inactive"
-            ? "That code is no longer available."
-            : "That code isn't valid — check the spelling.",
-        );
-      }
-    } catch {
-      setPromoError("Couldn't check the code right now. Please try again.");
-    } finally {
-      setPromoBusy(false);
-    }
-  };
 
   useEffect(() => {
     let active = true;
@@ -132,6 +69,83 @@ export function SubscribeCard({ firstName }: { firstName: string }) {
       active = false;
     };
   }, []);
+
+  // Referral auto-apply: came through a partner/expert page (?ref= in the
+  // URL, or the dmn_ref cookie from middleware) → their promo code lands
+  // pre-applied, nothing to remember or type. Silent when the owner has
+  // no active code.
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/member/promo-code", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(refParam ? { ref: refParam } : {}),
+        });
+        if (!res.ok) return;
+        const data = (await res.json()) as {
+          valid?: boolean;
+          code?: string;
+          trialDays?: number;
+          ownerName?: string | null;
+        };
+        if (active && data.valid && data.code) {
+          setPromoApplied({
+            code: data.code,
+            ownerName: data.ownerName ?? null,
+            trialDays: data.trialDays ?? 90,
+          });
+        }
+      } catch {
+        /* no auto-apply */
+      }
+    })();
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refParam]);
+
+  const applyPromo = async () => {
+    const code = promoInput.trim().toUpperCase();
+    if (!code) return;
+    setPromoBusy(true);
+    setPromoError(null);
+    try {
+      const res = await fetch("/api/member/promo-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        valid?: boolean;
+        reason?: string;
+        code?: string;
+        trialDays?: number;
+        ownerName?: string | null;
+      };
+      if (data.valid && data.code) {
+        setPromoApplied({
+          code: data.code,
+          ownerName: data.ownerName ?? null,
+          trialDays: data.trialDays ?? 90,
+        });
+        setPromoState("idle");
+        setPromoInput("");
+      } else {
+        setPromoError(
+          data.reason === "inactive"
+            ? "That code is no longer available."
+            : "That code isn't valid — check the spelling.",
+        );
+      }
+    } catch {
+      setPromoError("Couldn't check the code right now. Please try again.");
+    } finally {
+      setPromoBusy(false);
+    }
+  };
 
   const startCheckout = async (plan: PlanKey) => {
     setBusy(plan);
@@ -167,9 +181,8 @@ export function SubscribeCard({ firstName }: { firstName: string }) {
           );
         }
         // 4xx errors from our checkout API are user-friendly (sold out,
-        // already subscribed, invalid plan); trust them. 5xx + network
-        // errors collapse to a generic message so a hacker reading the
-        // browser console doesn't learn anything about the backend.
+        // already subscribed, invalid promo code); trust them. 5xx +
+        // network errors collapse to a generic message.
         const safe =
           body.error && res.status >= 400 && res.status < 500
             ? body.error
@@ -187,62 +200,53 @@ export function SubscribeCard({ firstName }: { firstName: string }) {
   };
 
   // The tier is decided by availability, not by the member: everyone pays
-  // the CURRENT rate ($49 for the first 100, then $99 to member 500, then
-  // $199). So we show exactly ONE card — the rate they can get right now.
+  // the CURRENT rate ($49 first 100 → $99 to 500 → $199).
   const activeTier: "founding" | "early" | "standard" =
     (avail?.founding.isOpen ?? true) ? "founding" : (avail?.early.isOpen ?? true) ? "early" : "standard";
-
   const activePlan: PlanKey = `${activeTier}_${interval}` as PlanKey;
 
-  const card =
+  const remaining =
     activeTier === "founding"
-      ? {
-          title: "Founding",
-          subtitle: "First 100 members",
-          ribbon: `★ ${avail?.founding.remaining ?? 100} OF 100 LEFT`,
-          price: interval === "monthly" ? "$49" : "$490",
-          sub: interval === "monthly" ? "or $490/year" : "$40.83/mo equivalent",
-          save: interval === "annual" ? "Save $98" : undefined,
-          sectionTitle: "WHAT MAKES IT SPECIAL",
-          perks: FOUNDING_PERKS,
-          footnote: "No trial — 30-day money-back guarantee · Cancel anytime",
-          cta: "Claim your founding rate",
-          ladder: "Your rate is locked for life. Once the first 100 seats fill, membership is $99, then $199.",
-        }
+      ? avail?.founding.remaining ?? null
       : activeTier === "early"
-        ? {
-            title: "Early Member",
-            subtitle: "Members 101–500",
-            ribbon: `${avail?.early.remaining ?? 400} OF 400 LEFT`,
-            price: interval === "monthly" ? "$99" : "$990",
-            sub: interval === "monthly" ? "or $990/year" : "$82.50/mo equivalent",
-            save: interval === "annual" ? "Save $198" : undefined,
-            sectionTitle: "WHAT MAKES IT SPECIAL",
-            perks: EARLY_PERKS,
-            footnote: "30-day money-back guarantee · Cancel anytime",
-            cta: "Claim your early rate",
-            ladder: "The founding 100 have filled. Your rate is locked for life; at member 500 the price becomes $199.",
-          }
-        : {
-            title: "Standard",
-            subtitle: "Full membership",
-            ribbon: undefined,
-            price: interval === "monthly" ? "$199" : "$1,990",
-            sub: interval === "monthly" ? "or $1,990/year" : "$165.83/mo equivalent",
-            save: interval === "annual" ? "Save $398" : undefined,
-            sectionTitle: "DETAILS",
-            perks: STANDARD_PERKS,
-            footnote: "14-day free trial · Cancel anytime",
-            cta: "Start membership",
-            ladder: null,
-          };
+        ? avail?.early.remaining ?? null
+        : null;
+
+  const ctaLabel =
+    activeTier === "founding"
+      ? "Claim your founding rate"
+      : activeTier === "early"
+        ? "Claim your early rate"
+        : "Start membership";
+
+  const ladder =
+    activeTier === "founding"
+      ? "Your rate is locked for life. Once the first 100 seats fill, membership is $99, then $199."
+      : activeTier === "early"
+        ? "The founding 100 have filled. Your rate is locked for life; at member 500 the price becomes $199."
+        : null;
+
+  const promo: PromoModule = {
+    state: promoState,
+    input: promoInput,
+    busy: promoBusy,
+    error: promoError,
+    applied: promoApplied,
+    onOpen: () => setPromoState("open"),
+    onInput: (v) => {
+      setPromoInput(v);
+      setPromoError(null);
+    },
+    onApply: () => void applyPromo(),
+    onRemove: () => setPromoApplied(null),
+  };
 
   return (
     <Box>
       <Stack
         direction={{ xs: "column", sm: "row" }}
         spacing={1.5}
-        sx={{ alignItems: { sm: "center" }, justifyContent: "space-between", mb: 2 }}
+        sx={{ alignItems: { sm: "center" }, justifyContent: "space-between", mb: 2.5 }}
       >
         <Box>
           <Typography
@@ -265,113 +269,26 @@ export function SubscribeCard({ firstName }: { firstName: string }) {
         <BillingToggle interval={interval} onChange={setInterval} />
       </Stack>
 
-      <UniversalPerksBanner perks={UNIVERSAL_PERKS} />
-
-      <Box sx={{ maxWidth: 430, mx: "auto", mt: 2 }}>
-        <PlanCard
+      <Box sx={{ maxWidth: 470, mx: "auto" }}>
+        <FoundingCard
           tier={activeTier}
-          title={card.title}
-          subtitle={card.subtitle}
-          ribbon={card.ribbon}
-          price={card.price}
-          per={interval === "monthly" ? "mo" : "yr"}
-          sub={card.sub}
-          save={card.save}
-          sectionTitle={card.sectionTitle}
-          perks={card.perks}
-          footnote={card.footnote}
-          cta={busy === activePlan ? "Opening Stripe…" : card.cta}
-          busy={busy === activePlan}
-          onClick={() => startCheckout(activePlan)}
+          interval={interval}
+          remaining={remaining}
+          ctaLabel={busy === activePlan ? "Opening Stripe…" : ctaLabel}
+          ctaBusy={busy === activePlan}
+          onCta={() => void startCheckout(activePlan)}
+          promo={promo}
         />
-        {card.ladder && (
-          <Typography sx={{ mt: 1.25, fontSize: "0.78rem", color: COLORS.muted, textAlign: "center", lineHeight: 1.5 }}>
-            {card.ladder}
+        {ladder && (
+          <Typography sx={{ mt: 1.5, fontSize: "0.78rem", color: COLORS.muted, textAlign: "center", lineHeight: 1.5 }}>
+            {ladder}
           </Typography>
         )}
-
-        {/* Promotional code — optional. A valid active code = 3 months free
-            (card on file, first charge after the trial). */}
-        <Box sx={{ mt: 1.75, textAlign: "center" }}>
-          {promoApplied ? (
-            <Chip
-              icon={<ConfirmationNumberOutlinedIcon sx={{ fontSize: 15 }} />}
-              label={`${promoApplied.code} applied — first ${Math.round(promoApplied.trialDays / 30)} months free, card charged after`}
-              onDelete={() => setPromoApplied(null)}
-              deleteIcon={<CloseRoundedIcon sx={{ fontSize: 15 }} />}
-              sx={{
-                bgcolor: "rgba(34,108,78,0.12)",
-                color: "#1F5C40",
-                fontWeight: 700,
-                fontSize: "0.78rem",
-                height: 30,
-                "& .MuiChip-deleteIcon": { color: "#1F5C40" },
-              }}
-            />
-          ) : showPromo ? (
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              spacing={1}
-              sx={{ justifyContent: "center", alignItems: { sm: "center" }, maxWidth: 380, mx: "auto" }}
-            >
-              <TextField
-                size="small"
-                autoFocus
-                placeholder="Enter code (e.g. MINT)"
-                value={promoInput}
-                onChange={(e) => {
-                  setPromoInput(e.target.value.toUpperCase());
-                  setPromoError(null);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    void applyPromo();
-                  }
-                }}
-                slotProps={{ input: { sx: { fontSize: "0.88rem", letterSpacing: "0.06em" } } }}
-                sx={{ flex: 1 }}
-              />
-              <Button
-                size="small"
-                variant="contained"
-                disableElevation
-                disabled={promoBusy || !promoInput.trim()}
-                onClick={() => void applyPromo()}
-                sx={{ bgcolor: COLORS.primary, textTransform: "none", fontWeight: 700, borderRadius: 999, px: 2.5 }}
-              >
-                {promoBusy ? "Checking…" : "Apply"}
-              </Button>
-            </Stack>
-          ) : (
-            <Box
-              component="button"
-              type="button"
-              onClick={() => setShowPromo(true)}
-              sx={{
-                all: "unset",
-                cursor: "pointer",
-                fontSize: "0.8rem",
-                fontWeight: 700,
-                color: COLORS.accentDeep,
-                borderBottom: `1px dashed ${COLORS.accent}`,
-                pb: "1px",
-                "&:hover": { color: COLORS.ink },
-                "&:focus-visible": { outline: `2px solid ${COLORS.accent}`, outlineOffset: 2 },
-              }}
-            >
-              Have a promotional code?
-            </Box>
-          )}
-          {promoError && (
-            <Typography sx={{ mt: 0.75, fontSize: "0.78rem", color: "#8C1D1D" }}>{promoError}</Typography>
-          )}
-        </Box>
       </Box>
 
       <Box
         sx={{
-          mt: 2,
+          mt: 2.5,
           px: { xs: 1.5, md: 2 },
           py: 1.1,
           borderRadius: 2,
@@ -390,12 +307,6 @@ export function SubscribeCard({ firstName }: { firstName: string }) {
           {error}
         </Typography>
       )}
-
-      <Typography
-        sx={{ mt: 1.5, fontSize: "0.75rem", color: COLORS.muted, textAlign: "center" }}
-      >
-        Cancel anytime · 30-day money-back guarantee on Founding &amp; Early · Secure checkout via Stripe
-      </Typography>
     </Box>
   );
 }
@@ -406,50 +317,6 @@ function normalise(v: Partial<TierStat> | undefined, cap: number): TierStat {
   const remaining = typeof v?.remaining === "number" ? v.remaining : Math.max(0, capped - taken);
   const isOpen = typeof v?.isOpen === "boolean" ? v.isOpen : remaining > 0;
   return { cap: capped, taken, remaining, isOpen };
-}
-
-function UniversalPerksBanner({ perks }: { perks: string[] }) {
-  return (
-    <Box
-      sx={{
-        borderRadius: 2,
-        bgcolor: COLORS.surfaceAlt,
-        border: `1px solid ${COLORS.line}`,
-        px: { xs: 2, md: 2.25 },
-        py: { xs: 1.25, md: 1.5 },
-      }}
-    >
-      <Typography
-        sx={{
-          fontSize: "0.68rem",
-          letterSpacing: "0.16em",
-          textTransform: "uppercase",
-          fontWeight: 800,
-          color: COLORS.accentDeep,
-          mb: 0.75,
-        }}
-      >
-        Every membership includes
-      </Typography>
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", md: "1fr 1fr", lg: "1fr 1fr 1fr 1fr" },
-          columnGap: 1.5,
-          rowGap: 0.5,
-        }}
-      >
-        {perks.map((p) => (
-          <Stack key={p} direction="row" spacing={0.75} sx={{ alignItems: "flex-start" }}>
-            <CheckRoundedIcon sx={{ fontSize: 14, color: COLORS.primary, mt: 0.2, flexShrink: 0 }} />
-            <Typography sx={{ fontSize: "0.8rem", color: COLORS.ink, lineHeight: 1.4 }}>
-              {p}
-            </Typography>
-          </Stack>
-        ))}
-      </Box>
-    </Box>
-  );
 }
 
 function BillingToggle({
@@ -501,227 +368,6 @@ function BillingToggle({
           </Box>
         );
       })}
-    </Box>
-  );
-}
-
-function PlanCard({
-  tier,
-  title,
-  subtitle,
-  ribbon,
-  price,
-  per,
-  sub,
-  save,
-  sectionTitle,
-  perks,
-  footnote,
-  cta,
-  busy,
-  soldOut,
-  onClick,
-}: {
-  tier: "founding" | "early" | "standard";
-  title: string;
-  subtitle: string;
-  ribbon?: string;
-  price: string;
-  per?: string;
-  sub?: string;
-  save?: string;
-  sectionTitle: string;
-  perks: string[];
-  footnote: string;
-  cta: string;
-  busy?: boolean;
-  soldOut?: boolean;
-  onClick?: () => void;
-}) {
-  const borderColor =
-    tier === "founding" ? COLORS.accent : tier === "early" ? COLORS.primary : COLORS.line;
-  const borderWidth = tier === "founding" ? 2 : 1;
-  const isStarTier = tier === "founding" || tier === "early";
-
-  return (
-    <Box
-      sx={{
-        position: "relative",
-        borderRadius: 2.5,
-        border: `${borderWidth}px solid ${borderColor}`,
-        bgcolor: "#FFFFFF",
-        overflow: "hidden",
-        display: "flex",
-        flexDirection: "column",
-        // Sold-out tiers stay in the layout but dim slightly + lose their
-        // ribbon glow so the visual hierarchy still points the eye at the
-        // available tier(s).
-        opacity: soldOut ? 0.7 : 1,
-        filter: soldOut ? "saturate(0.7)" : "none",
-        boxShadow:
-          soldOut
-            ? "0 8px 20px -16px rgba(14,42,61,0.18)"
-            : tier === "founding"
-              ? "0 24px 60px -30px rgba(217,168,75,0.55)"
-              : tier === "early"
-                ? "0 18px 44px -28px rgba(14,42,61,0.4)"
-                : "0 12px 32px -24px rgba(14,42,61,0.18)",
-        transition: "opacity 200ms ease, filter 200ms ease",
-      }}
-    >
-      {ribbon && (
-        <Box
-          sx={{
-            position: "absolute",
-            top: 14,
-            right: 14,
-            zIndex: 2,
-            px: 1.5,
-            py: 0.5,
-            borderRadius: 999,
-            // Sold-out ribbon switches to a quiet neutral so it doesn't
-            // pull attention to a tier the user can't buy.
-            bgcolor: soldOut ? "rgba(14,42,61,0.10)" : COLORS.accent,
-            color: soldOut ? COLORS.inkSoft : COLORS.primaryDeep,
-            fontSize: "0.66rem",
-            fontWeight: 800,
-            letterSpacing: "0.06em",
-            textTransform: "uppercase",
-          }}
-        >
-          {ribbon}
-        </Box>
-      )}
-      <Box sx={{ bgcolor: COLORS.primary, color: "#FFFFFF", px: 2.25, pt: 1.75, pb: 1.5 }}>
-        <Typography
-          sx={{
-            fontFamily: "var(--font-display)",
-            fontSize: "1.2rem",
-            fontWeight: 500,
-            lineHeight: 1.2,
-            letterSpacing: "-0.01em",
-            color: "#FFFFFF",
-          }}
-        >
-          {title}
-        </Typography>
-        <Typography sx={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.72)", mt: 0.25 }}>
-          {subtitle}
-        </Typography>
-      </Box>
-
-      <Box sx={{ px: 2.25, py: 1.75, borderBottom: `1px solid ${COLORS.line}`, textAlign: "center", bgcolor: "#FFFFFF" }}>
-        <Stack direction="row" spacing={0.5} sx={{ justifyContent: "center", alignItems: "baseline" }}>
-          <Typography
-            sx={{
-              fontFamily: "var(--font-display)",
-              fontSize: { xs: "2rem", md: "2.15rem" },
-              fontWeight: 600,
-              color: COLORS.ink,
-              lineHeight: 1,
-              letterSpacing: "-0.02em",
-            }}
-          >
-            {price}
-          </Typography>
-          {per && (
-            <Typography sx={{ fontSize: "0.9rem", color: COLORS.muted, fontWeight: 500 }}>
-              /{per}
-            </Typography>
-          )}
-        </Stack>
-        {sub && (
-          <Typography sx={{ fontSize: "0.78rem", color: COLORS.muted, mt: 0.4 }}>
-            {sub}
-          </Typography>
-        )}
-        {save && (
-          <Chip
-            label={save}
-            size="small"
-            sx={{
-              mt: 0.75,
-              bgcolor: "rgba(217,168,75,0.18)",
-              color: COLORS.accentDeep,
-              fontWeight: 700,
-              fontSize: "0.68rem",
-              height: 20,
-            }}
-          />
-        )}
-      </Box>
-
-      <Box sx={{ px: 2.25, py: 1.75, flex: 1 }}>
-        <Typography
-          sx={{
-            fontSize: "0.66rem",
-            letterSpacing: "0.12em",
-            textTransform: "uppercase",
-            color: COLORS.muted,
-            fontWeight: 800,
-            mb: 0.85,
-          }}
-        >
-          {sectionTitle}
-        </Typography>
-        <Stack spacing={0.7}>
-          {perks.map((p) => {
-            const Icon = isStarTier ? StarRoundedIcon : CheckRoundedIcon;
-            return (
-              <Stack key={p} direction="row" spacing={1} sx={{ alignItems: "flex-start" }}>
-                <Icon
-                  sx={{
-                    fontSize: 16,
-                    color: isStarTier ? COLORS.accentDeep : COLORS.primary,
-                    mt: 0.1,
-                    flexShrink: 0,
-                  }}
-                />
-                <Typography
-                  sx={{
-                    fontSize: "0.82rem",
-                    color: COLORS.ink,
-                    fontWeight: isStarTier ? 700 : 500,
-                    lineHeight: 1.4,
-                  }}
-                >
-                  {p}
-                </Typography>
-              </Stack>
-            );
-          })}
-        </Stack>
-      </Box>
-
-      <Box sx={{ px: 2.25, py: 1.1, textAlign: "center", borderTop: `1px solid ${COLORS.line}`, bgcolor: COLORS.surfaceAlt }}>
-        <Typography sx={{ fontSize: "0.72rem", color: COLORS.inkSoft, lineHeight: 1.45 }}>
-          {footnote}
-        </Typography>
-      </Box>
-
-      <Box sx={{ px: 2.25, py: 1.75 }}>
-        <Button
-          fullWidth
-          variant={tier === "standard" ? "outlined" : "contained"}
-          color={tier === "founding" ? "secondary" : "primary"}
-          disabled={busy || soldOut}
-          onClick={onClick}
-          startIcon={busy ? <CircularProgress size={14} sx={{ color: "inherit" }} /> : null}
-          sx={{
-            borderRadius: 999,
-            py: 0.9,
-            // Stronger disabled state so it's obvious the button is dead
-            // (default MUI disabled is quite faint on a dim-saturate card).
-            "&.Mui-disabled": {
-              bgcolor: "rgba(14,42,61,0.10)",
-              color: "rgba(14,42,61,0.55)",
-              border: "1px solid rgba(14,42,61,0.12)",
-            },
-          }}
-        >
-          {cta}
-        </Button>
-      </Box>
     </Box>
   );
 }

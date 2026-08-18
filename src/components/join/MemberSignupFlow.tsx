@@ -121,12 +121,16 @@ export default function MemberSignupFlow() {
         setSubmitting(false);
         return;
       }
-      // Carry an annual pre-selection (from /pricing) through to the
-      // /upgrade billing toggle.
+      // Carry context through to /upgrade: an annual pre-selection (from
+      // /pricing) for the billing toggle, and the referral code so the
+      // owner's promo auto-applies on the payment card.
       const next = data?.next ?? "/upgrade";
-      const interval = params.get("interval");
+      const carry = new URLSearchParams();
+      if (params.get("interval") === "annual") carry.set("interval", "annual");
+      const ref = params.get("ref");
+      if (ref) carry.set("ref", ref);
       router.push(
-        interval === "annual" ? `${next}${next.includes("?") ? "&" : "?"}interval=annual` : next,
+        carry.size > 0 ? `${next}${next.includes("?") ? "&" : "?"}${carry.toString()}` : next,
       );
     } catch {
       setError("Network error. Check your connection and try again.");

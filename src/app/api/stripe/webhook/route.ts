@@ -164,9 +164,35 @@ async function handleEvent(event: Stripe.Event, stripe: Stripe): Promise<string 
     try {
       const { data: member } = await sb
         .from("members")
-        .select("first_name, last_name, email, practice_name, tier, subscription_interval")
+        .select("first_name, last_name, email, practice_name, tier, subscription_interval, referral_code_id")
         .eq("id", memberId)
         .maybeSingle();
+
+      // Referral attribution — which expert/partner link brought them in.
+      let referredBy: string | null = null;
+      try {
+        if (member?.referral_code_id) {
+          const { data: rc } = await sb
+            .from("referral_codes")
+            .select("code, slug, expert_id, vendor_id")
+            .eq("id", member.referral_code_id)
+            .maybeSingle();
+          if (rc) {
+            let owner: string | null = null;
+            if (rc.expert_id) {
+              const { data: e } = await sb.from("experts").select("display_name, full_name").eq("id", rc.expert_id).maybeSingle();
+              owner = e?.display_name || e?.full_name || null;
+            } else if (rc.vendor_id) {
+              const { data: v } = await sb.from("vendors").select("display_name, company_name").eq("id", rc.vendor_id).maybeSingle();
+              owner = v?.display_name || v?.company_name || null;
+            }
+            const link = rc.slug ? `/${rc.slug}` : rc.code;
+            referredBy = owner ? `${owner} (${link})` : link;
+          }
+        }
+      } catch {
+        /* best-effort — the alert still goes out without it */
+      }
       const firstItem = sub.items.data[0];
       const amountCents = firstItem?.price?.unit_amount ?? 0;
       const currency = (firstItem?.price?.currency ?? "usd").toUpperCase();
@@ -190,6 +216,7 @@ async function handleEvent(event: Stripe.Event, stripe: Stripe): Promise<string 
               <li><strong>Interval:</strong> ${interval ?? "—"}</li>
               <li><strong>Amount:</strong> ${currency} $${amountStr}</li>
               ${session.metadata?.promo_code ? `<li><strong>Promo code:</strong> ${session.metadata.promo_code} (3-month trial — first charge after)</li>` : ""}
+              ${referredBy ? `<li><strong>Referred by:</strong> ${referredBy}</li>` : ""}
               <li><strong>Stripe sub:</strong> ${sub.id}</li>
             </ul>
             <p>See it at <a href="https://www.dentalmembernetwork.com/admin/members">/admin/members</a>.</p>
@@ -203,6 +230,10 @@ async function handleEvent(event: Stripe.Event, stripe: Stripe): Promise<string 
           `Tier:     ${member?.tier ?? "—"}`,
           `Interval: ${interval ?? "—"}`,
           `Amount:   ${currency} $${amountStr}`,
+          ...(session.metadata?.promo_code
+            ? [`Promo code: ${session.metadata.promo_code} (3-month trial — first charge after)`]
+            : []),
+          ...(referredBy ? [`Referred by: ${referredBy}`] : []),
           `Stripe sub: ${sub.id}`,
         ].join("\n"),
       });
