@@ -14,11 +14,38 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { ArrowLeft, ArrowRight, Check, ExternalLink } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, ExternalLink, MessageCircle, Search, Tag, BookOpen, Play } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { challengeOptions, locationOptions, memberRoles } from "@/lib/content";
+import { challengeOptions, heardAboutOptions, locationOptions, memberRoles } from "@/lib/content";
 
 const MotionBox = motion.create(Box);
+
+// Resolved server-side by the page (lib/referralContext) so the
+// invitation header is in the first paint — type mirrored here because
+// the lib is server-only.
+type RefContext = {
+  name: string;
+  kind: "expert" | "partner";
+  tagline: string | null;
+  imageUrl: string | null;
+  offerActive: boolean;
+  offerMonths: number;
+};
+
+function initialsOf(name: string): string {
+  const words = name.split(/\s+/).filter((w) => !/^dr\.?$/i.test(w));
+  return ((words[0]?.[0] ?? "") + (words[1]?.[0] ?? "")).toUpperCase() || "DM";
+}
+
+/** "Gary Takacs" → "Gary"; "Dr. Parul Dua Makkar" → "Dr. Makkar";
+ *  companies keep their full name. */
+function shortNameOf(ctx: RefContext): string {
+  if (ctx.kind === "partner") return ctx.name;
+  const base = (ctx.name.split(",")[0] ?? ctx.name).trim();
+  const parts = base.split(/\s+/);
+  if (/^dr\.?$/i.test(parts[0] ?? "")) return `Dr. ${parts[parts.length - 1]}`;
+  return parts[0] ?? base;
+}
 
 const OTHER = "Other";
 
@@ -41,7 +68,7 @@ const STEPS = [
  * unchanged, and success continues into the existing pay-first flow
  * (/upgrade → Stripe checkout).
  */
-export default function MemberSignupFlow() {
+export default function MemberSignupFlow({ refCtx = null }: { refCtx?: RefContext | null }) {
   const router = useRouter();
   const params = useSearchParams();
   const reduced = useReducedMotion();
@@ -64,6 +91,8 @@ export default function MemberSignupFlow() {
   // Step 3
   const [challenge, setChallenge] = useState("");
   const [challengeOther, setChallengeOther] = useState("");
+  const [heardAbout, setHeardAbout] = useState("");
+  const [heardAboutOther, setHeardAboutOther] = useState("");
   const [agreed, setAgreed] = useState(false);
   const [smsConsent, setSmsConsent] = useState(false);
 
@@ -76,8 +105,12 @@ export default function MemberSignupFlow() {
         practiceName.trim() !== "" &&
         (roleLabel !== OTHER || roleLabelOther.trim() !== "")
       );
-    return agreed && (challenge !== OTHER || challengeOther.trim() !== "");
-  }, [step, firstName, lastName, emailOk, practiceName, roleLabel, roleLabelOther, agreed, challenge, challengeOther]);
+    return (
+      agreed &&
+      (challenge !== OTHER || challengeOther.trim() !== "") &&
+      (heardAbout !== OTHER || heardAboutOther.trim() !== "")
+    );
+  }, [step, firstName, lastName, emailOk, practiceName, roleLabel, roleLabelOther, agreed, challenge, challengeOther, heardAbout, heardAboutOther]);
 
   const go = (d: 1 | -1) => {
     setError(null);
@@ -109,6 +142,7 @@ export default function MemberSignupFlow() {
             role_label: resolveOther(roleLabel, roleLabelOther),
             locations: locations || null,
             biggest_challenge: resolveOther(challenge, challengeOther),
+            heard_about: resolveOther(heardAbout, heardAboutOther),
             agreement_type: "member",
             agreement_version: "1.0",
             agreement_accepted_at: new Date().toISOString(),
@@ -161,8 +195,86 @@ export default function MemberSignupFlow() {
         />
       </Box>
 
-      <Container maxWidth="sm" sx={{ flex: 1, display: "flex", flexDirection: "column", py: { xs: 4, md: 7 } }}>
-        <Box sx={{ maxWidth: 460, width: "100%", mx: "auto", flex: 1 }}>
+      <Container
+        maxWidth={refCtx ? "lg" : "sm"}
+        sx={{ flex: 1, display: "flex", flexDirection: "column", py: { xs: 4, md: 7 } }}
+      >
+        <Box
+          sx={
+            refCtx
+              ? {
+                  // Referred desktop: two columns — invitation rail left,
+                  // form card right. Mobile stacks (rail hidden; the
+                  // step-0 header + slim strip carry the invitation).
+                  display: "grid",
+                  gridTemplateColumns: { xs: "1fr", md: "minmax(0, 0.95fr) minmax(0, 1.05fr)" },
+                  gap: { xs: 0, md: 7 },
+                  alignItems: "start",
+                  maxWidth: { xs: 460, md: "none" },
+                  width: "100%",
+                  mx: "auto",
+                  flex: 1,
+                }
+              : { maxWidth: 460, width: "100%", mx: "auto", flex: 1 }
+          }
+        >
+          {/* Desktop invitation rail — persistent through all steps */}
+          {refCtx && (
+            <Box sx={{ display: { xs: "none", md: "block" }, position: "sticky", top: 32 }}>
+              <InvitationHeader ctx={refCtx} />
+            </Box>
+          )}
+
+          <Box sx={{ minWidth: 0 }}>
+            {/* Mobile: full invitation header on step 1, then a slim
+                reminder strip while they complete the form. */}
+            {refCtx && step === 0 && (
+              <Box sx={{ display: { xs: "block", md: "none" } }}>
+                <InvitationHeader ctx={refCtx} />
+              </Box>
+            )}
+            {refCtx && step > 0 && (
+              <Stack
+                direction="row"
+                spacing={1.25}
+                sx={{
+                  display: { xs: "flex", md: "none" },
+                  alignItems: "center",
+                  mb: 3,
+                  px: 1.75,
+                  py: 1,
+                  borderRadius: 2,
+                  bgcolor: "#FFFFFF",
+                  border: "1px solid #E6DDCF",
+                }}
+              >
+                <RefAvatar ctx={refCtx} size={26} />
+                <Typography sx={{ fontSize: "0.8rem", color: "#3B4A55", fontWeight: 600 }}>
+                  Invited by {refCtx.name}
+                  {refCtx.offerActive && (
+                    <Box component="span" sx={{ color: "#9B7B3A", fontWeight: 700 }}>
+                      {" "}· {refCtx.offerMonths} months free, applied at checkout
+                    </Box>
+                  )}
+                </Typography>
+              </Stack>
+            )}
+
+            {/* On referred desktop the form sits in a white card, matching
+                the invitation mock; mobile + organic stay flush on paper. */}
+            <Box
+              sx={
+                refCtx
+                  ? {
+                      bgcolor: { xs: "transparent", md: "#FFFFFF" },
+                      border: { xs: "none", md: "1px solid #E6DDCF" },
+                      borderRadius: { xs: 0, md: 3 },
+                      p: { xs: 0, md: 3.5 },
+                      boxShadow: { xs: "none", md: "0 18px 40px -30px rgba(10,26,47,0.25)" },
+                    }
+                  : undefined
+              }
+            >
           <AnimatePresence mode="wait" initial={false}>
             <MotionBox
               key={step}
@@ -244,6 +356,14 @@ export default function MemberSignupFlow() {
                   </TextField>
                   {challenge === OTHER && (
                     <TextField label="Describe your biggest challenge" value={challengeOther} onChange={(e) => setChallengeOther(e.target.value)} placeholder="e.g. Hiring & retaining hygienists" multiline minRows={2} fullWidth required sx={fieldSx} />
+                  )}
+                  <TextField select label="How did you hear about us?" value={heardAbout} onChange={(e) => setHeardAbout(e.target.value)} fullWidth sx={fieldSx}>
+                    {heardAboutOptions.map((o) => (
+                      <MenuItem key={o} value={o}>{o}</MenuItem>
+                    ))}
+                  </TextField>
+                  {heardAbout === OTHER && (
+                    <TextField label="Tell us where you heard about us" value={heardAboutOther} onChange={(e) => setHeardAboutOther(e.target.value)} placeholder="e.g. A study club, a Facebook group…" fullWidth required sx={fieldSx} />
                   )}
                   <FormControlLabel
                     control={
@@ -363,8 +483,15 @@ export default function MemberSignupFlow() {
                   Founding 100 · $49 a month, locked for life · cancel anytime
                 </Typography>
               )}
+              {refCtx?.offerActive && (
+                <Typography sx={{ mt: step === 0 ? 0.75 : 2.5, fontSize: "0.8rem", color: "#7A8590", textAlign: "center" }}>
+                  You&apos;ll review {shortNameOf(refCtx)}&apos;s offer before entering any payment information.
+                </Typography>
+              )}
             </MotionBox>
           </AnimatePresence>
+            </Box>
+          </Box>
         </Box>
 
         <Typography sx={{ mt: 4, fontSize: "0.78rem", color: "#7A8590", textAlign: "center" }}>
@@ -374,6 +501,193 @@ export default function MemberSignupFlow() {
           </Box>
         </Typography>
       </Container>
+    </Box>
+  );
+}
+
+/** Avatar for the referring expert (headshot) or partner (logo), with an
+ *  initials fallback. Plain <img> — these are user-supplied URLs, so we
+ *  deliberately skip the Next image optimizer. */
+function RefAvatar({ ctx, size }: { ctx: RefContext; size: number }) {
+  if (ctx.imageUrl) {
+    return (
+      <Box
+        component="img"
+        src={ctx.imageUrl}
+        alt={ctx.name}
+        sx={{
+          width: size,
+          height: size,
+          borderRadius: "50%",
+          objectFit: ctx.kind === "expert" ? "cover" : "contain",
+          objectPosition: "center top",
+          bgcolor: "#FFFFFF",
+          border: "1px solid #E6DDCF",
+          flexShrink: 0,
+        }}
+      />
+    );
+  }
+  return (
+    <Box
+      sx={{
+        width: size,
+        height: size,
+        borderRadius: "50%",
+        bgcolor: "rgba(217,168,75,0.18)",
+        border: "1px solid rgba(217,168,75,0.5)",
+        color: "#9B7B3A",
+        display: "grid",
+        placeItems: "center",
+        fontSize: size * 0.38,
+        fontWeight: 800,
+        flexShrink: 0,
+      }}
+    >
+      {initialsOf(ctx.name)}
+    </Box>
+  );
+}
+
+/** The personalized invitation block shown above step 1 when someone
+ *  arrives through a referral link. The "months free" promise renders
+ *  ONLY while the owner's promo code is actually active. */
+function InvitationHeader({ ctx }: { ctx: RefContext }) {
+  const short = shortNameOf(ctx);
+  const benefits = [
+    { icon: MessageCircle, title: "Get practical answers", sub: "The expert hotline — a written answer within 2 to 3 working days." },
+    { icon: Search, title: "Find trusted help", sub: "The expert directory and the company directory, curated by the team." },
+    { icon: Tag, title: "Access member savings", sub: "Member-only offers from vetted partner companies." },
+    { icon: BookOpen, title: "Done-for-you resources", sub: "A growing library of kits — action guide, checklist, worksheet, video." },
+  ];
+  return (
+    <Box sx={{ mb: 4 }}>
+      <Typography
+        sx={{ color: "#9B7B3A", fontSize: "0.72rem", fontWeight: 800, letterSpacing: "0.18em", textTransform: "uppercase", mb: 1 }}
+      >
+        {ctx.name} invitation
+      </Typography>
+      <Typography
+        component="p"
+        sx={{
+          fontFamily: "var(--font-display)",
+          fontSize: { xs: "1.7rem", md: "2rem" },
+          fontWeight: 500,
+          color: "#0A1A2F",
+          letterSpacing: "-0.02em",
+          lineHeight: 1.12,
+          mb: 2,
+        }}
+      >
+        {ctx.offerActive
+          ? `${ctx.offerMonths} months free for your practice.`
+          : "You've been personally invited."}
+      </Typography>
+      <Typography sx={{ fontSize: "0.92rem", color: "#5C6770", lineHeight: 1.6, mb: 2.5, mt: -1 }}>
+        One place to find practical answers, trusted resources, and the right expert when your
+        practice is stuck.
+      </Typography>
+
+      {/* Recommended-by card */}
+      <Stack
+        direction="row"
+        spacing={1.75}
+        sx={{
+          alignItems: "center",
+          p: 2,
+          borderRadius: 2.5,
+          bgcolor: "#FFFFFF",
+          border: "1px solid #E6DDCF",
+          mb: ctx.offerActive ? 1.5 : 2.5,
+        }}
+      >
+        <RefAvatar ctx={ctx} size={52} />
+        <Box sx={{ minWidth: 0 }}>
+          <Typography sx={{ fontSize: "0.95rem", fontWeight: 700, color: "#0A1A2F", lineHeight: 1.3 }}>
+            Recommended by {ctx.name}
+          </Typography>
+          {ctx.tagline && (
+            <Typography sx={{ fontSize: "0.82rem", color: "#5C6770", mt: 0.25 }} noWrap>
+              {ctx.tagline}
+            </Typography>
+          )}
+        </Box>
+      </Stack>
+
+      {/* Offer recognition note — only while the code is live */}
+      {ctx.offerActive && (
+        <Box
+          sx={{
+            borderLeft: "3px solid #D9A84B",
+            bgcolor: "rgba(217,168,75,0.08)",
+            borderRadius: "0 10px 10px 0",
+            px: 2,
+            py: 1.5,
+            mb: 2.5,
+          }}
+        >
+          <Typography sx={{ fontSize: "0.88rem", fontWeight: 700, color: "#0A1A2F", mb: 0.25 }}>
+            Your invitation is recognized.
+          </Typography>
+          <Typography sx={{ fontSize: "0.84rem", color: "#3B4A55", lineHeight: 1.55 }}>
+            Complete your details first — {short}&apos;s {ctx.offerMonths}-month-free offer is applied
+            automatically and shown before you choose a plan.
+          </Typography>
+        </Box>
+      )}
+
+      {/* What membership includes */}
+      <Typography sx={{ fontSize: "0.95rem", fontWeight: 700, color: "#0A1A2F", mb: 1.25 }}>
+        Everything your practice can use
+      </Typography>
+      <Stack spacing={1.25} sx={{ mb: 2 }}>
+        {benefits.map(({ icon: Icon, title, sub }) => (
+          <Stack key={title} direction="row" spacing={1.5} sx={{ alignItems: "flex-start" }}>
+            <Box
+              sx={{
+                width: 28,
+                height: 28,
+                borderRadius: "50%",
+                bgcolor: "rgba(217,168,75,0.12)",
+                display: "grid",
+                placeItems: "center",
+                flexShrink: 0,
+                mt: 0.2,
+              }}
+            >
+              <Icon size={14} color="#9B7B3A" />
+            </Box>
+            <Box>
+              <Typography sx={{ fontSize: "0.88rem", fontWeight: 700, color: "#0A1A2F", lineHeight: 1.35 }}>
+                {title}
+              </Typography>
+              <Typography sx={{ fontSize: "0.8rem", color: "#5C6770", lineHeight: 1.5 }}>{sub}</Typography>
+            </Box>
+          </Stack>
+        ))}
+      </Stack>
+      <Box
+        component={Link}
+        href="/#tour"
+        target="_blank"
+        rel="noopener"
+        sx={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 0.75,
+          fontSize: "0.84rem",
+          fontWeight: 700,
+          color: "#9B7B3A",
+          textDecoration: "none",
+          borderBottom: "1px dashed rgba(155,123,58,0.5)",
+          pb: "1px",
+          mb: 1,
+          "&:hover": { color: "#0A1A2F" },
+        }}
+      >
+        <Play size={13} />
+        See what membership includes — watch the 2-minute tour
+      </Box>
     </Box>
   );
 }

@@ -145,13 +145,14 @@ export async function POST(req: Request) {
       // Form answers used for the personalized onboarding email + admin
       // view. Separate best-effort update so signup keeps working in an
       // environment where migration 0055 hasn't run yet.
-      if (inserted?.id && (utm?.locations || utm?.biggest_challenge)) {
+      if (inserted?.id && (utm?.locations || utm?.biggest_challenge || utm?.heard_about)) {
         try {
           await sb
             .from("members")
             .update({
               locations: utm?.locations ?? null,
               biggest_challenge: utm?.biggest_challenge ?? null,
+              heard_about: utm?.heard_about ?? null,
             })
             .eq("id", inserted.id);
         } catch {
@@ -235,6 +236,7 @@ export async function POST(req: Request) {
           { label: "Number of locations", value: utm?.locations },
           { label: "City / state", value: payload.cityState },
           { label: "Biggest challenge", value: utm?.biggest_challenge },
+          { label: "How they heard about us", value: utm?.heard_about },
           { label: "SMS consent", value: payload.smsConsent ? "Yes" : "No" },
           { label: "Source", value: payload.source ?? null },
         ],

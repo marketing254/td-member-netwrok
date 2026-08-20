@@ -259,6 +259,19 @@ export const challengeOptions = [
   "Other",
 ];
 
+export const heardAboutOptions = [
+  "Thriving Dentist Podcast",
+  "Less Insurance Dependence Podcast",
+  "Reducing Insurance Dependence Academy",
+  "Insurance Untangled Podcast",
+  "Dental Marketing Society",
+  "Expert",
+  "Company",
+  "Google",
+  "Friend",
+  "Other",
+];
+
 // PRICING (Section 10 in doc), verbatim
 export const pricingSection = {
   eyebrow: "MEMBERSHIP",

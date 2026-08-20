@@ -288,6 +288,8 @@ export type MembersRow = {
   // Added in 0055 — form answers used for onboarding personalization.
   locations: string | null;
   biggest_challenge: string | null;
+  // Added in 0057 — acquisition source from the signup form.
+  heard_about: string | null;
   status: MemberStatus;
   tier: string | null;
   joined_at: string | null;
