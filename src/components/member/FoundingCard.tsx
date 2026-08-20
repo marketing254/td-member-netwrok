@@ -12,15 +12,21 @@ import StarRoundedIcon from "@mui/icons-material/StarRounded";
 import type { SvgIconComponent } from "@mui/icons-material";
 
 /**
- * FoundingCard — the member "$49 card", dark navy/gold design (from the
- * team's mock): navy header band, slashed anchor price, lock-for-life
- * pill, WHAT'S INSIDE feature list, gold CTA, and (on the payment page)
- * the three-state invitation-code module directly under the button:
- *   idle    → a quiet "Have an invitation code?" link (no empty box)
- *   open    → input + Apply (uppercase, Enter submits)
- *   applied → green band "CODE applied — courtesy of {owner}" + Remove,
- *             and the CTA relabels to "Start my 3 months free".
- * Used on /upgrade (button CTA + promo) and /pricing (link CTA, no promo).
+ * FoundingCard — the member pricing card, built to the 18 Aug 2026 spec
+ * ("Pricing card: full build spec"). TWO STATES, never mixed:
+ *
+ *   State 1 (no code):    anchor price struck, $49/mo or $441/yr, lock
+ *                         chip, "No trial — 30-day money-back guarantee"
+ *                         fine print, CTA "Claim your founding rate".
+ *   State 2 (code applied): gold applied chip at the TOP of the price
+ *                         block, "$0 due today / then $49/mo from <date>"
+ *                         with the REAL first-charge date, trial fine
+ *                         print, CTA "Start my 3 months free", reminder
+ *                         disclosure under the button.
+ *
+ * Seat counter stays hidden until fewer than 60 of 100 founding seats
+ * remain. Annual is $441 (9 months buys 12 — permanent rate, not intro).
+ * No video-tour link anywhere on this card.
  */
 
 const CARD_BG = "#171A1F";
@@ -36,22 +42,22 @@ const WHATS_INSIDE: { icon: SvgIconComponent; title: string; body: string }[] = 
   {
     icon: PeopleAltOutlinedIcon,
     title: "The expert directory",
-    body: "Every expert in the network, what they do and how to reach them. Curated, not an algorithm.",
+    body: "Every expert in the network, what they do and how to reach them. Curated by the team behind Thriving Dentist, not an algorithm.",
   },
   {
     icon: StorefrontOutlinedIcon,
     title: "The company directory",
-    body: "Vetted companies with member-only offers on what you already pay for.",
+    body: "Vetted companies with member-only offers on the software, supplies and services you already pay for.",
   },
   {
     icon: LibraryBooksOutlinedIcon,
     title: "Kits and courses",
-    body: "A growing library, each kit with an action guide, checklist, worksheet and video. Plus full courses from the experts.",
+    body: "A growing library of expert resource kits, each with an action guide, checklist, worksheet and video. Plus full courses from the experts themselves.",
   },
   {
     icon: SupportAgentOutlinedIcon,
     title: "The expert hotline",
-    body: "Bring any practice problem. A written answer and the right people to speak to, within 2 to 3 working days.",
+    body: "Bring any practice problem. You get a written answer and the right people to speak to, within 2 to 3 working days.",
   },
   {
     icon: CalculateOutlinedIcon,
@@ -75,10 +81,26 @@ export type PromoModule = {
 type TierKey = "founding" | "early" | "standard";
 
 const TIER_HEAD: Record<TierKey, { title: string; sub: string }> = {
-  founding: { title: "Founding", sub: "For the first 100 members" },
+  founding: { title: "Founding", sub: "Founding rate · first 100 members" },
   early: { title: "Early Member", sub: "For members 101–500" },
   standard: { title: "Standard", sub: "Full membership" },
 };
+
+// FINAL pricing decision (18 Aug 2026): standard annual is $490; when a
+// 3-month code is applied the annual becomes $441 after the free months.
+// The $441 Stripe Price lives in STRIPE_PRICE_FOUNDING_ANNUAL_PROMO and
+// is used ONLY for promo-annual checkouts.
+const PRICES: Record<TierKey, { mo: string; yr: string }> = {
+  founding: { mo: "$49", yr: "$490" },
+  early: { mo: "$99", yr: "$990" },
+  standard: { mo: "$199", yr: "$1,990" },
+};
+const FOUNDING_PROMO_ANNUAL = "$441";
+
+function firstChargeDate(trialDays: number): string {
+  const d = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000);
+  return new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric" }).format(d);
+}
 
 export default function FoundingCard({
   tier,
@@ -93,32 +115,21 @@ export default function FoundingCard({
 }: {
   tier: TierKey;
   interval: "monthly" | "annual";
-  /** Seats left in this tier (founding/early) — shown in the header. */
   remaining?: number | null;
   ctaLabel: string;
   ctaBusy?: boolean;
-  /** Payment page: click starts checkout. */
   onCta?: () => void;
-  /** Marketing pages: CTA is a link instead. */
   ctaHref?: string;
-  /** Payment page only — the invitation-code module under the CTA. */
   promo?: PromoModule;
-  /** Emphasized note band above the CTA (e.g. the rate-lock promise). */
   note?: string | null;
 }) {
   const head = TIER_HEAD[tier];
-  const monthly = tier === "founding" ? "$49" : tier === "early" ? "$99" : "$199";
-  const yearly = tier === "founding" ? "$490" : tier === "early" ? "$990" : "$1,990";
-  const anchorMonthly = "$199 /mo";
-  const anchorAnnual = "$1,990 /yr";
-  const showAnchor = tier !== "standard";
-  const lockLine =
-    tier === "founding"
-      ? "Locked for life at $49, even when it goes to $199"
-      : tier === "early"
-        ? "Locked for life at $99, even when it goes to $199"
-        : null;
-  const finalCta = promo?.applied ? "Start my 3 months free" : ctaLabel;
+  const price = PRICES[tier];
+  const applied = promo?.applied ?? null;
+  const chargeDate = applied ? firstChargeDate(applied.trialDays) : null;
+  const finalCta = applied ? "Start my 3 months free" : ctaLabel;
+  // Scarcity counter only once it means something: under 60 seats left.
+  const showCounter = tier === "founding" && typeof remaining === "number" && remaining < 60;
 
   return (
     <Box
@@ -142,50 +153,155 @@ export default function FoundingCard({
               {head.sub}
             </Typography>
           </Box>
-          {typeof remaining === "number" && tier !== "standard" && (
+          {showCounter && (
             <Typography sx={{ fontSize: "0.7rem", fontWeight: 800, letterSpacing: "0.08em", color: GOLD, whiteSpace: "nowrap", textTransform: "uppercase" }}>
-              {/* Founding counter displays at most 96 (team call) — real
-                  sales below that show the true number. */}
-              {tier === "founding" ? Math.min(remaining, 96) : remaining} of {tier === "founding" ? 100 : 400} left
+              {remaining} of 100 left
+            </Typography>
+          )}
+          {tier === "early" && typeof remaining === "number" && (
+            <Typography sx={{ fontSize: "0.7rem", fontWeight: 800, letterSpacing: "0.08em", color: GOLD, whiteSpace: "nowrap", textTransform: "uppercase" }}>
+              {remaining} of 400 left
             </Typography>
           )}
         </Stack>
       </Box>
 
       {/* Price block */}
-      <Box sx={{ px: 3, pt: 2.75, pb: 2.5, textAlign: "center", borderBottom: `1px solid ${CARD_LINE}` }}>
-        {showAnchor && (
-          <Typography sx={{ fontSize: "1rem", color: TXT_MUTED, textDecoration: "line-through", textDecorationColor: "rgba(244,241,234,0.45)", mb: 0.25 }}>
-            {interval === "monthly" ? anchorMonthly : anchorAnnual}
-          </Typography>
-        )}
-        <Stack direction="row" spacing={0.75} sx={{ justifyContent: "center", alignItems: "baseline" }}>
-          <Typography sx={{ fontFamily: "var(--font-display)", fontSize: "3rem", fontWeight: 600, color: "#FFFFFF", lineHeight: 1, letterSpacing: "-0.02em" }}>
-            {interval === "monthly" ? monthly : yearly}
-          </Typography>
-          <Typography sx={{ fontSize: "1.05rem", color: TXT_SOFT, fontWeight: 500 }}>
-            /{interval === "monthly" ? "mo" : "yr"}
-          </Typography>
-        </Stack>
-        <Typography sx={{ fontSize: "0.9rem", color: TXT_SOFT, mt: 0.75 }}>
-          {interval === "monthly" ? `or ${yearly} a year` : `or ${monthly} a month`}
-        </Typography>
-        {lockLine && (
-          <Box
-            sx={{
-              display: "inline-block",
-              mt: 1.5,
-              px: 2,
-              py: 0.7,
-              borderRadius: 999,
-              bgcolor: "#F7EBD3",
-              color: "#0A1A2F",
-              fontSize: "0.82rem",
-              fontWeight: 600,
-            }}
-          >
-            {lockLine}
-          </Box>
+      <Box sx={{ px: 3, pt: 2.5, pb: 2.25, textAlign: "center", borderBottom: `1px solid ${CARD_LINE}` }}>
+        {applied ? (
+          <>
+            {/* Applied-code chip — gold, top of the price block. Company
+                name, never just the raw code. */}
+            <Box
+              sx={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 0.75,
+                px: 1.75,
+                py: 0.8,
+                mb: 2,
+                borderRadius: 999,
+                bgcolor: "rgba(217,168,75,0.16)",
+                border: `1px solid ${GOLD}`,
+                color: GOLD,
+                fontSize: "0.84rem",
+                fontWeight: 700,
+                flexWrap: "wrap",
+                justifyContent: "center",
+              }}
+            >
+              <CheckRoundedIcon sx={{ fontSize: 16, flexShrink: 0 }} />
+              <Box component="span">
+                {applied.code} applied — 3 months free, courtesy of {applied.ownerName ?? "the DMN team"}
+              </Box>
+              <Box
+                component="button"
+                type="button"
+                onClick={promo?.onRemove}
+                sx={{
+                  all: "unset",
+                  cursor: "pointer",
+                  fontSize: "0.72rem",
+                  fontWeight: 700,
+                  color: "rgba(217,168,75,0.75)",
+                  textDecoration: "underline",
+                  ml: 0.5,
+                  "&:hover": { color: GOLD },
+                }}
+              >
+                Remove
+              </Box>
+            </Box>
+
+            <Typography sx={{ fontFamily: "var(--font-display)", fontSize: "2.6rem", fontWeight: 600, color: "#FFFFFF", lineHeight: 1, letterSpacing: "-0.02em" }}>
+              $0 due today
+            </Typography>
+            <Typography sx={{ fontSize: "0.95rem", color: TXT_SOFT, mt: 1 }}>
+              {interval === "monthly" ? (
+                <>then {price.mo}/mo from {chargeDate}</>
+              ) : tier === "founding" ? (
+                <>
+                  <Box component="span" sx={{ textDecoration: "line-through", color: TXT_MUTED, mr: 0.75 }}>
+                    $490
+                  </Box>
+                  then {FOUNDING_PROMO_ANNUAL}/yr from {chargeDate}
+                </>
+              ) : (
+                <>then {price.yr}/yr from {chargeDate}</>
+              )}
+            </Typography>
+            <Typography sx={{ fontSize: "0.76rem", color: TXT_MUTED, mt: 1.5, lineHeight: 1.6 }}>
+              3 months free with {applied.code} · cancel any time before {chargeDate} and you pay
+              nothing · 30-day money-back guarantee after that
+            </Typography>
+          </>
+        ) : (
+          <>
+            {tier !== "standard" && interval === "monthly" && (
+              <Typography sx={{ fontSize: "1rem", color: TXT_MUTED, textDecoration: "line-through", textDecorationColor: "rgba(244,241,234,0.45)", mb: 0.25 }}>
+                $199 /mo
+              </Typography>
+            )}
+            <Stack direction="row" spacing={0.75} sx={{ justifyContent: "center", alignItems: "baseline" }}>
+              <Typography sx={{ fontFamily: "var(--font-display)", fontSize: "3rem", fontWeight: 600, color: "#FFFFFF", lineHeight: 1, letterSpacing: "-0.02em" }}>
+                {interval === "monthly" ? price.mo : price.yr}
+              </Typography>
+              <Typography sx={{ fontSize: "1.05rem", color: TXT_SOFT, fontWeight: 500 }}>
+                /{interval === "monthly" ? "mo" : "yr"}
+              </Typography>
+            </Stack>
+            <Typography sx={{ fontSize: "0.9rem", color: TXT_SOFT, mt: 0.75 }}>
+              {interval === "monthly" ? `or ${price.yr} a year` : `or ${price.mo} a month`}
+            </Typography>
+            {tier === "founding" && (
+              <Box
+                sx={{
+                  display: "inline-block",
+                  mt: 1.5,
+                  px: 2,
+                  py: 0.7,
+                  borderRadius: 999,
+                  bgcolor: "rgba(217,168,75,0.16)",
+                  border: `1px solid ${GOLD}`,
+                  color: GOLD,
+                  fontSize: "0.8rem",
+                  fontWeight: 600,
+                }}
+              >
+                {interval === "monthly"
+                  ? "Locked for life at $49, even when it goes to $199"
+                  : "Locked for life at $490, even when it goes to $199/mo equivalent"}
+              </Box>
+            )}
+            {tier === "early" && (
+              <Box
+                sx={{
+                  display: "inline-block",
+                  mt: 1.5,
+                  px: 2,
+                  py: 0.7,
+                  borderRadius: 999,
+                  bgcolor: "rgba(217,168,75,0.16)",
+                  border: `1px solid ${GOLD}`,
+                  color: GOLD,
+                  fontSize: "0.8rem",
+                  fontWeight: 600,
+                }}
+              >
+                Locked for life at {interval === "monthly" ? "$99" : "$990"}, even when it goes to $199
+              </Box>
+            )}
+            {tier !== "standard" && (
+              <Typography sx={{ fontSize: "0.76rem", color: TXT_MUTED, mt: 1.5 }}>
+                No trial — 30-day money-back guarantee · Cancel anytime
+              </Typography>
+            )}
+            {tier === "standard" && (
+              <Typography sx={{ fontSize: "0.76rem", color: TXT_MUTED, mt: 1.5 }}>
+                Cancel anytime
+              </Typography>
+            )}
+          </>
         )}
       </Box>
 
@@ -236,8 +352,8 @@ export default function FoundingCard({
         </Box>
       )}
 
-      {/* Rate-lock promise — a proper in-card mention, not fine print */}
-      {note && (
+      {/* Rate-lock promise band */}
+      {note && !applied && (
         <Box
           sx={{
             mx: 3,
@@ -259,8 +375,8 @@ export default function FoundingCard({
         </Box>
       )}
 
-      {/* CTA + invitation code module */}
-      <Box sx={{ px: 3, pt: note ? 2 : 3 }}>
+      {/* CTA */}
+      <Box sx={{ px: 3, pt: note && !applied ? 2 : 3, pb: 2.5 }}>
         <Button
           fullWidth
           disableElevation
@@ -276,8 +392,6 @@ export default function FoundingCard({
             borderRadius: "10px",
             py: 1.4,
             transition: "background-color 200ms ease, transform 200ms ease",
-            // Doubled selector out-specifies the theme's MuiButton hover
-            // (which otherwise paints the button black on hover).
             "&&:hover": { bgcolor: GOLD, transform: "translateY(-1px)" },
             "&.Mui-disabled": { bgcolor: "rgba(217,168,75,0.45)", color: "#14181F" },
             "&:focus-visible": { outline: `2px solid ${TXT}`, outlineOffset: 2 },
@@ -286,43 +400,17 @@ export default function FoundingCard({
           {finalCta}
         </Button>
 
-        {promo && (
+        {/* Under the button: guarantee/reminder line, then the quiet
+            invitation-code link. Nothing else. */}
+        <Typography sx={{ mt: 1.25, fontSize: "0.76rem", color: TXT_MUTED, textAlign: "center", lineHeight: 1.6 }}>
+          {applied
+            ? `We will remind you by email 7 days before your first payment on ${chargeDate}. Cancel any time in one click.`
+            : "Secure checkout via Stripe"}
+        </Typography>
+
+        {promo && !applied && (
           <Box sx={{ mt: 1.5 }}>
-            {promo.applied ? (
-              <Box
-                sx={{
-                  borderRadius: "10px",
-                  bgcolor: "rgba(214,238,225,0.95)",
-                  px: 2,
-                  py: 1.1,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1,
-                  flexWrap: "wrap",
-                }}
-              >
-                <CheckRoundedIcon sx={{ fontSize: 17, color: "#1F5C40", flexShrink: 0 }} />
-                <Typography sx={{ fontSize: "0.86rem", fontWeight: 600, color: "#1F5C40", flex: 1, minWidth: 0 }}>
-                  {promo.applied.code} applied — courtesy of {promo.applied.ownerName ?? "the DMN team"}
-                </Typography>
-                <Box
-                  component="button"
-                  type="button"
-                  onClick={promo.onRemove}
-                  sx={{
-                    all: "unset",
-                    cursor: "pointer",
-                    fontSize: "0.76rem",
-                    fontWeight: 700,
-                    color: "rgba(31,92,64,0.75)",
-                    textDecoration: "underline",
-                    "&:hover": { color: "#1F5C40" },
-                  }}
-                >
-                  Remove
-                </Box>
-              </Box>
-            ) : promo.state === "open" ? (
+            {promo.state === "open" ? (
               <>
                 <Stack direction="row" spacing={1}>
                   <TextField
@@ -399,17 +487,6 @@ export default function FoundingCard({
             )}
           </Box>
         )}
-      </Box>
-
-      {/* Reassurance */}
-      <Box sx={{ px: 3, pt: 1.75, pb: 2.5, textAlign: "center" }}>
-        <Typography sx={{ fontSize: "0.78rem", color: TXT_MUTED, lineHeight: 1.6 }}>
-          {tier === "standard"
-            ? "Cancel any time"
-            : "30-day money-back guarantee · cancel any time"}
-          <br />
-          Secure checkout via Stripe
-        </Typography>
       </Box>
     </Box>
   );

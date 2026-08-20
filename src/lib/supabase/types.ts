@@ -285,6 +285,9 @@ export type MembersRow = {
   practice_name: string | null;
   practice_role: string | null;
   city: string | null;
+  // Added in 0055 — form answers used for onboarding personalization.
+  locations: string | null;
+  biggest_challenge: string | null;
   status: MemberStatus;
   tier: string | null;
   joined_at: string | null;
@@ -845,9 +848,29 @@ export type MemberPromoCodeRow = {
   vendor_id: string | null;
   active: boolean;
   trial_days: number;
+  // Added in 0055 — seats the code covers ("fully claimed" at the cap).
+  max_uses: number;
   created_by: string | null;
   created_at: string;
   updated_at: string;
+};
+
+// Added in 0055 — approval-gated onboarding email drafts.
+export type MemberOnboardingEmailRow = {
+  id: string;
+  member_id: string;
+  kind: string;
+  challenge: string | null;
+  kit_slug: string | null;
+  kit_title: string | null;
+  match_kind: string | null;
+  subject: string;
+  html: string;
+  status: string;
+  approval_token: string | null;
+  approved_by: string | null;
+  sent_to_member_at: string | null;
+  created_at: string;
 };
 
 export type MemberPromoRedemptionRow = {
@@ -989,6 +1012,7 @@ export type Database = {
       resource_inquiry_replies: Table<ResourceInquiryRepliesRow>;
       resource_feedback: Table<ResourceFeedbackRow>;
       resource_views: Table<ResourceViewsRow>;
+      member_onboarding_emails: Table<MemberOnboardingEmailRow>;
       member_promo_codes: Table<MemberPromoCodeRow>;
       member_promo_redemptions: Table<MemberPromoRedemptionRow>;
       referral_codes: Table<ReferralCodesRow>;

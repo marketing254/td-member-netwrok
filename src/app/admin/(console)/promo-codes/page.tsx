@@ -21,6 +21,7 @@ type Row = {
   label: string | null;
   active: boolean;
   trial_days: number;
+  max_uses: number;
   created_at: string;
   owner: { kind: "expert" | "partner" | "both" | "team"; name: string };
   uses: number;
@@ -245,9 +246,11 @@ export default function AdminPromoCodesPage() {
                     </Typography>
                   </Box>
                   <Stack direction="row" spacing={2.5} sx={{ alignItems: "center" }}>
-                    <Box sx={{ textAlign: "center", minWidth: 56 }}>
-                      <Typography sx={{ fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.1em", color: INK_MUTED, textTransform: "uppercase" }}>Used by</Typography>
-                      <Typography sx={{ fontSize: "1.05rem", fontWeight: 700, color: r.uses > 0 ? GOLD : INK, lineHeight: 1.1, mt: 0.25 }}>{r.uses}</Typography>
+                    <Box sx={{ textAlign: "center", minWidth: 64 }}>
+                      <Typography sx={{ fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.1em", color: INK_MUTED, textTransform: "uppercase" }}>Seats used</Typography>
+                      <Typography sx={{ fontSize: "1.05rem", fontWeight: 700, color: r.uses >= r.max_uses ? "#8C1D1D" : r.uses > 0 ? GOLD : INK, lineHeight: 1.1, mt: 0.25 }}>
+                        {r.uses}/{r.max_uses ?? 10}
+                      </Typography>
                     </Box>
                     <Button
                       size="small"

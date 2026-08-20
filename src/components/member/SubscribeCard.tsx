@@ -137,7 +137,9 @@ export function SubscribeCard({ firstName }: { firstName: string }) {
         setPromoError(
           data.reason === "inactive"
             ? "That code is no longer available."
-            : "That code isn't valid — check the spelling.",
+            : data.reason === "full"
+              ? "That code has been fully claimed."
+              : "That code is not recognised. Check with whoever gave it to you.",
         );
       }
     } catch {
@@ -277,7 +279,11 @@ export function SubscribeCard({ firstName }: { firstName: string }) {
           ctaLabel={busy === activePlan ? "Opening Stripe…" : ctaLabel}
           ctaBusy={busy === activePlan}
           onCta={() => void startCheckout(activePlan)}
-          promo={promo}
+          // Organic members never see the offer: the promo module (applied
+          // chip AND the "Have an invitation code?" link) only exists for
+          // visitors who arrived through a referral link (?ref=) or whose
+          // code auto-applied via the attribution cookie.
+          promo={promoApplied || refParam ? promo : undefined}
           note={ladder}
         />
       </Box>
@@ -294,7 +300,7 @@ export function SubscribeCard({ firstName }: { firstName: string }) {
         }}
       >
         <Typography sx={{ fontSize: "0.78rem", color: COLORS.accentDeep, fontWeight: 600 }}>
-          ★ Coming in Phase 2 — Premium: 1-on-1 coaching · practice audit &amp; review · priority Hotline (24–48h) · advanced masterclasses · whole-team seats
+          ★ Coming in Phase 2 — Premium: 1-on-1 coaching · practice audit &amp; review · expert hotline · advanced masterclasses · whole-team seats
         </Typography>
       </Box>
 

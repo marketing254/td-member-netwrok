@@ -43,6 +43,10 @@ type MemberRow = {
   practice_role: string | null;
   city: string | null;
   state?: string | null;
+  locations?: string | null;
+  biggest_challenge?: string | null;
+  sms_consent_at?: string | null;
+  sms_consent_text?: string | null;
   status: "waitlist" | "invited" | "active" | "paused" | "churned";
   tier: string | null;
   joined_at: string | null;
@@ -447,6 +451,18 @@ function MemberDetailDrawer({
             <Field label="Role" value={member.practice_role} />
             <Field label="City" value={member.city} />
             {member.state && <Field label="State / Region" value={member.state} />}
+            <Field label="Number of locations" value={member.locations ?? null} />
+            <Field label="Biggest challenge" value={member.biggest_challenge ?? null} />
+          </Section>
+
+          <Section title="Consent">
+            <Field
+              label="SMS consent"
+              value={member.sms_consent_at ? `Yes — ${formatDate(member.sms_consent_at)}` : "No"}
+            />
+            {member.sms_consent_text && (
+              <Field label="Consent text shown" value={member.sms_consent_text} small />
+            )}
           </Section>
 
           <Section title="Subscription">

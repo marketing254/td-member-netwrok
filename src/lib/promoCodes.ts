@@ -142,6 +142,31 @@ export async function ensurePromoCodesForOwners(): Promise<number> {
   return rows.length;
 }
 
+/**
+ * Seat cap (0055): each code covers a limited number of seats
+ * (max_uses, default 10). True when every seat is taken. Fails open
+ * (false) pre-migration or on any error — the cap is a marketing
+ * control, not a security boundary.
+ */
+export async function isPromoFullyClaimed(promoCodeId: string): Promise<boolean> {
+  try {
+    const sb = getSupabaseAdmin();
+    const { data: row, error } = await sb
+      .from("member_promo_codes")
+      .select("max_uses")
+      .eq("id", promoCodeId)
+      .single();
+    if (error || !row) return false;
+    const { count } = await sb
+      .from("member_promo_redemptions")
+      .select("id", { count: "exact", head: true })
+      .eq("promo_code_id", promoCodeId);
+    return (count ?? 0) >= row.max_uses;
+  } catch {
+    return false;
+  }
+}
+
 /** True when the error smells like "migration 0054 hasn't run here yet". */
 export function isMissingPromoTables(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String((err as { message?: string })?.message ?? err);

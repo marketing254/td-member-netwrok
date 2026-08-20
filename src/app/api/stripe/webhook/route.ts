@@ -143,6 +143,13 @@ async function handleEvent(event: Stripe.Event, stripe: Stripe): Promise<string 
 
     await applySubscriptionToMember(sb, memberId, sub, stripe);
 
+    // Onboarding: send the Day 0 welcome immediately (BCC'd to the team,
+    // recorded in member_onboarding_emails). Days 3/7/14 follow via the
+    // hourly cron. Fire-and-forget + idempotent per member.
+    void import("@/lib/onboarding").then(({ onMemberActivated }) =>
+      onMemberActivated(memberId),
+    );
+
     // Promo-code attribution — one row per member per code, so the admin
     // console and the code owner's portal can count real uses. Idempotent
     // (unique constraint) and best-effort: a miss never blocks activation.

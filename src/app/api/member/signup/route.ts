@@ -142,6 +142,22 @@ export async function POST(req: Request) {
         })
         .select("id")
         .single();
+      // Form answers used for the personalized onboarding email + admin
+      // view. Separate best-effort update so signup keeps working in an
+      // environment where migration 0055 hasn't run yet.
+      if (inserted?.id && (utm?.locations || utm?.biggest_challenge)) {
+        try {
+          await sb
+            .from("members")
+            .update({
+              locations: utm?.locations ?? null,
+              biggest_challenge: utm?.biggest_challenge ?? null,
+            })
+            .eq("id", inserted.id);
+        } catch {
+          /* columns not present yet */
+        }
+      }
       if (insErr) {
         return serverError(insErr, { route, extra: { stage: "members_insert" } });
       }
@@ -218,7 +234,7 @@ export async function POST(req: Request) {
           { label: "Role", value: utm?.role_label },
           { label: "Number of locations", value: utm?.locations },
           { label: "City / state", value: payload.cityState },
-          { label: "Biggest challenge", value: utm?.challenge },
+          { label: "Biggest challenge", value: utm?.biggest_challenge },
           { label: "SMS consent", value: payload.smsConsent ? "Yes" : "No" },
           { label: "Source", value: payload.source ?? null },
         ],

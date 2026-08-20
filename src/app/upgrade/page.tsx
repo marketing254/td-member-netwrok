@@ -73,11 +73,14 @@ function UpgradeInner() {
     ctx?.subscriptionStatus === "active" || ctx?.subscriptionStatus === "trialing";
 
   // Already active + logged in → they belong in the portal, not here.
+  // (Dev preview mode is exempt so a leftover test session can't bounce
+  // the card view to /dashboard.)
+  const previewMode = process.env.NODE_ENV !== "production" && params.get("preview") === "1";
   useEffect(() => {
-    if (!loading && ctx?.authed && isActive && !justSubscribed) {
+    if (!previewMode && !loading && ctx?.authed && isActive && !justSubscribed) {
       router.replace("/dashboard");
     }
-  }, [loading, ctx?.authed, isActive, justSubscribed, router]);
+  }, [previewMode, loading, ctx?.authed, isActive, justSubscribed, router]);
 
   // Post-payment polling. Two tails:
   //  • Logged-in: once the webhook flips status→active, go to /dashboard.
@@ -115,9 +118,10 @@ function UpgradeInner() {
   if (loading) return <PageSkeleton />;
 
   // DEV ONLY: /upgrade?preview=1 renders the plan card with a fake context
-  // so the page can be checked without doing a signup. Compiled out of
-  // production builds (NODE_ENV is inlined), so no bypass ships.
-  if (process.env.NODE_ENV !== "production" && params.get("preview") === "1" && !ctx) {
+  // so the page can be checked without doing a signup — it wins even over
+  // a leftover test session in the browser. Compiled out of production
+  // builds (NODE_ENV is inlined), so no bypass ships.
+  if (process.env.NODE_ENV !== "production" && params.get("preview") === "1") {
     return (
       <PageShell signOut={() => router.push("/")}>
         <Alert severity="warning" sx={{ mb: 2 }}>

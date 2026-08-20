@@ -337,6 +337,17 @@ export async function middleware(req: NextRequest) {
         return applySecurityHeaders(res);
       }
 
+      // DEV ONLY: /upgrade?preview=1 renders the payment card with a fake
+      // context so the team can eyeball it without a signup. NODE_ENV is
+      // "production" on Vercel, so this branch cannot exist live.
+      if (
+        isUpgrade &&
+        process.env.NODE_ENV !== "production" &&
+        req.nextUrl.searchParams.get("preview") === "1"
+      ) {
+        return applySecurityHeaders(res);
+      }
+
       const supabase = createMiddlewareSupabase(req, res);
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) {

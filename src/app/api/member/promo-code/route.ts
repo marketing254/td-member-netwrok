@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { resolveCheckoutMember } from "@/lib/auth/guards";
+import { isPromoFullyClaimed } from "@/lib/promoCodes";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -55,6 +56,9 @@ export async function POST(req: Request) {
         .maybeSingle();
       if (!data) return NextResponse.json({ valid: false, reason: "invalid" });
       if (!data.active) return NextResponse.json({ valid: false, reason: "inactive" });
+      if (await isPromoFullyClaimed(data.id)) {
+        return NextResponse.json({ valid: false, reason: "full" });
+      }
       promo = data;
     } else if (ref) {
       const { data: refRow } = await sb
@@ -72,6 +76,10 @@ export async function POST(req: Request) {
       const { data: promoRows } = await owner.limit(1);
       const row = promoRows?.[0] ?? null;
       if (!row || !row.active) return NextResponse.json({ valid: false, reason: "inactive" });
+      // Auto-apply stays silent when the code's seats are gone.
+      if (await isPromoFullyClaimed(row.id)) {
+        return NextResponse.json({ valid: false, reason: "full" });
+      }
       promo = row;
     } else {
       return NextResponse.json({ valid: false, reason: "invalid" });
