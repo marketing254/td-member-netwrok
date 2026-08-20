@@ -45,6 +45,7 @@ type MemberRow = {
   state?: string | null;
   locations?: string | null;
   biggest_challenge?: string | null;
+  heard_about?: string | null;
   sms_consent_at?: string | null;
   sms_consent_text?: string | null;
   status: "waitlist" | "invited" | "active" | "paused" | "churned";
@@ -453,6 +454,7 @@ function MemberDetailDrawer({
             {member.state && <Field label="State / Region" value={member.state} />}
             <Field label="Number of locations" value={member.locations ?? null} />
             <Field label="Biggest challenge" value={member.biggest_challenge ?? null} />
+            <Field label="How they heard about us" value={member.heard_about ?? null} />
           </Section>
 
           <Section title="Consent">
