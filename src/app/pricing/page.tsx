@@ -404,7 +404,7 @@ export default function PricingPage() {
             }}
           >
             <Typography sx={{ fontSize: "0.88rem", color: COLORS.accentBright, fontWeight: 600 }}>
-              ★ Coming in Phase 2 — Premium: 1-on-1 coaching · practice audit &amp; review · priority Hotline (24–48h) · advanced masterclasses · whole-team seats
+              ★ Coming in Phase 2 — Premium: 1-on-1 coaching · practice audit &amp; review · expert hotline · advanced masterclasses · whole-team seats
             </Typography>
           </Box>
 

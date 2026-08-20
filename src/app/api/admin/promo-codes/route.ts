@@ -31,7 +31,7 @@ export async function GET() {
 
     const { data: codes, error } = await sb
       .from("member_promo_codes")
-      .select("id, code, label, expert_id, vendor_id, active, trial_days, created_at")
+      .select("id, code, label, expert_id, vendor_id, active, trial_days, max_uses, created_at")
       .order("created_at", { ascending: false });
     if (error) throw error;
 
@@ -62,6 +62,7 @@ export async function GET() {
         label: c.label,
         active: c.active,
         trial_days: c.trial_days,
+        max_uses: c.max_uses,
         created_at: c.created_at,
         owner:
           c.expert_id && c.vendor_id

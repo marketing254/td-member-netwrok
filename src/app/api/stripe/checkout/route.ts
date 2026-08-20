@@ -72,6 +72,10 @@ export async function POST(req: Request) {
       if (!promoRow.active) {
         return apiError.badRequest("That promotional code is no longer available.", route);
       }
+      const { isPromoFullyClaimed } = await import("@/lib/promoCodes");
+      if (await isPromoFullyClaimed(promoRow.id)) {
+        return apiError.badRequest("That code has been fully claimed.", route);
+      }
       promo = { id: promoRow.id, code: promoRow.code, trial_days: promoRow.trial_days };
     } catch {
       return apiError.badRequest("That promotional code isn't valid.", route);
@@ -145,6 +149,22 @@ export async function POST(req: Request) {
     // Specific Stripe-config errors stay in server logs; user gets a
     // generic "service unavailable" response.
     return serverError(err, { route, status: 503, extra: { stage: "stripe_init" } });
+  }
+
+  // FINAL pricing decision (18 Aug 2026): standard founding annual is
+  // $490; with a 3-month code applied the annual becomes $441 — a
+  // separate Stripe Price used ONLY here, so the trial converts into
+  // exactly what the card promised ("then $441/yr").
+  if (promo && plan === "founding_annual") {
+    const promoAnnual = process.env.STRIPE_PRICE_FOUNDING_ANNUAL_PROMO;
+    if (!promoAnnual) {
+      console.error("[checkout] STRIPE_PRICE_FOUNDING_ANNUAL_PROMO is not set — promo-annual blocked");
+      return apiError.badRequest(
+        "Annual billing with a code isn't available right now — choose monthly, or remove the code.",
+        route,
+      );
+    }
+    priceId = promoAnnual;
   }
 
   // Create or reuse the Stripe Customer for this member. Storing the
