@@ -56,7 +56,7 @@ export async function PATCH(req: Request) {
     const supabase = getSupabaseAdmin();
     const { data: existing, error: readErr } = await supabase
       .from("offers")
-      .select("id, headline, vendor_id")
+      .select("id, headline, description, discount_value, vendor_id")
       .eq("id", body.id)
       .maybeSingle();
     if (readErr) throw readErr;
@@ -95,6 +95,37 @@ export async function PATCH(req: Request) {
         link: "/vendor/offers",
         metadata: { offer_id: body.id },
       });
+    }
+
+    // Announce the new offer to the MEMBER network — kind "update" (NOT
+    // "feature": feature spotlights render inside Member offers and would
+    // duplicate the real offer row). Lands on the dashboard "What's new"
+    // showcase and the partner profile carousel. Best-effort.
+    if (body.action === "approve" && existing.vendor_id) {
+      try {
+        const { data: v } = await supabase
+          .from("vendors")
+          .select("display_name, company_name")
+          .eq("id", existing.vendor_id)
+          .maybeSingle();
+        const vendorName = v?.display_name || v?.company_name || "A DMN partner";
+        await supabase.from("profile_spotlights").insert({
+          vendor_id: existing.vendor_id,
+          kind: "update",
+          title: `New member offer from ${vendorName}: ${existing.headline}`,
+          body:
+            existing.description ||
+            `${existing.discount_value ? `${existing.discount_value} — ` : ""}see the full offer on their profile.`,
+          link_url: `/dashboard/partners/${existing.vendor_id}`,
+          link_label: "See the offer",
+          is_published: true,
+          posted_to_feed: true,
+          published_at: new Date().toISOString(),
+          created_by: guard.adminId,
+        });
+      } catch (err) {
+        console.error("[admin offers] member announcement failed:", err);
+      }
     }
 
     return NextResponse.json({ ok: true });

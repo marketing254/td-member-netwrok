@@ -46,6 +46,9 @@ type MemberRow = {
   locations?: string | null;
   biggest_challenge?: string | null;
   heard_about?: string | null;
+  referred_by?: string | null;
+  promo_code_used?: string | null;
+  early_member_locked?: boolean | null;
   sms_consent_at?: string | null;
   sms_consent_text?: string | null;
   status: "waitlist" | "invited" | "active" | "paused" | "churned";
@@ -454,7 +457,12 @@ function MemberDetailDrawer({
             {member.state && <Field label="State / Region" value={member.state} />}
             <Field label="Number of locations" value={member.locations ?? null} />
             <Field label="Biggest challenge" value={member.biggest_challenge ?? null} />
+          </Section>
+
+          <Section title="Acquisition">
             <Field label="How they heard about us" value={member.heard_about ?? null} />
+            <Field label="Referred by" value={member.referred_by ?? null} />
+            <Field label="Promo code used" value={member.promo_code_used ?? null} />
           </Section>
 
           <Section title="Consent">

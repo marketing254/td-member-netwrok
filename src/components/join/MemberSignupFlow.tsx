@@ -28,6 +28,7 @@ type RefContext = {
   kind: "expert" | "partner";
   tagline: string | null;
   imageUrl: string | null;
+  pairedName: string | null;
   offerActive: boolean;
   offerMonths: number;
 };
@@ -609,6 +610,11 @@ function InvitationHeader({ ctx }: { ctx: RefContext }) {
           {ctx.tagline && (
             <Typography sx={{ fontSize: "0.82rem", color: "#5C6770", mt: 0.25 }} noWrap>
               {ctx.tagline}
+            </Typography>
+          )}
+          {ctx.pairedName && (
+            <Typography sx={{ fontSize: "0.8rem", color: "#9B7B3A", fontWeight: 700, mt: 0.25 }} noWrap>
+              {ctx.kind === "expert" ? ctx.pairedName : `with ${ctx.pairedName}`}
             </Typography>
           )}
         </Box>

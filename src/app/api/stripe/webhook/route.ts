@@ -145,10 +145,12 @@ async function handleEvent(event: Stripe.Event, stripe: Stripe): Promise<string 
 
     // Onboarding: send the Day 0 welcome immediately (BCC'd to the team,
     // recorded in member_onboarding_emails). Days 3/7/14 follow via the
-    // hourly cron. Fire-and-forget + idempotent per member.
-    void import("@/lib/onboarding").then(({ onMemberActivated }) =>
-      onMemberActivated(memberId),
-    );
+    // hourly cron. AWAITED — fire-and-forget here let the serverless
+    // function freeze mid-work (day-0 rows stuck in "sending", which the
+    // cron then skips, silently killing the member's whole sequence).
+    // Never throws, so the webhook still acks Stripe on any failure.
+    const { onMemberActivated } = await import("@/lib/onboarding");
+    await onMemberActivated(memberId);
 
     // Promo-code attribution — one row per member per code, so the admin
     // console and the code owner's portal can count real uses. Idempotent

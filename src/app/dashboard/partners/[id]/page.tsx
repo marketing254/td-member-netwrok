@@ -27,6 +27,27 @@ type Offer = {
   terms: string | null;
   valid_to: string | null;
 };
+type CatalogMedia = {
+  id: string;
+  kind: string | null;
+  url: string;
+  thumbnail_url: string | null;
+  caption: string | null;
+  duration_label: string | null;
+};
+type CatalogItem = {
+  id: string;
+  type: "service" | "product" | "course" | string;
+  name: string;
+  tagline: string | null;
+  description: string | null;
+  category: string | null;
+  price_label: string | null;
+  duration_hours: number | null;
+  module_count: number | null;
+  highlights: string[] | null;
+  media: CatalogMedia[];
+};
 type PartnerProfile = {
   id: string;
   name: string;
@@ -45,6 +66,7 @@ export default function PartnerProfilePage() {
   const id = params?.id;
   const [partner, setPartner] = useState<PartnerProfile | null>(null);
   const [offers, setOffers] = useState<Offer[]>([]);
+  const [catalog, setCatalog] = useState<CatalogItem[]>([]);
   const [spotlights, setSpotlights] = useState<Spotlight[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -60,13 +82,14 @@ export default function PartnerProfilePage() {
           setNotFound(true);
           return;
         }
-        const body = (await res.json()) as { partner?: PartnerProfile; offers?: Offer[]; spotlights?: Spotlight[] };
+        const body = (await res.json()) as { partner?: PartnerProfile; offers?: Offer[]; spotlights?: Spotlight[]; catalog?: CatalogItem[] };
         if (!body.partner) {
           setNotFound(true);
           return;
         }
         setPartner(body.partner);
         setOffers(body.offers ?? []);
+        setCatalog(body.catalog ?? []);
         setSpotlights(body.spotlights ?? []);
       } catch {
         if (active) setNotFound(true);
@@ -184,6 +207,18 @@ export default function PartnerProfilePage() {
             </Section>
           )}
 
+          {/* Catalog — the partner's approved services, products & courses,
+              exactly as they submitted them. */}
+          {catalog.length > 0 && (
+            <Section title="Services, products & courses">
+              <Stack spacing={1.5}>
+                {catalog.map((c) => (
+                  <CatalogCard key={c.id} item={c} />
+                ))}
+              </Stack>
+            </Section>
+          )}
+
           {/* Offers — real offer rows plus the spotlight carousel (offers,
               events, news). The carousel lives HERE, under Member offers,
               rather than duplicated at the top of the page. */}
@@ -214,6 +249,68 @@ function Section({ title, children }: { title: string; children: React.ReactNode
         {title}
       </Typography>
       {children}
+    </Box>
+  );
+}
+
+const CATALOG_TYPE_CHIP: Record<string, { bg: string; fg: string; label: string }> = {
+  service: { bg: "rgba(34,108,78,0.12)", fg: "#1F5C40", label: "Service" },
+  product: { bg: "rgba(31,58,92,0.12)", fg: "#1B3A5C", label: "Product" },
+  course: { bg: "rgba(110,51,70,0.12)", fg: "#6E3346", label: "Course" },
+};
+
+function CatalogCard({ item }: { item: CatalogItem }) {
+  const chip = CATALOG_TYPE_CHIP[item.type] ?? { bg: "rgba(122,133,144,0.14)", fg: INK_MUTED, label: item.type };
+  const thumb = item.media.find((m) => m.thumbnail_url || (m.kind ?? "").startsWith("image"));
+  return (
+    <Box sx={{ border: `1px solid ${LINE}`, borderRadius: 2, bgcolor: "#FFFFFF", p: { xs: 2, sm: 2.5 } }}>
+      <Stack direction="row" spacing={2} sx={{ alignItems: "flex-start" }}>
+        {thumb && (
+          <Box
+            component="img"
+            src={thumb.thumbnail_url ?? thumb.url}
+            alt=""
+            sx={{ width: 72, height: 72, borderRadius: 1.5, objectFit: "cover", border: `1px solid ${LINE}`, flexShrink: 0 }}
+          />
+        )}
+        <Box sx={{ minWidth: 0, flex: 1 }}>
+          <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap", gap: 0.5, mb: 0.25 }}>
+            <Typography sx={{ fontSize: "1rem", fontWeight: 700, color: INK }}>{item.name}</Typography>
+            <Chip label={chip.label} size="small" sx={{ height: 20, fontSize: "0.64rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em", bgcolor: chip.bg, color: chip.fg }} />
+            {item.price_label && (
+              <Typography sx={{ fontSize: "0.82rem", color: GOLD, fontWeight: 700 }}>{item.price_label}</Typography>
+            )}
+          </Stack>
+          {item.tagline && (
+            <Typography sx={{ fontSize: "0.86rem", color: INK_SOFT, fontWeight: 600, mb: 0.5 }}>{item.tagline}</Typography>
+          )}
+          {item.description && (
+            <Typography sx={{ fontSize: "0.84rem", color: INK_SOFT, lineHeight: 1.6, whiteSpace: "pre-line" }}>
+              {item.description}
+            </Typography>
+          )}
+          {(item.highlights?.length ?? 0) > 0 && (
+            <Box component="ul" sx={{ m: 0, mt: 0.75, pl: 2.5 }}>
+              {item.highlights!.map((h) => (
+                <Typography key={h} component="li" sx={{ fontSize: "0.82rem", color: INK_SOFT, lineHeight: 1.55 }}>
+                  {h}
+                </Typography>
+              ))}
+            </Box>
+          )}
+          <Stack direction="row" spacing={2} sx={{ mt: 0.75, flexWrap: "wrap", gap: 0.75 }}>
+            {item.duration_hours != null && (
+              <Typography sx={{ fontSize: "0.74rem", color: INK_MUTED, fontWeight: 600 }}>{item.duration_hours}h</Typography>
+            )}
+            {item.module_count != null && (
+              <Typography sx={{ fontSize: "0.74rem", color: INK_MUTED, fontWeight: 600 }}>{item.module_count} modules</Typography>
+            )}
+            {item.category && (
+              <Typography sx={{ fontSize: "0.74rem", color: INK_MUTED, fontWeight: 600 }}>{item.category}</Typography>
+            )}
+          </Stack>
+        </Box>
+      </Stack>
     </Box>
   );
 }
