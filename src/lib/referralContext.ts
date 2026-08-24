@@ -17,6 +17,10 @@ export type RefContext = {
   kind: "expert" | "partner";
   tagline: string | null;
   imageUrl: string | null;
+  /** For dual-role people (expert who is also a partner, matched by
+   *  email): the other hat's name — Ashley's page mentions Mint
+   *  Conceptions, Mint's page mentions Ashley. */
+  pairedName: string | null;
   offerActive: boolean;
   offerMonths: number;
 };
@@ -38,21 +42,31 @@ export async function getReferralContext(ref: string | undefined | null): Promis
     let kind: "expert" | "partner" = "expert";
     let tagline: string | null = null;
     let imageUrl: string | null = null;
+    let pairedName: string | null = null;
 
     if (rc.expert_id) {
       const { data: e } = await sb
         .from("experts")
-        .select("display_name, full_name, specialty, headshot_url, status")
+        .select("display_name, full_name, email, specialty, headshot_url, status")
         .eq("id", rc.expert_id)
         .maybeSingle();
       if (!e || e.status === "archived" || e.status === "suspended") return null;
       name = e.display_name || e.full_name;
       tagline = e.specialty;
       imageUrl = e.headshot_url;
+      // Dual-role: their company's partner profile shares the same email.
+      if (e.email) {
+        const { data: pv } = await sb
+          .from("vendors")
+          .select("display_name, company_name, status")
+          .ilike("contact_email", e.email)
+          .maybeSingle();
+        if (pv && pv.status !== "suspended") pairedName = pv.display_name || pv.company_name;
+      }
     } else if (rc.vendor_id) {
       const { data: v } = await sb
         .from("vendors")
-        .select("display_name, company_name, category, logo_url, avatar_url, status")
+        .select("display_name, company_name, contact_email, category, logo_url, avatar_url, status")
         .eq("id", rc.vendor_id)
         .maybeSingle();
       if (!v || v.status === "suspended") return null;
@@ -60,6 +74,17 @@ export async function getReferralContext(ref: string | undefined | null): Promis
       name = v.display_name || v.company_name;
       tagline = v.category;
       imageUrl = v.logo_url ?? v.avatar_url;
+      // Dual-role: the founder's expert profile shares the same email.
+      if (v.contact_email) {
+        const { data: pe } = await sb
+          .from("experts")
+          .select("display_name, full_name, status")
+          .ilike("email", v.contact_email)
+          .maybeSingle();
+        if (pe && pe.status !== "archived" && pe.status !== "suspended") {
+          pairedName = pe.display_name || pe.full_name;
+        }
+      }
     }
     if (!name) return null;
 
@@ -80,7 +105,7 @@ export async function getReferralContext(ref: string | undefined | null): Promis
       /* promo tables absent — invitation renders without the offer */
     }
 
-    return { name, kind, tagline, imageUrl, offerActive, offerMonths };
+    return { name, kind, tagline, imageUrl, pairedName, offerActive, offerMonths };
   } catch {
     return null;
   }

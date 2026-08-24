@@ -56,7 +56,7 @@ export async function PATCH(req: Request) {
     const supabase = getSupabaseAdmin();
     const { data: existing, error: readErr } = await supabase
       .from("catalog_items")
-      .select("id, name, vendor_id")
+      .select("id, name, tagline, type, vendor_id")
       .eq("id", body.id)
       .maybeSingle();
     if (readErr) throw readErr;
@@ -94,6 +94,37 @@ export async function PATCH(req: Request) {
         link: `/vendor/catalog/${body.id}`,
         metadata: { catalog_item_id: body.id },
       });
+    }
+
+    // Announce the approval to the MEMBER network — a published spotlight
+    // lands on the dashboard "What's new in the network" showcase and the
+    // partner's profile carousel, naming the new resource. Best-effort.
+    if (body.action === "approve" && existing.vendor_id) {
+      try {
+        const { data: v } = await supabase
+          .from("vendors")
+          .select("display_name, company_name")
+          .eq("id", existing.vendor_id)
+          .maybeSingle();
+        const vendorName = v?.display_name || v?.company_name || "A DMN partner";
+        const typeLabel = existing.type === "course" ? "course" : existing.type === "product" ? "product" : "service";
+        await supabase.from("profile_spotlights").insert({
+          vendor_id: existing.vendor_id,
+          kind: "news",
+          title: `New from ${vendorName}: ${existing.name}`,
+          body:
+            existing.tagline ||
+            `${vendorName} just added a new ${typeLabel} to their DMN listing — see their profile for the details.`,
+          link_url: `/dashboard/partners/${existing.vendor_id}`,
+          link_label: "View their listing",
+          is_published: true,
+          posted_to_feed: true,
+          published_at: new Date().toISOString(),
+          created_by: guard.adminId,
+        });
+      } catch (err) {
+        console.error("[admin catalog] member announcement failed:", err);
+      }
     }
 
     return NextResponse.json({ ok: true });

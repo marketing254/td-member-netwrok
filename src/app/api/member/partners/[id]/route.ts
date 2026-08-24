@@ -7,6 +7,32 @@ import { fetchPublishedSpotlights } from "@/lib/spotlights";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+// Shape of the approved-catalog select below — the generated client types
+// don't model the nested catalog_media relation, so we assert it.
+type MemberCatalogRow = {
+  id: string;
+  type: string;
+  name: string;
+  tagline: string | null;
+  description: string | null;
+  category: string | null;
+  price_label: string | null;
+  duration_hours: number | null;
+  module_count: number | null;
+  highlights: string[] | null;
+  catalog_media:
+    | {
+        id: string;
+        kind: string | null;
+        url: string;
+        thumbnail_url: string | null;
+        caption: string | null;
+        duration_label: string | null;
+        position: number | null;
+      }[]
+    | null;
+};
+
 /**
  * GET /api/member/partners/[id]
  *
@@ -56,6 +82,17 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
       .eq("review_status", "approved")
       .order("created_at", { ascending: false });
 
+    // Approved catalog — the partner's services/products/courses, exactly
+    // as they submitted them (member-safe fields + media).
+    const { data: catalogRows } = await admin
+      .from("catalog_items")
+      .select(
+        "id, type, name, tagline, description, category, price_label, duration_hours, module_count, highlights, catalog_media(id, kind, url, thumbnail_url, caption, duration_label, position)",
+      )
+      .eq("vendor_id", id)
+      .eq("review_status", "approved")
+      .order("created_at", { ascending: false });
+
     const spotlights = await fetchPublishedSpotlights(admin, { vendorId: id });
 
     return NextResponse.json({
@@ -77,6 +114,29 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
         description: o.description,
         terms: o.terms,
         valid_to: o.valid_to,
+      })),
+      catalog: ((catalogRows ?? []) as unknown as MemberCatalogRow[]).map((c) => ({
+        id: c.id,
+        type: c.type,
+        name: c.name,
+        tagline: c.tagline,
+        description: c.description,
+        category: c.category,
+        price_label: c.price_label,
+        duration_hours: c.duration_hours,
+        module_count: c.module_count,
+        highlights: c.highlights,
+        media: (c.catalog_media ?? [])
+          .slice()
+          .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+          .map((m) => ({
+            id: m.id,
+            kind: m.kind,
+            url: m.url,
+            thumbnail_url: m.thumbnail_url,
+            caption: m.caption,
+            duration_label: m.duration_label,
+          })),
       })),
     });
   } catch (err) {
