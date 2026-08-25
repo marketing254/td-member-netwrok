@@ -34,7 +34,8 @@ export async function GET() {
       .eq("verified", true)
       .not("logo_url", "is", null)
       .not("description", "is", null)
-      .order("display_name", { ascending: true, nullsFirst: false });
+      // First come, first listed — house anchors are pinned on top afterwards.
+      .order("created_at", { ascending: true });
     if (error) throw error;
 
     // A covered company is only visible while its paying partner is also

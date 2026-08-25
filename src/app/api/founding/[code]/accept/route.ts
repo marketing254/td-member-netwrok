@@ -277,7 +277,10 @@ export async function POST(req: Request, ctx: { params: Promise<{ code: string }
           email,
           full_name: invite.full_name,
           display_name: invite.full_name,
-          specialty: invite.description ?? invite.company_name ?? "Founding expert",
+          // description is the long-form text — it belongs in the BIO
+          // (part of the public publish gate). Specialty stays short.
+          specialty: invite.category ?? invite.company_name ?? "Founding expert",
+          bio: invite.description ?? null,
           company_name: invite.company_name ?? null,
           phone: invite.phone ?? null,
           website: invite.website ?? null,
@@ -290,6 +293,33 @@ export async function POST(req: Request, ctx: { params: Promise<{ code: string }
         .select("id")
         .single();
       expertId = ins?.id ?? null;
+    }
+
+    // Keep the admin Experts tab complete: founding invites skip the
+    // public application form, so mirror an application row here
+    // (status onboarded). Without it the expert never appears in admin.
+    try {
+      const { data: appRow } = await sb
+        .from("expert_applications")
+        .select("id")
+        .eq("email", email)
+        .maybeSingle();
+      if (!appRow) {
+        await sb.from("expert_applications").insert({
+          email,
+          full_name: invite.full_name,
+          specialty: invite.category ?? invite.company_name ?? "Founding expert",
+          company_name: invite.company_name ?? null,
+          phone: invite.phone ?? null,
+          website: invite.website ?? null,
+          booking_link: invite.calendar_link ?? null,
+          status: "onboarded",
+          source: "founding-invite",
+          agreement_accepted: true,
+        });
+      }
+    } catch (err) {
+      console.error("[founding accept] application-row mirror failed:", err);
     }
   }
 
