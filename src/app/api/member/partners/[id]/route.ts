@@ -93,7 +93,28 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
       .eq("review_status", "approved")
       .order("created_at", { ascending: false });
 
-    const spotlights = await fetchPublishedSpotlights(admin, { vendorId: id });
+    const publishedSpotlights = await fetchPublishedSpotlights(admin, { vendorId: id });
+
+    // Approved offers render INSIDE the spotlight carousel (that's its
+    // whole purpose) — folded in as feature slides, promo code included.
+    const offerSlides = (offerRows ?? []).map((o) => ({
+      id: `offer-${o.id}`,
+      kind: "feature" as const,
+      title: o.headline,
+      body: [
+        o.description,
+        o.promo_code ? `Promo code: ${o.promo_code}` : null,
+        o.terms,
+      ]
+        .filter(Boolean)
+        .join("\n\n"),
+      link_url: null,
+      link_label: null,
+      image_url: null,
+      event_date: null,
+      published_at: null,
+    }));
+    const spotlights = [...offerSlides, ...publishedSpotlights];
 
     return NextResponse.json({
       partner: {

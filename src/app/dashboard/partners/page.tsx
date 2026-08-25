@@ -7,6 +7,7 @@ import {
   Box,
   CircularProgress,
   InputAdornment,
+  Pagination,
   Stack,
   TextField,
   Typography,
@@ -71,6 +72,18 @@ export default function MemberPartnersPage() {
     );
   }, [partners, q]);
 
+  // Pagination — 12 per page keeps the directory tidy as partners grow.
+  const PAGE_SIZE = 12;
+  const [page, setPage] = useState(1);
+  useEffect(() => {
+    setPage(1);
+  }, [q]);
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paged = useMemo(
+    () => filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [filtered, page],
+  );
+
   return (
     <Box sx={{ maxWidth: 1100, mx: "auto", py: { xs: 3, md: 4 }, px: { xs: 2, md: 0 } }}>
       <Stack spacing={3.5}>
@@ -131,10 +144,24 @@ export default function MemberPartnersPage() {
           </Box>
         ) : (
           <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }, gridAutoRows: "1fr", gap: 2.5 }}>
-            {filtered.map((p) => (
+            {paged.map((p) => (
               <PartnerCard key={p.id} partner={p} />
             ))}
           </Box>
+        )}
+
+        {pageCount > 1 && (
+          <Stack sx={{ alignItems: "center", pt: 1 }}>
+            <Pagination
+              count={pageCount}
+              page={page}
+              onChange={(_, v) => {
+                setPage(v);
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              sx={{ "& .MuiPaginationItem-root.Mui-selected": { bgcolor: "#0A1A2F", color: "#fff" } }}
+            />
+          </Stack>
         )}
       </Stack>
     </Box>
@@ -151,64 +178,123 @@ function PartnerCard({ partner }: { partner: Partner }) {
         flexDirection: "column",
         textDecoration: "none",
         color: "inherit",
-        borderRadius: 2,
+        height: "100%",
+        borderRadius: 3,
         border: `1px solid ${LINE}`,
         bgcolor: "#FFFFFF",
-        p: 2.25,
-        transition: "transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease",
+        overflow: "hidden",
+        transition: "transform 260ms cubic-bezier(0.16,1,0.3,1), border-color 260ms ease, box-shadow 260ms ease",
         "&:hover": {
-          transform: "translateY(-2px)",
+          transform: "translateY(-4px)",
           borderColor: GOLD,
-          boxShadow: "0 16px 32px -16px rgba(217,168,75,0.3)",
+          boxShadow: "0 24px 48px -20px rgba(10,26,47,0.3)",
         },
         "&:focus-visible": { outline: `2px solid ${GOLD}`, outlineOffset: 3 },
       }}
     >
-      <Stack direction="row" spacing={2} sx={{ alignItems: "center", mb: 1.5 }}>
-        <Box
+      {/* Logo stage — cream band with the mark centered, storefront-style */}
+      <Box
+        sx={{
+          position: "relative",
+          height: 116,
+          bgcolor: "#FBF8F1",
+          borderBottom: `1px solid ${LINE}`,
+          display: "grid",
+          placeItems: "center",
+        }}
+      >
+        {partner.logo_url ? (
+          <Box sx={{ position: "relative", width: "58%", height: "64%" }}>
+            <Image
+              src={partner.logo_url}
+              alt={partner.name}
+              fill
+              sizes="220px"
+              unoptimized
+              style={{ objectFit: "contain" }}
+            />
+          </Box>
+        ) : (
+          <StorefrontOutlinedIcon sx={{ color: GOLD, fontSize: 40 }} />
+        )}
+        {partner.offer_count > 0 && (
+          <Box
+            sx={{
+              position: "absolute",
+              top: 10,
+              right: 10,
+              px: 1.1,
+              py: 0.3,
+              borderRadius: 999,
+              bgcolor: "#0A1A2F",
+              color: "#E9C77B",
+              fontSize: "0.66rem",
+              fontWeight: 800,
+              letterSpacing: "0.05em",
+            }}
+          >
+            {partner.offer_count} OFFER{partner.offer_count === 1 ? "" : "S"}
+          </Box>
+        )}
+      </Box>
+
+      {/* Body */}
+      <Box sx={{ display: "flex", flexDirection: "column", flex: 1, p: 2, pt: 1.75 }}>
+        {partner.category && (
+          <Typography
+            sx={{
+              fontSize: "0.66rem",
+              color: GOLD,
+              fontWeight: 800,
+              letterSpacing: "0.09em",
+              textTransform: "uppercase",
+              mb: 0.4,
+            }}
+            noWrap
+          >
+            {partner.category}
+          </Typography>
+        )}
+        <Typography
           sx={{
-            position: "relative",
-            width: 52,
-            height: 52,
-            borderRadius: 1.5,
+            fontFamily: "var(--font-display)",
+            fontSize: "1.2rem",
+            fontWeight: 600,
+            color: INK,
+            lineHeight: 1.2,
+            letterSpacing: "-0.01em",
+            mb: 0.75,
+          }}
+          noWrap
+        >
+          {partner.name}
+        </Typography>
+        <Typography
+          sx={{
+            fontSize: "0.85rem",
+            color: INK_SOFT,
+            lineHeight: 1.55,
+            minHeight: "calc(3 * 1.55 * 0.85rem)",
+            display: "-webkit-box",
+            WebkitLineClamp: 3,
+            WebkitBoxOrient: "vertical",
             overflow: "hidden",
-            bgcolor: "#FBF8F1",
-            border: `1px solid ${LINE}`,
-            flexShrink: 0,
-            display: "grid",
-            placeItems: "center",
           }}
         >
-          {partner.logo_url ? (
-            <Image src={partner.logo_url} alt={partner.name} fill sizes="52px" unoptimized style={{ objectFit: "contain", padding: 6 }} />
-          ) : (
-            <StorefrontOutlinedIcon sx={{ color: GOLD, fontSize: 24 }} />
-          )}
-        </Box>
-        <Box sx={{ minWidth: 0, flex: 1 }}>
-          <Typography sx={{ fontFamily: "var(--font-display)", fontSize: "1.15rem", fontWeight: 600, color: INK, lineHeight: 1.15, letterSpacing: "-0.01em" }} noWrap>
-            {partner.name}
-          </Typography>
-          {partner.category && (
-            <Typography sx={{ fontSize: "0.74rem", color: GOLD, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", mt: 0.25 }}>
-              {partner.category}
-            </Typography>
-          )}
-        </Box>
-      </Stack>
-      {/* Fixed 3-line slot (even when text is shorter or missing) so every
-          card in the grid is exactly the same height. */}
-      <Typography sx={{ fontSize: "0.86rem", color: INK_SOFT, lineHeight: 1.55, mb: 1.25, minHeight: "calc(3 * 1.55 * 0.86rem)", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-        {partner.description ?? ""}
-      </Typography>
-      <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between", mt: "auto", pt: 1, borderTop: `1px solid ${LINE}` }}>
-        <Typography sx={{ fontSize: "0.74rem", color: INK_MUTED, fontWeight: 600 }}>
-          {partner.offer_count === 0 ? "Profile" : `${partner.offer_count} offer${partner.offer_count === 1 ? "" : "s"}`}
+          {partner.description ?? ""}
         </Typography>
-        <Stack direction="row" spacing={0.5} sx={{ alignItems: "center", color: GOLD, fontSize: "0.74rem", fontWeight: 700 }}>
-          View partner <ArrowForwardRoundedIcon sx={{ fontSize: 14 }} />
+        <Stack
+          direction="row"
+          sx={{ alignItems: "center", justifyContent: "space-between", mt: "auto", pt: 1.5 }}
+        >
+          <Typography sx={{ fontSize: "0.74rem", color: INK_MUTED, fontWeight: 600 }}>
+            {partner.offer_count === 0 ? "Profile" : `${partner.offer_count} member offer${partner.offer_count === 1 ? "" : "s"}`}
+          </Typography>
+          <Stack direction="row" spacing={0.5} sx={{ alignItems: "center", color: GOLD, fontSize: "0.76rem", fontWeight: 700 }}>
+            View partner <ArrowForwardRoundedIcon sx={{ fontSize: 14 }} />
+          </Stack>
         </Stack>
-      </Stack>
+      </Box>
     </Box>
   );
 }

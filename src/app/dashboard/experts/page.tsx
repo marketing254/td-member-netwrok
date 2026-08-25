@@ -6,6 +6,7 @@ import Image from "next/image";
 import { isSupabaseImage } from "@/lib/images";
 import {
   Box,
+  Pagination,
   CircularProgress,
   InputAdornment,
   Stack,
@@ -72,6 +73,18 @@ export default function MemberExpertsPage() {
         (e.bio ?? "").toLowerCase().includes(lc),
     );
   }, [experts, q]);
+
+  // Pagination — the bench will only grow; 12 per page keeps the grid tidy.
+  const PAGE_SIZE = 12;
+  const [page, setPage] = useState(1);
+  useEffect(() => {
+    setPage(1);
+  }, [q]);
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paged = useMemo(
+    () => filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [filtered, page],
+  );
 
   return (
     <Box sx={{ maxWidth: 1100, mx: "auto", py: { xs: 3, md: 4 }, px: { xs: 2, md: 0 } }}>
@@ -154,13 +167,28 @@ export default function MemberExpertsPage() {
                 sm: "repeat(2, 1fr)",
                 lg: "repeat(3, 1fr)",
               },
+              gridAutoRows: "1fr",
               gap: 2.5,
             }}
           >
-            {filtered.map((e) => (
+            {paged.map((e) => (
               <ExpertCard key={e.id} expert={e} />
             ))}
           </Box>
+        )}
+
+        {pageCount > 1 && (
+          <Stack sx={{ alignItems: "center", pt: 1 }}>
+            <Pagination
+              count={pageCount}
+              page={page}
+              onChange={(_, v) => {
+                setPage(v);
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              sx={{ "& .MuiPaginationItem-root.Mui-selected": { bgcolor: "#0A1A2F", color: "#fff" } }}
+            />
+          </Stack>
         )}
       </Stack>
     </Box>
@@ -177,108 +205,149 @@ function ExpertCard({ expert }: { expert: Expert }) {
         flexDirection: "column",
         textDecoration: "none",
         color: "inherit",
-        borderRadius: 2,
+        height: "100%",
+        borderRadius: 3,
         border: `1px solid ${LINE}`,
         bgcolor: "#FFFFFF",
-        p: 2.25,
-        transition: "transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease",
+        p: 2.5,
+        pt: 3,
+        textAlign: "center",
+        transition: "transform 260ms cubic-bezier(0.16,1,0.3,1), border-color 260ms ease, box-shadow 260ms ease",
+        "& .expert-ring": { transition: "box-shadow 260ms ease, transform 260ms ease" },
         "&:hover": {
-          transform: "translateY(-2px)",
+          transform: "translateY(-4px)",
           borderColor: GOLD,
-          boxShadow: "0 16px 32px -16px rgba(217,168,75,0.3)",
+          boxShadow: "0 24px 48px -22px rgba(10,26,47,0.3)",
         },
-        "&:focus-visible": {
-          outline: `2px solid ${GOLD}`,
-          outlineOffset: 3,
+        "&:hover .expert-ring": {
+          boxShadow: "0 0 0 4px rgba(217,168,75,0.25)",
+          transform: "scale(1.03)",
         },
+        "&:focus-visible": { outline: `2px solid ${GOLD}`, outlineOffset: 3 },
       }}
     >
-      <Stack direction="row" spacing={2} sx={{ alignItems: "center", mb: 1.5 }}>
-        <Box
-          sx={{
-            position: "relative",
-            width: 56,
-            height: 56,
-            borderRadius: "50%",
-            overflow: "hidden",
-            bgcolor: "#FBF8F1",
-            border: `1px solid ${LINE}`,
-            flexShrink: 0,
-          }}
-        >
-          {expert.headshot_url ? (
-            <Image
-              src={expert.headshot_url}
-              alt={expert.name}
-              fill
-              sizes="56px"
-              unoptimized={!isSupabaseImage(expert.headshot_url)}
-              style={{ objectFit: "cover", objectPosition: "center top" }}
-            />
-          ) : (
-            <Box
-              sx={{
-                width: "100%",
-                height: "100%",
-                display: "grid",
-                placeItems: "center",
-                color: GOLD,
-                fontFamily: "var(--font-display)",
-                fontWeight: 700,
-                fontSize: "1.1rem",
-              }}
-            >
-              {initials(expert.name)}
-            </Box>
-          )}
-        </Box>
-        <Box sx={{ minWidth: 0, flex: 1 }}>
-          <Typography
+      {/* Circular portrait with a gold ring — classic team-page style */}
+      <Box
+        className="expert-ring"
+        sx={{
+          position: "relative",
+          width: 104,
+          height: 104,
+          mx: "auto",
+          borderRadius: "50%",
+          overflow: "hidden",
+          border: "3px solid rgba(217,168,75,0.55)",
+          bgcolor: "#FBF8F1",
+        }}
+      >
+        {expert.headshot_url ? (
+          <Image
+            src={expert.headshot_url}
+            alt={expert.name}
+            fill
+            sizes="104px"
+            unoptimized={!isSupabaseImage(expert.headshot_url)}
+            style={{ objectFit: "cover", objectPosition: "center top" }}
+          />
+        ) : (
+          <Box
             sx={{
+              width: "100%",
+              height: "100%",
+              display: "grid",
+              placeItems: "center",
+              background: "linear-gradient(135deg, #0A1A2F 0%, #12325A 100%)",
+              color: GOLD,
               fontFamily: "var(--font-display)",
-              fontSize: "1.15rem",
-              fontWeight: 600,
-              color: INK,
-              lineHeight: 1.15,
-              letterSpacing: "-0.01em",
+              fontWeight: 700,
+              fontSize: "1.7rem",
             }}
-            noWrap
           >
-            {expert.name}
-          </Typography>
-          {expert.specialty && (
-            <Typography sx={{ fontSize: "0.74rem", color: GOLD, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", mt: 0.25 }}>
-              {expert.specialty}
-            </Typography>
-          )}
-        </Box>
-      </Stack>
-      {expert.bio && (
-        <Typography
-          sx={{
-            fontSize: "0.86rem",
-            color: INK_SOFT,
-            lineHeight: 1.55,
-            mb: 1.25,
-            display: "-webkit-box",
-            WebkitLineClamp: 3,
-            WebkitBoxOrient: "vertical",
-            overflow: "hidden",
-          }}
-        >
-          {expert.bio}
-        </Typography>
-      )}
+            {initials(expert.name)}
+          </Box>
+        )}
+      </Box>
+
+      <Typography
+        sx={{
+          fontFamily: "var(--font-display)",
+          fontSize: "1.2rem",
+          fontWeight: 600,
+          color: INK,
+          lineHeight: 1.2,
+          letterSpacing: "-0.01em",
+          mt: 1.75,
+        }}
+        noWrap
+      >
+        {expert.name}
+      </Typography>
+
+      {/* Specialty — short title, clamped; the full text lives on the profile */}
+      <Typography
+        sx={{
+          fontSize: "0.68rem",
+          color: GOLD,
+          fontWeight: 800,
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          lineHeight: 1.45,
+          mt: 0.5,
+          minHeight: "calc(2 * 1.45 * 0.68rem)",
+          display: "-webkit-box",
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: "vertical",
+          overflow: "hidden",
+        }}
+      >
+        {expert.specialty ?? ""}
+      </Typography>
+
+      {/* Gold rule */}
+      <Box sx={{ width: 34, height: 2, bgcolor: GOLD, borderRadius: 2, mx: "auto", my: 1.25, opacity: 0.6 }} />
+
+      {/* Fixed 3-line bio slot so every card matches */}
+      <Typography
+        sx={{
+          fontSize: "0.85rem",
+          color: INK_SOFT,
+          lineHeight: 1.55,
+          textAlign: "left",
+          minHeight: "calc(3 * 1.55 * 0.85rem)",
+          display: "-webkit-box",
+          WebkitLineClamp: 3,
+          WebkitBoxOrient: "vertical",
+          overflow: "hidden",
+        }}
+      >
+        {expert.bio ?? ""}
+      </Typography>
+
       <Stack
         direction="row"
-        sx={{ alignItems: "center", justifyContent: "space-between", mt: "auto", pt: 1, borderTop: `1px solid ${LINE}` }}
+        sx={{
+          alignItems: "center",
+          justifyContent: "space-between",
+          mt: "auto",
+          pt: 1.5,
+          borderTop: `1px solid ${LINE}`,
+        }}
       >
-        <Typography sx={{ fontSize: "0.74rem", color: INK_MUTED, fontWeight: 600 }}>
-          {expert.kit_count === 0
-            ? "No kits yet"
-            : `${expert.kit_count} kit${expert.kit_count === 1 ? "" : "s"}`}
-        </Typography>
-        <Stack direction="row" spacing={0.5} sx={{ alignItems: "center", color: GOLD, fontSize: "0.74rem", fontWeight: 700 }}>
+        <Box
+          sx={{
+            px: 1.1,
+            py: 0.3,
+            borderRadius: 999,
+            bgcolor: expert.kit_count > 0 ? "rgba(160,120,35,0.12)" : "rgba(122,133,144,0.1)",
+            color: expert.kit_count > 0 ? GOLD : INK_MUTED,
+            fontSize: "0.68rem",
+            fontWeight: 800,
+            letterSpacing: "0.04em",
+          }}
+        >
+          {expert.kit_count === 0 ? "PROFILE" : `${expert.kit_count} KIT${expert.kit_count === 1 ? "" : "S"}`}
+        </Box>
+        <Stack direction="row" spacing={0.5} sx={{ alignItems: "center", color: GOLD, fontSize: "0.76rem", fontWeight: 700 }}>
           View profile <ArrowForwardRoundedIcon sx={{ fontSize: 14 }} />
         </Stack>
       </Stack>

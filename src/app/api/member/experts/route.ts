@@ -35,7 +35,8 @@ export async function GET() {
       .neq("status", "suspended")
       .not("headshot_url", "is", null)
       .not("bio", "is", null)
-      .order("display_name", { ascending: true, nullsFirst: false });
+      // First come, first listed — house anchors are pinned on top afterwards.
+      .order("created_at", { ascending: true });
     if (error) throw error;
 
     const ids = (experts ?? []).map((e) => e.id);

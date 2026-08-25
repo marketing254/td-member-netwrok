@@ -13,6 +13,7 @@ import {
   DialogTitle,
   Grid,
   IconButton,
+  MenuItem,
   Snackbar,
   Stack,
   Tab,
@@ -68,6 +69,7 @@ function Inner() {
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   // Founding-expert billing exemption: the first 20 real experts are free
   // for life. `exemptEmails` marks who already has it; `slots` drives the
@@ -266,6 +268,23 @@ function Inner() {
           }}
         >
           Add expert
+        </Button>
+        <Button
+          variant="outlined"
+          onClick={() => setProfileOpen(true)}
+          sx={{
+            flexShrink: 0,
+            textTransform: "none",
+            fontWeight: 700,
+            borderRadius: 999,
+            px: 2.5,
+            py: 1,
+            borderColor: "#0E2A3D",
+            color: "#0E2A3D",
+            "&:hover": { borderColor: "#1A3A4F", bgcolor: "rgba(14,42,61,0.04)" },
+          }}
+        >
+          Profile &amp; headshot
         </Button>
       </Stack>
 
@@ -499,7 +518,171 @@ function Inner() {
         }}
         onError={(msg) => setToast(msg)}
       />
+
+      <ExpertProfileDialog
+        open={profileOpen}
+        onClose={() => setProfileOpen(false)}
+        onSaved={(msg) => {
+          setProfileOpen(false);
+          setToast(msg);
+        }}
+      />
     </Stack>
+  );
+}
+
+/** Edit an existing expert's PUBLIC profile — the headshot + bio the
+ *  publish gate requires (an expert is invisible on /experts without
+ *  both), plus specialty / website / booking link. */
+function ExpertProfileDialog({
+  open,
+  onClose,
+  onSaved,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSaved: (msg: string) => void;
+}) {
+  const [experts, setExperts] = useState<{ id: string; name: string; email: string | null }[]>([]);
+  const [expertId, setExpertId] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [specialty, setSpecialty] = useState("");
+  const [bio, setBio] = useState("");
+  const [website, setWebsite] = useState("");
+  const [bookingLink, setBookingLink] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [currentHeadshot, setCurrentHeadshot] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    let active = true;
+    fetch("/api/admin/invite-links?owners=1", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { experts?: { id: string; name: string; email: string | null }[] } | null) => {
+        if (active && d?.experts) setExperts(d.experts);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!expertId) return;
+    let active = true;
+    fetch(`/api/admin/experts/profile?id=${expertId}`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { expert?: { display_name: string | null; specialty: string | null; bio: string | null; website: string | null; booking_link: string | null; headshot_url: string | null } } | null) => {
+        if (!active || !d?.expert) return;
+        setDisplayName(d.expert.display_name ?? "");
+        setSpecialty(d.expert.specialty ?? "");
+        setBio(d.expert.bio ?? "");
+        setWebsite(d.expert.website ?? "");
+        setBookingLink(d.expert.booking_link ?? "");
+        setCurrentHeadshot(d.expert.headshot_url);
+        setFile(null);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [expertId]);
+
+  const save = async () => {
+    if (!expertId) return;
+    setBusy(true);
+    setErr(null);
+    try {
+      const form = new FormData();
+      form.set("expert_id", expertId);
+      if (displayName.trim()) form.set("display_name", displayName.trim());
+      if (specialty.trim()) form.set("specialty", specialty.trim());
+      if (bio.trim()) form.set("bio", bio.trim());
+      if (website.trim()) form.set("website", website.trim());
+      if (bookingLink.trim()) form.set("booking_link", bookingLink.trim());
+      if (file) form.set("headshot", file);
+      const res = await fetch("/api/admin/experts/profile", { method: "POST", body: form });
+      const body = (await res.json().catch(() => ({}))) as { error?: string; publishReady?: boolean };
+      if (!res.ok) {
+        setErr(body.error ?? "Couldn't save the profile.");
+        return;
+      }
+      onSaved(
+        body.publishReady
+          ? "Profile saved — headshot + bio present, the expert is LIVE on /experts."
+          : "Profile saved — still hidden from /experts until BOTH a headshot and a bio are set.",
+      );
+    } catch {
+      setErr("Network error — try again.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle sx={{ fontWeight: 700 }}>Expert profile &amp; headshot</DialogTitle>
+      <DialogContent>
+        <Stack spacing={2} sx={{ mt: 0.5 }}>
+          <Typography sx={{ fontSize: "0.82rem", color: "text.secondary" }}>
+            An expert only appears on the public /experts page once they have BOTH a headshot and a
+            bio. This is where you set them.
+          </Typography>
+          <TextField
+            select
+            label="Expert"
+            value={expertId}
+            onChange={(e) => setExpertId(e.target.value)}
+            fullWidth
+            size="small"
+          >
+            {experts.map((e) => (
+              <MenuItem key={e.id} value={e.id}>
+                {e.name}
+                {e.email ? ` — ${e.email}` : ""}
+              </MenuItem>
+            ))}
+          </TextField>
+          {expertId && (
+            <>
+              <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+                {currentHeadshot ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={currentHeadshot} alt="Current headshot" style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover" }} />
+                ) : (
+                  <Box sx={{ width: 56, height: 56, borderRadius: "50%", bgcolor: "rgba(160,120,35,0.14)", display: "grid", placeItems: "center", fontSize: "0.7rem", fontWeight: 800, color: "#A07823" }}>
+                    NONE
+                  </Box>
+                )}
+                <Button variant="outlined" component="label" size="small" sx={{ textTransform: "none", fontWeight: 700 }}>
+                  {file ? file.name : "Choose headshot image…"}
+                  <input hidden type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+                </Button>
+              </Stack>
+              <TextField label="Display name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} fullWidth size="small" />
+              <TextField label="Specialty" value={specialty} onChange={(e) => setSpecialty(e.target.value)} fullWidth size="small" />
+              <TextField label="Bio" value={bio} onChange={(e) => setBio(e.target.value)} fullWidth multiline minRows={4} size="small" />
+              <TextField label="Website" value={website} onChange={(e) => setWebsite(e.target.value)} fullWidth size="small" />
+              <TextField label="Booking link" value={bookingLink} onChange={(e) => setBookingLink(e.target.value)} fullWidth size="small" />
+            </>
+          )}
+          {err && <Alert severity="error">{err}</Alert>}
+        </Stack>
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 2.5 }}>
+        <Button onClick={onClose} sx={{ textTransform: "none" }}>Cancel</Button>
+        <Button
+          variant="contained"
+          disabled={!expertId || busy}
+          onClick={() => void save()}
+          sx={{ textTransform: "none", fontWeight: 700, bgcolor: "#0E2A3D", "&:hover": { bgcolor: "#1A3A4F" } }}
+        >
+          {busy ? "Saving…" : "Save profile"}
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 }
 
@@ -522,6 +705,8 @@ function AddExpertDialog({
   const [website, setWebsite] = useState("");
   const [bookingLink, setBookingLink] = useState("");
   const [topics, setTopics] = useState("");
+  const [bioText, setBioText] = useState("");
+  const [headshotFile, setHeadshotFile] = useState<File | null>(null);
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -558,14 +743,33 @@ function AddExpertDialog({
           company_name: companyName.trim() || undefined,
           website: website.trim() || undefined,
           booking_link: bookingLink.trim() || undefined,
+          bio: bioText.trim() || undefined,
           topics: topics.trim() || undefined,
           notes: notes.trim() || undefined,
         }),
       });
-      const body = (await res.json()) as { ok?: boolean; error?: string };
+      const body = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        provisioning?: { experts_row?: { id?: string } };
+      };
       if (!res.ok || body.error) {
         setFormError(body.error ?? `Failed (${res.status}).`);
         return;
+      }
+      // One-step onboarding: chain the headshot upload straight onto the
+      // freshly created experts row (same endpoint the Profile & headshot
+      // dialog uses).
+      const newExpertId = body.provisioning?.experts_row?.id;
+      if (headshotFile && newExpertId) {
+        try {
+          const fd = new FormData();
+          fd.set("expert_id", newExpertId);
+          fd.set("headshot", headshotFile);
+          await fetch("/api/admin/experts/profile", { method: "POST", body: fd });
+        } catch {
+          /* profile dialog remains the fallback */
+        }
       }
       const name = fullName.trim();
       reset();

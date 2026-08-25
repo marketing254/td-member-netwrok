@@ -8,14 +8,21 @@ import {
   Button,
   Chip,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   IconButton,
+  MenuItem,
   Snackbar,
   Stack,
   Tab,
   Tabs,
+  TextField,
   Tooltip,
   Typography,
 } from "@mui/material";
+import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
 import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
 import PauseCircleOutlinedIcon from "@mui/icons-material/PauseCircleOutlined";
@@ -59,6 +66,8 @@ function Inner() {
   const [actingId, setActingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [profileVendorId, setProfileVendorId] = useState<string | null>(null);
   const [addCompanyOpen, setAddCompanyOpen] = useState(false);
 
   const load = useCallback(async () => {
@@ -158,6 +167,17 @@ function Inner() {
           </Typography>
         </Box>
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ flexShrink: 0 }}>
+          <Button
+            variant="outlined"
+            startIcon={<ImageOutlinedIcon />}
+            onClick={() => {
+              setProfileVendorId(null);
+              setProfileOpen(true);
+            }}
+            sx={{ whiteSpace: "nowrap" }}
+          >
+            Profile &amp; logo
+          </Button>
           <Button
             variant="outlined"
             startIcon={<DomainAddOutlinedIcon />}
@@ -321,6 +341,18 @@ function Inner() {
                 />
               </Box>
               <Stack direction="row" sx={{ justifyContent: "flex-end", gap: 0.5, alignItems: "center" }}>
+                <Tooltip title="Edit profile & logo (headshot, description…)">
+                  <IconButton
+                    size="small"
+                    sx={{ color: "#A07823" }}
+                    onClick={() => {
+                      setProfileVendorId(v.id);
+                      setProfileOpen(true);
+                    }}
+                  >
+                    <ImageOutlinedIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
                 {actingId === v.id ? (
                   <CircularProgress size={18} sx={{ color: "#A07823" }} />
                 ) : (
@@ -430,6 +462,16 @@ function Inner() {
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       />
 
+      <VendorProfileDialog
+        open={profileOpen}
+        initialVendorId={profileVendorId}
+        onClose={() => setProfileOpen(false)}
+        onSaved={(msg) => {
+          setProfileOpen(false);
+          setToast(msg);
+        }}
+      />
+
       <AddCompanyDialog
         open={addCompanyOpen}
         payers={rows
@@ -487,5 +529,169 @@ function StatusChip({ status }: { status: string }) {
   const s = map[status] ?? map.pending_review;
   return (
     <Chip label={s.label} size="small" sx={{ bgcolor: s.bg, color: s.color, fontWeight: 700, fontSize: "0.68rem", height: 22 }} />
+  );
+}
+
+
+/** Edit a partner's PUBLIC profile — the logo + description the publish
+ *  gate requires (a partner is invisible in the directories without
+ *  both), plus category / website / booking link. */
+function VendorProfileDialog({
+  open,
+  initialVendorId = null,
+  onClose,
+  onSaved,
+}: {
+  open: boolean;
+  initialVendorId?: string | null;
+  onClose: () => void;
+  onSaved: (msg: string) => void;
+}) {
+  const [vendors, setVendors] = useState<{ id: string; name: string; email: string | null }[]>([]);
+  const [vendorId, setVendorId] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [category, setCategory] = useState("");
+  const [description, setDescription] = useState("");
+  const [website, setWebsite] = useState("");
+  const [calendarLink, setCalendarLink] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [currentLogo, setCurrentLogo] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  // Opening from a row lands directly on that partner; the header button
+  // opens blank for the dropdown.
+  useEffect(() => {
+    if (open) setVendorId(initialVendorId ?? "");
+  }, [open, initialVendorId]);
+
+  useEffect(() => {
+    if (!open) return;
+    let active = true;
+    fetch("/api/admin/invite-links?owners=1", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { partners?: { id: string; name: string; email: string | null }[] } | null) => {
+        if (active && d?.partners) setVendors(d.partners);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!vendorId) return;
+    let active = true;
+    fetch(`/api/admin/vendors/profile?id=${vendorId}`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { vendor?: { display_name: string | null; company_name: string | null; category: string | null; description: string | null; website: string | null; calendar_link: string | null; logo_url: string | null } } | null) => {
+        if (!active || !d?.vendor) return;
+        setDisplayName(d.vendor.display_name ?? d.vendor.company_name ?? "");
+        setCategory(d.vendor.category ?? "");
+        setDescription(d.vendor.description ?? "");
+        setWebsite(d.vendor.website ?? "");
+        setCalendarLink(d.vendor.calendar_link ?? "");
+        setCurrentLogo(d.vendor.logo_url);
+        setFile(null);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [vendorId]);
+
+  const save = async () => {
+    if (!vendorId) return;
+    setBusy(true);
+    setErr(null);
+    try {
+      const form = new FormData();
+      form.set("vendor_id", vendorId);
+      if (displayName.trim()) form.set("display_name", displayName.trim());
+      if (category.trim()) form.set("category", category.trim());
+      if (description.trim()) form.set("description", description.trim());
+      if (website.trim()) form.set("website", website.trim());
+      if (calendarLink.trim()) form.set("calendar_link", calendarLink.trim());
+      if (file) form.set("logo", file);
+      const res = await fetch("/api/admin/vendors/profile", { method: "POST", body: form });
+      const body = (await res.json().catch(() => ({}))) as { error?: string; publishReady?: boolean };
+      if (!res.ok) {
+        setErr(body.error ?? "Couldn't save the profile.");
+        return;
+      }
+      onSaved(
+        body.publishReady
+          ? "Profile saved — logo + description present and partner is live in the directories."
+          : "Profile saved — the partner stays hidden until they are approved + verified AND have a logo + description.",
+      );
+    } catch {
+      setErr("Network error — try again.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle sx={{ fontWeight: 700 }}>Partner profile &amp; logo</DialogTitle>
+      <DialogContent>
+        <Stack spacing={2} sx={{ mt: 0.5 }}>
+          <Typography sx={{ fontSize: "0.82rem", color: "text.secondary" }}>
+            A partner only appears in the directories once approved + verified AND with BOTH a logo
+            and a description. This is where the team supplies the missing pieces.
+          </Typography>
+          <TextField
+            select
+            label="Partner"
+            value={vendorId}
+            onChange={(e) => setVendorId(e.target.value)}
+            fullWidth
+            size="small"
+          >
+            {vendors.map((v) => (
+              <MenuItem key={v.id} value={v.id}>
+                {v.name}
+                {v.email ? ` — ${v.email}` : ""}
+              </MenuItem>
+            ))}
+          </TextField>
+          {vendorId && (
+            <>
+              <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+                {currentLogo ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={currentLogo} alt="Current logo" style={{ width: 56, height: 56, borderRadius: 8, objectFit: "contain", border: "1px solid #E6DDCF", background: "#fff" }} />
+                ) : (
+                  <Box sx={{ width: 56, height: 56, borderRadius: 2, bgcolor: "rgba(160,120,35,0.14)", display: "grid", placeItems: "center", fontSize: "0.7rem", fontWeight: 800, color: "#A07823" }}>
+                    NONE
+                  </Box>
+                )}
+                <Button variant="outlined" component="label" size="small" sx={{ textTransform: "none", fontWeight: 700 }}>
+                  {file ? file.name : "Choose logo image…"}
+                  <input hidden type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+                </Button>
+              </Stack>
+              <TextField label="Display name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} fullWidth size="small" />
+              <TextField label="Category" value={category} onChange={(e) => setCategory(e.target.value)} fullWidth size="small" />
+              <TextField label="Description" value={description} onChange={(e) => setDescription(e.target.value)} fullWidth multiline minRows={4} size="small" />
+              <TextField label="Website" value={website} onChange={(e) => setWebsite(e.target.value)} fullWidth size="small" />
+              <TextField label="Booking / calendar link" value={calendarLink} onChange={(e) => setCalendarLink(e.target.value)} fullWidth size="small" />
+            </>
+          )}
+          {err && <Alert severity="error">{err}</Alert>}
+        </Stack>
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 2.5 }}>
+        <Button onClick={onClose} sx={{ textTransform: "none" }}>Cancel</Button>
+        <Button
+          variant="contained"
+          disabled={!vendorId || busy}
+          onClick={() => void save()}
+          sx={{ textTransform: "none", fontWeight: 700 }}
+        >
+          {busy ? "Saving…" : "Save profile"}
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 }

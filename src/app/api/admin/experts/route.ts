@@ -90,6 +90,7 @@ export async function POST(req: Request) {
     topics?: string;
     website?: string;
     booking_link?: string;
+    bio?: string;
     notes?: string;
   };
   try {
@@ -222,6 +223,7 @@ export async function POST(req: Request) {
     });
 
     // Provision portal access (same path as mark_onboarded).
+    const bio = body.bio?.trim() || null;
     const provisioning = await provisionExpert({
       supabase,
       application: {
@@ -241,6 +243,13 @@ export async function POST(req: Request) {
         process.env.NEXT_PUBLIC_APP_URL ??
         "https://dentalmembernetwork.com",
     });
+
+    // Bio supplied at creation goes straight onto the experts row (the
+    // application table has no bio column; the row is what the publish
+    // gate reads).
+    if (bio && provisioning.experts_row.id) {
+      await supabase.from("experts").update({ bio }).eq("id", provisioning.experts_row.id);
+    }
 
     // In-app admin notification.
     await supabase.from("notifications").insert({
