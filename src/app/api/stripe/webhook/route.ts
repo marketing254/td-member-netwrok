@@ -152,6 +152,45 @@ async function handleEvent(event: Stripe.Event, stripe: Stripe): Promise<string 
     const { onMemberActivated } = await import("@/lib/onboarding");
     await onMemberActivated(memberId);
 
+    // Meta Conversions API — CONFIRMED Purchase for the paid-ads channel
+    // only. Fired here (server-side, after verified payment) so a
+    // thank-you-page visit or refresh can never fabricate a purchase.
+    // The event id was minted at checkout creation and is shared with
+    // the browser Pixel, so Meta de-duplicates. This whole webhook is
+    // idempotent per event (stripe_events), so it sends at most once.
+    if (session.metadata?.channel === "meta_ads") {
+      try {
+        const { data: buyer } = await sb
+          .from("members")
+          .select("email, first_name, last_name")
+          .eq("id", memberId)
+          .maybeSingle();
+        const item = sub.items.data[0];
+        const amount = (item?.price?.unit_amount ?? 0) / 100;
+        const currency = item?.price?.currency ?? "usd";
+        if (buyer?.email && session.metadata?.meta_event_id) {
+          const { sendMetaPurchase } = await import("@/lib/meta");
+          await sendMetaPurchase({
+            eventId: session.metadata.meta_event_id,
+            email: buyer.email,
+            firstName: buyer.first_name,
+            lastName: buyer.last_name,
+            value: amount,
+            currency,
+            contentName: session.metadata?.plan ?? "founding_membership",
+            eventSourceUrl: session.metadata?.landing_url ?? null,
+            fbp: session.metadata?.meta_fbp ?? null,
+            fbc: session.metadata?.meta_fbc ?? null,
+            fbclid: session.metadata?.meta_fbclid ?? null,
+            clientIp: session.metadata?.client_ip ?? null,
+            clientUserAgent: session.metadata?.client_ua ?? null,
+          });
+        }
+      } catch (err) {
+        console.error("[stripe webhook] meta purchase report failed:", err);
+      }
+    }
+
     // Promo-code attribution — one row per member per code, so the admin
     // console and the code owner's portal can count real uses. Idempotent
     // (unique constraint) and best-effort: a miss never blocks activation.
