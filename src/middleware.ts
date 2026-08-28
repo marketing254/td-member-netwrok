@@ -42,25 +42,27 @@ function buildCsp(): string {
     // booking widget on member kit detail pages.
     // Stripe.js — js.stripe.com hosts the script; m.stripe.network is the
     // 3D-Secure / risk-check iframe host used by PaymentElement.
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://www.googletagmanager.com https://vercel.live https://embed.ycb.me https://*.ycb.me https://*.youcanbook.me https://js.stripe.com https://*.js.stripe.com",
+    // connect.facebook.net — the Meta Pixel loader on the paid-ads pages;
+    // checkout.stripe.com — Stripe's Embedded Checkout assets.
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://www.googletagmanager.com https://vercel.live https://embed.ycb.me https://*.ycb.me https://*.youcanbook.me https://js.stripe.com https://*.js.stripe.com https://checkout.stripe.com https://connect.facebook.net",
     "worker-src 'self' blob:",
     "child-src 'self' blob:",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://vercel.live https://*.ycb.me https://*.youcanbook.me",
     "font-src 'self' https://fonts.gstatic.com https://vercel.live https://assets.vercel.com https://*.ycb.me https://*.youcanbook.me data:",
-    `img-src 'self' data: blob: ${supabaseHttps} https://www.google-analytics.com https://www.googletagmanager.com https://vercel.live https://vercel.com https://*.ycb.me https://*.youcanbook.me https://*.stripe.com`,
+    `img-src 'self' data: blob: ${supabaseHttps} https://www.google-analytics.com https://www.googletagmanager.com https://vercel.live https://vercel.com https://*.ycb.me https://*.youcanbook.me https://*.stripe.com https://www.facebook.com`,
     // media-src controls <video> and <audio> sources. Without this, videos
     // from Supabase Storage are blocked because default-src 'self' falls back.
     `media-src 'self' blob: ${supabaseHttps}`,
     // Stripe XHR: api.stripe.com for tokenization + subscription lookups,
     // js.stripe.com + m.stripe.network for risk-check calls the SDK makes.
-    `connect-src 'self' ${supabaseHttps} ${supabaseWss} https://cdn.jsdelivr.net https://fonts.gstatic.com https://www.google-analytics.com https://www.googletagmanager.com https://analytics.google.com https://vercel.live https://*.pusher.com wss://*.pusher.com https://*.ycb.me https://*.youcanbook.me https://api.stripe.com https://js.stripe.com https://m.stripe.network https://maps.googleapis.com`,
+    `connect-src 'self' ${supabaseHttps} ${supabaseWss} https://cdn.jsdelivr.net https://fonts.gstatic.com https://www.google-analytics.com https://www.googletagmanager.com https://analytics.google.com https://vercel.live https://*.pusher.com wss://*.pusher.com https://*.ycb.me https://*.youcanbook.me https://api.stripe.com https://js.stripe.com https://m.stripe.network https://maps.googleapis.com https://checkout.stripe.com https://www.facebook.com https://connect.facebook.net`,
     // frame-src controls <iframe> sources. Supabase is needed so the resource
     // viewer can render PDFs inline; Microsoft Office Online viewer is needed
     // for slide decks (.pptx). YCBM domains let the booking widget render
     // the calendar iframe. Spline (my.spline.design + prod.spline.design)
     // hosts the 3D hero scene iframe. Stripe: js.stripe.com hosts the
     // PaymentElement iframe; hooks.stripe.com hosts 3-D Secure challenges.
-    `frame-src 'self' ${supabaseHttps} https://view.officeapps.live.com https://vercel.live https://*.ycb.me https://*.youcanbook.me https://my.spline.design https://*.spline.design https://js.stripe.com https://hooks.stripe.com https://*.js.stripe.com`,
+    `frame-src 'self' ${supabaseHttps} https://view.officeapps.live.com https://vercel.live https://*.ycb.me https://*.youcanbook.me https://my.spline.design https://*.spline.design https://js.stripe.com https://hooks.stripe.com https://*.js.stripe.com https://checkout.stripe.com https://www.facebook.com`,
     "frame-ancestors 'none'",
     "form-action 'self'",
     "base-uri 'self'",
