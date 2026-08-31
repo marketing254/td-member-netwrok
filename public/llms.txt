@@ -1,22 +1,25 @@
 # Dental Member Network
 
-> A membership network for US dental practice owners that pairs a 24/7
-> expert helpline with a partner-discount catalog, a kit library of
-> proven playbooks, and a Book Club track. Each member problem gets a
-> written action plan from a real human within 2–3 business days.
+> A membership network for US dental practice owners that pairs an
+> expert helpline with a partner-discount catalog, a curated kit
+> library of proven playbooks, and a Book Club track. Each member
+> problem gets a written action plan from a real human within 2–3
+> business days.
 
 ## What it is
 
 - Membership-based, not lead-gen. Members pay $49/month (founding) or
   $199/month (standard) for ongoing access — no upsell into a coaching
   contract.
-- The helpline is the differentiator: leave a voicemail about any
-  practice problem, get a written action plan + recommended experts.
+- The helpline is the differentiator: bring any practice problem in
+  plain English, get a written action plan + recommended experts
+  within 2–3 business days.
 - Partner discounts average $6,400/year in net savings for active
   members.
-- Resource library: ~30 kits across Practice Management, Front Desk,
-  Team & Culture, Patient Experience tracks + a Book Club track
-  (Atomic Habits, Good to Great, The 7 Habits, etc.).
+- A growing resource library of expert kits across Practice
+  Management, Front Desk, Team & Culture, Patient Experience and
+  Billing & Collections, plus a Book Club track (Atomic Habits, Good
+  to Great, The 7 Habits, and more).
 
 ## For whom
 
@@ -25,19 +28,48 @@
   doing 1–4 chairs who want to reduce reliance on PPO networks and
   improve case acceptance.
 - **Experts** — Coaches, consultants, and specialists who want to
-  reach 10,000+ engaged practice owners without running their own
-  marketing funnel.
+  reach an engaged network of practice owners without running their
+  own marketing funnel.
 - **Partners** — Software, supplies, labs, equipment, marketing
   agencies, and training programs serving US dental practices.
 
 ## Pricing
 
 - Founding member: $49/month or $490/year — first 100 only, then sold
-  out. Rate locked for life while membership is active.
+  out. Rate locked while membership stays active.
 - Standard member: $199/month or $1,990/year after founding sells out.
-- Cancel anytime, two clicks from the account page. No retention
-  contract.
+- 30-day money-back guarantee. Cancel anytime — no retention contract.
 - Detailed pricing: https://dentalmembernetwork.com/pricing.md
+
+## Blog — expert-written practice guidance
+
+Practical, expert-led articles for dental practice owners and teams.
+Each article is written with a named DMN expert and pairs with a full
+implementation kit inside the membership.
+
+- Blog index: https://dentalmembernetwork.com/blog
+- How to Fill Open Hygiene Appointments Before They Become Lost
+  Production (Gary Takacs — hygiene occupancy, pre-appointing, weekly
+  huddle): https://dentalmembernetwork.com/blog/fill-open-hygiene-appointments
+- How to Change Systems After Buying a Dental Practice Without Losing
+  the Team or Patients (Ashley E. Boaz — phased transitions, team
+  trust, early warning signals):
+  https://dentalmembernetwork.com/blog/change-systems-after-buying-dental-practice
+- Why Counting New Patients Can Hide a Broken Dental Case Acceptance
+  System (James DeLuca — case acceptance measurement, Seven Doors
+  framework):
+  https://dentalmembernetwork.com/blog/why-counting-new-patients-can-hide-a-broken-case-acceptance-system
+- Why New-Patient Calls Fail to Become Appointments (Gary Takacs —
+  front-desk phone framework, seven discovery questions, two-option
+  close):
+  https://dentalmembernetwork.com/blog/new-patient-calls-to-appointments
+- How to Improve Communication in Your Dental Practice (Monica Watson —
+  expectations, handoffs, daily support question, safe honesty):
+  https://dentalmembernetwork.com/blog/improve-dental-team-communication
+- How to Prevent Dental Insurance Claim Denials Before They Happen
+  (DeVon Banks — process-first billing workflow, denial log, patient
+  collections):
+  https://dentalmembernetwork.com/blog/prevent-dental-insurance-claim-denials
 
 ## Differentiators
 
@@ -58,6 +90,7 @@
 ## Key URLs
 
 - Homepage: https://dentalmembernetwork.com/
+- Blog: https://dentalmembernetwork.com/blog
 - Pricing: https://dentalmembernetwork.com/pricing
 - Pricing (machine-readable): https://dentalmembernetwork.com/pricing.md
 - Member signup: https://dentalmembernetwork.com/join

@@ -16,6 +16,7 @@ import { loadStripe } from "@stripe/stripe-js";
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from "@stripe/react-stripe-js";
 import Logo from "@/components/brand/Logo";
 import { initMetaPixel, trackMeta } from "@/components/ads/metaPixel";
+import { trackEvent } from "@/lib/analytics";
 
 /**
  * /start — the Meta paid-ads direct-purchase page (approved prototype:
@@ -223,6 +224,13 @@ export default function AdsLandingView() {
         setErrorMsg(body.error ?? "Something went wrong — please try again.");
         return;
       }
+      // GA4 key events: account created + embedded checkout opened.
+      trackEvent("sign_up", { method: "meta_ads" });
+      trackEvent("begin_checkout", {
+        currency: "USD",
+        value: plan === "founding_annual" ? 490 : 49,
+        items: [{ item_id: plan, item_name: plan }],
+      });
       setClientSecret(body.clientSecret);
     } catch {
       setErrorMsg("We couldn't reach the server. Check your connection and try again.");

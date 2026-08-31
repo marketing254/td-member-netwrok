@@ -178,19 +178,21 @@ export function Block({ block }: { block: BlogBlock }) {
           >
             {block.text}
           </Typography>
-          <Typography
-            component="cite"
-            sx={{
-              fontStyle: "normal",
-              fontSize: "0.78rem",
-              fontWeight: 800,
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-              color: GOLD,
-            }}
-          >
-            {block.cite}
-          </Typography>
+          {block.cite && (
+            <Typography
+              component="cite"
+              sx={{
+                fontStyle: "normal",
+                fontSize: "0.78rem",
+                fontWeight: 800,
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                color: GOLD,
+              }}
+            >
+              {block.cite}
+            </Typography>
+          )}
         </Box>
       );
     case "formula":

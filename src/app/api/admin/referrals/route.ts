@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/guards";
 import { serverError } from "@/lib/api/errorResponse";
+import { getOrCreateExpertReferral, getOrCreateVendorReferral } from "@/lib/referral";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,6 +21,41 @@ export async function GET() {
 
   try {
     const admin = getSupabaseAdmin();
+
+    // Idempotent sweep (same pattern as /api/admin/promo-codes): make sure
+    // every active expert and every live partner has a referral link BEFORE
+    // listing. Links are also created at founding acceptance now, but this
+    // guarantees the console is always complete — including rows provisioned
+    // through older paths that never generated one.
+    try {
+      const [{ data: allExperts }, { data: allVendors }, { data: existing }] = await Promise.all([
+        admin.from("experts").select("id, display_name, full_name").eq("status", "active"),
+        admin
+          .from("vendors")
+          .select("id, display_name, company_name, billing_parent_id")
+          .eq("status", "approved")
+          .eq("verified", true),
+        admin.from("referral_codes").select("expert_id, vendor_id"),
+      ]);
+      const hasExpert = new Set((existing ?? []).map((c) => c.expert_id).filter(Boolean));
+      const hasVendor = new Set((existing ?? []).map((c) => c.vendor_id).filter(Boolean));
+      for (const e of allExperts ?? []) {
+        if (!hasExpert.has(e.id)) {
+          // eslint-disable-next-line no-await-in-loop
+          await getOrCreateExpertReferral(e.id, e.display_name || e.full_name || "expert");
+        }
+      }
+      for (const v of allVendors ?? []) {
+        // Covered companies ride their paying partner's link — skip them.
+        if (v.billing_parent_id) continue;
+        if (!hasVendor.has(v.id)) {
+          // eslint-disable-next-line no-await-in-loop
+          await getOrCreateVendorReferral(v.id, v.display_name || v.company_name || "partner");
+        }
+      }
+    } catch (err) {
+      console.error("[admin referrals] sweep failed (listing continues):", err);
+    }
 
     const { data: codes, error } = await admin
       .from("referral_codes")

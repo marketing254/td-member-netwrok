@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Box, Button, CircularProgress, Container, Stack, Typography } from "@mui/material";
 import Logo from "@/components/brand/Logo";
 import { initMetaPixel, trackMeta } from "@/components/ads/metaPixel";
+import { trackEventOnce } from "@/lib/analytics";
 
 /**
  * The paid-ads thank-you page UI (approved prototype thank-you.html).
@@ -72,6 +73,12 @@ export default function WelcomeView({
       { value: monthly ? 49.0 : 490.0, currency: "USD", content_name: plan },
       metaEventId,
     );
+    // GA4 key event — same server-verified gate as the Meta Purchase.
+    trackEventOnce(`welcome_${metaEventId}`, "purchase", {
+      currency: "USD",
+      value: monthly ? 49.0 : 490.0,
+      method: "meta_ads_embedded",
+    });
   }, [state, metaEventId, monthly, plan]);
 
   // Auto sign-in: server re-verifies the Stripe session AND the signed

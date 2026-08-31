@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import BlogArticleView from "@/components/blog/BlogArticleView";
-import { BLOG_ARTICLES, getBlogArticle } from "@/lib/blog";
+import { PUBLISHED_BLOG_ARTICLES, getBlogArticle } from "@/lib/blog";
 
 const SITE = "https://dentalmembernetwork.com";
 
@@ -12,7 +12,9 @@ const SITE = "https://dentalmembernetwork.com";
  * (generateStaticParams) so crawlers get complete HTML.
  */
 export function generateStaticParams() {
-  return BLOG_ARTICLES.map((a) => ({ slug: a.slug }));
+  // Only released articles get a page; unreleased ones (published: false)
+  // 404 via dynamicParams=false until Lester clears them.
+  return PUBLISHED_BLOG_ARTICLES.map((a) => ({ slug: a.slug }));
 }
 
 export const dynamicParams = false;
@@ -57,9 +59,9 @@ export default async function BlogArticlePage({
 }) {
   const { slug } = await params;
   const article = getBlogArticle(slug);
-  if (!article) notFound();
+  if (!article || article.published === false) notFound();
 
-  const related = BLOG_ARTICLES.filter((a) => a.slug !== article.slug);
+  const related = PUBLISHED_BLOG_ARTICLES.filter((a) => a.slug !== article.slug);
 
   const jsonld = {
     "@context": "https://schema.org",
@@ -92,6 +94,21 @@ export default async function BlogArticlePage({
           { "@type": "ListItem", position: 3, name: article.title, item: `${SITE}/blog/${article.slug}` },
         ],
       },
+      // FAQPage — mirrors the approved on-page FAQ section exactly, so AI
+      // answer engines can extract each Q&A as a self-contained passage.
+      ...(article.faqs && article.faqs.length > 0
+        ? [
+            {
+              "@type": "FAQPage",
+              "@id": `${SITE}/blog/${article.slug}#faq`,
+              mainEntity: article.faqs.map((f) => ({
+                "@type": "Question",
+                name: f.q,
+                acceptedAnswer: { "@type": "Answer", text: f.a },
+              })),
+            },
+          ]
+        : []),
     ],
   };
 

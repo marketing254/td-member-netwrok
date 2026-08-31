@@ -11,13 +11,12 @@ All prices in USD. Cancel anytime — no contracts, no retention call.
 - **Availability**: First 100 members only; sold out afterwards
 - **Rate lock**: Locked for life while membership stays active
 - **Includes**:
-  - 24/7 Expert Hotline — written action plan + recommended experts
+  - Expert Hotline — written action plan + recommended experts
     within 2–3 business days
-  - Full library access — ~30 kits across Practice Management,
-    Front Desk, Team & Culture, Patient Experience, Book Club
-  - New resources every week
-  - Exclusive DMN expert podcasts
-  - Monthly live AMAs + CE events
+  - Full library access — a growing library of expert kits across
+    Practice Management, Front Desk, Team & Culture, Patient
+    Experience, Billing & Collections, and a Book Club track
+  - New resources added regularly
   - Partner network discounts (average $6,400/year saved)
   - Community of fellow practice owners + named experts
   - Founding-member badge in the network directory
@@ -34,7 +33,6 @@ All prices in USD. Cancel anytime — no contracts, no retention call.
   - Full Expert Hotline access
   - Full library access
   - All partner discounts
-  - Monthly AMAs
   - Community + directory access
 - **Not included** (founding-only):
   - Founding-member badge
@@ -82,8 +80,8 @@ Featured Expert benefits at every phase.
 - **Phase 2 — Growth (months 7-12)**: $49/month, locked launch rate
 - **Phase 3 — Standard (month 13+)**: $199/month OR $1,990/year
   (annual pre-pay = 2 months free, unlocks after month 6)
-- **Course revenue split**: Experts keep **90%** of net course revenue,
-  DMN keeps 10%. DMN runs the platform (checkout, hosting, refund
+- **Course revenue split**: Experts keep **70%** of net course revenue,
+  DMN keeps 30%. DMN runs the platform (checkout, hosting, refund
   handling, CE accreditation when applicable). Paid out monthly via
   Stripe Connect.
 - **Includes (every phase)**: done-for-you content library produced
