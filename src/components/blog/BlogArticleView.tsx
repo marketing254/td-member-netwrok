@@ -19,7 +19,17 @@ import Header from "@/components/sections/Header";
 import Footer from "@/components/sections/Footer";
 import { BLOG_CTA_LABEL, type BlogArticle } from "@/lib/blog";
 import { BlogCard } from "@/components/blog/BlogCard";
-import { Block, TocLinks, bodyText } from "@/components/blog/ArticleBlocks";
+import { Block, TocLinks, bodyText, inline } from "@/components/blog/ArticleBlocks";
+
+function formatDate(iso: string): string {
+  try {
+    return new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric" }).format(
+      new Date(`${iso}T00:00:00`),
+    );
+  } catch {
+    return iso;
+  }
+}
 
 const INK = "#0A1A2F";
 const INK_SOFT = "#3B4A55";
@@ -46,6 +56,7 @@ export default function BlogArticleView({
   const toc = [
     ...(article.quickAnswer ? [{ id: "quick-answer", label: "The quick answer" }] : []),
     ...article.body.filter((b) => b.kind === "h2").map((b) => ({ id: b.id, label: b.toc })),
+    ...(article.faqs && article.faqs.length > 0 ? [{ id: "faq", label: "FAQs" }] : []),
   ];
   const [tocOpen, setTocOpen] = useState(false);
 
@@ -224,7 +235,12 @@ export default function BlogArticleView({
                 <Typography sx={{ fontSize: "0.9rem", fontWeight: 700, color: INK, lineHeight: 1.3 }}>
                   Expert guidance from {expertName}
                 </Typography>
-                <Typography sx={{ fontSize: "0.78rem", color: INK_MUTED }}>{article.expert.role}</Typography>
+                <Typography sx={{ fontSize: "0.78rem", color: INK_MUTED }}>
+                  {article.expert.role} ·{" "}
+                  {article.dateModified !== article.datePublished
+                    ? `Updated ${formatDate(article.dateModified)}`
+                    : `Published ${formatDate(article.datePublished)}`}
+                </Typography>
               </Box>
               <Box
                 sx={{
@@ -377,6 +393,50 @@ export default function BlogArticleView({
               <Block key={i} block={block} />
             ))}
 
+            {/* FAQ — approved Q&A, also emitted as FAQPage JSON-LD */}
+            {article.faqs && article.faqs.length > 0 && (
+              <Box sx={{ mt: 5 }}>
+                <Typography
+                  component="h2"
+                  id="faq"
+                  sx={{
+                    fontFamily: "var(--font-display)",
+                    fontSize: { xs: "1.45rem", md: "1.7rem" },
+                    fontWeight: 600,
+                    color: INK,
+                    lineHeight: 1.22,
+                    letterSpacing: "-0.015em",
+                    mb: 2.5,
+                    scrollMarginTop: "110px",
+                  }}
+                >
+                  Frequently asked questions
+                </Typography>
+                {article.faqs.map((faq) => (
+                  <Box
+                    key={faq.q}
+                    sx={{
+                      mb: 2,
+                      p: { xs: 2.25, md: 2.75 },
+                      borderRadius: 3,
+                      bgcolor: "#FFFFFF",
+                      border: `1px solid ${LINE}`,
+                    }}
+                  >
+                    <Typography
+                      component="h3"
+                      sx={{ fontSize: "1rem", fontWeight: 700, color: INK, mb: 0.9, lineHeight: 1.4 }}
+                    >
+                      {faq.q}
+                    </Typography>
+                    <Typography sx={{ fontSize: "0.95rem", color: INK_SOFT, lineHeight: 1.7 }}>
+                      {faq.a}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+            )}
+
             {/* Takeaway card */}
             <Box
               sx={{
@@ -464,6 +524,11 @@ export default function BlogArticleView({
                 <Typography sx={{ fontSize: "0.92rem", color: "rgba(246,241,231,0.82)", lineHeight: 1.65, mb: 2.5 }}>
                   {article.kitCta.description}
                 </Typography>
+                {article.kitCta.support && (
+                  <Typography sx={{ fontSize: "0.88rem", color: "#E8C76F", lineHeight: 1.6, mb: 2 }}>
+                    {inline(article.kitCta.support)}
+                  </Typography>
+                )}
                 <Button
                   component={Link}
                   href={article.kitCta.href}
@@ -483,7 +548,7 @@ export default function BlogArticleView({
                     "&&:hover": { bgcolor: "#E4B95F", color: INK },
                   }}
                 >
-                  {BLOG_CTA_LABEL}
+                  {article.kitCta.label ?? BLOG_CTA_LABEL}
                 </Button>
               </Box>
             </Box>

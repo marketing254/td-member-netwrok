@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Box, Chip, Container, Stack, Typography } from "@mui/material";
 import Header from "@/components/sections/Header";
 import Footer from "@/components/sections/Footer";
-import { BLOG_ARTICLES, BLOG_INDEX_HEADING, BLOG_INDEX_STANDFIRST } from "@/lib/blog";
+import { PUBLISHED_BLOG_ARTICLES, BLOG_INDEX_HEADING, BLOG_INDEX_STANDFIRST } from "@/lib/blog";
 import { BlogCard } from "@/components/blog/BlogCard";
 
 const INK = "#0A1A2F";
@@ -23,10 +23,10 @@ export default function BlogIndexView() {
   // Categories derive from the registry — a future category appears here
   // automatically the moment its first article ships.
   const categories = useMemo(
-    () => [...new Set(BLOG_ARTICLES.map((a) => a.category))],
+    () => [...new Set(PUBLISHED_BLOG_ARTICLES.map((a) => a.category))],
     [],
   );
-  const shown = category ? BLOG_ARTICLES.filter((a) => a.category === category) : BLOG_ARTICLES;
+  const shown = category ? PUBLISHED_BLOG_ARTICLES.filter((a) => a.category === category) : PUBLISHED_BLOG_ARTICLES;
 
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "#FBF8F1", display: "flex", flexDirection: "column" }}>

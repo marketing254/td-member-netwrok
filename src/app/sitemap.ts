@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { BLOG_ARTICLES } from "@/lib/blog";
+import { PUBLISHED_BLOG_ARTICLES } from "@/lib/blog";
 
 const SITE = "https://dentalmembernetwork.com";
 
@@ -27,7 +27,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/resources", priority: 0.8, changeFrequency: "weekly" },
     { path: "/blog", priority: 0.8, changeFrequency: "weekly" },
     // One entry per published article — the registry is the source of truth.
-    ...BLOG_ARTICLES.map((a) => ({
+    ...PUBLISHED_BLOG_ARTICLES.map((a) => ({
       path: `/blog/${a.slug}`,
       priority: 0.7,
       changeFrequency: "monthly" as const,

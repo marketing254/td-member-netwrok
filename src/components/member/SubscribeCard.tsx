@@ -1,5 +1,6 @@
 "use client";
 
+import { trackEvent } from "@/lib/analytics";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Box, Stack, Typography } from "@mui/material";
@@ -192,6 +193,11 @@ export function SubscribeCard({ firstName }: { firstName: string }) {
         setError(safe);
         return;
       }
+      // GA4 key event: Stripe checkout opened for this plan.
+      trackEvent("begin_checkout", {
+        currency: "USD",
+        items: [{ item_id: plan, item_name: plan }],
+      });
       window.location.href = body.url;
     } catch (err) {
       if (process.env.NODE_ENV !== "production") console.error("[checkout] failed:", err);

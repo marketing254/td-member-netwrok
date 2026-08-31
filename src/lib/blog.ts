@@ -17,7 +17,7 @@ export type BlogBlock =
   | { kind: "h3"; text: string }
   | { kind: "ul"; items: string[] }
   | { kind: "ol"; items: { strong?: string; text: string }[] }
-  | { kind: "quote"; text: string; cite: string }
+  | { kind: "quote"; text: string; cite?: string }
   | { kind: "formula"; parts: string[] };
 
 export type BlogArticle = {
@@ -47,13 +47,25 @@ export type BlogArticle = {
   /** Answer-first callout card right under the hero (AEO). */
   quickAnswer?: string;
   body: BlogBlock[];
+  /** Approved FAQ section — rendered on-page AND emitted as FAQPage JSON-LD. */
+  faqs?: { q: string; a: string }[];
   takeaway: { eyebrow: string; title: string; body: string };
   kitCta: {
     kitName: string;
     description: string;
-    /** Referral landing that carries the 3-months-free offer. LOCKED by Lester. */
+    /** CTA destination. LOCKED by Lester per article — never change without approval. */
     href: string;
+    /** Per-article button label (falls back to BLOG_CTA_LABEL). LOCKED by Lester. */
+    label?: string;
+    /** Approved sentence rendered above the button (supports **bold**). */
+    support?: string;
   };
+  /**
+   * false = approved for staging but NOT released (e.g. CTA destination
+   * still unconfirmed by Lester). Unpublished articles are excluded from
+   * the index, sitemap, related rails and static generation.
+   */
+  published?: boolean;
 };
 
 /** CTA button label — locked by Lester in the build brief. */
@@ -84,7 +96,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
     },
     kitSlug: "9-kpis",
     hero: {
-      src: "/blog/gary-kit-hero.png",
+      src: "/blog/gary-kit-hero.jpg",
       alt: "The 9 KPIs That Drive Your Practice resource kit featuring Gary Takacs",
     },
     readTime: "7 minute read",
@@ -197,7 +209,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
     },
     kitSlug: "transition-without-turbulence",
     hero: {
-      src: "/blog/ashley-kit-hero.png",
+      src: "/blog/ashley-kit-hero.jpg",
       alt: "Transition Without Turbulence resource kit featuring Ashley E. Boaz",
     },
     readTime: "8 minute read",
@@ -318,12 +330,12 @@ export const BLOG_ARTICLES: BlogArticle[] = [
     expert: {
       name: "James DeLuca",
       role: "Founder, Precision Dental Analytics",
-      headshotUrl: "/blog/james-deluca-headshot.jpg",
+      headshotUrl: "/blog/james-deluca-headshot-v2.jpg",
       profileHref: "/experts/3a4486a8-117e-4db6-a0d3-fefb63668af6",
     },
     kitSlug: "close-the-case-not-just-the-patient",
     hero: {
-      src: "/blog/james-kit-hero-v3.png",
+      src: "/blog/james-kit-hero-v3.jpg",
       alt: "Close the Case, Not Just the Patient resource kit featuring James DeLuca",
     },
     readTime: "6 minute read",
@@ -473,7 +485,654 @@ export const BLOG_ARTICLES: BlogArticle[] = [
       href: "/jamesdeluca",
     },
   },
+  // ---- Week 2 (approved by Lester 2026-08-30) --------------------------
+  {
+    slug: "new-patient-calls-to-appointments",
+    title: "Why New-Patient Calls Fail to Become Appointments",
+    metaTitle: "Why New-Patient Calls Fail to Book | DMN",
+    metaDescription:
+      "Use a warm greeting, seven discovery questions, clear insurance and price responses, and a two-option close to book more dental new-patient calls.",
+    excerpt:
+      "A repeatable phone process helps the front desk welcome new callers, understand their needs, answer common questions, and offer a clear appointment choice.",
+    category: "Front Desk",
+    dek: "A new-patient call can end in a booked visit or a polite goodbye. Gary Takacs's phone framework gives the front desk a repeatable way to welcome the caller, understand what they need, handle common questions, and offer a clear next step.",
+    expert: {
+      name: "Gary Takacs",
+      role: "Founder, Thriving Dentist",
+      headshotUrl:
+        "https://jbntnrtnaqigsyzgvuyv.supabase.co/storage/v1/object/public/kit-thumbnails/profiles/gary-takacs-headshot.jpg",
+      profileHref: "/experts/ecf8bd07-66e7-48f9-b002-b1b33adb2548",
+    },
+    kitSlug: "new-patient-phone-call",
+    hero: {
+      src: "/blog/gary-phone-kit-hero.jpg",
+      alt: "The New Patient Phone Call resource kit featuring Gary Takacs",
+    },
+    readTime: "7 minute read",
+    datePublished: "2026-08-31",
+    dateModified: "2026-08-31",
+    quickAnswer:
+      "New-patient calls often fail when the team sounds rushed, treats the call as data entry, gives a flat answer to an insurance or price question, or ends without directly offering an appointment. A stronger process is to answer promptly, use a warm greeting, ask a consistent set of discovery questions, and close with two specific appointment times.",
+    body: [
+      {
+        kind: "p",
+        lead: true,
+        text: "The caller has already taken an important step. They found the practice, decided it might be able to help, and picked up the phone. The front desk should make the next step feel clear and easy.",
+      },
+      { kind: "h2", id: "why-it-matters", text: "Why the first call matters so much", toc: "Why the call matters" },
+      {
+        kind: "p",
+        text: "Marketing creates attention. The phone call is where that attention becomes a real patient relationship.",
+      },
+      {
+        kind: "p",
+        text: "If the call feels cold, confusing, or difficult, the practice can lose the opportunity even when its website, reviews, and advertising worked. Gary's framework treats the front desk as part of the practice's growth system, not simply an administrative checkpoint.",
+      },
+      {
+        kind: "p",
+        text: "The goal is not to rush the caller into a booking. It is to understand the reason for the call, show that the practice is prepared to help, and give the caller a useful next action.",
+      },
+      { kind: "h2", id: "answer-promptly", text: "1. Answer promptly and sound pleased they called", toc: "Answer promptly" },
+      {
+        kind: "p",
+        text: "Gary recommends answering within three rings and smiling before speaking. The smile matters because tone travels through the phone.",
+      },
+      { kind: "p", text: "A simple opening is enough:" },
+      { kind: "quote", text: "\"Thank you for calling [Practice]. This is [Name]. How may I help you today?\"" },
+      {
+        kind: "p",
+        text: "The words are less important than the experience. The caller should feel welcomed, not processed. Avoid making them repeat information unnecessarily, transferring them without explanation, or putting them on hold before understanding why they called.",
+      },
+      { kind: "h2", id: "seven-questions", text: "2. Ask seven questions that help the practice respond well", toc: "The seven questions" },
+      { kind: "p", text: "Gary's call framework uses seven consistent questions:" },
+      {
+        kind: "ol",
+        items: [
+          { text: "How did you hear about us?" },
+          { text: "What prompted your call today?" },
+          { text: "When was your last dental visit?" },
+          { text: "Are you experiencing any pain right now?" },
+          { text: "Do you have dental insurance?" },
+          { text: "What time of day works best for you?" },
+          { text: "Is there anything else we should know so we can prepare?" },
+        ],
+      },
+      {
+        kind: "p",
+        text: "These questions do more than fill an intake form. They reveal urgency, scheduling needs, the source of the call, and what the team should prepare for before the patient arrives.",
+      },
+      {
+        kind: "p",
+        text: "Ask them conversationally. The call should not feel like an interrogation. Listen to the answer before moving to the next question.",
+      },
+      { kind: "h2", id: "insurance", text: "3. Do not let insurance become a dead end", toc: "Handle insurance questions" },
+      {
+        kind: "p",
+        text: "When a caller asks whether the practice accepts an insurance plan, a flat yes or no can end the conversation before the caller understands the available options.",
+      },
+      {
+        kind: "p",
+        text: "The team should answer accurately, explain what it can verify, and bring the conversation back to care. Gary's framework suggests language such as:",
+      },
+      {
+        kind: "quote",
+        text: "\"We work with many plans and can verify your benefits before your visit. The most important thing is understanding the care you need. When can we see you?\"",
+      },
+      {
+        kind: "p",
+        text: "The exact wording must match the practice's real participation and billing policies. The principle is to avoid an abrupt answer that leaves the caller without a path forward.",
+      },
+      { kind: "h2", id: "price", text: "4. Give context before discussing price", toc: "Price with context" },
+      {
+        kind: "p",
+        text: "A caller may ask, \"How much is a cleaning?\" or \"What will this treatment cost?\" The question is reasonable, but the practice may not know the correct answer until it understands the patient's needs.",
+      },
+      {
+        kind: "p",
+        text: "Instead of guessing or avoiding the question, explain why an examination is needed and promise a clear conversation before treatment begins:",
+      },
+      {
+        kind: "quote",
+        text: "\"Every patient's needs are a little different. The doctor will assess what you need, and we will discuss the recommendations and costs before proceeding. Let me help you find an appointment.\"",
+      },
+      {
+        kind: "p",
+        text: "This respects the caller's concern while avoiding a price quote without clinical context.",
+      },
+      { kind: "h2", id: "two-choices", text: "5. Close with two real appointment choices", toc: "The two-option close" },
+      {
+        kind: "p",
+        text: "Calls often fade at the finish because the team asks an open question such as, \"When would you like to come in?\" The caller then has to search an entire calendar in their head.",
+      },
+      { kind: "p", text: "Gary recommends offering two specific choices:" },
+      { kind: "quote", text: "\"We have Tuesday at 10:00 or Thursday at 2:30. Which works better for you?\"" },
+      {
+        kind: "p",
+        text: "Two options make the decision smaller. If neither works, the team can offer the next pair. The point is to guide the caller toward a practical choice rather than leave the next step vague.",
+      },
+      { kind: "h2", id: "confirm", text: "6. Confirm the appointment before the call ends", toc: "Confirm before hanging up" },
+      {
+        kind: "p",
+        text: "Repeat the date, time, provider, location, and anything the patient should bring. Send the confirmation message immediately and make sure the patient knows how to contact the practice if something changes.",
+      },
+      {
+        kind: "p",
+        text: "The first impression continues after the phone call. A clear confirmation shows the same care and organization the patient should expect when they arrive.",
+      },
+      { kind: "h2", id: "coach-the-system", text: "7. Coach the system, not just the person", toc: "Coach the system" },
+      { kind: "p", text: "A script sitting in a binder will not change performance. The team needs a short weekly review:" },
+      {
+        kind: "ul",
+        items: [
+          "How many new-patient calls came in?",
+          "How many were answered and how many were missed?",
+          "How many ended in a booked appointment?",
+          "Where did callers hesitate or leave the process?",
+          "What one part of the call should the team practise this week?",
+        ],
+      },
+      {
+        kind: "p",
+        text: "Gary's member kit uses a 70% or better call-to-appointment benchmark. Treat that as his coaching target, not a universal guarantee. The useful habit is to measure the practice against its own starting point and improve the conversation consistently.",
+      },
+      {
+        kind: "quote",
+        text: "\"The front desk is not an administrative function. It's a revenue-generating function.\"",
+        cite: "Gary Takacs",
+      },
+    ],
+    faqs: [
+      {
+        q: "What should a dental receptionist say to a new patient?",
+        a: "Use a warm greeting with the practice and team member's name, ask why the person is calling, listen carefully, gather the information needed to prepare, and offer two specific appointment times.",
+      },
+      {
+        q: "How should a dental office answer insurance questions?",
+        a: "Answer accurately based on the practice's real insurance participation. Explain what the team can verify, avoid making promises before checking benefits, and give the caller a clear path to an appointment.",
+      },
+      {
+        q: "How can a dental practice measure phone conversion?",
+        a: "Divide the number of new-patient calls that produced booked appointments by the total number of qualified new-patient calls reviewed. Define the calculation once and use the same definition every week.",
+      },
+    ],
+    takeaway: {
+      eyebrow: "The takeaway",
+      title: "A stronger new-patient call is not a longer sales pitch.",
+      body: "It is a warmer and more consistent path from \"How can we help?\" to a confirmed appointment. Answer promptly, ask the right questions, respond to insurance and price concerns honestly, and offer two real times.",
+    },
+    kitCta: {
+      kitName: "The New Patient Phone Call: From Ring to Booking",
+      description:
+        "The member kit includes Gary's Action Guide, seven-question call flow, scripts, checklist, worksheet, wall poster, and team training resources.",
+      href: "/garytakacs",
+      label: "Start Your Three Months Free",
+      support:
+        "Gary's invitation includes three months free. Use code **GARY** when registering through his expert link.",
+    },
+  },
+  {
+    slug: "improve-dental-team-communication",
+    title: "How to Improve Communication in Your Dental Practice",
+    metaTitle: "How to Improve Dental Team Communication | DMN",
+    metaDescription:
+      "Use clear expectations, daily support questions, stronger handoffs, and consistent patient explanations to improve communication in your dental practice.",
+    excerpt:
+      "A few repeatable communication habits can prevent daily friction, improve handoffs, and help dental teams raise problems before they become blowups.",
+    category: "Team & Culture",
+    dek: "Communication problems rarely begin with one dramatic blowup. Monica Watson's practical framework helps dental teams prevent daily friction with clear expectations, better handoffs, useful questions, and a culture where people can speak honestly.",
+    expert: {
+      name: "Monica Watson",
+      role: "Founder, Blossom Dental Consulting",
+      headshotUrl:
+        "https://jbntnrtnaqigsyzgvuyv.supabase.co/storage/v1/object/public/kit-thumbnails/profiles/monica-watson-headshot.jpg",
+      profileHref: "/experts/848576aa-148a-424e-ab07-548a070953f0",
+    },
+    kitSlug: "you-cant-over-communicate",
+    hero: {
+      src: "/blog/monica-kit-hero.jpg",
+      alt: "You Can't Over-Communicate resource kit featuring Monica Watson",
+    },
+    readTime: "8 minute read",
+    datePublished: "2026-08-31",
+    dateModified: "2026-08-31",
+    quickAnswer:
+      "To improve communication in a dental practice, stop relying on people to read one another's minds. Set clear expectations, agree on repeatable handoffs, ask the team what support they need, and make it safe to raise a problem early. Review those habits every day instead of waiting for a conflict, a patient complaint, or a difficult team meeting.",
+    body: [
+      {
+        kind: "p",
+        lead: true,
+        text: "Monica Watson puts the principle plainly: \"You can't over communicate. You can only under communicate.\"",
+      },
+      {
+        kind: "p",
+        text: "That does not mean adding more messages, meetings, or software. It means making the important information clear, timely, consistent, and useful to the person who needs it.",
+      },
+      { kind: "h2", id: "why-it-breaks", text: "Why dental-team communication breaks down", toc: "Why it breaks down" },
+      {
+        kind: "p",
+        text: "A dental practice moves quickly. The front desk is answering calls, checking benefits, managing the schedule, and helping patients. The clinical team is moving between operatories, preparing treatment, documenting care, and responding to the doctor. Each person may be doing their own job well while the practice still creates gaps between roles.",
+      },
+      { kind: "p", text: "Those gaps show up in familiar ways:" },
+      {
+        kind: "ul",
+        items: [
+          "An emergency patient is added without the clinical team receiving the right details.",
+          "The doctor is running behind, but nobody explains the delay to the next patient.",
+          "A team member is held accountable for an expectation that was never clearly stated.",
+          "The front and clinical teams explain the same procedure differently.",
+          "A small concern stays quiet until it becomes a personal conflict.",
+        ],
+      },
+      {
+        kind: "p",
+        text: "The fix is not simply telling everyone to communicate better. The practice needs a few defined communication systems that remove ambiguity.",
+      },
+      { kind: "h2", id: "morning-plan", text: "1. Replace firefighting with a morning plan", toc: "The morning plan" },
+      {
+        kind: "p",
+        text: "Monica encourages practices to plan for predictable pressure before the day becomes stressful. During the morning huddle, identify likely trouble points:",
+      },
+      {
+        kind: "ul",
+        items: [
+          "Where will an emergency patient fit?",
+          "Which appointments may require extra time or support?",
+          "Where is the schedule especially tight?",
+          "Who will update a waiting patient if the doctor falls behind?",
+          "What information needs to move from the front desk to the clinical team?",
+        ],
+      },
+      {
+        kind: "p",
+        text: "This is not a long meeting. A focused huddle gives the team a shared picture of the day and reduces the number of decisions made in a rush.",
+      },
+      { kind: "h2", id: "expectations", text: "2. Make expectations visible", toc: "Visible expectations" },
+      { kind: "p", text: "Monica says, \"Clarity is kindness.\"" },
+      {
+        kind: "p",
+        text: "Team members need to know what good performance looks like, who owns each task, and when a handoff is complete. If the expectation exists only in the practice owner's head, accountability will feel unpredictable and unfair.",
+      },
+      { kind: "p", text: "Choose one recurring point of friction and write down:" },
+      {
+        kind: "ol",
+        items: [
+          { text: "What needs to happen." },
+          { text: "Who is responsible." },
+          { text: "What information must be recorded or handed off." },
+          { text: "When the task is considered complete." },
+          { text: "What happens if the normal process cannot be followed." },
+        ],
+      },
+      {
+        kind: "p",
+        text: "Start small. A clear one-page process for emergency calls or late-running appointments is more useful than a large manual nobody uses.",
+      },
+      { kind: "h2", id: "handoff", text: "3. Use a complete front-to-back handoff", toc: "Complete handoffs" },
+      {
+        kind: "p",
+        text: "When an emergency patient calls, the front desk should not have to invent the questions. Monica recommends an intake form with a consistent script.",
+      },
+      { kind: "p", text: "The form might include:" },
+      {
+        kind: "ul",
+        items: [
+          "What prompted the call?",
+          "Where is the discomfort?",
+          "When did it begin?",
+          "Has anything made it better or worse?",
+          "Is there swelling, trauma, or another urgent concern?",
+          "What has the patient already been told about the visit?",
+        ],
+      },
+      {
+        kind: "p",
+        text: "The clinical team then receives the information before the patient is seated. The front desk should also set an honest expectation: the practice will address the immediate concern, but definitive treatment may require diagnosis, time, and a separate visit.",
+      },
+      {
+        kind: "p",
+        text: "The exact clinical questions and urgency rules must be approved by the dentist. The communication principle is universal: the person receiving the handoff should not need to start from zero.",
+      },
+      { kind: "h2", id: "support-question", text: "4. Ask a daily support question", toc: "The daily support question" },
+      { kind: "p", text: "Monica recommends that team members ask one another:" },
+      { kind: "quote", text: "\"How can I support you today?\"" },
+      {
+        kind: "p",
+        text: "This question works because it turns a vague idea of teamwork into a specific offer. A dental assistant may need the front desk to protect a handoff window. The scheduling coordinator may need the doctor to make a decision before lunch. A new employee may need clarification without feeling that they are slowing everyone down.",
+      },
+      {
+        kind: "p",
+        text: "The answer is not always a request for more help. It may reveal a missing resource, an unclear responsibility, or a conflict that can be addressed while it is still small.",
+      },
+      { kind: "h2", id: "honest-answers", text: "5. Make it safe to give an honest answer", toc: "Safe honesty" },
+      {
+        kind: "p",
+        text: "Asking for feedback is not enough. Leaders also have to show that an honest response will be handled constructively.",
+      },
+      {
+        kind: "p",
+        text: "Monica warns that when a team stops talking to its leader, the culture is already in trouble. If questions are dismissed, concerns are punished, or every suggestion becomes a debate, people learn to remain quiet.",
+      },
+      { kind: "p", text: "Leaders can change that pattern by responding with three steps:" },
+      {
+        kind: "ol",
+        items: [
+          { text: "Thank the person for raising the issue." },
+          { text: "Ask for a specific example and the impact it created." },
+          { text: "Agree on the next action, owner, and follow-up date." },
+        ],
+      },
+      {
+        kind: "p",
+        text: "Not every suggestion must be accepted. Every sincere concern should receive a clear response.",
+      },
+      { kind: "h2", id: "consistent-explanation", text: "6. Give patients one consistent explanation", toc: "One patient explanation" },
+      {
+        kind: "p",
+        text: "Communication gaps affect patients too. Monica recommends creating a benefit statement for every common procedure so the patient receives the same basic answer from the front desk, assistant, hygienist, and doctor.",
+      },
+      { kind: "p", text: "The statement should explain, in plain language:" },
+      {
+        kind: "ul",
+        items: [
+          "What problem the procedure addresses.",
+          "Why the dentist may recommend it.",
+          "What the patient should ask the clinical team before deciding.",
+        ],
+      },
+      {
+        kind: "p",
+        text: "The doctor still provides the diagnosis, risks, alternatives, and informed-consent discussion. The shared statement simply prevents different team members from giving conflicting or confusing explanations.",
+      },
+      { kind: "h2", id: "comfort-question", text: "7. End new-patient calls with the comfort question", toc: "The comfort question" },
+      { kind: "p", text: "Monica teaches teams to ask:" },
+      { kind: "quote", text: "\"Is there anything you'd like us to know to make your visit more comfortable at our office?\"" },
+      {
+        kind: "p",
+        text: "The answer may reveal anxiety, mobility needs, a previous negative experience, a preference for detailed explanations, or another useful detail. Record it and share it with the clinical team.",
+      },
+      {
+        kind: "p",
+        text: "That single question tells the patient that the practice is listening before the appointment begins.",
+      },
+      { kind: "h2", id: "weekly-review", text: "A simple weekly communication review", toc: "The weekly review" },
+      { kind: "p", text: "Once a week, ask the team:" },
+      {
+        kind: "ul",
+        items: [
+          "Where did information get lost?",
+          "Which handoff worked especially well?",
+          "What expectation remained unclear?",
+          "Did a patient receive two different answers?",
+          "What one process should we clarify this week?",
+        ],
+      },
+      {
+        kind: "p",
+        text: "Choose one improvement and test it. The goal is not a perfect week. It is a practice that notices communication gaps and repairs them before they become culture problems.",
+      },
+    ],
+    faqs: [
+      {
+        q: "How can a dentist improve communication with the team?",
+        a: "Set explicit expectations, define task ownership, use short daily huddles, ask what support people need, and follow up visibly when someone raises a concern.",
+      },
+      {
+        q: "What should a dental morning huddle include?",
+        a: "Focus on the day's pressure points, schedule risks, emergency capacity, important patient needs, handoffs, and decisions that require a named owner.",
+      },
+      {
+        q: "How can a dental practice reduce staff conflict?",
+        a: "Address concerns early, discuss the process and impact rather than attacking the person, clarify the expected behavior, and agree on a next step that can be observed.",
+      },
+    ],
+    takeaway: {
+      eyebrow: "The takeaway",
+      title: "Better communication is not more talking. It is fewer assumptions.",
+      body: "Plan for predictable problems, make expectations visible, use complete handoffs, ask useful questions, and protect the honesty you asked the team to give you.",
+    },
+    kitCta: {
+      kitName: "You Can't Over-Communicate",
+      description:
+        "The member kit includes Monica's Action Guide, checklist, worksheet, wall poster, scripts, and team implementation resources.",
+      // Monica's expert referral link (confirmed by Lester via Rushdha,
+      // 2026-08-31). Her promo code is inactive, so signups via this link
+      // see standard pricing — matching the article's no-promotion rule.
+      href: "/monicawatson",
+      label: "Join Dental Member Network",
+    },
+  },
+  {
+    slug: "prevent-dental-insurance-claim-denials",
+    title: "How to Prevent Dental Insurance Claim Denials Before They Happen",
+    metaTitle: "How to Prevent Dental Claim Denials | DMN",
+    metaDescription:
+      "Prevent avoidable dental claim denials with a documented process for eligibility, data, clinical notes, attachments, claim review, and follow-up.",
+    excerpt:
+      "A denied dental claim often begins upstream. A documented workflow helps the team catch eligibility, data, note, and attachment problems before submission.",
+    category: "Billing & Collections",
+    dek: "A denied claim often begins before the claim is submitted. DeVon Banks's process-first framework helps dental practices find weak points in benefit verification, data entry, documentation, attachments, patient collections, and follow-up.",
+    expert: {
+      name: "DeVon Banks",
+      role: "CEO, D-TECH Billing and Claims",
+      headshotUrl:
+        "https://jbntnrtnaqigsyzgvuyv.supabase.co/storage/v1/object/public/kit-thumbnails/profiles/b33f7c0b-c844-4d5f-8928-8fd3cec49421-1787635915283.jpg",
+      profileHref: "/experts/b33f7c0b-c844-4d5f-8928-8fd3cec49421",
+    },
+    kitSlug: "the-process-comes-first",
+    hero: {
+      src: "/blog/devon-kit-hero.jpg",
+      alt: "The Process Comes First resource kit featuring DeVon Banks",
+    },
+    readTime: "8 minute read",
+    datePublished: "2026-08-31",
+    dateModified: "2026-08-31",
+    quickAnswer:
+      "To prevent avoidable dental insurance claim denials, build one documented billing process that begins with eligibility verification and continues through accurate patient data, complete clinical notes, required attachments, claim review, submission, and follow-up. Train the team on that process before adding new software or automation. Track rejection and appeal reasons so the practice can correct the step that caused the problem.",
+    body: [
+      {
+        kind: "p",
+        lead: true,
+        text: "DeVon Banks summarizes the principle clearly: \"Technology is our tools. They're not the process.\"",
+      },
+      {
+        kind: "p",
+        text: "The grammar is conversational, but the lesson is precise. A dashboard can reveal a denial. It cannot repair a workflow the practice has never defined.",
+      },
+      { kind: "h2", id: "upstream", text: "Why denials begin earlier than most teams think", toc: "Denials start upstream" },
+      {
+        kind: "p",
+        text: "When a claim is rejected or denied, the billing team often focuses on the final submission. DeVon asks practices to look further upstream.",
+      },
+      {
+        kind: "p",
+        text: "The problem may have started when benefits were not verified, patient details were entered incorrectly, the procedure note did not support the service, an attachment was missing, or nobody owned the follow-up. By the time the payer responds, the original error may be days or weeks old.",
+      },
+      {
+        kind: "p",
+        text: "That is why the process needs to cover the full path from appointment preparation to payment.",
+      },
+      { kind: "h2", id: "write-the-workflow", text: "1. Write the workflow before buying another tool", toc: "Write the workflow" },
+      { kind: "p", text: "Start with a simple map of the current process:" },
+      {
+        kind: "ol",
+        items: [
+          { text: "Verify eligibility and benefits." },
+          { text: "Enter or update patient and plan information." },
+          { text: "Confirm the planned procedure and coding information." },
+          { text: "Complete the clinical documentation." },
+          { text: "Gather required images, narratives, or other attachments." },
+          { text: "Review the claim before submission." },
+          { text: "Submit through the approved system." },
+          { text: "Track the payer response." },
+          { text: "Correct, appeal, collect, or escalate according to the result." },
+        ],
+      },
+      {
+        kind: "p",
+        text: "For each step, name the owner, the deadline, the required information, and the evidence that the task is complete.",
+      },
+      {
+        kind: "p",
+        text: "DeVon makes the training problem obvious: \"It's kind of difficult to promote training when there's not a system to train on.\"",
+      },
+      { kind: "h2", id: "eligibility", text: "2. Begin with eligibility verification", toc: "Start with eligibility" },
+      {
+        kind: "p",
+        text: "The billing process does not begin after treatment. It begins before the patient is in the chair.",
+      },
+      {
+        kind: "p",
+        text: "Confirm the patient's current plan details and document what the practice learned. Eligibility and benefit information can change, and verification is not a guarantee of payment. It is still a necessary control because it helps the team identify plan limitations, missing data, and patient responsibility before treatment.",
+      },
+      {
+        kind: "p",
+        text: "The American Dental Association advises practices to document details such as the carrier, group number, and member identification information during eligibility verification. The practice should also follow the payer's current rules and the terms of its participating-provider agreements.",
+      },
+      { kind: "h2", id: "clinical-note", text: "3. Make the clinical note support the claim", toc: "Notes that support claims" },
+      { kind: "p", text: "Billing cannot repair documentation that never explains what happened clinically." },
+      {
+        kind: "p",
+        text: "The note should accurately describe the patient's condition, the diagnosis, the service delivered, and any relevant clinical findings. Required radiographs, periodontal records, narratives, or other attachments should match the procedure and payer requirements.",
+      },
+      {
+        kind: "p",
+        text: "This does not mean writing notes for an insurance company instead of the patient record. It means making the record complete enough to show why the care was necessary and what was performed.",
+      },
+      {
+        kind: "p",
+        text: "The dentist remains responsible for clinical documentation. The billing team can use a checklist to identify missing elements before a claim leaves the practice.",
+      },
+      { kind: "h2", id: "pre-submission", text: "4. Review the claim before submission", toc: "Pre-submission review" },
+      { kind: "p", text: "A short pre-submission review can catch avoidable errors:" },
+      {
+        kind: "ul",
+        items: [
+          "Does the patient's name and identification match the plan record?",
+          "Is the correct payer and group information attached?",
+          "Are procedure details complete and consistent?",
+          "Does the clinical note substantiate the service?",
+          "Are all required images, narratives, or other documents included?",
+          "Has the team recorded any relevant coordination-of-benefits information?",
+          "Is the claim being submitted through the correct channel?",
+        ],
+      },
+      {
+        kind: "p",
+        text: "The checklist should reflect the practice's services and the payer's current rules. It should not depend on one experienced employee remembering every exception.",
+      },
+      { kind: "h2", id: "track-reasons", text: "5. Track the reason, not just the unpaid balance", toc: "Track denial reasons" },
+      {
+        kind: "p",
+        text: "An accounts-receivable report tells the practice what remains unpaid. It does not always explain why.",
+      },
+      { kind: "p", text: "Create a simple denial and appeal log with fields such as:" },
+      {
+        kind: "ul",
+        items: [
+          "Date submitted",
+          "Payer",
+          "Procedure or claim category",
+          "Rejection or denial reason",
+          "Missing information",
+          "Action taken",
+          "Owner",
+          "Follow-up date",
+          "Final outcome",
+        ],
+      },
+      {
+        kind: "p",
+        text: "DeVon used a plain spreadsheet to review a few hundred appeals over about six months, identify patterns, and change processes. The exact volume is not the point. The habit is: collect enough consistent information to see where the workflow is breaking.",
+      },
+      {
+        kind: "p",
+        text: "Review the log monthly. If one denial reason keeps returning, fix the upstream step instead of repeatedly correcting the same result.",
+      },
+      { kind: "h2", id: "patient-collections", text: "6. Include patient collections in the same process", toc: "Patient collections" },
+      {
+        kind: "p",
+        text: "Getting paid includes both the insurance portion and the patient portion. DeVon warns that practices may focus heavily on the payer while leaving patient balances unresolved.",
+      },
+      {
+        kind: "p",
+        text: "Before treatment, the team should explain what is known, what remains an estimate, when payment is expected, and which payment methods or financing choices the practice genuinely offers. After the payer responds, communicate any remaining balance clearly and promptly.",
+      },
+      {
+        kind: "p",
+        text: "DeVon's standard is direct: \"There should not be a patient in the chair that you're not aware of how you're going to get paid, both from insurance and from patient.\"",
+      },
+      {
+        kind: "p",
+        text: "This is not a promise that every estimate will be exact. It is a requirement that the practice has checked the information available and has a defined financial conversation.",
+      },
+      { kind: "h2", id: "train-then-automate", text: "7. Train for consistency, then automate", toc: "Train, then automate" },
+      {
+        kind: "p",
+        text: "Once the workflow is documented, train every person who owns a step. Use real examples, a skills check, and a short audit period. When the process works consistently, decide which technology can remove repetitive work or improve visibility.",
+      },
+      { kind: "p", text: "Evaluate a tool against a specific problem:" },
+      {
+        kind: "ul",
+        items: [
+          "Which step will it improve?",
+          "What input data does it require?",
+          "Who monitors exceptions?",
+          "How will the practice know it worked?",
+          "What happens when the automation fails?",
+        ],
+      },
+      { kind: "p", text: "DeVon's warning is useful here: \"You can't just spend away a problem.\"" },
+      { kind: "h2", id: "monthly-review", text: "A 15-minute monthly claims review", toc: "The monthly review" },
+      { kind: "p", text: "Bring the practice owner, clinical lead, and billing owner together and answer:" },
+      {
+        kind: "ul",
+        items: [
+          "What were the most common denial or rejection reasons?",
+          "Which step caused each recurring problem?",
+          "Are clinical notes or attachments regularly incomplete?",
+          "Are eligibility details being recorded consistently?",
+          "Which patient balances have no next action?",
+          "What one process change will we test this month?",
+        ],
+      },
+      {
+        kind: "p",
+        text: "Assign an owner and a review date. A meeting without a process change is only a report.",
+      },
+    ],
+    faqs: [
+      {
+        q: "What causes dental insurance claims to be denied?",
+        a: "Common causes include eligibility problems, inaccurate patient or plan data, incomplete clinical documentation, missing attachments, coding or submission errors, plan limitations, and missed follow-up requirements.",
+      },
+      {
+        q: "Does verifying benefits guarantee payment?",
+        a: "No. Verification helps the practice understand available information, but it is not a guarantee of payment. Benefits, eligibility, payer policies, and contract terms can affect the final decision.",
+      },
+      {
+        q: "Should a dental practice buy claims software first?",
+        a: "Document the process first. Then choose technology that improves a defined step, uses reliable data, and has a named person responsible for exceptions and follow-up.",
+      },
+    ],
+    takeaway: {
+      eyebrow: "The takeaway",
+      title: "The best time to prevent a denial is before the claim leaves the practice.",
+      body: "Verify benefits, keep patient data accurate, document the care completely, attach what the payer requires, review before submission, and track recurring reasons. Build the process first. Use technology to strengthen it.",
+    },
+    kitCta: {
+      kitName: "The Process Comes First",
+      description:
+        "The member kit includes DeVon's Action Guide, claims-process checklist, workflow worksheet, wall poster, and billing implementation resources.",
+      // DeVon's expert referral link (confirmed by Lester via Rushdha,
+      // 2026-08-31).
+      href: "/devonbanks",
+      label: "Join Dental Member Network",
+    },
+  },
 ];
+
+/** Only the articles cleared for release — what the public surfaces use. */
+export const PUBLISHED_BLOG_ARTICLES = BLOG_ARTICLES.filter((a) => a.published !== false);
 
 export function getBlogArticle(slug: string): BlogArticle | undefined {
   return BLOG_ARTICLES.find((a) => a.slug === slug);

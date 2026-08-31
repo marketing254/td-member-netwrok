@@ -128,6 +128,36 @@ export async function middleware(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
   const res = NextResponse.next({ request: req });
 
+  // Supabase Auth fallback — when a magic-link redirect URL isn't in
+  // Supabase's allowlist, Supabase falls back to the Site URL (the
+  // homepage) with ?code=… or ?error=…. Forward those to /auth/callback
+  // HERE so the homepage itself never needs to read searchParams — that
+  // read was making "/" fully dynamic (server-rendered per request).
+  // With it gone, the highest-traffic page is static and served from the
+  // CDN edge.
+  if (pathname === "/") {
+    const sp = req.nextUrl.searchParams;
+    const code = sp.get("code");
+    const authError = sp.get("error");
+    if (code || authError) {
+      const target = req.nextUrl.clone();
+      target.pathname = "/auth/callback";
+      target.search = "";
+      if (code) {
+        target.searchParams.set("code", code);
+        const next = sp.get("next");
+        const role = sp.get("role");
+        if (next) target.searchParams.set("next", next);
+        if (role) target.searchParams.set("role", role);
+      } else if (authError) {
+        target.searchParams.set("error", authError);
+        const desc = sp.get("error_description");
+        if (desc) target.searchParams.set("error_description", desc);
+      }
+      return applySecurityHeaders(NextResponse.redirect(target));
+    }
+  }
+
   // Referral attribution — persist ?ref=CODE as a cookie the MOMENT a
   // visitor arrives via a referral link (e.g. /rushdhaakbar redirects to
   // /join?ref=RUSHLXN6). Without this the credit lives only in the URL and

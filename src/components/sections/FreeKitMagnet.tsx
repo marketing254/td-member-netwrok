@@ -274,7 +274,7 @@ export default function FreeKitMagnet() {
                   }}
                 >
                   <Image
-                    src="/free-kit/ppo-fees-cover.png"
+                    src="/free-kit/ppo-fees-cover-v2.jpg"
                     alt="Negotiating Better PPO Fees — Free Kit cover"
                     fill
                     sizes="(max-width: 900px) 100vw, 420px"

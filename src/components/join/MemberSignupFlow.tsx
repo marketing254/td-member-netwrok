@@ -1,4 +1,5 @@
 "use client";
+import { trackEvent } from "@/lib/analytics";
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -156,6 +157,8 @@ export default function MemberSignupFlow({ refCtx = null }: { refCtx?: RefContex
         setSubmitting(false);
         return;
       }
+      // GA4 key event: account created (marks the top of the paid funnel).
+      trackEvent("sign_up", { method: params.get("ref") ? "referral" : "organic" });
       // Carry context through to /upgrade: an annual pre-selection (from
       // /pricing) for the billing toggle, and the referral code so the
       // owner's promo auto-applies on the payment card.

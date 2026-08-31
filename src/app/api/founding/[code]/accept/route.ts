@@ -371,6 +371,21 @@ export async function POST(req: Request, ctx: { params: Promise<{ code: string }
     if (expertId) await sb.from("experts").update({ auth_user_id: authUserId } as never).eq("id", expertId);
   }
 
+  // Referral link — generate AT ACCEPTANCE so the shareable
+  // dentalmembernetwork.com/<handle> exists the moment they're in.
+  // (Previously the link was only created lazily on their first visit to
+  // the portal's referral section, so accepted experts who never opened
+  // it had no link and the admin Referrals tab showed nothing for them.)
+  // Best-effort: a failure never blocks acceptance — the admin referrals
+  // sweep and the portal both self-heal it later.
+  try {
+    const { getOrCreateExpertReferral, getOrCreateVendorReferral } = await import("@/lib/referral");
+    if (expertId) await getOrCreateExpertReferral(expertId, invite.full_name);
+    if (vendorId) await getOrCreateVendorReferral(vendorId, invite.company_name ?? invite.full_name);
+  } catch (err) {
+    console.error("[founding accept] referral-link generation failed (self-heals later):", err);
+  }
+
   // Fan out the EXTRA companies (companies[1..]) into covered listings under
   // the principal partner. One fee already covers them; each is created as a
   // draft (pending_review) for the team to publish. companies[0] is the

@@ -1,5 +1,6 @@
 "use client";
 
+import { trackEventOnce } from "@/lib/analytics";
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -99,6 +100,10 @@ function UpgradeInner() {
           if (body.subscriptionStatus === "active" || body.subscriptionStatus === "trialing") {
             clearInterval(tick);
             if (cancelled) return;
+            // GA4 key event: subscription confirmed SERVER-SIDE (the
+            // webhook flipped the status) — never fired off the redirect
+            // param alone, and deduped across refreshes.
+            trackEventOnce("upgrade_purchase", "purchase", { currency: "USD", method: "stripe_checkout" });
             if (body.authed) router.replace("/dashboard");
             else setPaidReady(true);
             return;
