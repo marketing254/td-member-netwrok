@@ -29,6 +29,7 @@ import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import CalculateOutlinedIcon from "@mui/icons-material/CalculateOutlined";
 import InboxOutlinedIcon from "@mui/icons-material/InboxOutlined";
+import FactCheckOutlinedIcon from "@mui/icons-material/FactCheckOutlined";
 import PodcastsIcon from "@mui/icons-material/Podcasts";
 import EventAvailableOutlinedIcon from "@mui/icons-material/EventAvailableOutlined";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
@@ -47,6 +48,7 @@ const SIDEBAR_W = 240;
 const navItems = [
   { href: "/dashboard", label: "Overview", icon: DashboardOutlinedIcon },
   { href: "/dashboard/resources", label: "Resource library", icon: LibraryBooksOutlinedIcon },
+  { href: "/dashboard/systems", label: "Systems", icon: FactCheckOutlinedIcon },
   { href: "/dashboard/experts", label: "Experts", icon: SchoolOutlinedIcon },
   { href: "/dashboard/partners", label: "Partners", icon: StorefrontOutlinedIcon },
   { href: "/dashboard/tools", label: "Tools", icon: CalculateOutlinedIcon },
