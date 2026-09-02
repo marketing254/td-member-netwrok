@@ -178,14 +178,17 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
   // 16:9 player) — this tracks which short is currently expanded/playing.
   const [activeShortId, setActiveShortId] = useState<string | null>(null);
   // The kit's originating expert (attributed kits): face + scheduler for
-  // the "Go deeper" card. Null for house kits → the card features Gary.
+  // the "Go deeper" card.
+  //   undefined → still resolving (card NOT rendered — prevents the
+  //               "Gary flashes first, then the real expert" swap)
+  //   null      → house kit, no attributed expert → card features Gary
   const [kitExpert, setKitExpert] = useState<{
     name: string;
     headshot_url: string | null;
     booking_link: string | null;
     specialty: string | null;
     company_name: string | null;
-  } | null>(null);
+  } | null | undefined>(undefined);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   /**
@@ -198,19 +201,27 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
   // the "Go deeper" card features them instead of the default coach.
   const originatingExpertId = resources.find((r) => r.originating_expert_id)?.originating_expert_id ?? null;
   useEffect(() => {
+    // Resources still loading → we don't know the kit's owner yet. Stay
+    // "undefined" so the card doesn't render a default face it will swap.
+    if (loading) return;
     if (!originatingExpertId) {
-      setKitExpert(null);
+      setKitExpert(null); // house kit — Gary is the correct face
       return;
     }
     let active = true;
     (async () => {
       try {
         const res = await fetch(`/api/member/experts/${originatingExpertId}`, { cache: "no-store" });
-        if (!active || !res.ok) return;
+        if (!active) return;
+        if (!res.ok) {
+          setKitExpert(null); // lookup failed → default coach, no swap later
+          return;
+        }
         const body = (await res.json()) as {
           expert?: { name: string; headshot_url: string | null; booking_link: string | null; specialty: string | null; company_name: string | null };
         };
-        if (active && body.expert) {
+        if (!active) return;
+        if (body.expert) {
           setKitExpert({
             name: body.expert.name,
             headshot_url: body.expert.headshot_url,
@@ -218,15 +229,17 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
             specialty: body.expert.specialty,
             company_name: body.expert.company_name,
           });
+        } else {
+          setKitExpert(null);
         }
       } catch {
-        /* card falls back to the default coach */
+        if (active) setKitExpert(null); // card falls back to the default coach
       }
     })();
     return () => {
       active = false;
     };
-  }, [originatingExpertId]);
+  }, [originatingExpertId, loading]);
 
   const markProgress = useCallback(async (resourceId: string, action: "view" | "complete") => {
     const now = new Date().toISOString();
@@ -979,11 +992,14 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
         />
       )}
 
-      {/* 1-on-1 coaching booking — every kit page surfaces this so members
-          can take what they just learned into a focused call with Gary. */}
-      <Box sx={{ mt: { xs: 4, lg: 5 } }}>
-        <BookCoachingCard topicTitle={topicTitle} expert={kitExpert} />
-      </Box>
+      {/* 1-on-1 coaching booking — every kit page surfaces this. Rendered
+          only once the kit's expert is RESOLVED (undefined = still
+          loading), so the card never shows a default face and swaps. */}
+      {kitExpert !== undefined && (
+        <Box sx={{ mt: { xs: 4, lg: 5 } }}>
+          <BookCoachingCard topicTitle={topicTitle} expert={kitExpert} />
+        </Box>
+      )}
 
       {/* Mid-kit feedback — fires once at 50% (see effect above). */}
       <FeedbackDialog

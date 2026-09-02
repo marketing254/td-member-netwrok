@@ -156,25 +156,44 @@ export function BookCoachingCard({ topicTitle, expert }: { topicTitle?: string; 
                     ? `Bring your questions about ${topicTitle} — or anything else running your practice — to a focused 30-minute strategy call. Free with founding membership.`
                     : "Bring your hardest practice question to a focused 30-minute strategy call. Free with founding membership."}
               </Typography>
-              <Stack
-                direction="row"
-                spacing={2}
-                sx={{ mt: 1, flexWrap: "wrap", rowGap: 0.5 }}
-              >
-                {featured ? (
-                  <>
-                    {featured.specialty && <MiniMeta label="Expertise" value={featured.specialty} />}
-                    {featured.company_name && <MiniMeta label="Company" value={featured.company_name} />}
-                    <MiniMeta label="Status" value="Founding Expert" />
-                  </>
-                ) : (
-                  <>
-                    <MiniMeta label="Founder" value="Thriving Dentist" />
-                    <MiniMeta label="Coached" value="2,200+ practices" />
-                    <MiniMeta label="Format" value="30 min · Zoom" />
-                  </>
-                )}
-              </Stack>
+              {featured ? (
+                // Aligned label/value grid — the label column sizes to the
+                // widest label so every value starts on the same axis, and
+                // a long specialty clamps to two lines instead of sprawling
+                // wider than the intro copy above it.
+                <Box
+                  sx={{
+                    mt: 1.25,
+                    display: "grid",
+                    gridTemplateColumns: "max-content 1fr",
+                    columnGap: 1.5,
+                    rowGap: 0.6,
+                    alignItems: "baseline",
+                    maxWidth: 540,
+                  }}
+                >
+                  {featured.specialty && (
+                    <>
+                      <MetaLabel text="Expertise" />
+                      <MetaValue clamp>{featured.specialty}</MetaValue>
+                    </>
+                  )}
+                  {featured.company_name && (
+                    <>
+                      <MetaLabel text="Company" />
+                      <MetaValue>{featured.company_name}</MetaValue>
+                    </>
+                  )}
+                  <MetaLabel text="Status" />
+                  <MetaValue>Founding Expert</MetaValue>
+                </Box>
+              ) : (
+                <Stack direction="row" spacing={2} sx={{ mt: 1, flexWrap: "wrap", rowGap: 0.5 }}>
+                  <MiniMeta label="Founder" value="Thriving Dentist" />
+                  <MiniMeta label="Coached" value="2,200+ practices" />
+                  <MiniMeta label="Format" value="30 min · Zoom" />
+                </Stack>
+              )}
             </Box>
           </Stack>
 
@@ -379,6 +398,46 @@ function BookingDialog({
         )}
       </Box>
     </Dialog>
+  );
+}
+
+function MetaLabel({ text }: { text: string }) {
+  return (
+    <Typography
+      sx={{
+        fontSize: "0.62rem",
+        fontWeight: 700,
+        letterSpacing: "0.1em",
+        color: "var(--ink-fade, #7A8590)",
+        textTransform: "uppercase",
+        lineHeight: 1.5,
+      }}
+    >
+      {text}
+    </Typography>
+  );
+}
+
+function MetaValue({ children, clamp = false }: { children: React.ReactNode; clamp?: boolean }) {
+  return (
+    <Typography
+      sx={{
+        fontSize: "0.78rem",
+        fontWeight: 600,
+        color: "var(--ink, #0A1A2F)",
+        lineHeight: 1.5,
+        ...(clamp
+          ? {
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+            }
+          : null),
+      }}
+    >
+      {children}
+    </Typography>
   );
 }
 
