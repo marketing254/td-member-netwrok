@@ -91,6 +91,13 @@ export async function sendMetaPurchase(input: MetaPurchaseInput): Promise<boolea
         },
       },
     ],
+    // TEMPORARY testing hook: when META_CAPI_TEST_EVENT_CODE is set (e.g.
+    // TEST39618 from Events Manager → Test events), server events route to
+    // the Test Events debug view. UNSET the env var after verification —
+    // events sent with a test code do NOT count toward real campaign data.
+    ...(process.env.META_CAPI_TEST_EVENT_CODE
+      ? { test_event_code: process.env.META_CAPI_TEST_EVENT_CODE }
+      : {}),
   };
 
   try {
