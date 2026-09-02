@@ -147,7 +147,6 @@ export default function AdsLandingView() {
     fbclid: null,
     landingUrl: null,
   });
-  const initiateFired = useRef(false);
 
   // Campaign context + pixel — read once on mount so the page itself is
   // static/CDN-cacheable no matter what query string the ad appends.
@@ -171,12 +170,6 @@ export default function AdsLandingView() {
     initMetaPixel();
     trackMeta("PageView");
     trackMeta("ViewContent", { content_name: "dmn_founding_membership" });
-  }, []);
-
-  const fireInitiate = useCallback(() => {
-    if (initiateFired.current) return;
-    initiateFired.current = true;
-    trackMeta("InitiateCheckout", { content_name: "dmn_founding_membership" });
   }, []);
 
   const monthly = plan === "founding_monthly";
@@ -231,6 +224,14 @@ export default function AdsLandingView() {
         value: plan === "founding_annual" ? 490 : 49,
         items: [{ item_id: plan, item_name: plan }],
       });
+      // Meta standard InitiateCheckout — fired exactly once per checkout
+      // attempt (this success path runs once per Continue click that
+      // actually opens the Stripe form), with plan value + an eventID.
+      trackMeta(
+        "InitiateCheckout",
+        { value: plan === "founding_annual" ? 490 : 49, currency: "USD", content_name: plan },
+        (typeof crypto !== "undefined" && crypto.randomUUID) ? crypto.randomUUID() : `ic-${Date.now()}`,
+      );
       setClientSecret(body.clientSecret);
     } catch {
       setErrorMsg("We couldn't reach the server. Check your connection and try again.");
@@ -250,7 +251,6 @@ export default function AdsLandingView() {
         type={opts?.type}
         autoComplete={opts?.auto}
         value={form[key] as string}
-        onFocus={fireInitiate}
         onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
         sx={{
           "& .MuiOutlinedInput-root": {
@@ -673,8 +673,7 @@ export default function AdsLandingView() {
                         fullWidth
                         size="small"
                         value={form.role}
-                        onFocus={fireInitiate}
-                        onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
+                                        onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
                         sx={{
                           "& .MuiOutlinedInput-root": { borderRadius: "14px", bgcolor: "#fff", fontSize: "0.85rem", height: 50 },
                         }}
