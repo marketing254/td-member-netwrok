@@ -58,11 +58,13 @@ const ROLES = [
 // eye-line at the same 38% height — the card locks the same 5:7 aspect
 // ratio, so faces stay aligned at EVERY viewport width.
 const KITS = [
+  { img: "/ads/cards/gary.jpg", by: "Gary Takacs", title: "9 KPIs That Drive Your Practice" },
   { img: "/ads/cards/laura.jpg", by: "Laura Phillips, E.A.", title: "Know Your Real Numbers" },
   { img: "/ads/cards/parul.jpg", by: "Dr. Parul Dua Makkar", title: "Seen, Felt and Acknowledged" },
   { img: "/ads/cards/ashley.jpg", by: "Ashley Boaz", title: "Transition Without Turbulence" },
   { img: "/ads/cards/callie2.jpg", by: "Callie Ward", title: "The Successful Morning Huddle" },
   { img: "/ads/cards/devon.jpg", by: "DeVon Banks", title: "The Process Comes First" },
+  { img: "/ads/cards/sonick.jpg", by: "Dr. Michael Sonick", title: "Take Care Of The Basics" },
 ];
 
 // Ad-creative hero variants (?creative=…) — approved copy from the
@@ -405,6 +407,59 @@ export default function AdsLandingView() {
           <Typography sx={{ maxWidth: 720, mx: "auto", mt: 3.25, pt: 2.25, borderTop: `1px solid ${LINE}`, fontSize: "0.76rem", color: "#717780" }}>
             One short form. Choose monthly or annual and pay securely on this page—no registration detour.
           </Typography>
+
+          {/* Founded-by endorsement — a quiet, engraved lockup between the
+              hero and the library. */}
+          <Stack
+            direction="row"
+            spacing={{ xs: 2, md: 3.5 }}
+            sx={{ alignItems: "center", justifyContent: "center", mt: { xs: 5, md: 6.5 } }}
+          >
+            <Box
+              sx={{
+                height: "1px",
+                width: { xs: 48, sm: 120, md: 170 },
+                background: `linear-gradient(to right, transparent, ${GOLD})`,
+              }}
+            />
+            <Box sx={{ textAlign: "center", whiteSpace: "nowrap" }}>
+              <Typography
+                sx={{
+                  fontSize: "0.62rem",
+                  fontWeight: 800,
+                  letterSpacing: "0.42em",
+                  textIndent: "0.42em",
+                  textTransform: "uppercase",
+                  color: MUTED,
+                  mb: 0.5,
+                }}
+              >
+                Founded by
+              </Typography>
+              <Typography
+                sx={{
+                  fontFamily: "var(--font-display)",
+                  fontWeight: 600,
+                  fontSize: { xs: "1.35rem", md: "1.7rem" },
+                  letterSpacing: "-0.01em",
+                  lineHeight: 1.1,
+                  color: INK,
+                }}
+              >
+                Thriving{" "}
+                <Box component="span" sx={{ color: GOLD_DARK, fontStyle: "italic" }}>
+                  Dentist
+                </Box>
+              </Typography>
+            </Box>
+            <Box
+              sx={{
+                height: "1px",
+                width: { xs: 48, sm: 120, md: 170 },
+                background: `linear-gradient(to left, transparent, ${GOLD})`,
+              }}
+            />
+          </Stack>
         </Container>
       </Box>
 
@@ -422,12 +477,12 @@ export default function AdsLandingView() {
           </Box>
           <Box
             sx={{
-              display: { xs: "flex", md: "grid" },
-              gridTemplateColumns: "repeat(5, 1fr)",
-              gap: 1.75,
-              overflowX: { xs: "auto", md: "visible" },
-              scrollSnapType: { xs: "x mandatory", md: "none" },
-              pb: { xs: 1, md: 0 },
+              display: { xs: "flex", lg: "grid" },
+              gridTemplateColumns: "repeat(7, 1fr)",
+              gap: 1.5,
+              overflowX: { xs: "auto", lg: "visible" },
+              scrollSnapType: { xs: "x mandatory", lg: "none" },
+              pb: { xs: 1, lg: 0 },
             }}
           >
             {KITS.map((kit) => (
@@ -440,7 +495,7 @@ export default function AdsLandingView() {
                   // maps 1:1 onto the card at every screen width, so the
                   // aligned eye-lines never drift responsively.
                   aspectRatio: "5 / 7",
-                  minWidth: { xs: 245, md: "auto" },
+                  minWidth: { xs: 215, lg: "auto" },
                   borderRadius: "18px",
                   bgcolor: "#15263a",
                   boxShadow: "0 16px 38px rgba(23,35,49,0.13)",
@@ -450,9 +505,9 @@ export default function AdsLandingView() {
               >
                 <Image src={kit.img} alt={kit.by} fill sizes="(max-width: 900px) 245px, 20vw" style={{ objectFit: "cover" }} />
                 <Box sx={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(4,12,22,0.94), rgba(4,12,22,0) 68%)" }} />
-                <Box sx={{ position: "absolute", zIndex: 2, left: 18, right: 18, bottom: 17, color: "#fff" }}>
+                <Box sx={{ position: "absolute", zIndex: 2, left: 14, right: 14, bottom: 14, color: "#fff" }}>
                   <Typography sx={{ color: "rgba(255,255,255,0.78)", fontSize: "0.64rem", fontWeight: 600 }}>{kit.by}</Typography>
-                  <Typography sx={{ mt: 0.5, fontFamily: "var(--font-display)", fontWeight: 600, fontSize: "1.18rem", lineHeight: 1.1, color: "#FFFFFF" }}>
+                  <Typography sx={{ mt: 0.5, fontFamily: "var(--font-display)", fontWeight: 600, fontSize: { xs: "1.1rem", lg: "0.98rem" }, lineHeight: 1.15, color: "#FFFFFF" }}>
                     {kit.title}
                   </Typography>
                 </Box>

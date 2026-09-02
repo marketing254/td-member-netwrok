@@ -208,6 +208,80 @@ async function handleEvent(event: Stripe.Event, stripe: Stripe): Promise<string 
       }
     }
 
+    // Sales tracker — append this sale to the team's Google Sheet via its
+    // Apps Script web-app URL (SALES_TRACKER_WEBHOOK_URL). Best-effort and
+    // env-gated: a missing URL or a failed append never affects the sale.
+    // Idempotent like everything here — the webhook dedupes per event.
+    if (process.env.SALES_TRACKER_WEBHOOK_URL) {
+      try {
+        // signup_channel/heard_about come from migration 0058 — not in the
+        // generated types yet, so the row shape is asserted (same pattern
+        // as the 0058 writes elsewhere).
+        const { data: buyer } = await sb
+          .from("members")
+          .select("first_name, last_name, email, phone, practice_name, practice_role, tier, subscription_interval, signup_channel, heard_about, referral_code_id")
+          .eq("id", memberId)
+          .maybeSingle<{
+            first_name: string | null; last_name: string | null; email: string | null;
+            phone: string | null; practice_name: string | null; practice_role: string | null;
+            tier: string | null; subscription_interval: string | null;
+            signup_channel: string | null; heard_about: string | null;
+            referral_code_id: string | null;
+          }>();
+        const item = sub.items.data[0];
+        const billing = item?.price?.recurring?.interval === "year" ? "Annual" : "Monthly";
+        const planPrice = (item?.price?.unit_amount ?? 0) / 100;
+        const channel = buyer?.signup_channel ?? (buyer?.referral_code_id ? "referral" : "organic");
+        const customerId = typeof session.customer === "string" ? session.customer : "";
+        // Masterclass-tracker style "Order Details" blob — the sheet cell a
+        // reader clicks to see the whole order in one place. NO card data:
+        // we never receive card numbers (Stripe holds those), and even the
+        // brand/last-4 receipt info is deliberately left out of the tracker.
+        const orderDetails = [
+          `Order ID: ${sub.id}`,
+          "",
+          `Name: ${[buyer?.first_name, buyer?.last_name].filter(Boolean).join(" ")}`,
+          `Email: ${buyer?.email ?? "-"}`,
+          `Phone: ${buyer?.phone ?? "-"}`,
+          `Practice: ${buyer?.practice_name ?? "-"}`,
+          `Role: ${buyer?.practice_role ?? "-"}`,
+          "",
+          `Membership: ${buyer?.tier ?? "founding"} — ${billing} at $${planPrice}`,
+          `Status: ${sub.status}`,
+          ...(session.metadata?.promo_code ? [`Promo code: ${session.metadata.promo_code}`] : []),
+          `Channel: ${channel}`,
+          ...(buyer?.heard_about ? [`How they heard: ${buyer.heard_about}`] : []),
+          "",
+          `Stripe customer: ${customerId || "-"}`,
+        ].join("\n");
+        await fetch(process.env.SALES_TRACKER_WEBHOOK_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            kind: "sale",
+            date: new Date().toISOString(),
+            firstName: buyer?.first_name ?? "",
+            lastName: buyer?.last_name ?? "",
+            practice: buyer?.practice_name ?? "",
+            role: buyer?.practice_role ?? "",
+            email: buyer?.email ?? "",
+            phone: buyer?.phone ?? "",
+            tier: buyer?.tier ?? "",
+            billing,
+            planPrice,
+            status: sub.status,
+            promoCode: session.metadata?.promo_code ?? "",
+            channel,
+            heardAbout: buyer?.heard_about ?? "",
+            orderDetails,
+          }),
+          signal: AbortSignal.timeout(8000),
+        });
+      } catch (err) {
+        console.error("[stripe webhook] sales-tracker append failed:", err);
+      }
+    }
+
     // Best-effort team alert. Pull the member's name + email + amount.
     try {
       const { data: member } = await sb
@@ -425,6 +499,44 @@ async function handleEvent(event: Stripe.Event, stripe: Stripe): Promise<string 
 
     if (event.type === "invoice.payment_failed") {
       await sb.from("members").update({ subscription_status: "past_due" }).eq("id", memberId);
+    }
+
+    // Sales tracker — MONTH-WISE payments. Every successful charge (first
+    // payment AND each renewal) appends to the month sheet named for its
+    // date ("September 2026"), Masterclass-tracker style. Best-effort,
+    // env-gated, deduped by the webhook's per-event idempotency.
+    if (
+      event.type === "invoice.paid" &&
+      (invoice.amount_paid ?? 0) > 0 &&
+      process.env.SALES_TRACKER_WEBHOOK_URL
+    ) {
+      try {
+        const { data: payer } = await sb
+          .from("members")
+          .select("first_name, last_name, email, practice_name, tier, subscription_interval")
+          .eq("id", memberId)
+          .maybeSingle();
+        const paidAt = new Date();
+        await fetch(process.env.SALES_TRACKER_WEBHOOK_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            kind: "payment",
+            month: paidAt.toLocaleDateString("en-US", { month: "long", year: "numeric" }),
+            date: paidAt.toISOString(),
+            name: [payer?.first_name, payer?.last_name].filter(Boolean).join(" "),
+            email: payer?.email ?? "",
+            practice: payer?.practice_name ?? "",
+            description: `${payer?.tier ?? "founding"} membership — ${payer?.subscription_interval === "year" ? "annual" : "monthly"}`,
+            amount: (invoice.amount_paid ?? 0) / 100,
+            currency: (invoice.currency ?? "usd").toUpperCase(),
+            invoiceId: invoice.id ?? "",
+          }),
+          signal: AbortSignal.timeout(8000),
+        });
+      } catch (err) {
+        console.error("[stripe webhook] payment-tracker append failed:", err);
+      }
     }
 
     // Referral revenue attribution (admin-only analytics). On a real
