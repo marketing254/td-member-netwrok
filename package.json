@@ -31,6 +31,7 @@
     "next": "16.2.4",
     "nodemailer": "^8.0.7",
     "openai": "^6.41.0",
+    "pdfjs-dist": "^6.3.289",
     "puppeteer-core": "^25.3.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
