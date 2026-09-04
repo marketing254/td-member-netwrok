@@ -26,7 +26,7 @@ const MotionBox = motion.create(Box);
 // the lib is server-only.
 type RefContext = {
   name: string;
-  kind: "expert" | "partner";
+  kind: "expert" | "partner" | "team";
   tagline: string | null;
   imageUrl: string | null;
   pairedName: string | null;
@@ -42,6 +42,7 @@ function initialsOf(name: string): string {
 /** "Gary Takacs" → "Gary"; "Dr. Parul Dua Makkar" → "Dr. Makkar";
  *  companies keep their full name. */
 function shortNameOf(ctx: RefContext): string {
+  if (ctx.kind === "team") return "the team";
   if (ctx.kind === "partner") return ctx.name;
   const base = (ctx.name.split(",")[0] ?? ctx.name).trim();
   const parts = base.split(/\s+/);
@@ -70,7 +71,20 @@ const STEPS = [
  * unchanged, and success continues into the existing pay-first flow
  * (/upgrade → Stripe checkout).
  */
-export default function MemberSignupFlow({ refCtx = null }: { refCtx?: RefContext | null }) {
+export type SignupPrefill = {
+  firstName: string | null;
+  lastName: string | null;
+  email: string;
+  practiceName: string | null;
+};
+
+export default function MemberSignupFlow({
+  refCtx = null,
+  prefill = null,
+}: {
+  refCtx?: RefContext | null;
+  prefill?: SignupPrefill | null;
+}) {
   const router = useRouter();
   const params = useSearchParams();
   const reduced = useReducedMotion();
@@ -80,14 +94,14 @@ export default function MemberSignupFlow({ refCtx = null }: { refCtx?: RefContex
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Step 1
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState(params.get("email") ?? "");
+  // Step 1 (a ?resume= welcome-back visit arrives with saved details)
+  const [firstName, setFirstName] = useState(prefill?.firstName ?? "");
+  const [lastName, setLastName] = useState(prefill?.lastName ?? "");
+  const [email, setEmail] = useState(prefill?.email ?? params.get("email") ?? "");
   // Step 2
   const [roleLabel, setRoleLabel] = useState("");
   const [roleLabelOther, setRoleLabelOther] = useState("");
-  const [practiceName, setPracticeName] = useState("");
+  const [practiceName, setPracticeName] = useState(prefill?.practiceName ?? "");
   const [locations, setLocations] = useState("");
   const [phone, setPhone] = useState("");
   // Step 3
@@ -167,6 +181,14 @@ export default function MemberSignupFlow({ refCtx = null }: { refCtx?: RefContex
       if (params.get("interval") === "annual") carry.set("interval", "annual");
       const ref = params.get("ref");
       if (ref) carry.set("ref", ref);
+      // Direct promo links (/reshani, the exit-intent offer) ride a
+      // ?promo=CODE param the same way referrals ride ?ref=.
+      const promo = params.get("promo");
+      if (promo && /^[A-Za-z0-9-]{3,20}$/.test(promo)) carry.set("promo", promo);
+      // Welcome-back links: the resume token rides through so the payment
+      // card applies the month-free code server-side at checkout.
+      const resume = params.get("resume");
+      if (resume && /^[A-Za-z0-9_-]{16,64}$/.test(resume)) carry.set("resume", resume);
       router.push(
         carry.size > 0 ? `${next}${next.includes("?") ? "&" : "?"}${carry.toString()}` : next,
       );
@@ -254,10 +276,10 @@ export default function MemberSignupFlow({ refCtx = null }: { refCtx?: RefContex
               >
                 <RefAvatar ctx={refCtx} size={26} />
                 <Typography sx={{ fontSize: "0.8rem", color: "#3B4A55", fontWeight: 600 }}>
-                  Invited by {refCtx.name}
+                  {refCtx.kind === "team" ? "Your welcome gift" : `Invited by ${refCtx.name}`}
                   {refCtx.offerActive && (
                     <Box component="span" sx={{ color: "#9B7B3A", fontWeight: 700 }}>
-                      {" "}· {refCtx.offerMonths} months free, applied at checkout
+                      {" "}· {refCtx.offerMonths} month{refCtx.offerMonths === 1 ? "" : "s"} free, applied at checkout
                     </Box>
                   )}
                 </Typography>
@@ -569,7 +591,7 @@ function InvitationHeader({ ctx }: { ctx: RefContext }) {
       <Typography
         sx={{ color: "#9B7B3A", fontSize: "0.72rem", fontWeight: 800, letterSpacing: "0.18em", textTransform: "uppercase", mb: 1 }}
       >
-        {ctx.name} invitation
+        {ctx.kind === "team" ? "Your invitation" : `${ctx.name} invitation`}
       </Typography>
       <Typography
         component="p"
@@ -584,7 +606,7 @@ function InvitationHeader({ ctx }: { ctx: RefContext }) {
         }}
       >
         {ctx.offerActive
-          ? `${ctx.offerMonths} months free for your practice.`
+          ? `${ctx.offerMonths} month${ctx.offerMonths === 1 ? "" : "s"} free for your practice.`
           : "You've been personally invited."}
       </Typography>
       <Typography sx={{ fontSize: "0.92rem", color: "#5C6770", lineHeight: 1.6, mb: 2.5, mt: -1 }}>
@@ -608,7 +630,7 @@ function InvitationHeader({ ctx }: { ctx: RefContext }) {
         <RefAvatar ctx={ctx} size={52} />
         <Box sx={{ minWidth: 0 }}>
           <Typography sx={{ fontSize: "0.95rem", fontWeight: 700, color: "#0A1A2F", lineHeight: 1.3 }}>
-            Recommended by {ctx.name}
+            {ctx.kind === "team" ? "A gift from the Dental Member Network team" : `Recommended by ${ctx.name}`}
           </Typography>
           {ctx.tagline && (
             <Typography sx={{ fontSize: "0.82rem", color: "#5C6770", mt: 0.25 }} noWrap>
@@ -639,7 +661,7 @@ function InvitationHeader({ ctx }: { ctx: RefContext }) {
             Your invitation is recognized.
           </Typography>
           <Typography sx={{ fontSize: "0.84rem", color: "#3B4A55", lineHeight: 1.55 }}>
-            Complete your details first — {short}&apos;s {ctx.offerMonths}-month-free offer is applied
+            Complete your details first — {short === "the team" ? "your" : `${short}’s`} {ctx.offerMonths}-month-free offer is applied
             automatically and shown before you choose a plan.
           </Typography>
         </Box>

@@ -33,6 +33,12 @@ export function SubscribeCard({ firstName }: { firstName: string }) {
   const initialInterval: BillingInterval =
     searchParams?.get("interval") === "annual" ? "annual" : "monthly";
   const refParam = searchParams?.get("ref") ?? null;
+  // Direct promo param (/reshani, exit-intent offer). Wins over ref —
+  // an explicit code is a stronger signal than an attribution cookie.
+  const promoParam = searchParams?.get("promo") ?? null;
+  // Welcome-back checkout: a resume token from the follow-up email — the
+  // month-free code is validated and applied SERVER-SIDE at checkout.
+  const resumeParam = searchParams?.get("resume") ?? null;
 
   const [interval, setInterval] = useState<BillingInterval>(initialInterval);
   const [busy, setBusy] = useState<PlanKey | null>(null);
@@ -82,7 +88,9 @@ export function SubscribeCard({ firstName }: { firstName: string }) {
         const res = await fetch("/api/member/promo-code", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(refParam ? { ref: refParam } : {}),
+          body: JSON.stringify(
+            promoParam ? { code: promoParam } : refParam ? { ref: refParam } : {},
+          ),
         });
         if (!res.ok) return;
         const data = (await res.json()) as {
@@ -106,7 +114,7 @@ export function SubscribeCard({ firstName }: { firstName: string }) {
       active = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [refParam]);
+  }, [refParam, promoParam]);
 
   const applyPromo = async () => {
     const code = promoInput.trim().toUpperCase();
@@ -157,7 +165,11 @@ export function SubscribeCard({ firstName }: { firstName: string }) {
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan, ...(promoApplied ? { promoCode: promoApplied.code } : {}) }),
+        body: JSON.stringify({
+          plan,
+          ...(promoApplied ? { promoCode: promoApplied.code } : {}),
+          ...(resumeParam ? { resume: resumeParam } : {}),
+        }),
       });
       const body = (await res.json().catch(() => ({}))) as {
         url?: string;

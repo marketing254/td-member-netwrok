@@ -26,6 +26,7 @@ import PersonOutlineRoundedIcon from "@mui/icons-material/PersonOutlineRounded";
 import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
 import StoreOutlinedIcon from "@mui/icons-material/StoreOutlined";
 import Logo from "@/components/brand/Logo";
+import ExitIntentOffer from "@/components/sections/ExitIntentOffer";
 import { brand, navLinks } from "@/lib/content";
 
 const LOGIN_LINKS = [
@@ -75,6 +76,9 @@ export default function Header() {
 
   return (
     <>
+      {/* Exit-intent 3-months-free offer — public marketing pages only
+          (this Header never renders on /start or inside the portals). */}
+      <ExitIntentOffer />
       <AppBar
         position="sticky"
         elevation={0}
