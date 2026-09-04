@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { processOnboardingQueue, processTrialReminders } from "@/lib/onboarding";
+import { processAbandonedQueue } from "@/lib/abandoned";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,5 +32,10 @@ export async function GET(req: Request) {
 
   const result = await processOnboardingQueue();
   const trialReminders = await processTrialReminders();
-  return NextResponse.json({ ok: true, ...result, trialReminders });
+  // Abandoned-registration recovery sequence (SPEC 2026-09-03) — runs
+  // unattended on the same hourly tick; +1h/+24h/+7d offsets all land
+  // within an hourly cadence, and the pre-send purchase check covers the
+  // spec's 30-minute wait with a wide margin.
+  const abandoned = await processAbandonedQueue();
+  return NextResponse.json({ ok: true, ...result, trialReminders, abandoned });
 }

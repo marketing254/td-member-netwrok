@@ -66,6 +66,8 @@ type Payload = {
   fbp: string | null;
   fbc: string | null;
   landingUrl: string | null;
+  /** Abandoned-registration resume token — may carry a one-month-free grant. */
+  resumeToken: string | null;
 };
 
 function str(v: unknown, max: number): string {
@@ -117,6 +119,7 @@ function parsePayload(json: unknown): { ok: true; data: Payload } | { ok: false;
       fbp: str(b.fbp, 100) || null,
       fbc: str(b.fbc, 400) || null,
       landingUrl: str(b.landingUrl, 400) || null,
+      resumeToken: str(b.resumeToken, 64) || null,
     },
   };
 }
@@ -267,6 +270,23 @@ export async function POST(req: Request) {
       await sb.from("members").update({ stripe_customer_id: customerId }).eq("id", memberId);
     }
 
+    // Abandoned-registration recovery: the email-3 one-month-free code is
+    // applied SERVER-SIDE via the resume token (the code value never
+    // travels through the browser, and it never appears on /start).
+    // Single use, must match this buyer's email, expires 48h after email
+    // 3 — recoveryGrantForCheckout enforces all three. An expired/invalid
+    // token simply falls through to the normal $49 checkout (per SPEC:
+    // it must never fail the checkout).
+    let recovery: { rowId: string; code: string } | null = null;
+    if (p.resumeToken) {
+      try {
+        const { recoveryGrantForCheckout } = await import("@/lib/abandoned");
+        recovery = await recoveryGrantForCheckout(p.resumeToken, p.email);
+      } catch (err) {
+        console.error("[ads:checkout] recovery grant lookup failed:", err);
+      }
+    }
+
     // One event id shared by the server Conversions API call and the
     // browser Pixel so Meta de-duplicates the Purchase.
     const metaEventId = randomUUID();
@@ -284,6 +304,10 @@ export async function POST(req: Request) {
       allow_promotion_codes: false,
       billing_address_collection: "auto",
       subscription_data: {
+        // Recovery grant: one month free, then the founding rate — the
+        // ONLY trial this page can ever attach, and only via a valid
+        // personal email-3 code.
+        ...(recovery ? { trial_period_days: 30 } : {}),
         metadata: {
           member_id: memberId,
           plan: p.plan,
@@ -300,6 +324,7 @@ export async function POST(req: Request) {
         tier: "founding",
         channel: "meta_ads",
         meta_event_id: metaEventId,
+        ...(recovery ? { recovery_row_id: recovery.rowId, recovery_code: recovery.code } : {}),
         // Browser/network context for Conversions API match quality —
         // captured at purchase intent, replayed by the webhook.
         ...(p.fbp ? { meta_fbp: p.fbp } : {}),

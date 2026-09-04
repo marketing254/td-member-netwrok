@@ -152,6 +152,23 @@ async function handleEvent(event: Stripe.Event, stripe: Stripe): Promise<string 
     const { onMemberActivated } = await import("@/lib/onboarding");
     await onMemberActivated(memberId);
 
+    // Abandoned-registration sequence: a purchase for this email, from
+    // ANY path, stops the sequence immediately (SPEC stop condition) and
+    // burns the single-use recovery code if one was applied.
+    try {
+      const { data: buyerEmailRow } = await sb
+        .from("members").select("email").eq("id", memberId).maybeSingle();
+      if (buyerEmailRow?.email) {
+        const { stopSequenceOnPurchase } = await import("@/lib/abandoned");
+        await stopSequenceOnPurchase(
+          buyerEmailRow.email,
+          (session.metadata?.recovery_row_id as string | undefined) ?? null,
+        );
+      }
+    } catch (err) {
+      console.error("[stripe webhook] abandoned-sequence stop failed:", err);
+    }
+
     // Meta Conversions API — CONFIRMED Purchase for the paid-ads channel
     // only. Fired here (server-side, after verified payment) so a
     // thank-you-page visit or refresh can never fabricate a purchase.

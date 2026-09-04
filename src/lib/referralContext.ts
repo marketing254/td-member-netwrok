@@ -14,7 +14,7 @@ import { isPromoFullyClaimed } from "@/lib/promoCodes";
 
 export type RefContext = {
   name: string;
-  kind: "expert" | "partner";
+  kind: "expert" | "partner" | "team";
   tagline: string | null;
   imageUrl: string | null;
   /** For dual-role people (expert who is also a partner, matched by
@@ -106,6 +106,43 @@ export async function getReferralContext(ref: string | undefined | null): Promis
     }
 
     return { name, kind, tagline, imageUrl, pairedName, offerActive, offerMonths };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Same invitation-header treatment for direct promo-code arrivals
+ * (?promo=DIRECT from the exit popup, ?promo=RESHANI from the team
+ * link, …). These codes have no expert/partner owner, so the header
+ * renders as a gift from the DMN team — never an individual's name.
+ * Owner-attached codes return null here; those arrive via ?ref= and get
+ * the personalized header instead.
+ */
+export async function getPromoContext(promo: string | undefined | null): Promise<RefContext | null> {
+  const code = (promo ?? "").trim();
+  if (!/^[A-Za-z0-9-]{3,20}$/.test(code)) return null;
+
+  try {
+    const sb = getSupabaseAdmin();
+    const { data: rows } = await sb
+      .from("member_promo_codes")
+      .select("id, active, trial_days, expert_id, vendor_id")
+      .ilike("code", code)
+      .limit(1);
+    const row = rows?.[0];
+    if (!row || !row.active || row.expert_id || row.vendor_id) return null;
+    if (await isPromoFullyClaimed(row.id)) return null;
+
+    return {
+      name: "Dental Member Network",
+      kind: "team",
+      tagline: "We'd love to welcome you in",
+      imageUrl: "/faviconicon.png",
+      pairedName: null,
+      offerActive: true,
+      offerMonths: Math.max(1, Math.round((row.trial_days ?? 90) / 30)),
+    };
   } catch {
     return null;
   }

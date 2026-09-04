@@ -149,6 +149,12 @@ export default function AdsLandingView() {
     fbclid: null,
     landingUrl: null,
   });
+  // Abandoned-registration resume: token from the recovery emails.
+  // codeState mirrors the server's verdict on the one-month-free code —
+  // the code VALUE never reaches the browser; it is applied server-side.
+  const [resumeToken, setResumeToken] = useState<string | null>(null);
+  const [codeState, setCodeState] = useState<"none" | "active" | "expired">("none");
+  const abandonCaptured = useRef<string>("");
 
   // Campaign context + pixel — read once on mount so the page itself is
   // static/CDN-cacheable no matter what query string the ad appends.
@@ -172,6 +178,37 @@ export default function AdsLandingView() {
     initMetaPixel();
     trackMeta("PageView");
     trackMeta("ViewContent", { content_name: "dmn_founding_membership" });
+
+    // Resume link from the recovery emails: prefill everything they had
+    // filled and take them straight to the payment section.
+    const resume = q.get("resume");
+    if (resume && /^[A-Za-z0-9_-]{16,64}$/.test(resume)) {
+      (async () => {
+        try {
+          const res = await fetch(`/api/ads/resume?token=${encodeURIComponent(resume)}`);
+          const body = (await res.json().catch(() => ({}))) as {
+            ok?: boolean; firstName?: string | null; lastName?: string | null; email?: string;
+            practiceName?: string | null; role?: string | null; plan?: string | null;
+            codeState?: "none" | "active" | "expired";
+          };
+          if (!body.ok) return;
+          setResumeToken(resume);
+          setCodeState(body.codeState ?? "none");
+          setForm((f) => ({
+            ...f,
+            firstName: body.firstName ?? f.firstName,
+            lastName: body.lastName ?? f.lastName,
+            email: body.email ?? f.email,
+            practiceName: body.practiceName ?? f.practiceName,
+            role: body.role && ROLES.includes(body.role) ? body.role : f.role,
+          }));
+          if (body.plan === "founding_annual" || body.plan === "founding_monthly") setPlan(body.plan);
+          document.getElementById("checkout")?.scrollIntoView({ behavior: "smooth" });
+        } catch {
+          /* resume is best-effort — the plain form still works */
+        }
+      })();
+    }
   }, []);
 
   const monthly = plan === "founding_monthly";
@@ -185,8 +222,39 @@ export default function AdsLandingView() {
     form.role &&
     form.agree;
 
+  // Partial-registration capture — fires once the work email is valid
+  // (and refreshes on Continue). keepalive so a tab close doesn't lose
+  // it. The server enforces the 30-day one-sequence rule; a repeat here
+  // never restarts anything.
+  const captureAbandon = useCallback((f: typeof form, planNow: string) => {
+    const email = f.email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return;
+    const snapshot = JSON.stringify([email, f.firstName, f.lastName, f.practiceName, f.role, planNow]);
+    if (abandonCaptured.current === snapshot) return;
+    abandonCaptured.current = snapshot;
+    try {
+      void fetch("/api/ads/abandon", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        keepalive: true,
+        body: JSON.stringify({
+          email,
+          firstName: f.firstName.trim() || null,
+          lastName: f.lastName.trim() || null,
+          practiceName: f.practiceName.trim() || null,
+          role: f.role || null,
+          plan: planNow,
+          utm: tracking.current.utm,
+        }),
+      });
+    } catch {
+      /* capture must never affect the visitor */
+    }
+  }, []);
+
   const startCheckout = useCallback(async () => {
     if (!canSubmit || submitting) return;
+    captureAbandon(form, plan);
     setSubmitting(true);
     setErrorMsg(null);
     setAlreadyMember(false);
@@ -207,6 +275,7 @@ export default function AdsLandingView() {
           fbp: readCookie("_fbp"),
           fbc: readCookie("_fbc"),
           landingUrl: tracking.current.landingUrl,
+          resumeToken,
         }),
       });
       const body = (await res.json().catch(() => ({}))) as {
@@ -240,9 +309,9 @@ export default function AdsLandingView() {
     } finally {
       setSubmitting(false);
     }
-  }, [canSubmit, submitting, form, plan]);
+  }, [canSubmit, submitting, form, plan, resumeToken, captureAbandon]);
 
-  const field = (label: string, key: keyof typeof form, opts?: { type?: string; auto?: string }) => (
+  const field = (label: string, key: keyof typeof form, opts?: { type?: string; auto?: string; onBlur?: () => void }) => (
     <Box>
       <Typography sx={{ fontSize: "0.72rem", fontWeight: 700, color: "#44505c", mb: 0.6 }}>
         {label} *
@@ -252,6 +321,7 @@ export default function AdsLandingView() {
         size="small"
         type={opts?.type}
         autoComplete={opts?.auto}
+        onBlur={opts?.onBlur}
         value={form[key] as string}
         onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
         sx={{
@@ -708,6 +778,16 @@ export default function AdsLandingView() {
                   <Typography component="h3" sx={{ ...display, fontSize: { xs: "1.8rem", md: "2.2rem" }, mt: 0.75, mb: 1 }}>
                     Create your membership
                   </Typography>
+                  {codeState === "active" && (
+                    <Box sx={{ mb: 2.5, p: 1.75, borderRadius: "12px", bgcolor: "rgba(44,122,82,0.09)", border: "1px solid rgba(44,122,82,0.35)", color: "#1F5238", fontSize: "0.82rem", fontWeight: 600 }}>
+                      Your first month is free — the code from Lester's email is applied automatically at checkout. After that it is $49 a month, locked while you stay.
+                    </Box>
+                  )}
+                  {codeState === "expired" && (
+                    <Box sx={{ mb: 2.5, p: 1.75, borderRadius: "12px", bgcolor: "#F4F1E9", border: `1px solid ${LINE}`, color: "#53606C", fontSize: "0.82rem" }}>
+                      Your one-month-free code has expired. The founding rate below still stands.
+                    </Box>
+                  )}
                   <Typography sx={{ mb: 3, color: MUTED, fontSize: "0.82rem" }}>
                     Your membership details and payment stay together—no extra registration screens.
                   </Typography>
@@ -716,7 +796,7 @@ export default function AdsLandingView() {
                     {field("First name", "firstName", { auto: "given-name" })}
                     {field("Last name", "lastName", { auto: "family-name" })}
                     <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-                      {field("Work email", "email", { type: "email", auto: "email" })}
+                      {field("Work email", "email", { type: "email", auto: "email", onBlur: () => captureAbandon(form, plan) })}
                     </Box>
                     {field("Practice name", "practiceName", { auto: "organization" })}
                     <Box>

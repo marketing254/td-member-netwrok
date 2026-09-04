@@ -43,7 +43,7 @@ export async function POST(req: Request) {
   if (!guard.ok) return guard.response;
 
   const route = "POST /api/stripe/checkout";
-  const body = (await req.json().catch(() => ({}))) as { plan?: unknown; promoCode?: unknown };
+  const body = (await req.json().catch(() => ({}))) as { plan?: unknown; promoCode?: unknown; resume?: unknown };
   if (!isValidPlan(body.plan)) {
     return apiError.badRequest("Please pick a valid plan.", route);
   }
@@ -79,6 +79,29 @@ export async function POST(req: Request) {
       promo = { id: promoRow.id, code: promoRow.code, trial_days: promoRow.trial_days };
     } catch {
       return apiError.badRequest("That promotional code isn't valid.", route);
+    }
+  }
+
+  // Welcome-back checkout (follow-up email 3): a resume token whose
+  // month-free code is active, unused, and matches this member's email
+  // turns the subscription into a 30-day trial. Validated server-side at
+  // this moment — the code never travels through the browser. Invalid or
+  // expired tokens fall through silently to normal pricing (per SPEC).
+  let recovery: { rowId: string; code: string } | null = null;
+  const resumeToken = typeof body.resume === "string" ? body.resume.trim() : "";
+  if (!promo && resumeToken) {
+    try {
+      const { recoveryGrantForCheckout } = await import("@/lib/abandoned");
+      const { data: memberRow } = await sb
+        .from("members")
+        .select("email")
+        .eq("id", guard.memberId)
+        .maybeSingle();
+      if (memberRow?.email) {
+        recovery = await recoveryGrantForCheckout(resumeToken, memberRow.email);
+      }
+    } catch (err) {
+      console.error("[checkout] recovery grant lookup failed:", err);
     }
   }
 
@@ -192,7 +215,8 @@ export async function POST(req: Request) {
     billing_address_collection: "auto",
     subscription_data: {
       // Promo code → free trial: card on file now, first charge after.
-      ...(promo ? { trial_period_days: promo.trial_days } : {}),
+      // Welcome-back grant → 30-day trial the same way.
+      ...(promo ? { trial_period_days: promo.trial_days } : recovery ? { trial_period_days: 30 } : {}),
       metadata: {
         member_id: member.id,
         plan,
@@ -201,6 +225,7 @@ export async function POST(req: Request) {
         founding_member: isFoundingPlan(plan) ? "true" : "false",
         early_member: isEarlyPlan(plan) ? "true" : "false",
         ...(promo ? { promo_code: promo.code, promo_code_id: promo.id } : {}),
+        ...(recovery ? { recovery_row_id: recovery.rowId, recovery_code: recovery.code } : {}),
       },
     },
     metadata: {
@@ -208,6 +233,7 @@ export async function POST(req: Request) {
       plan,
       tier,
       ...(promo ? { promo_code: promo.code, promo_code_id: promo.id } : {}),
+      ...(recovery ? { recovery_row_id: recovery.rowId, recovery_code: recovery.code } : {}),
     },
     success_url: `${origin}/upgrade?subscribed=1&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}/upgrade?subscribed=0`,
