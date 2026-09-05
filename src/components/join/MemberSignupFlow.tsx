@@ -1,6 +1,6 @@
 "use client";
 import { trackEvent } from "@/lib/analytics";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -128,8 +128,54 @@ export default function MemberSignupFlow({
     );
   }, [step, firstName, lastName, emailOk, practiceName, roleLabel, roleLabelOther, agreed, challenge, challengeOther, heardAbout, heardAboutOther]);
 
+  // Partial-registration capture — the SAME recovery sequence as /start,
+  // for anyone who enters a valid email on /join/member and drops off
+  // before paying. Fires when the email field blurs, on Continue, and on
+  // tab-close (keepalive beacon). The server enforces the 30-day
+  // one-sequence rule and skips existing paying members, so a repeat here
+  // never restarts or double-sends anything.
+  const abandonSnapshot = useRef<string>("");
+  const captureAbandon = useCallback(() => {
+    const em = email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em)) return;
+    const snap = JSON.stringify([em, firstName, lastName, practiceName, roleLabel]);
+    if (abandonSnapshot.current === snap) return;
+    abandonSnapshot.current = snap;
+    try {
+      void fetch("/api/ads/abandon", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        keepalive: true,
+        body: JSON.stringify({
+          email: em,
+          firstName: firstName.trim() || null,
+          lastName: lastName.trim() || null,
+          practiceName: practiceName.trim() || null,
+          role: roleLabel === OTHER ? roleLabelOther.trim() || null : roleLabel || null,
+          plan: params.get("interval") === "annual" ? "founding_annual" : "founding_monthly",
+          utm: {
+            ref: params.get("ref") ?? null,
+            promo: params.get("promo") ?? null,
+            source: "landing-join",
+          },
+        }),
+      });
+    } catch {
+      /* capture must never affect the visitor */
+    }
+  }, [email, firstName, lastName, practiceName, roleLabel, roleLabelOther, params]);
+
+  // Tab-close / navigate-away safety net: capture on the way out too.
+  useEffect(() => {
+    const onLeave = () => captureAbandon();
+    window.addEventListener("pagehide", onLeave);
+    return () => window.removeEventListener("pagehide", onLeave);
+  }, [captureAbandon]);
+
   const go = (d: 1 | -1) => {
     setError(null);
+    // Leaving step 1 forward = they gave us an email; snapshot it now.
+    if (d === 1 && step === 0) captureAbandon();
     setDir(d);
     setStep((s) => Math.min(2, Math.max(0, s + d)));
   };
@@ -347,7 +393,7 @@ export default function MemberSignupFlow({
                     <TextField label="First name" value={firstName} onChange={(e) => setFirstName(e.target.value)} autoComplete="given-name" autoFocus fullWidth required sx={fieldSx} />
                     <TextField label="Last name" value={lastName} onChange={(e) => setLastName(e.target.value)} autoComplete="family-name" fullWidth required sx={fieldSx} />
                   </Stack>
-                  <TextField label="Work email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" fullWidth required sx={fieldSx} />
+                  <TextField label="Work email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} onBlur={() => captureAbandon()} autoComplete="email" fullWidth required sx={fieldSx} />
                 </Stack>
               )}
 
