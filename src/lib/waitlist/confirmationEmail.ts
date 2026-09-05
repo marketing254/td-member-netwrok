@@ -143,7 +143,7 @@ function memberDraft(input: ConfirmationInput): EmailDraft {
     role: "member",
     subject: "Welcome to the Dental Member Network — your founding spot is locked in",
     preview:
-      "Your founding membership is confirmed. $49/month at the founding rate. Here's what happens next.",
+      "Your founding membership is confirmed at the founding rate. Here's what happens next.",
     eyebrow: "Founding Member",
     headline: "Your founding spot is locked in.",
     accent: BRAND.gold,
@@ -151,7 +151,7 @@ function memberDraft(input: ConfirmationInput): EmailDraft {
     replyTo: SUPPORT_EMAIL,
     intro: [
       `Hi ${firstName(input.signup.fullName)},`,
-      "Welcome to the Dental Member Network. Your founding membership is confirmed and your $49/month founding rate is locked in — it never increases for as long as your membership stays active.",
+      "Welcome to the Dental Member Network. Your founding membership is confirmed and your founding rate ($49/month, or $490/year on the annual plan) is locked in — it never increases for as long as your membership stays active.",
     ],
     sections: [
       {
@@ -164,7 +164,7 @@ function memberDraft(input: ConfirmationInput): EmailDraft {
       {
         title: "A few things to know",
         items: [
-          "Your founding member status is permanent. As we add features over time, you keep access at the same $49/month founding rate for as long as your membership stays active.",
+          "Your founding member status is permanent. As we add features over time, you keep access at the same founding rate you chose for as long as your membership stays active.",
           'Member discounts on vendor products and services are clearly marked in the Vendor Directory, just look for the "Member Benefit" panel on each vendor\'s card.',
           "If you registered with a practice email, feel free to invite your office manager or team members to set up their own accounts. The first 100 founding spots are still open.",
         ],

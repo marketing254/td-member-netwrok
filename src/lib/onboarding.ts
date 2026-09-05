@@ -120,12 +120,21 @@ function escapeHtml(s: string): string {
 
 // ── templates ───────────────────────────────────────────────────────────
 
-function renderWelcome(firstName: string, foundingNumber: number | null): { subject: string; html: string } {
+function renderWelcome(
+  firstName: string,
+  foundingNumber: number | null,
+  interval: string | null = null,
+): { subject: string; html: string } {
+  // Annual founding members pay $490/yr; everyone else on founding is $49/mo.
+  const isAnnual = interval === "year" || interval === "annual";
+  const rateLine = isAnnual
+    ? "Your rate is locked at $490 a year for as long as you stay, even once it goes up for everyone who joins after you."
+    : "Your rate is locked at $49 a month for as long as you stay, even once it goes up for everyone who joins after you.";
   const badge =
     foundingNumber !== null && foundingNumber <= 100
       ? `<div style="background:#FBF8F1;border:1px solid #D9A84B;border-radius:10px;padding:14px 18px;margin:0 0 16px;text-align:center;">
   <span style="font-size:11px;font-weight:800;letter-spacing:0.14em;color:#A07823;text-transform:uppercase;">Founding member #${foundingNumber}</span><br>
-  <span style="font-size:13.5px;color:#3B4A55;">Your rate is locked at $49 a month for as long as you stay, even once it goes up for everyone who joins after you.</span>
+  <span style="font-size:13.5px;color:#3B4A55;">${rateLine}</span>
 </div>`
       : "";
   const body = `<p style="margin:0 0 14px;">Hi ${escapeHtml(firstName)},</p>
@@ -558,13 +567,13 @@ export async function onMemberActivated(memberId: string): Promise<void> {
 
     const { data: member } = await sb
       .from("members")
-      .select("id, first_name, last_name, email, practice_name, biggest_challenge, status, subscription_status")
+      .select("id, first_name, last_name, email, practice_name, biggest_challenge, status, subscription_status, subscription_interval")
       .eq("id", memberId)
       .maybeSingle();
     if (!member || TEST_MEMBER_EMAILS.has(member.email.toLowerCase())) return;
 
     const foundingNumber = await foundingNumberFor(memberId);
-    const rendered = renderWelcome(member.first_name ?? "there", foundingNumber);
+    const rendered = renderWelcome(member.first_name ?? "there", foundingNumber, member.subscription_interval ?? null);
     await sendAndRecord({
       memberId,
       memberEmail: member.email,
