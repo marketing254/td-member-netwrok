@@ -95,10 +95,17 @@ export type CapturePayload = {
  *   - An open or recent (<30 days) sequence exists for this email → only
  *     the field values are refreshed; the schedule does NOT restart.
  */
+// Emails the recovery sequence must never touch, regardless of capture
+// (handled manually / separately). Lower-case.
+const SUPPRESSED_EMAILS = new Set<string>([
+  "drjenkins@smile-parlor.com", // Sep-4 Meta abandon — Rushdha will follow up separately.
+]);
+
 export async function captureAbandon(p: CapturePayload): Promise<void> {
   const sb = db();
   const email = p.email.trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return;
+  if (SUPPRESSED_EMAILS.has(email)) return;
 
   // Already a paying member? Nothing to recover.
   const { data: member } = await sb
@@ -446,6 +453,9 @@ export async function processAbandonedQueue(): Promise<{ sent: number; stopped: 
 
   for (const row of rows ?? []) {
     const age = Date.now() - new Date(row.captured_at).getTime();
+
+    // Suppressed emails are handled manually — never auto-email them.
+    if (SUPPRESSED_EMAILS.has(row.email.trim().toLowerCase())) continue;
 
     // Purchase check immediately before anything sends (covers the
     // 30-minute wait: email 1 is only due at +1h, and a paid member at
