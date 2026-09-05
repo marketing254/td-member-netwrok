@@ -342,7 +342,14 @@ type SequenceRow = {
   first_name: string | null;
   resume_token: string;
   unsubscribe_token: string;
+  /** founding_monthly | founding_annual (what they picked before dropping off). */
+  plan?: string | null;
 };
+
+/** Rate wording that matches the plan they were on — never quote $49/month to an annual chooser. */
+function rateWords(plan: string | null | undefined): string {
+  return plan === "founding_annual" ? "$490 a year" : "$49 a month";
+}
 
 function names(row: SequenceRow) {
   return {
@@ -383,13 +390,13 @@ function renderEmail2(row: SequenceRow) {
 <p style="margin:0 0 16px;">A growing library of done-for-you kits from working experts. Each one is a session turned into something your team can use: training video, action guide, checklist, worksheet, a wall poster for the operatory.</p>
 <p style="margin:0 0 16px;">Templates and SOPs, written from an expert's own process, so a team can run them on a Monday morning.</p>
 <p style="margin:0 0 16px;">Member-only offers from companies that serve dental practices.</p>
-<p style="margin:0 0 16px;">It is $49 a month, locked for as long as you stay, for the first hundred founding members.</p>
+<p style="margin:0 0 16px;">It is ${rateWords(row.plan)}, locked for as long as you stay, for the first hundred founding members.</p>
 <p style="margin:0 0 16px;">Two things people ask before they join. Can I cancel? Yes, anytime, from your account. What if it is not for me? The first thirty days carry a full money-back guarantee, so trying it costs one email to me.</p>
 ${button(resume, "Finish joining")}
 ${SIGNOFF}`,
       unsub,
     ),
-    text: `Hi ${first},\n\nHere is what is inside, on the day you join.\n\nAn expert hotline. You write in with a real practice problem, and within two to three business days you get a written answer and the right experts to talk to. Not a search box. A person.\n\nA growing library of done-for-you kits from working experts. Each one is a session turned into something your team can use: training video, action guide, checklist, worksheet, a wall poster for the operatory.\n\nTemplates and SOPs, written from an expert's own process, so a team can run them on a Monday morning.\n\nMember-only offers from companies that serve dental practices.\n\nIt is $49 a month, locked for as long as you stay, for the first hundred founding members.\n\nTwo things people ask before they join. Can I cancel? Yes, anytime, from your account. What if it is not for me? The first thirty days carry a full money-back guarantee, so trying it costs one email to me.\n\nFinish joining: ${resume}\n\nWarmly,\nLester De Alwis\nCo-Founder\nDental Member Network\nPowered by Thriving Dentist Inc.\n\nUnsubscribe: ${unsub}`,
+    text: `Hi ${first},\n\nHere is what is inside, on the day you join.\n\nAn expert hotline. You write in with a real practice problem, and within two to three business days you get a written answer and the right experts to talk to. Not a search box. A person.\n\nA growing library of done-for-you kits from working experts. Each one is a session turned into something your team can use: training video, action guide, checklist, worksheet, a wall poster for the operatory.\n\nTemplates and SOPs, written from an expert's own process, so a team can run them on a Monday morning.\n\nMember-only offers from companies that serve dental practices.\n\nIt is ${rateWords(row.plan)}, locked for as long as you stay, for the first hundred founding members.\n\nTwo things people ask before they join. Can I cancel? Yes, anytime, from your account. What if it is not for me? The first thirty days carry a full money-back guarantee, so trying it costs one email to me.\n\nFinish joining: ${resume}\n\nWarmly,\nLester De Alwis\nCo-Founder\nDental Member Network\nPowered by Thriving Dentist Inc.\n\nUnsubscribe: ${unsub}`,
   };
 }
 
@@ -412,7 +419,7 @@ function renderEmail3(row: SequenceRow, code: string | null, codeExpires: Date |
 <p style="margin:0 0 16px;">This is the last email about this, and I would rather end with something useful than another reminder.</p>
 ${
   withCode
-    ? `<p style="margin:0 0 16px;">Join in the next two days and your first month is free. After that it is $49 a month, locked for as long as you stay, same as everyone in the founding hundred.</p>
+    ? `<p style="margin:0 0 16px;">Join in the next two days and your first month is free. After that it is ${rateWords(row.plan)}, locked for as long as you stay, same as everyone in the founding hundred.</p>
 <p style="margin:0 0 16px;">Your code: <strong style="letter-spacing:0.08em;">${code}</strong><br>It works until ${expiresWords}, and it is yours alone.</p>`
     : ""
 }
@@ -421,7 +428,7 @@ ${button(joinLink, withCode ? "Join with a month free" : "Finish joining")}
 ${SIGNOFF}`,
       unsub,
     ),
-    text: `Hi ${first},\n\nThis is the last email about this, and I would rather end with something useful than another reminder.\n\n${withCode ? `Join in the next two days and your first month is free. After that it is $49 a month, locked for as long as you stay, same as everyone in the founding hundred.\n\nYour code: ${code}\nIt works until ${expiresWords}, and it is yours alone.\n\n` : ""}${withCode ? "Join with a month free" : "Finish joining"}: ${joinLink}\n\nThe first thing I would do once you are in is send the hotline the problem that has been sitting on your desk longest. That is what it is for.\n\nWarmly,\nLester De Alwis\nCo-Founder\nDental Member Network\nPowered by Thriving Dentist Inc.\n\nUnsubscribe: ${unsub}`,
+    text: `Hi ${first},\n\nThis is the last email about this, and I would rather end with something useful than another reminder.\n\n${withCode ? `Join in the next two days and your first month is free. After that it is ${rateWords(row.plan)}, locked for as long as you stay, same as everyone in the founding hundred.\n\nYour code: ${code}\nIt works until ${expiresWords}, and it is yours alone.\n\n` : ""}${withCode ? "Join with a month free" : "Finish joining"}: ${joinLink}\n\nThe first thing I would do once you are in is send the hotline the problem that has been sitting on your desk longest. That is what it is for.\n\nWarmly,\nLester De Alwis\nCo-Founder\nDental Member Network\nPowered by Thriving Dentist Inc.\n\nUnsubscribe: ${unsub}`,
   };
 }
 
@@ -443,7 +450,7 @@ export async function processAbandonedQueue(): Promise<{ sent: number; stopped: 
 
   const { data: rows } = await sb
     .from("pending_registrations")
-    .select("id, email, first_name, resume_token, unsubscribe_token, captured_at, email1_sent_at, email2_sent_at, email3_sent_at, code, code_expires_at")
+    .select("id, email, first_name, plan, resume_token, unsubscribe_token, captured_at, email1_sent_at, email2_sent_at, email3_sent_at, code, code_expires_at")
     .is("stopped_at", null)
     .order("captured_at", { ascending: true })
     .limit(100);
@@ -518,7 +525,7 @@ export async function processAbandonedQueue(): Promise<{ sent: number; stopped: 
 // ── draft review sends ──────────────────────────────────────────────────
 
 /**
- * Send all three sequence emails to the review inbox (Rushdha, cc
+ * Send all three sequence emails to the review inbox (Rushdha, bcc
  * lester@ekwa.com) so the design and copy can be approved BEFORE the
  * sequence goes live. Subjects carry a [DRAFT] prefix; no member ever
  * receives these, and the standard member-send BCC list is not used.
