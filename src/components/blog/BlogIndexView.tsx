@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Box, Chip, Container, Stack, Typography } from "@mui/material";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Box, Chip, Container, Pagination, Stack, Typography } from "@mui/material";
 import Header from "@/components/sections/Header";
 import Footer from "@/components/sections/Footer";
 import { PUBLISHED_BLOG_ARTICLES, BLOG_INDEX_HEADING, BLOG_INDEX_STANDFIRST } from "@/lib/blog";
@@ -17,8 +17,12 @@ const LINE = "#E6DDCF";
  * category filter chips (derived from live articles only, so no empty
  * categories ever render) and the responsive card grid in launch order.
  */
+const PAGE_SIZE = 6;
+
 export default function BlogIndexView() {
   const [category, setCategory] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const gridTop = useRef<HTMLDivElement | null>(null);
 
   // Categories derive from the registry — a future category appears here
   // automatically the moment its first article ships.
@@ -26,7 +30,19 @@ export default function BlogIndexView() {
     () => [...new Set(PUBLISHED_BLOG_ARTICLES.map((a) => a.category))],
     [],
   );
-  const shown = category ? PUBLISHED_BLOG_ARTICLES.filter((a) => a.category === category) : PUBLISHED_BLOG_ARTICLES;
+  const filtered = category ? PUBLISHED_BLOG_ARTICLES.filter((a) => a.category === category) : PUBLISHED_BLOG_ARTICLES;
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const shown = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  // A new category filter always starts from page 1.
+  useEffect(() => {
+    setPage(1);
+  }, [category]);
+
+  const goToPage = (next: number) => {
+    setPage(next);
+    gridTop.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "#FBF8F1", display: "flex", flexDirection: "column" }}>
@@ -103,6 +119,7 @@ export default function BlogIndexView() {
 
       {/* Article grid — launch order preserved (registry order) */}
       <Container maxWidth="lg" sx={{ pb: { xs: 6, md: 9 }, flex: 1 }}>
+        <Box ref={gridTop} sx={{ scrollMarginTop: 110 }} />
         <Box
           sx={{
             display: "grid",
@@ -115,6 +132,34 @@ export default function BlogIndexView() {
             <BlogCard key={article.slug} article={article} />
           ))}
         </Box>
+
+        {pageCount > 1 && (
+          <Stack direction="row" sx={{ justifyContent: "center", mt: { xs: 4, md: 5 } }}>
+            <Pagination
+              count={pageCount}
+              page={page}
+              onChange={(_, next) => goToPage(next)}
+              shape="rounded"
+              size="large"
+              sx={{
+                "& .MuiPaginationItem-root": {
+                  fontWeight: 700,
+                  color: INK_SOFT,
+                  border: `1px solid ${LINE}`,
+                  bgcolor: "#FFFFFF",
+                  borderRadius: 2,
+                },
+                "& .MuiPaginationItem-root.Mui-selected": {
+                  bgcolor: INK,
+                  color: "#F6F1E7",
+                  borderColor: INK,
+                  "&:hover": { bgcolor: INK },
+                },
+                "& .MuiPaginationItem-root:hover": { bgcolor: "rgba(217,168,75,0.12)" },
+              }}
+            />
+          </Stack>
+        )}
       </Container>
 
       <Footer />

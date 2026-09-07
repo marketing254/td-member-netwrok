@@ -16,7 +16,16 @@ const LINE = "#E6DDCF";
  * row and a "Read article" affordance. Shared by the /blog grid and the
  * related-articles rail on article pages.
  */
-export function BlogCard({ article, href }: { article: BlogArticle; href?: string }) {
+export function BlogCard({
+  article,
+  href,
+  compact = false,
+}: {
+  article: BlogArticle;
+  href?: string;
+  /** Smaller card for the related-articles rail: no excerpt, tighter type. */
+  compact?: boolean;
+}) {
   return (
     <Box
       component={Link}
@@ -51,7 +60,7 @@ export function BlogCard({ article, href }: { article: BlogArticle; href?: strin
         />
       </Box>
 
-      <Box sx={{ p: 2.5, display: "flex", flexDirection: "column", flex: 1 }}>
+      <Box sx={{ p: compact ? 1.75 : 2.5, display: "flex", flexDirection: "column", flex: 1 }}>
         <Typography
           sx={{
             fontSize: "0.66rem",
@@ -68,36 +77,41 @@ export function BlogCard({ article, href }: { article: BlogArticle; href?: strin
           component="h3"
           sx={{
             fontFamily: "var(--font-display)",
-            fontSize: "1.18rem",
+            fontSize: compact ? "1rem" : "1.18rem",
             fontWeight: 600,
             color: INK,
             lineHeight: 1.25,
             letterSpacing: "-0.01em",
-            mb: 1.25,
+            mb: compact ? 1.5 : 1.25,
+            ...(compact
+              ? { display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }
+              : {}),
           }}
         >
           {article.title}
         </Typography>
-        <Typography
-          sx={{
-            fontSize: "0.88rem",
-            color: INK_SOFT,
-            lineHeight: 1.6,
-            mb: 2,
-            display: "-webkit-box",
-            WebkitLineClamp: 3,
-            WebkitBoxOrient: "vertical",
-            overflow: "hidden",
-          }}
-        >
-          {article.excerpt}
-        </Typography>
+        {!compact && (
+          <Typography
+            sx={{
+              fontSize: "0.88rem",
+              color: INK_SOFT,
+              lineHeight: 1.6,
+              mb: 2,
+              display: "-webkit-box",
+              WebkitLineClamp: 3,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+            }}
+          >
+            {article.excerpt}
+          </Typography>
+        )}
 
         <Stack
           direction="row"
           sx={{
             mt: "auto",
-            pt: 1.75,
+            pt: compact ? 1.25 : 1.75,
             borderTop: `1px solid ${LINE}`,
             alignItems: "center",
             justifyContent: "space-between",
