@@ -14,17 +14,24 @@ import VerifiedOutlinedIcon from "@mui/icons-material/VerifiedOutlined";
  * left, cream offer panel with the "1 month free" ticket on the right.
  * DIRECT promo auto-applied through /join/member?promo=DIRECT.
  *
- * Behavior guardrails:
- *   - Desktop only (mouse leaving through the top of the viewport);
- *     there is no reliable, non-annoying exit signal on touch devices.
- *   - Armed only after 5 seconds on the page, shown at most once per
- *     browser session (sessionStorage), never on /start (the paid-ads
- *     page has its own locked offer rules).
+ * Triggers (any one of them, once the page has been open 5 seconds):
+ *   1. Leaving — the cursor exits through the top of the viewport
+ *      (heading for the tab bar / close button). Desktop only.
+ *   2. Switching away — the tab is hidden (another tab, another app,
+ *      minimise). The offer is waiting when they come back.
+ *   3. Going idle — no scroll, mouse, key or touch for 30 seconds.
+ *      This one also gives touch devices a way to see the offer.
+ *
+ * Guardrails:
+ *   - Shown at most once per browser session (sessionStorage), never on
+ *     /start (the paid-ads page has its own locked offer rules).
  *   - Every claim in the copy is true: 30-day promo trial, founding $49
  *     locked, 30-day guarantee, cancel anytime.
  */
 const SESSION_KEY = "dmn_exit_offer_shown";
 const ARM_DELAY_MS = 5_000;
+/** No scroll / mouse / key / touch for this long counts as "stopped reading". */
+const IDLE_MS = 30_000;
 
 const INK = "#0A1A2F";
 const GOLD = "#D9A84B";
@@ -163,12 +170,15 @@ export default function ExitIntentOffer() {
       return; // storage unavailable → never risk a repeat-nag
     }
     let armed = false;
-    const armTimer = setTimeout(() => {
-      armed = true;
-    }, ARM_DELAY_MS);
+    let shown = false;
+    let idleTimer: ReturnType<typeof setTimeout> | null = null;
 
-    const onLeave = (e: MouseEvent) => {
-      if (!armed || e.clientY > 0) return;
+    const ACTIVITY_EVENTS = ["scroll", "wheel", "mousemove", "keydown", "pointerdown", "touchstart"] as const;
+
+    // Fire the offer once, from whichever trigger wins, then disarm all.
+    const show = () => {
+      if (shown || !armed) return;
+      shown = true;
       try {
         if (sessionStorage.getItem(SESSION_KEY)) return;
         sessionStorage.setItem(SESSION_KEY, "1");
@@ -176,16 +186,46 @@ export default function ExitIntentOffer() {
         /* still show once for this page view */
       }
       setOpen(true);
-      document.removeEventListener("mouseout", handler);
+      teardown();
     };
-    // mouseout with no relatedTarget at clientY<=0 = cursor left via the top
-    const handler = (e: MouseEvent) => {
-      if (!(e as MouseEvent & { relatedTarget: EventTarget | null }).relatedTarget) onLeave(e);
+
+    // 1. Cursor leaves through the top (tab bar / close button).
+    const onMouseOut = (e: MouseEvent) => {
+      if (e.relatedTarget || e.clientY > 0) return;
+      show();
     };
-    document.addEventListener("mouseout", handler);
+
+    // 2. Tab hidden — another tab, app, or minimised. Opens now so it is
+    //    waiting on return.
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") show();
+    };
+
+    // 3. Idle — no interaction for IDLE_MS. Any activity resets the clock.
+    const resetIdle = () => {
+      if (idleTimer) clearTimeout(idleTimer);
+      idleTimer = setTimeout(show, IDLE_MS);
+    };
+
+    const teardown = () => {
+      if (idleTimer) clearTimeout(idleTimer);
+      document.removeEventListener("mouseout", onMouseOut);
+      document.removeEventListener("visibilitychange", onVisibility);
+      for (const ev of ACTIVITY_EVENTS) window.removeEventListener(ev, resetIdle);
+    };
+
+    const armTimer = setTimeout(() => {
+      armed = true;
+      resetIdle(); // idle clock starts once armed
+    }, ARM_DELAY_MS);
+
+    document.addEventListener("mouseout", onMouseOut);
+    document.addEventListener("visibilitychange", onVisibility);
+    for (const ev of ACTIVITY_EVENTS) window.addEventListener(ev, resetIdle, { passive: true });
+
     return () => {
       clearTimeout(armTimer);
-      document.removeEventListener("mouseout", handler);
+      teardown();
     };
   }, []);
 
