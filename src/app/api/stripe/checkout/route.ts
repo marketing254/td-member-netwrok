@@ -178,7 +178,9 @@ export async function POST(req: Request) {
   // $490; with a 3-month code applied the annual becomes $441 — a
   // separate Stripe Price used ONLY here, so the trial converts into
   // exactly what the card promised ("then $441/yr").
-  if (promo && plan === "founding_annual") {
+  // Only 3-month (90-day) codes earn the $441 annual; a 30-day welcome
+  // code keeps the standard $490 annual with its free month up front.
+  if (promo && plan === "founding_annual" && promo.trial_days >= 90) {
     const promoAnnual = process.env.STRIPE_PRICE_FOUNDING_ANNUAL_PROMO;
     if (!promoAnnual) {
       console.error("[checkout] STRIPE_PRICE_FOUNDING_ANNUAL_PROMO is not set — promo-annual blocked");

@@ -11,7 +11,7 @@ import VerifiedOutlinedIcon from "@mui/icons-material/VerifiedOutlined";
 
 /**
  * Exit-intent offer — the approved split design: navy gift panel on the
- * left, cream offer panel with the "3 months free" ticket on the right.
+ * left, cream offer panel with the "1 month free" ticket on the right.
  * DIRECT promo auto-applied through /join/member?promo=DIRECT.
  *
  * Behavior guardrails:
@@ -20,7 +20,7 @@ import VerifiedOutlinedIcon from "@mui/icons-material/VerifiedOutlined";
  *   - Armed only after 5 seconds on the page, shown at most once per
  *     browser session (sessionStorage), never on /start (the paid-ads
  *     page has its own locked offer rules).
- *   - Every claim in the copy is true: 90-day promo trial, founding $49
+ *   - Every claim in the copy is true: 30-day promo trial, founding $49
  *     locked, 30-day guarantee, cancel anytime.
  */
 const SESSION_KEY = "dmn_exit_offer_shown";
@@ -335,7 +335,7 @@ export default function ExitIntentOffer() {
                 WebkitTextFillColor: "transparent",
               }}
             >
-              3 months free
+              1 month free
             </Typography>
             <Typography sx={{ fontSize: "0.72rem", fontWeight: 800, letterSpacing: "0.3em", textTransform: "uppercase", color: "#243244", mt: 0.5 }}>
               Founding membership
@@ -405,7 +405,7 @@ export default function ExitIntentOffer() {
               },
             }}
           >
-            Claim My 3 Months Free
+            Claim My Free Month
           </Button>
           <Typography sx={{ mt: 1.25, fontSize: "0.76rem", color: "#7A8590" }}>
             Applied automatically at checkout — nothing to type.

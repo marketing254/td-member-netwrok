@@ -127,7 +127,13 @@ export default function FoundingCard({
   const price = PRICES[tier];
   const applied = promo?.applied ?? null;
   const chargeDate = applied ? firstChargeDate(applied.trialDays) : null;
-  const finalCta = applied ? "Start my 3 months free" : ctaLabel;
+  // Free-period wording follows the code's actual trial length (30-day
+  // welcome codes vs 90-day partner/expert codes).
+  const freeMonths = applied ? Math.max(1, Math.round(applied.trialDays / 30)) : 0;
+  const freeLabel = `${freeMonths} month${freeMonths === 1 ? "" : "s"} free`;
+  // The $441 promo-annual price is a 3-month-code deal only.
+  const promoAnnual = !!applied && applied.trialDays >= 90;
+  const finalCta = applied ? (freeMonths === 1 ? "Start my free month" : `Start my ${freeMonths} months free`) : ctaLabel;
   // Scarcity counter only once it means something: under 60 seats left.
   const showCounter = tier === "founding" && typeof remaining === "number" && remaining < 60;
 
@@ -192,7 +198,7 @@ export default function FoundingCard({
             >
               <CheckRoundedIcon sx={{ fontSize: 16, flexShrink: 0 }} />
               <Box component="span">
-                {applied.code} applied — 3 months free, courtesy of {applied.ownerName ?? "the DMN team"}
+                {applied.code} applied — {freeLabel}, courtesy of {applied.ownerName ?? "the DMN team"}
               </Box>
               <Box
                 component="button"
@@ -219,7 +225,7 @@ export default function FoundingCard({
             <Typography sx={{ fontSize: "0.95rem", color: TXT_SOFT, mt: 1 }}>
               {interval === "monthly" ? (
                 <>then {price.mo}/mo from {chargeDate}</>
-              ) : tier === "founding" ? (
+              ) : tier === "founding" && promoAnnual ? (
                 <>
                   <Box component="span" sx={{ textDecoration: "line-through", color: TXT_MUTED, mr: 0.75 }}>
                     $490
@@ -231,7 +237,7 @@ export default function FoundingCard({
               )}
             </Typography>
             <Typography sx={{ fontSize: "0.76rem", color: TXT_MUTED, mt: 1.5, lineHeight: 1.6 }}>
-              3 months free with {applied.code} · cancel any time before {chargeDate} and you pay
+              {freeLabel} with {applied.code} · cancel any time before {chargeDate} and you pay
               nothing · 30-day money-back guarantee after that
             </Typography>
           </>

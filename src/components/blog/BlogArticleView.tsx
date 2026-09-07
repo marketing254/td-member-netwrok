@@ -1,17 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import {
-  Box,
-  Button,
-  Collapse,
-  Container,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Box, Button, Collapse, Container, IconButton, Stack, Typography } from "@mui/material";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
+import ChevronLeftRoundedIcon from "@mui/icons-material/ChevronLeftRounded";
 import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
@@ -486,14 +480,75 @@ export default function BlogArticleView({
                 background: "linear-gradient(135deg, #0A1A2F 0%, #12325A 100%)",
               }}
             >
-              <Box sx={{ position: "relative", minHeight: { xs: 180, sm: "100%" } }}>
-                <Image
-                  src={article.hero.src}
-                  alt=""
-                  fill
-                  sizes="(max-width: 600px) 100vw, 40vw"
-                  style={{ objectFit: "cover" }}
-                />
+              {/* Kit panel — composed in-page (kit name + expert) instead of
+                  cropping the hero image, so nothing is ever cut off. */}
+              <Box
+                sx={{
+                  position: "relative",
+                  overflow: "hidden",
+                  p: { xs: 3, md: 3.5 },
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  minHeight: { xs: 220, sm: "100%" },
+                  background: "linear-gradient(160deg, #17335A 0%, #0A1A2F 80%)",
+                  borderRight: { sm: "1px solid rgba(217,168,75,0.22)" },
+                }}
+              >
+                <Box aria-hidden sx={{ position: "absolute", right: -70, top: -70, width: 220, height: 220, borderRadius: "50%", border: "1px solid rgba(217,168,75,0.18)" }} />
+                <Box>
+                  <Box
+                    sx={{
+                      display: "inline-block",
+                      px: 1.25,
+                      py: 0.45,
+                      borderRadius: 999,
+                      border: "1px solid rgba(217,168,75,0.5)",
+                      color: "#E8C76F",
+                      fontSize: "0.6rem",
+                      fontWeight: 800,
+                      letterSpacing: "0.18em",
+                      textTransform: "uppercase",
+                      mb: 1.75,
+                    }}
+                  >
+                    Resource kit · Action guide
+                  </Box>
+                  <Typography sx={{ fontSize: "0.64rem", fontWeight: 800, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(246,241,231,0.55)", mb: 0.75 }}>
+                    {article.category}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontFamily: "var(--font-display)",
+                      fontSize: { xs: "1.35rem", md: "1.5rem" },
+                      fontWeight: 600,
+                      color: "#F6F1E7",
+                      lineHeight: 1.2,
+                      letterSpacing: "-0.01em",
+                    }}
+                  >
+                    {article.kitCta.kitName}
+                  </Typography>
+                </Box>
+                <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", mt: 3 }}>
+                  <Box sx={{ position: "relative", width: 58, height: 58, borderRadius: "50%", overflow: "hidden", border: "2px solid #D9A84B", flexShrink: 0 }}>
+                    <Image
+                      src={article.expert.headshotUrl}
+                      alt={article.expert.name}
+                      fill
+                      sizes="58px"
+                      style={{ objectFit: "cover", objectPosition: "center top" }}
+                    />
+                  </Box>
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography sx={{ fontSize: "0.92rem", fontWeight: 700, color: "#F6F1E7", lineHeight: 1.2 }}>
+                      {article.expert.name}
+                    </Typography>
+                    <Typography sx={{ fontSize: "0.76rem", color: "rgba(246,241,231,0.65)", mt: 0.25 }} noWrap>
+                      {article.expert.role}
+                    </Typography>
+                  </Box>
+                </Stack>
               </Box>
               <Box sx={{ p: { xs: 3, md: 4 } }}>
                 <Typography
@@ -557,36 +612,74 @@ export default function BlogArticleView({
 
         {/* Related articles — capped to the same centered width as the
             TOC + article pair above so the whole page sits on one axis. */}
-        {related.length > 0 && (
-          <Box sx={{ pb: { xs: 6, md: 8 }, maxWidth: 986, mx: "auto" }}>
-            <Typography
-              component="h2"
-              sx={{
-                fontFamily: "var(--font-display)",
-                fontSize: { xs: "1.4rem", md: "1.7rem" },
-                fontWeight: 600,
-                color: INK,
-                mb: 3,
-              }}
-            >
-              Keep reading
-            </Typography>
-            <Box
-              sx={{
-                display: "grid",
-                gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)" },
-                gap: 3,
-              }}
-            >
-              {related.map((a) => (
-                <BlogCard key={a.slug} article={a} />
-              ))}
-            </Box>
-          </Box>
-        )}
+        {related.length > 0 && <RelatedRail articles={related} />}
       </Container>
 
       <Footer />
+    </Box>
+  );
+}
+
+/**
+ * "Keep reading" — a compact horizontal rail (3 cards visible on desktop)
+ * with side arrows, instead of a full grid that swallows the page.
+ */
+function RelatedRail({ articles }: { articles: BlogArticle[] }) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const scrollBy = (dir: 1 | -1) => {
+    const el = ref.current;
+    if (!el) return;
+    el.scrollBy({ left: dir * Math.round(el.clientWidth * 0.85), behavior: "smooth" });
+  };
+  const arrowSx = {
+    width: 38,
+    height: 38,
+    border: `1px solid ${LINE}`,
+    bgcolor: "#FFFFFF",
+    color: INK,
+    "&:hover": { bgcolor: "#FFFFFF", borderColor: GOLD_BRIGHT, color: GOLD },
+  } as const;
+  return (
+    <Box sx={{ pb: { xs: 6, md: 8 }, maxWidth: 986, mx: "auto" }}>
+      <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between", mb: 2.25 }}>
+        <Typography
+          component="h2"
+          sx={{ fontFamily: "var(--font-display)", fontSize: { xs: "1.4rem", md: "1.7rem" }, fontWeight: 600, color: INK }}
+        >
+          Keep reading
+        </Typography>
+        <Stack direction="row" spacing={1}>
+          <IconButton aria-label="Previous articles" onClick={() => scrollBy(-1)} sx={arrowSx}>
+            <ChevronLeftRoundedIcon />
+          </IconButton>
+          <IconButton aria-label="Next articles" onClick={() => scrollBy(1)} sx={arrowSx}>
+            <ChevronRightRoundedIcon />
+          </IconButton>
+        </Stack>
+      </Stack>
+      <Box
+        ref={ref}
+        sx={{
+          display: "flex",
+          gap: 2.25,
+          overflowX: "auto",
+          scrollSnapType: "x mandatory",
+          scrollbarWidth: "none",
+          "&::-webkit-scrollbar": { display: "none" },
+          pb: 1,
+          mx: { xs: -2, sm: 0 },
+          px: { xs: 2, sm: 0 },
+        }}
+      >
+        {articles.map((a) => (
+          <Box
+            key={a.slug}
+            sx={{ flex: "0 0 auto", width: { xs: 250, sm: 280, md: "calc((100% - 36px) / 3)" }, scrollSnapAlign: "start" }}
+          >
+            <BlogCard article={a} compact />
+          </Box>
+        ))}
+      </Box>
     </Box>
   );
 }
