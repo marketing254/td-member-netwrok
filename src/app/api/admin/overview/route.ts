@@ -31,7 +31,7 @@ export async function GET() {
       supabase
         .from("vendors")
         .select("id, status, verified, created_at, plan_id"),
-      supabase.from("members").select("id, status, tier, joined_at, created_at"),
+      supabase.from("members").select("id, status, tier, joined_at, created_at, activated_at, stripe_subscription_id"),
       supabase
         .from("waitlist_signups")
         .select("id, role, created_at"),
@@ -81,10 +81,16 @@ export async function GET() {
       verified: v.filter((x) => x.verified).length,
     };
 
+    // Started-but-unpaid signups (pay-first flows create the row at the
+    // payment step) are NOT members — they get their own tab and badge.
+    const isPending = (x: { activated_at: string | null; stripe_subscription_id: string | null }) =>
+      !x.activated_at && !x.stripe_subscription_id;
+    const realMembers = m.filter((x) => !isPending(x));
     const memberCounts = {
-      total: m.length,
-      active: m.filter((x) => x.status === "active").length,
-      thisWeek: m.filter((x) => x.created_at >= weekAgo).length,
+      total: realMembers.length,
+      active: realMembers.filter((x) => x.status === "active").length,
+      thisWeek: realMembers.filter((x) => x.created_at >= weekAgo).length,
+      pending: m.filter(isPending).length,
     };
 
     const waitlistCounts = {
