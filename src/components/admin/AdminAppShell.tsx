@@ -24,6 +24,7 @@ import {
 import { useTheme } from "@mui/material/styles";
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
+import HourglassEmptyOutlinedIcon from "@mui/icons-material/HourglassEmptyOutlined";
 import StoreOutlinedIcon from "@mui/icons-material/StoreOutlined";
 import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
 import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
@@ -57,6 +58,7 @@ type CurrentAdmin = {
 };
 
 type QueueCounts = {
+  pendingMembers: number;
   vendorsPending: number;
   offersPending: number;
   catalogPending: number;
@@ -116,6 +118,7 @@ const navSections: { label: string; items: NavItem[] }[] = [
     items: [
       { href: "/admin", label: "Dashboard", icon: DashboardOutlinedIcon },
       { href: "/admin/members", label: "Members", icon: PeopleAltOutlinedIcon },
+      { href: "/admin/pending-members", label: "Pending members", icon: HourglassEmptyOutlinedIcon, badgeKey: "pendingMembers" },
       { href: "/admin/experts", label: "Experts", icon: SchoolOutlinedIcon, badgeKey: "expertsPending" },
       // URL stays /admin/vendors so routes, /api/admin/vendors, and the
       // vendors DB table don't have to migrate. Label is "Partners"
@@ -469,6 +472,7 @@ export default function AdminAppShell({ children }: { children: React.ReactNode 
   const me = useCurrentAdmin();
 
   const [counts, setCounts] = useState<QueueCounts>({
+    pendingMembers: 0,
     vendorsPending: 0,
     offersPending: 0,
     catalogPending: 0,
@@ -485,6 +489,7 @@ export default function AdminAppShell({ children }: { children: React.ReactNode 
       const overview = overviewRes.ok
         ? ((await overviewRes.json()) as {
             vendors?: { pending?: number };
+            members?: { pending?: number };
             offers?: { pending?: number };
             catalog?: { pending?: number };
             experts?: { pending?: number };
@@ -496,6 +501,7 @@ export default function AdminAppShell({ children }: { children: React.ReactNode 
           })
         : {};
       setCounts({
+        pendingMembers: overview.members?.pending ?? 0,
         vendorsPending: overview.vendors?.pending ?? 0,
         offersPending: overview.offers?.pending ?? 0,
         catalogPending: overview.catalog?.pending ?? 0,
