@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Box, Stack, Typography } from "@mui/material";
 import type { BlogBlock } from "@/lib/blog";
 
@@ -16,17 +17,31 @@ const GOLD = "#A07823";
 const GOLD_BRIGHT = "#D9A84B";
 const LINE = "#E6DDCF";
 
-/** Tiny inline-markdown renderer: **bold** and *italic* only. */
+/**
+ * Tiny inline-markdown renderer: **bold**, *italic* and [text](href)
+ * links. Links are the approved internal-link placements from the SEO
+ * briefs (e.g. related-reading sentences); internal hrefs use next/link.
+ */
 export function inline(text: string): React.ReactNode {
-  const re = /\*\*([^*]+)\*\*|\*([^*]+)\*/g;
+  const re = /\[([^\]]+)\]\(([^)\s]+)\)|\*\*([^*]+)\*\*|\*([^*]+)\*/g;
   const nodes: React.ReactNode[] = [];
   let last = 0;
   let m: RegExpExecArray | null;
   let k = 0;
   while ((m = re.exec(text))) {
     if (m.index > last) nodes.push(text.slice(last, m.index));
-    if (m[1] !== undefined) nodes.push(<strong key={k++}>{m[1]}</strong>);
-    else nodes.push(<em key={k++}>{m[2]}</em>);
+    if (m[1] !== undefined) {
+      const href = m[2]!;
+      const linkSx = { color: GOLD, fontWeight: 700, textDecoration: "underline", textUnderlineOffset: "3px" } as const;
+      nodes.push(
+        href.startsWith("/") ? (
+          <Box key={k++} component={Link} href={href} sx={linkSx}>{m[1]}</Box>
+        ) : (
+          <Box key={k++} component="a" href={href} target="_blank" rel="noopener noreferrer" sx={linkSx}>{m[1]}</Box>
+        ),
+      );
+    } else if (m[3] !== undefined) nodes.push(<strong key={k++}>{m[3]}</strong>);
+    else nodes.push(<em key={k++}>{m[4]}</em>);
     last = m.index + m[0].length;
   }
   if (last < text.length) nodes.push(text.slice(last));

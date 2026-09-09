@@ -77,6 +77,132 @@ export const BLOG_INDEX_STANDFIRST =
 
 /** Launch order per the build brief: Gary → Ashley → James. */
 export const BLOG_ARTICLES: BlogArticle[] = [
+  // ── Week 3 (approved 2026-09-08; release 2026-09-09) ────────────────
+  {
+    slug: "dental-post-treatment-follow-up-call",
+    title: "What Should a Dentist Say in a Follow-Up Call After Treatment?",
+    metaTitle: "Dental Follow-Up Call After Treatment: What to Say",
+    metaDescription:
+      "Use Gary Takacs's patient follow-up framework to plan a caring check-in after dental treatment, handle questions, and record what needs attention.",
+    excerpt:
+      "A caring after-treatment call needs a clear opening, time to listen, and a reliable next step. Gary Takacs's framework helps your team plan who calls and how to follow through.",
+    category: "Patient Experience",
+    dek: "A useful patient check-in starts with listening, not selling. Gary Takacs's evening call framework gives your team a simple place to begin.",
+    expert: {
+      name: "Gary Takacs",
+      role: "Founder, Thriving Dentist",
+      headshotUrl:
+        "https://jbntnrtnaqigsyzgvuyv.supabase.co/storage/v1/object/public/kit-thumbnails/profiles/gary-takacs-headshot.jpg",
+      profileHref: "/experts/ecf8bd07-66e7-48f9-b002-b1b33adb2548",
+    },
+    kitSlug: "evening-we-care-call",
+    hero: {
+      src: "/blog/gary-we-care-kit-hero.jpg",
+      alt: "The Evening 'We Care' Call resource kit featuring Gary Takacs",
+    },
+    readTime: "5 minute read",
+    datePublished: "2026-09-09",
+    dateModified: "2026-09-09",
+    quickAnswer:
+      "A dental follow-up call should identify who is calling, explain that the practice is checking in after treatment, ask how the patient is feeling, and give them space to raise questions. The caller should then record the conversation and route any clinical concern to the dentist through the practice's agreed process.",
+    body: [
+      {
+        kind: "p",
+        lead: true,
+        text: "*Based on Gary Takacs's DMN resource kit, The Evening 'We Care' Call That Creates Patient Loyalty.*",
+      },
+      {
+        kind: "p",
+        text: "The point is not to complete a script as quickly as possible. It is to make sure the patient has been heard and knows what happens next.",
+      },
+      { kind: "h2", id: "check-in", text: "Start with a genuine check-in", toc: "Start with a check-in" },
+      {
+        kind: "p",
+        text: "Gary Takacs's approach is the evening \u201cWe Care\u201d call: a personal follow-up after a significant procedure. His framework puts a human conversation after the clinical appointment, when the patient is back at home.",
+      },
+      { kind: "p", text: "Here is illustrative wording adapted from that framework, not a verbatim quotation:" },
+      {
+        kind: "quote",
+        text: "\u201cHi, this is Sam calling from your dental practice. Dr. Lee asked me to check in after your visit today. How are you feeling? Is there anything you would like us to help with?\u201d",
+      },
+      {
+        kind: "p",
+        text: "Use the real caller's name and identify the practice. Confirm you are speaking with the intended patient before discussing treatment details.",
+      },
+      {
+        kind: "p",
+        text: "Then stop talking. The question matters only if the patient has room to answer it. A patient who says, \u201cI'm not sure about one of the instructions,\u201d needs a response, not the next line of a script.",
+      },
+      { kind: "h2", id: "who-and-when", text: "Decide who calls and when", toc: "Decide who calls and when" },
+      {
+        kind: "p",
+        text: "Gary suggests that the doctor call after complex procedures and that an assistant can handle routine follow-up calls. His suggested evening window is 6 to 7 p.m.",
+      },
+      {
+        kind: "p",
+        text: "Treat that as a starting point for the practice's workflow, not a reason to ignore a patient's contact preferences. Agree in advance which patients need a call, who owns each call, and who is available if a question needs the dentist's attention.",
+      },
+      {
+        kind: "p",
+        text: "For example, the team could identify the day's follow-up patients before closing and assign one caller to each. That is an editorial implementation suggestion, not an additional rule from Gary's kit.",
+      },
+      { kind: "p", text: "The useful distinction is ownership: someone should know that the call is theirs to make." },
+      { kind: "h2", id: "concerns", text: "Know what to do when the patient raises a concern", toc: "When a concern is raised" },
+      {
+        kind: "p",
+        text: "A caring call can surface a question the patient did not ask at the appointment. It should not turn a non-clinical team member into someone who diagnoses symptoms or improvises treatment advice.",
+      },
+      {
+        kind: "p",
+        text: "Before introducing the routine, the dentist should define how callers route clinical questions and urgent concerns. Follow the practice's clinician-approved instructions and escalation process. This article addresses communication, not clinical aftercare, and the call does not replace written discharge instructions.",
+      },
+      { kind: "p", text: "Consider this illustrative response:" },
+      {
+        kind: "quote",
+        text: "\u201cThank you for telling me. I will pass that question to the dentist through our follow-up process so you can get the right guidance.\u201d",
+      },
+      {
+        kind: "p",
+        text: "Only promise a callback time that the practice can meet. If a concern needs urgent attention, use the agreed urgent-care process rather than leaving it as a routine message.",
+      },
+      { kind: "h2", id: "voicemail", text: "Leave a useful voicemail and record the outcome", toc: "Voicemail and the record" },
+      { kind: "p", text: "Gary recommends leaving a warm voicemail when the patient does not answer and logging each call." },
+      { kind: "p", text: "Keep voicemail wording general and consistent with the patient's communication preferences. For example:" },
+      {
+        kind: "quote",
+        text: "\u201cHi, this is Sam from your dental practice, checking in with you. Please call us back on our practice number if you would like to speak with the team.\u201d",
+      },
+      {
+        kind: "p",
+        text: "In the call record, note whether you reached the patient, left a message, or identified a question needing follow-up. Record the next owner and action when something remains unresolved. These record fields are an editorial suggestion for making Gary's logging step usable.",
+      },
+      { kind: "p", text: "A \u201ccall completed\u201d tick should not hide an unanswered question." },
+      { kind: "h2", id: "not-a-sales-call", text: "Keep this call separate from a sales conversation", toc: "Not a sales conversation" },
+      {
+        kind: "p",
+        text: "An after-treatment check-in has a different purpose from a call that books a new patient. If someone is uncomfortable or uncertain, focus on that concern. Do not treat the moment as an opportunity to sell another service or request a positive review.",
+      },
+      {
+        kind: "p",
+        text: "For the earlier part of the patient journey, our article **[Why New-Patient Calls Fail to Become Appointments](/blog/new-patient-calls-to-appointments)** covers the booking conversation. Here, success starts with a clear answer to a simpler question: did the patient get the support they needed after the visit?",
+      },
+    ],
+    takeaway: {
+      eyebrow: "Put the routine into practice",
+      title: "Start small, and make sure the call has an owner.",
+      body: "Start with a defined group of follow-up patients, a named caller, an agreed contact window, and a clear route back to the dentist. Review any unresolved questions at the next team check-in.",
+    },
+    kitCta: {
+      // The CTA template prefixes "Get the complete … resource kit", so the
+      // leading "The" is dropped here to avoid "the complete The Evening…".
+      kitName: "Evening 'We Care' Call That Creates Patient Loyalty",
+      description:
+        "Available inside Dental Member Network, including the companion call script.",
+      href: "/garytakacs",
+      label: "Join Dental Member Network",
+      support: "Gary's invitation offers three months free with code **GARY**.",
+    },
+  },
   {
     slug: "fill-open-hygiene-appointments",
     title: "How to Fill Open Hygiene Appointments Before They Become Lost Production",
