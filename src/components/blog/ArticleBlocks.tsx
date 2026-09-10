@@ -40,8 +40,8 @@ export function inline(text: string): React.ReactNode {
           <Box key={k++} component="a" href={href} target="_blank" rel="noopener noreferrer" sx={linkSx}>{m[1]}</Box>
         ),
       );
-    } else if (m[3] !== undefined) nodes.push(<strong key={k++}>{m[3]}</strong>);
-    else nodes.push(<em key={k++}>{m[4]}</em>);
+    } else if (m[3] !== undefined) nodes.push(<strong key={k++}>{inline(m[3])}</strong>);
+    else nodes.push(<em key={k++}>{inline(m[4])}</em>);
     last = m.index + m[0].length;
   }
   if (last < text.length) nodes.push(text.slice(last));

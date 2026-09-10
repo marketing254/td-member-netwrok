@@ -35,15 +35,15 @@ const PRICING_JSONLD = {
       description:
         "Membership for US + Canadian dental practice owners. Expert hotline returning a written action plan in 2–3 business days, partner-network discounts averaging $6,400/year, and a curated kit library.",
       brand: { "@type": "Brand", name: "Dental Member Network" },
-      image: "https://dentalmembernetwork.com/td-logo-horizontal-dark.svg",
-      url: "https://dentalmembernetwork.com/pricing",
+      image: "https://www.dentalmembernetwork.com/td-logo-horizontal-dark.svg",
+      url: "https://www.dentalmembernetwork.com/pricing",
       offers: [
         {
           "@type": "Offer",
           name: "Founding Member · Monthly",
           price: "49.00",
           priceCurrency: "USD",
-          url: "https://dentalmembernetwork.com/join?intent=founding&interval=monthly",
+          url: "https://www.dentalmembernetwork.com/join?intent=founding&interval=monthly",
           availability: "https://schema.org/LimitedAvailability",
           eligibleQuantity: { "@type": "QuantitativeValue", maxValue: 100 },
         },
@@ -52,7 +52,7 @@ const PRICING_JSONLD = {
           name: "Founding Member · Annual",
           price: "490.00",
           priceCurrency: "USD",
-          url: "https://dentalmembernetwork.com/join?intent=founding&interval=annual",
+          url: "https://www.dentalmembernetwork.com/join?intent=founding&interval=annual",
           availability: "https://schema.org/LimitedAvailability",
         },
         {
@@ -60,7 +60,7 @@ const PRICING_JSONLD = {
           name: "Standard Member · Monthly",
           price: "199.00",
           priceCurrency: "USD",
-          url: "https://dentalmembernetwork.com/join?intent=standard&interval=monthly",
+          url: "https://www.dentalmembernetwork.com/join?intent=standard&interval=monthly",
           availability: "https://schema.org/InStock",
         },
       ],
@@ -71,11 +71,11 @@ const PRICING_JSONLD = {
       description:
         "Featured spot on the DMN expert bench for coaches, consultants and educators. We produce your kits, surface them in the member library, route warm leads to your calendar. Sell your own courses with a 70/30 split.",
       brand: { "@type": "Brand", name: "Dental Member Network" },
-      url: "https://dentalmembernetwork.com/pricing",
+      url: "https://www.dentalmembernetwork.com/pricing",
       offers: [
-        { "@type": "Offer", name: "Expert Launch — months 1-6", price: "0.00", priceCurrency: "USD", url: "https://dentalmembernetwork.com/experts" },
-        { "@type": "Offer", name: "Expert Growth — months 7-12", price: "49.00", priceCurrency: "USD", url: "https://dentalmembernetwork.com/experts" },
-        { "@type": "Offer", name: "Expert Standard — month 13+", price: "199.00", priceCurrency: "USD", url: "https://dentalmembernetwork.com/experts" },
+        { "@type": "Offer", name: "Expert Launch — months 1-6", price: "0.00", priceCurrency: "USD", url: "https://www.dentalmembernetwork.com/experts" },
+        { "@type": "Offer", name: "Expert Growth — months 7-12", price: "49.00", priceCurrency: "USD", url: "https://www.dentalmembernetwork.com/experts" },
+        { "@type": "Offer", name: "Expert Standard — month 13+", price: "199.00", priceCurrency: "USD", url: "https://www.dentalmembernetwork.com/experts" },
       ],
     },
     {
@@ -84,11 +84,11 @@ const PRICING_JSONLD = {
       description:
         "Featured vendor placement for companies serving dental practices. Same Featured Partner benefits across all phases + refer-and-earn $50 per converted member.",
       brand: { "@type": "Brand", name: "Dental Member Network" },
-      url: "https://dentalmembernetwork.com/pricing",
+      url: "https://www.dentalmembernetwork.com/pricing",
       offers: [
-        { "@type": "Offer", name: "Partner Launch — months 1-6", price: "0.00", priceCurrency: "USD", url: "https://dentalmembernetwork.com/partners" },
-        { "@type": "Offer", name: "Partner Growth — months 7-12", price: "49.00", priceCurrency: "USD", url: "https://dentalmembernetwork.com/partners" },
-        { "@type": "Offer", name: "Partner Standard — month 13+", price: "199.00", priceCurrency: "USD", url: "https://dentalmembernetwork.com/partners" },
+        { "@type": "Offer", name: "Partner Launch — months 1-6", price: "0.00", priceCurrency: "USD", url: "https://www.dentalmembernetwork.com/partners" },
+        { "@type": "Offer", name: "Partner Growth — months 7-12", price: "49.00", priceCurrency: "USD", url: "https://www.dentalmembernetwork.com/partners" },
+        { "@type": "Offer", name: "Partner Standard — month 13+", price: "199.00", priceCurrency: "USD", url: "https://www.dentalmembernetwork.com/partners" },
       ],
     },
   ],

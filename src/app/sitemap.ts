@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { PUBLISHED_BLOG_ARTICLES } from "@/lib/blog";
 
-const SITE = "https://dentalmembernetwork.com";
+const SITE = "https://www.dentalmembernetwork.com";
 
 /**
  * Next.js auto-generates /sitemap.xml from this file. Update PAGES when
