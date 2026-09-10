@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import BlogArticleView from "@/components/blog/BlogArticleView";
 import { PUBLISHED_BLOG_ARTICLES, getBlogArticle } from "@/lib/blog";
 
-const SITE = "https://dentalmembernetwork.com";
+const SITE = "https://www.dentalmembernetwork.com";
 
 /**
  * /blog/[slug] — one server-rendered page per approved article. Slugs,

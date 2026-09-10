@@ -77,6 +77,155 @@ export const BLOG_INDEX_STANDFIRST =
 
 /** Launch order per the build brief: Gary → Ashley → James. */
 export const BLOG_ARTICLES: BlogArticle[] = [
+  // ── Week 3 · article 2 (approved 2026-09-08; release 2026-09-10) ─────
+  {
+    slug: "difficult-feedback-dental-team",
+    title: "How to Give a Dental Team Member Difficult Feedback Without Making It Personal",
+    metaTitle: "Difficult Feedback for Dental Teams: A Practical Approach",
+    metaDescription:
+      "Give dental staff clear, specific feedback using Liz Lord's problem-first approach. Check expectations, training, tools, and support before assigning blame.",
+    excerpt:
+      "Difficult feedback becomes more useful when it addresses a specific problem instead of a person's character. Liz Lord's approach starts with clarity, support, and the standard you need to meet.",
+    category: "Team & Culture",
+    dek: "Address the missed standard, check the support you provided, and agree on what changes next.",
+    expert: {
+      name: "Liz Lord",
+      role: "Founder and Chief Architect, The Practice Transformation Institute",
+      headshotUrl:
+        "https://jbntnrtnaqigsyzgvuyv.supabase.co/storage/v1/object/public/kit-thumbnails/profiles/liz-lord-headshot.jpg",
+      profileHref: "/experts/d53eb2fa-4da9-4cb1-863a-61c1fc6bf2be",
+    },
+    kitSlug: "attack-the-problem-not-the-person",
+    hero: {
+      src: "/blog/liz-kit-hero.jpg",
+      alt: "The Attack The Problem, Not The Person resource kit featuring Liz Lord",
+    },
+    readTime: "5 minute read",
+    datePublished: "2026-09-10",
+    dateModified: "2026-09-10",
+    quickAnswer:
+      "To give a dental team member difficult feedback, describe the specific behavior and its effect rather than making a judgment about their character. Check whether you made the standard clear and provided the training, feedback, and tools to meet it. Then listen to their perspective and agree on a practical next step.",
+    body: [
+      {
+        kind: "p",
+        lead: true,
+        text: "*Based on Liz Lord's DMN resource kit, Attack The Problem, Not The Person.*",
+      },
+      {
+        kind: "p",
+        text: "Liz Lord, Founder and Chief Architect of The Practice Transformation Institute, summarizes the principle this way:",
+      },
+      { kind: "quote", text: "\u201cYou attack problems, you don't attack people.\u201d", cite: "Liz Lord" },
+      {
+        kind: "p",
+        text: "That does not mean avoiding a difficult message. It means being clear about the problem you need to solve.",
+      },
+      { kind: "h2", id: "your-part", text: "Before the conversation, check your part in the problem", toc: "Check your part first" },
+      {
+        kind: "p",
+        text: "It is tempting to begin with what the employee should have done. Liz starts one step earlier: what has the leader done, or failed to do, that contributes to the situation?",
+      },
+      { kind: "p", text: "Her framework asks you to check four things:" },
+      {
+        kind: "ul",
+        items: [
+          "Did you clearly communicate what a good job looks like?",
+          "Did you provide the training needed to do it?",
+          "Did you provide feedback?",
+          "Did you provide the tools the person needs?",
+        ],
+      },
+      {
+        kind: "p",
+        text: "These questions make a vague complaint more useful. \u201cThe handoffs are poor\u201d might mean the team member missed an agreed step. It might also mean that three people use three different handoff processes.",
+      },
+      {
+        kind: "p",
+        text: "If you never established the standard, acknowledge that gap and put it in place. You can still address the immediate problem without pretending the expectations were clear all along.",
+      },
+      { kind: "h2", id: "what-happened", text: "Describe what happened, not who the person is", toc: "Describe what happened" },
+      { kind: "p", text: "Compare these two openings:" },
+      { kind: "quote", text: "\u201cYou're careless with the schedule.\u201d" },
+      {
+        kind: "quote",
+        text: "\u201cYesterday, two appointment changes were not included in the handoff, so the next team member had to reconstruct what had changed.\u201d",
+      },
+      {
+        kind: "p",
+        text: "The second is an illustrative example, not a quote from Liz or a report of an actual DMN practice. It names an observable event and its operational effect. The first assigns a personality trait that the person has little room to respond to constructively.",
+      },
+      {
+        kind: "p",
+        text: "Before your conversation, write down the event, the expected standard, and the impact. If you cannot describe those plainly, you may need more information before drawing a conclusion.",
+      },
+      { kind: "h2", id: "acknowledge", text: "Acknowledge good work without cancelling it", toc: "Acknowledge good work" },
+      {
+        kind: "p",
+        text: "Liz recommends genuinely acknowledging what is going well and letting that acknowledgement land. Her warning is about following praise immediately with \u201cbut,\u201d which can make the positive statement feel disposable.",
+      },
+      {
+        kind: "p",
+        text: "This is not a requirement to invent a compliment. Choose something real and specific. Give it space. Then move to the area that needs attention without turning the first statement into a setup.",
+      },
+      { kind: "p", text: "For example:" },
+      {
+        kind: "quote",
+        text: "\u201cYou handled those patient questions thoughtfully this morning. I appreciate the care you took.\u201d",
+      },
+      {
+        kind: "quote",
+        text: "\u201cI also want us to work through yesterday's handoff. Two appointment changes were missing. Can you walk me through what happened?\u201d",
+      },
+      {
+        kind: "p",
+        text: "This wording is an editorial adaptation of the principle. The important features are genuine acknowledgement, a concrete problem, and an invitation to explain.",
+      },
+      { kind: "h2", id: "standard-and-support", text: "Agree on the standard and the support", toc: "Agree the standard and support" },
+      { kind: "p", text: "Once you understand the issue, make the next step observable." },
+      {
+        kind: "p",
+        text: "In the handoff example, you might agree that appointment changes are recorded in one shared place before the next person takes over. If the person needs training or access, name who will provide it. Agree when you will check whether the process is working.",
+      },
+      {
+        kind: "p",
+        text: "Liz distinguishes accountability from sole ownership. The accountable person does not have to perform every task alone. Other people can help, but someone needs to keep track of whether the work meets the standard.",
+      },
+      {
+        kind: "p",
+        text: "That distinction matters in a busy dental practice. \u201cEveryone helps\u201d should not leave nobody responsible for checking completion.",
+      },
+      {
+        kind: "p",
+        text: "If expectations are inconsistent across the whole team, **[How to Improve Communication in Your Dental Practice](/blog/improve-dental-team-communication)** is a useful companion topic. A private correction cannot solve a process that the entire team understands differently.",
+      },
+      { kind: "h2", id: "keeps-happening", text: "What if the problem keeps happening?", toc: "If it keeps happening" },
+      {
+        kind: "p",
+        text: "Respectful feedback is not the same as indefinite tolerance. Liz is clear that leaders still need to address problems rather than letting them continue.",
+      },
+      {
+        kind: "p",
+        text: "Return to the agreed standard and what has happened since the conversation. Check whether the promised support was provided. Discuss the remaining gap using specific examples rather than escalating to labels such as \u201clazy\u201d or \u201cnot a team player.\u201d",
+      },
+      {
+        kind: "p",
+        text: "Use the practice's established management process for any further action. This article is a communication framework, not a disciplinary procedure.",
+      },
+    ],
+    takeaway: {
+      eyebrow: "Make the next conversation easier to prepare",
+      title: "Four lines before you start.",
+      body: "Before the next difficult conversation, write four lines: what happened, what good work should look like, what support is needed, and when you will follow up. This preparation exercise is an editorial application of Liz's approach. You do not need to choose between protecting the relationship and addressing the work. Be respectful of the person and clear about the standard.",
+    },
+    kitCta: {
+      kitName: "Attack The Problem, Not The Person",
+      description:
+        "Available inside Dental Member Network, to work through Liz Lord's approach to communication, leadership, and accountability.",
+      // Standard paid membership route — no trial or free-month wording.
+      href: "/join/member",
+      label: "Join Dental Member Network",
+    },
+  },
   // ── Week 3 (approved 2026-09-08; release 2026-09-09) ────────────────
   {
     slug: "dental-post-treatment-follow-up-call",
