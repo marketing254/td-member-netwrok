@@ -11,45 +11,44 @@
  * Bing re-crawling also speeds up AI citation refresh.
  *
  * Usage:
- *   # All sitemap URLs:
+ *   # Every URL in the live sitemap (blog articles included):
  *   node scripts/indexnow.mjs
  *
  *   # Specific URLs (override sitemap):
- *   node scripts/indexnow.mjs https://dentalmembernetwork.com/pricing https://dentalmembernetwork.com/experts
+ *   node scripts/indexnow.mjs https://www.dentalmembernetwork.com/blog/some-slug
  *
  *   # Dry run (print what would be submitted):
  *   node scripts/indexnow.mjs --dry-run
  *
- * Set the API_KEY constant below to match the file you place in /public.
+ * The host is www because Vercel serves production on www and 308s the
+ * bare domain there; IndexNow rejects URLs whose host doesn't match the
+ * key file's host. The key file lives at /public/<API_KEY>.txt.
  */
 
-const HOST = "dentalmembernetwork.com";
+const HOST = "www.dentalmembernetwork.com";
 const API_KEY = "20a869c927f1d8a7a854d6ca37917378";
 const KEY_LOCATION = `https://${HOST}/${API_KEY}.txt`;
 const ENDPOINT = "https://api.indexnow.org/IndexNow";
-
-const SITEMAP_URLS = [
-  "https://dentalmembernetwork.com/",
-  "https://dentalmembernetwork.com/pricing",
-  "https://dentalmembernetwork.com/join",
-  "https://dentalmembernetwork.com/experts",
-  "https://dentalmembernetwork.com/partners",
-  "https://dentalmembernetwork.com/resources",
-  "https://dentalmembernetwork.com/reviews",
-];
+const SITEMAP = `https://${HOST}/sitemap.xml`;
 
 const dryRun = process.argv.includes("--dry-run");
-const overrideUrls = process.argv
-  .slice(2)
-  .filter((a) => !a.startsWith("--"));
-const urls = overrideUrls.length ? overrideUrls : SITEMAP_URLS;
+const overrideUrls = process.argv.slice(2).filter((a) => !a.startsWith("--"));
 
-const payload = {
-  host: HOST,
-  key: API_KEY,
-  keyLocation: KEY_LOCATION,
-  urlList: urls,
-};
+/** Read the live sitemap and normalise every URL onto the www host. */
+async function sitemapUrls() {
+  const res = await fetch(SITEMAP, { redirect: "follow" });
+  if (!res.ok) throw new Error(`sitemap fetch failed: ${res.status}`);
+  const xml = await res.text();
+  const urls = [...xml.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/g)].map((m) => m[1]);
+  const normalised = urls.map((u) => u.replace(/^https?:\/\/(www\.)?dentalmembernetwork\.com/i, `https://${HOST}`));
+  return [...new Set(normalised)];
+}
+
+const urls = overrideUrls.length
+  ? overrideUrls.map((u) => u.replace(/^https?:\/\/(www\.)?dentalmembernetwork\.com/i, `https://${HOST}`))
+  : await sitemapUrls();
+
+const payload = { host: HOST, key: API_KEY, keyLocation: KEY_LOCATION, urlList: urls };
 
 console.log(`IndexNow → ${ENDPOINT}`);
 console.log(`Submitting ${urls.length} URL${urls.length === 1 ? "" : "s"}:`);
