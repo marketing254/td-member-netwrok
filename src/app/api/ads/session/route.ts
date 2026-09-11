@@ -47,6 +47,8 @@ type VerifiedSession = {
   paid: boolean;
   plan: string;
   subscriptionId: string | null;
+  /** Server-stamped at checkout creation: the account was created by that checkout. */
+  autoLogin: boolean;
 };
 
 async function retrieveVerified(sessionId: string): Promise<VerifiedSession | null> {
@@ -57,8 +59,13 @@ async function retrieveVerified(sessionId: string): Promise<VerifiedSession | nu
     if (!memberId || session.metadata?.channel !== "meta_ads") return null;
     return {
       memberId,
-      paid: session.payment_status === "paid" && session.status === "complete",
+      paid:
+        (session.payment_status === "paid" ||
+          // $0 summit-trial checkout: card saved, nothing due today.
+          (session.payment_status === "no_payment_required" && session.metadata?.offer === "summit_trial")) &&
+        session.status === "complete",
       plan: session.metadata?.plan ?? "founding_monthly",
+      autoLogin: session.metadata?.auto_login === "true",
       subscriptionId:
         typeof session.subscription === "string"
           ? session.subscription
@@ -119,6 +126,18 @@ export async function POST(req: Request) {
         { ok: false, state: "signin_required" },
         { status: 401 },
       );
+    }
+
+    // 2b. Identity binding: the cookie proves "this browser ran the
+    //     checkout", not "this browser owns the email". The checkout
+    //     routes reuse an existing (unpaid) member row when the email
+    //     matches, so without this check anyone who knew a member's email
+    //     could complete a checkout and be signed in as them. Only an
+    //     account CREATED by this very checkout may be auto-signed-in;
+    //     everyone else uses the emailed code. Payment/activation is
+    //     unaffected either way (the webhook handles it).
+    if (!verified.autoLogin) {
+      return NextResponse.json({ ok: false, state: "signin_required" }, { status: 200 });
     }
 
     const sb = getSupabaseAdmin();

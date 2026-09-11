@@ -43,7 +43,7 @@ const GENERIC_FAIL = "That code didn't work. Request a new one and try again.";
 export async function POST(req: Request) {
   const route = "POST /api/member/verify-otp";
 
-  let body: { email?: string; token?: string };
+  let body: { email?: string; token?: string; next?: string };
   try {
     body = await req.json();
   } catch {
@@ -188,7 +188,12 @@ export async function POST(req: Request) {
     const isPaid =
       resolvedMember.subscription_status === "active" ||
       resolvedMember.subscription_status === "trialing";
-    const next = isPaid ? "/dashboard" : "/upgrade";
+    // ?next= is accepted ONLY for the summit page, and only for a paid
+    // member (an unpaid member still goes to /upgrade). Anything else —
+    // an external host, a protocol-relative URL, any other path — is
+    // ignored, so there is no open redirect.
+    const wantsSummit = typeof body.next === "string" && body.next === "/summit";
+    const next = isPaid ? (wantsSummit ? "/summit" : "/dashboard") : "/upgrade";
 
     // They now have a real session — retire the pay-first signup cookie so it
     // can't linger and take precedence over the session on a later /upgrade.
