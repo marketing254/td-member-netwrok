@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/guards";
 
@@ -31,7 +32,7 @@ export async function GET() {
       supabase
         .from("vendors")
         .select("id, status, verified, created_at, plan_id"),
-      supabase.from("members").select("id, status, tier, joined_at, created_at, activated_at, stripe_subscription_id"),
+      supabase.from("members").select("id, email, status, tier, joined_at, created_at, activated_at, stripe_subscription_id"),
       supabase
         .from("waitlist_signups")
         .select("id, role, created_at"),
@@ -85,12 +86,33 @@ export async function GET() {
     // payment step) are NOT members — they get their own tab and badge.
     const isPending = (x: { activated_at: string | null; stripe_subscription_id: string | null }) =>
       !x.activated_at && !x.stripe_subscription_id;
+    let capturedWithoutMember = 0;
+    try {
+      const known = new Set(m.map((x) => x.email.toLowerCase()));
+      const { data: captured } = await (supabase as unknown as SupabaseClient)
+        .from("pending_registrations")
+        .select("email")
+        .limit(500);
+      const seen = new Set<string>();
+      for (const c of (captured ?? []) as { email: string }[]) {
+        const k = c.email.toLowerCase();
+        if (known.has(k) || seen.has(k)) continue;
+        seen.add(k);
+        capturedWithoutMember += 1;
+      }
+    } catch {
+      /* table absent */
+    }
     const realMembers = m.filter((x) => !isPending(x));
     const memberCounts = {
       total: realMembers.length,
       active: realMembers.filter((x) => x.status === "active").length,
       thisWeek: realMembers.filter((x) => x.created_at >= weekAgo).length,
-      pending: m.filter(isPending).length,
+      // Same definition as the Pending members tab: unpaid members rows PLUS
+      // people captured by the follow-up sequence before the payment step
+      // (no members row yet). Purchased captures always have a members row,
+      // so they are never double-counted.
+      pending: m.filter(isPending).length + capturedWithoutMember,
     };
 
     const waitlistCounts = {

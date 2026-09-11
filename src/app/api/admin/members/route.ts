@@ -73,13 +73,64 @@ export async function GET(req: NextRequest) {
       } catch {
         /* table absent — rows render without follow-up state */
       }
-      return NextResponse.json({
-        rows: pending.map((r) => ({
-          ...r,
-          source: sourceLabel(r),
-          follow_up: byEmail.get(r.email.toLowerCase()) ?? null,
-        })),
-      });
+
+      const rows: Record<string, unknown>[] = pending.map((r) => ({
+        ...r,
+        source: sourceLabel(r),
+        follow_up: byEmail.get(r.email.toLowerCase()) ?? null,
+      }));
+
+      // People captured by the follow-up sequence BEFORE the payment step
+      // (the /join/member and /start forms capture on the email field) have
+      // no members row yet — the row is only created when checkout opens.
+      // Without this they were invisible here even though email 1 had
+      // already gone out to them. Show them from the capture itself.
+      try {
+        const known = new Set(all.map((r) => r.email.toLowerCase()));
+        const { data: captured } = await (supabase as unknown as SupabaseClient)
+          .from("pending_registrations")
+          .select("id, email, first_name, last_name, practice_name, role, plan, utm, captured_at, email1_sent_at, email2_sent_at, email3_sent_at, code, code_expires_at, code_used_at, resumed_at, stopped_at, stop_reason")
+          .order("captured_at", { ascending: false })
+          .limit(500);
+        const seen = new Set<string>();
+        for (const c of (captured ?? []) as (FollowUp & {
+          id: string; first_name: string | null; last_name: string | null;
+          practice_name: string | null; role: string | null; utm: Record<string, unknown> | null;
+        })[]) {
+          const k = c.email.toLowerCase();
+          if (known.has(k) || seen.has(k)) continue;
+          seen.add(k);
+          const utm = c.utm ?? {};
+          const utmSource = typeof utm.source === "string" ? utm.source : typeof utm.utm_source === "string" ? utm.utm_source : null;
+          rows.push({
+            id: `capture:${c.id}`,
+            first_name: c.first_name ?? "",
+            last_name: c.last_name,
+            email: c.email,
+            phone: null,
+            practice_name: c.practice_name,
+            practice_role: c.role,
+            tier: c.plan,
+            created_at: c.captured_at,
+            signup_channel: null,
+            utm_source: utmSource,
+            utm_campaign: typeof utm.utm_campaign === "string" ? utm.utm_campaign : null,
+            utm_content: typeof utm.utm_content === "string" ? utm.utm_content : null,
+            source:
+              utmSource === "landing-join"
+                ? "Join page · stopped before payment"
+                : utmSource === "meta" || utmSource === "start"
+                  ? "Meta ad · stopped before payment"
+                  : `${utmSource ?? "Direct"} · stopped before payment`,
+            follow_up: c,
+          });
+        }
+      } catch {
+        /* table absent — nothing extra to show */
+      }
+
+      rows.sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+      return NextResponse.json({ rows });
     }
 
     const rows = all.filter((r) => !isPendingMember(r));

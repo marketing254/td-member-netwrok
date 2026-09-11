@@ -152,7 +152,7 @@ export default function PendingMembersPage() {
           Pending members
         </Typography>
         <Typography sx={{ color: "text.secondary", maxWidth: 720 }}>
-          People who reached the payment step but haven&apos;t paid. They are not members and don&apos;t
+          People who started signing up but haven&apos;t paid, whether they stopped at the join form or at the payment step. They are not members and don&apos;t
           count anywhere else. The follow-up sequence (1h · 24h · day 7 with a one-month code) runs on its
           own; this page shows where each person is in it and where they came from.
         </Typography>
