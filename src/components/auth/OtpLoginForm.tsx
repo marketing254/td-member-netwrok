@@ -59,6 +59,12 @@ export type OtpLoginConfig = {
    * "ask an admin to invite you" on portals where signup is closed.
    */
   unknownEmailMessage?: string;
+  /**
+   * Forward a `?next=` query param to the verify endpoint so a sign-in
+   * that started mid-task (registering for an event) lands back where it
+   * began. The endpoint allowlists the value; the form never trusts it.
+   */
+  forwardNextParam?: boolean;
 };
 
 export default function OtpLoginForm({ config }: { config: OtpLoginConfig }) {
@@ -158,6 +164,9 @@ export default function OtpLoginForm({ config }: { config: OtpLoginConfig }) {
         body: JSON.stringify({
           email: email.trim().toLowerCase(),
           token: cleaned,
+          ...(config.forwardNextParam && params?.get("next")
+            ? { next: params.get("next") }
+            : {}),
         }),
       });
       const body = (await res.json()) as {

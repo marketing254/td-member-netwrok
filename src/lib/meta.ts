@@ -55,6 +55,19 @@ export type MetaPurchaseInput = {
  * treat false as an error worth failing the request over.
  */
 export async function sendMetaPurchase(input: MetaPurchaseInput): Promise<boolean> {
+  return sendMetaEvent("Purchase", input);
+}
+
+/**
+ * Report a server-verified standard event. Used for Purchase (paid) and
+ * StartTrial ($0 trial — which must NEVER be reported as a Purchase or
+ * carry the renewal amount as collected revenue). Same rails as above:
+ * server-only, hashed PII, event id dedupe, no-op when unconfigured.
+ */
+export async function sendMetaEvent(
+  eventName: "Purchase" | "StartTrial",
+  input: MetaPurchaseInput,
+): Promise<boolean> {
   const id = pixelId();
   const token = process.env.META_CAPI_ACCESS_TOKEN;
   if (!id || !token) return false; // Not configured yet — silent no-op.
@@ -78,7 +91,7 @@ export async function sendMetaPurchase(input: MetaPurchaseInput): Promise<boolea
   const body = {
     data: [
       {
-        event_name: "Purchase",
+        event_name: eventName,
         event_time: Math.floor(Date.now() / 1000),
         event_id: input.eventId,
         action_source: "website",
@@ -113,12 +126,12 @@ export async function sendMetaPurchase(input: MetaPurchaseInput): Promise<boolea
     );
     if (!res.ok) {
       const text = await res.text().catch(() => "");
-      console.error("[meta capi] purchase rejected:", res.status, text.slice(0, 300));
+      console.error(`[meta capi] ${eventName} rejected:`, res.status, text.slice(0, 300));
       return false;
     }
     return true;
   } catch (err) {
-    console.error("[meta capi] purchase send failed:", err instanceof Error ? err.message : err);
+    console.error(`[meta capi] ${eventName} send failed:`, err instanceof Error ? err.message : err);
     return false;
   }
 }

@@ -69,7 +69,7 @@ export function initMetaPixel(): void {
 
 /** Track a standard event. No-op when the pixel isn't configured. */
 export function trackMeta(
-  event: "PageView" | "ViewContent" | "InitiateCheckout" | "Purchase",
+  event: "PageView" | "ViewContent" | "InitiateCheckout" | "Purchase" | "StartTrial",
   params?: Record<string, unknown>,
   eventId?: string,
 ): void {

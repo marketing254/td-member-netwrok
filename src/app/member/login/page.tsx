@@ -20,6 +20,7 @@ export default function MemberLoginPage() {
           accentColor: "#A07823",
           accentTint: "rgba(217,168,75,0.16)",
           signupHref: "/join",
+          forwardNextParam: true,
           signupLabel: "Not a member yet?",
           unknownEmailMessage:
             "We couldn't find a member account for that email. Sign up at /join, or check the spelling.",

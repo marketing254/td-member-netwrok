@@ -169,12 +169,36 @@ async function handleEvent(event: Stripe.Event, stripe: Stripe): Promise<string 
       console.error("[stripe webhook] abandoned-sequence stop failed:", err);
     }
 
+    // Summit (DMN × RIDA) trial checkout: payment method verified and the
+    // $0 trial subscription exists → the event registration is ENTITLED
+    // and handed to n8n for the Zoom registration. entitleRegistration is
+    // idempotent (only pending rows move), so a replayed webhook cannot
+    // register anyone twice. Never throws into the webhook.
+    const isSummitTrial = session.metadata?.offer === "summit_trial";
+    if (isSummitTrial && session.metadata?.registration_id) {
+      try {
+        const { entitleRegistration } = await import("@/lib/events/summit");
+        await entitleRegistration(session.metadata.registration_id, "trial_checkout", {
+          memberId,
+          stripeSessionId: session.id,
+          stripeSubscriptionId: subId,
+        });
+      } catch (err) {
+        console.error("[stripe webhook] summit entitlement failed:", err);
+      }
+    }
+
     // Meta Conversions API — CONFIRMED Purchase for the paid-ads channel
     // only. Fired here (server-side, after verified payment) so a
     // thank-you-page visit or refresh can never fabricate a purchase.
     // The event id was minted at checkout creation and is shared with
     // the browser Pixel, so Meta de-duplicates. This whole webhook is
     // idempotent per event (stripe_events), so it sends at most once.
+    //
+    // A $0 TRIAL IS NOT A PURCHASE. Summit-trial sessions report
+    // StartTrial with value 0 here; their Purchase fires from the first
+    // PAID invoice (see invoice.paid below), with the amount actually
+    // collected.
     if (session.metadata?.channel === "meta_ads") {
       try {
         const { data: buyer } = await sb
@@ -186,13 +210,13 @@ async function handleEvent(event: Stripe.Event, stripe: Stripe): Promise<string 
         const amount = (item?.price?.unit_amount ?? 0) / 100;
         const currency = item?.price?.currency ?? "usd";
         if (buyer?.email && session.metadata?.meta_event_id) {
-          const { sendMetaPurchase } = await import("@/lib/meta");
-          await sendMetaPurchase({
+          const { sendMetaEvent } = await import("@/lib/meta");
+          await sendMetaEvent(isSummitTrial ? "StartTrial" : "Purchase", {
             eventId: session.metadata.meta_event_id,
             email: buyer.email,
             firstName: buyer.first_name,
             lastName: buyer.last_name,
-            value: amount,
+            value: isSummitTrial ? 0 : amount,
             currency,
             contentName: session.metadata?.plan ?? "founding_membership",
             eventSourceUrl: session.metadata?.landing_url ?? null,
@@ -553,6 +577,43 @@ async function handleEvent(event: Stripe.Event, stripe: Stripe): Promise<string 
         });
       } catch (err) {
         console.error("[stripe webhook] payment-tracker append failed:", err);
+      }
+    }
+
+    // Meta Purchase for a summit-trial member: the FIRST paid invoice is
+    // the real conversion (value = what was collected). The event id is
+    // the invoice id, so the browser cannot duplicate it and Stripe
+    // retries dedupe on stripe_events. Only ever fires for amount > 0.
+    if (event.type === "invoice.paid" && (invoice.amount_paid ?? 0) > 0) {
+      try {
+        const subIdForInvoice =
+          typeof invoice.parent?.subscription_details?.subscription === "string"
+            ? invoice.parent.subscription_details.subscription
+            : invoice.parent?.subscription_details?.subscription?.id ?? null;
+        if (subIdForInvoice) {
+          const subForInvoice = await stripe.subscriptions.retrieve(subIdForInvoice);
+          if (subForInvoice.metadata?.offer === "summit_trial" && subForInvoice.metadata?.channel === "meta_ads") {
+            const { data: payer } = await sb
+              .from("members")
+              .select("email, first_name, last_name")
+              .eq("id", memberId)
+              .maybeSingle();
+            if (payer?.email) {
+              const { sendMetaEvent } = await import("@/lib/meta");
+              await sendMetaEvent("Purchase", {
+                eventId: `inv_${invoice.id}`,
+                email: payer.email,
+                firstName: payer.first_name,
+                lastName: payer.last_name,
+                value: (invoice.amount_paid ?? 0) / 100,
+                currency: invoice.currency ?? "usd",
+                contentName: "summit_trial_first_payment",
+              });
+            }
+          }
+        }
+      } catch (err) {
+        console.error("[stripe webhook] summit first-payment purchase report failed:", err);
       }
     }
 
