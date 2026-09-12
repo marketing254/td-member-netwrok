@@ -4,8 +4,7 @@ import Link from "next/link";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import { loadStripe } from "@stripe/stripe-js";
-import { EmbeddedCheckoutProvider, EmbeddedCheckout } from "@stripe/react-stripe-js";
+import dynamic from "next/dynamic";
 import { trackEvent } from "@/lib/analytics";
 import { initMetaPixel, trackMeta } from "@/components/ads/metaPixel";
 
@@ -22,8 +21,11 @@ import { initMetaPixel, trackMeta } from "@/components/ads/metaPixel";
  * and only the verified Stripe webhook can entitle it and trigger Zoom.
  */
 
-const STRIPE_PK = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
-const stripePromise = STRIPE_PK ? loadStripe(STRIPE_PK) : null;
+/** Stripe.js is heavy; it is fetched only once a checkout session exists. */
+const SummitCheckout = dynamic(() => import("./SummitCheckout"), {
+  ssr: false,
+  loading: () => <p className="stripe-loading">Loading secure checkout…</p>,
+});
 
 const SPEAKERS = [
   { img: "/rida/ekta.jpg", name: "Dr. Ekta Pandya", role: "Dentist, DDS · Public Health & AI Advocate" },
@@ -221,17 +223,17 @@ export default function SummitLandingView() {
     <>
       <header className="event-header container">
         <a href="#join" aria-label="DMN summit and membership trial">
-          <Image src="/rida/dmn-logo.png" alt="Dental Member Network" className="dmn-logo" width={194} height={62} priority />
+          <Image src="/rida/dmn-logo.png" alt="Dental Member Network" className="dmn-logo" width={194} height={62} sizes="194px" priority />
         </a>
         <span className="brand-partner">
           <span className="partner-with">WITH</span>
-          <Image className="rida-logo" src="/rida/rida-logo.png" alt="RIDA — Reducing Insurance Dependence Academy" width={166} height={48} priority />
+          <Image className="rida-logo" src="/rida/rida-logo.png" alt="RIDA — Reducing Insurance Dependence Academy" width={166} height={48} sizes="166px" priority />
         </span>
         <nav aria-label="Event navigation">
           <a href="#program">The program</a>
           <a href="#panel">Speakers</a>
           <a href="#membership">DMN membership</a>
-          <a href="#join" className="small-cta">Start free trial ↗</a>
+          <a href="#signup" className="small-cta">Start free trial ↗</a>
         </nav>
       </header>
 
@@ -254,6 +256,7 @@ export default function SummitLandingView() {
               <p><span>✓</span> Expert &amp; company directories and member offers</p>
               <p><span>✓</span> $0 today. Then $49/month unless cancelled</p>
             </div>
+            <a className="cta hero-cta" href="#signup">Start my 30-day free trial ↗</a>
             <a className="membership-jump" href="#membership">What is included in my DMN membership? ↓</a>
             <span className="speaker-caption" id="panel">YOUR SUMMIT SPEAKERS</span>
             <div className="c-faces">
@@ -275,7 +278,7 @@ export default function SummitLandingView() {
           </div>
 
           <div className="c-form">
-            <div className="signup-card">
+            <div className="signup-card" id="signup">
               <span className="trial-label">DMN MEMBERSHIP · 30-DAY TRIAL</span>
               <div className="trial-price">$0 <span>today</span></div>
               <p>
@@ -288,7 +291,7 @@ export default function SummitLandingView() {
               </div>
               <div className="divider" />
 
-              {clientSecret && stripePromise ? (
+              {clientSecret ? (
                 <>
                   <h3 id="pay-head">Complete your free trial</h3>
                   <p className="pay-head">
@@ -296,9 +299,7 @@ export default function SummitLandingView() {
                     <button type="button" onClick={() => setClientSecret(null)}>Edit details</button>
                   </p>
                   <div className="stripe-wrap">
-                    <EmbeddedCheckoutProvider stripe={stripePromise} options={{ clientSecret }}>
-                      <EmbeddedCheckout />
-                    </EmbeddedCheckoutProvider>
+                    <SummitCheckout clientSecret={clientSecret} />
                   </div>
                 </>
               ) : memberDone ? (
@@ -414,9 +415,9 @@ export default function SummitLandingView() {
                 <p>A few of the expert kits to explore.</p>
               </div>
               <div className="kit-grid">
-                <article><Image src="/rida/kit-huddle.jpg" width={360} height={360} alt="Successful Morning Huddle expert kit cover" /><div><span>TEAM ROUTINES</span><h4>Successful Morning Huddle</h4><p>Callie Ward</p></div></article>
-                <article><Image src="/rida/kit-numbers.jpg" width={360} height={360} alt="Know Your Real Numbers expert kit cover" /><div><span>PRACTICE FINANCES</span><h4>Know Your Real Numbers</h4><p>Laura Phillips, E.A.</p></div></article>
-                <article><Image src="/rida/kit-process.jpg" width={360} height={360} alt="The Process Comes First expert kit cover" /><div><span>PRACTICE SYSTEMS</span><h4>The Process Comes First</h4><p>DeVon Banks</p></div></article>
+                <article><Image src="/rida/kit-huddle.jpg" width={360} height={360} sizes="(max-width: 760px) 30vw, 120px" alt="Successful Morning Huddle expert kit cover" /><div><span>TEAM ROUTINES</span><h4>Successful Morning Huddle</h4><p>Callie Ward</p></div></article>
+                <article><Image src="/rida/kit-numbers.jpg" width={360} height={360} sizes="(max-width: 760px) 30vw, 120px" alt="Know Your Real Numbers expert kit cover" /><div><span>PRACTICE FINANCES</span><h4>Know Your Real Numbers</h4><p>Laura Phillips, E.A.</p></div></article>
+                <article><Image src="/rida/kit-process.jpg" width={360} height={360} sizes="(max-width: 760px) 30vw, 120px" alt="The Process Comes First expert kit cover" /><div><span>PRACTICE SYSTEMS</span><h4>The Process Comes First</h4><p>DeVon Banks</p></div></article>
               </div>
             </div>
             <div className="membership-close">
@@ -424,7 +425,7 @@ export default function SummitLandingView() {
                 <b>One summit. A full month to explore DMN.</b>
                 <span>After your trial, continue using DMN’s support and resources for $49/month unless cancelled.</span>
               </p>
-              <a className="cta" href="#join">Explore DMN with a free trial ↗</a>
+              <a className="cta" href="#signup">Explore DMN with a free trial ↗</a>
             </div>
           </div>
         </section>
@@ -474,7 +475,7 @@ export default function SummitLandingView() {
               <article><span>02</span><h3>Receive event access</h3><p>Get confirmation and your personal Zoom access details by email.</p></article>
               <article><span>03</span><h3>Use your 30 days</h3><p>Join the summit and explore DMN’s expert kits, tools and Expert Hotline.</p></article>
             </div>
-            <a className="cta" href="#join">Start my free trial ↗</a>
+            <a className="cta" href="#signup">Start my free trial ↗</a>
             <p className="offer-terms">
               <strong>$0 today.</strong> 30-day DMN trial. Then $49/month.<br />Card required. Cancel before the trial ends to avoid a charge.
             </p>
@@ -498,7 +499,7 @@ export default function SummitLandingView() {
       </main>
 
       <footer className="event-footer container">
-        <Image src="/rida/dmn-logo.png" alt="Dental Member Network" width={160} height={52} />
+        <Image src="/rida/dmn-logo.png" alt="Dental Member Network" width={160} height={52} sizes="160px" />
         <p>September 16, 2026 · DMN × RIDA</p>
         <nav className="site-links" aria-label="Legal and support">
           <Link href="/legal/privacy">Privacy</Link>

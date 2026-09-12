@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, type ReactNode } from "react";
+import { useEffect } from "react";
 import Lenis from "lenis";
 
 /**
@@ -11,7 +11,7 @@ import Lenis from "lenis";
  *
  * Respects prefers-reduced-motion by skipping the smoothing.
  */
-export default function SmoothScroll({ children }: { children: ReactNode }) {
+export default function SmoothScroll() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -40,5 +40,5 @@ export default function SmoothScroll({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  return <>{children}</>;
+  return null;
 }
