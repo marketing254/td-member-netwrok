@@ -336,7 +336,7 @@ export default function PendingMembersPage() {
 }
 
 function SourceChip({ source }: { source: string }) {
-  const meta = source === "Meta ad";
+  const meta = source === "Meta ad" || source === "Summit ad";
   const ref = source === "Referral";
   return (
     <Chip
