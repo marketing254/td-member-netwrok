@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Fraunces, Manrope } from "next/font/google";
 import Providers from "@/components/Providers";
-import SmoothScroll from "@/components/SmoothScroll";
 import GoogleAnalytics from "@/components/analytics/GoogleAnalytics";
 import "./globals.css";
 
@@ -125,9 +124,7 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <Providers>
-          <SmoothScroll>{children}</SmoothScroll>
-        </Providers>
+        <Providers>{children}</Providers>
         <GoogleAnalytics />
       </body>
     </html>
