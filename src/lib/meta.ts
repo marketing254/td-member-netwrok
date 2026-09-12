@@ -129,6 +129,15 @@ export async function sendMetaEvent(
       console.error(`[meta capi] ${eventName} rejected:`, res.status, text.slice(0, 300));
       return false;
     }
+    // One line per accepted event so Vercel logs show the send happened
+    // (event name, our dedupe id, value) — no PII.
+    const accepted = (await res.json().catch(() => null)) as { events_received?: number } | null;
+    console.info(`[meta capi] ${eventName} accepted`, {
+      eventId: input.eventId,
+      value: input.value,
+      eventsReceived: accepted?.events_received ?? null,
+      testCode: !!process.env.META_CAPI_TEST_EVENT_CODE,
+    });
     return true;
   } catch (err) {
     console.error(`[meta capi] ${eventName} send failed:`, err instanceof Error ? err.message : err);
