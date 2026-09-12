@@ -17,9 +17,15 @@ function isPendingMember(r: { activated_at: string | null; stripe_subscription_i
 
 // signup_channel / utm_* were added after the last type generation — read
 // them loosely rather than blocking on a typegen refresh.
+const SUMMIT_CAMPAIGN = "rida_summit_2026_09"; // matches SUMMIT.campaign in lib/events/summit.ts
+
 function sourceLabel(r: Record<string, unknown>): string {
   const channel = typeof r.signup_channel === "string" ? r.signup_channel : null;
   const utm = typeof r.utm_source === "string" ? r.utm_source : null;
+  const campaign = typeof r.utm_campaign === "string" ? r.utm_campaign : null;
+  // The summit ad page also creates the member row through Stripe checkout;
+  // keep it distinguishable from the /start membership ads.
+  if (campaign === SUMMIT_CAMPAIGN && (channel === "meta_ads" || utm === "meta")) return "Summit ad";
   if (channel === "meta_ads" || utm === "meta") return "Meta ad";
   if (r.referral_code_id) return "Referral";
   if (utm) return utm;
