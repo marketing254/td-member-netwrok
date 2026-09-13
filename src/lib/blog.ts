@@ -77,6 +77,173 @@ export const BLOG_INDEX_STANDFIRST =
 
 /** Launch order per the build brief: Gary → Ashley → James. */
 export const BLOG_ARTICLES: BlogArticle[] = [
+  // ── Week 3 · article 3 (approved 2026-09-08; release 2026-09-11) ─────
+  {
+    slug: "hire-dental-staff-under-pressure",
+    title: "How to Hire Dental Staff When You're Short-Staffed Without Rushing the Decision",
+    metaTitle: "Hiring Dental Staff When You're Short-Staffed",
+    metaDescription:
+      "Use Ameena Basile's approach to hiring under pressure: define job-related standards, arrange temporary cover, and keep your dental team informed.",
+    excerpt:
+      "An urgent staffing gap does not have to decide your permanent hire. Ameena Basile's approach separates temporary cover from a consistent assessment of the person joining your team.",
+    category: "Team & Culture",
+    dek: "Separate the need for immediate cover from the decision about who should join your team permanently.",
+    expert: {
+      name: "Ameena Basile",
+      role: "Co-founder, Dental Business Mastery",
+      headshotUrl:
+        "https://jbntnrtnaqigsyzgvuyv.supabase.co/storage/v1/object/public/kit-thumbnails/profiles/ameena-basile-1788280179204.jpg",
+      profileHref: "/experts/65479ac7-4739-43a8-ab5d-fdb1ff1b34d2",
+    },
+    kitSlug: "you-just-doubled-the-problem",
+    hero: {
+      src: "/blog/ameena-kit-hero.jpg",
+      alt: "The You Just Doubled The Problem resource kit featuring Ameena Basile",
+    },
+    readTime: "5 minute read",
+    datePublished: "2026-09-11",
+    dateModified: "2026-09-11",
+    // The approved direct opening answer, rendered as the answer-first callout.
+    quickAnswer:
+      "When your dental practice is short-staffed, make two decisions separately: how to cover the immediate workload and how to assess the permanent hire. Define the role's essential requirements, assess candidates against those requirements consistently, and explain the interim plan to your existing team.",
+    body: [
+      {
+        kind: "p",
+        lead: true,
+        text: "*Based on Ameena Basile's DMN resource kit, You Just Doubled The Problem.*",
+      },
+      {
+        kind: "p",
+        text: "Ameena Basile, co-founder of Dental Business Mastery, argues that pressure can change the hiring question from “Who meets our needs?” to “Who can start on Monday?” Her alternative is not to move slowly for its own sake. It is to keep urgency from replacing the standard.",
+      },
+      { kind: "h2", id: "available-not-right", text: "Why an available candidate is not automatically the right hire", toc: "Available is not right" },
+      {
+        kind: "p",
+        text: "A vacancy creates real pressure. Calls still need answering, patients still arrive, and other team members may already be covering unfamiliar work.",
+      },
+      {
+        kind: "p",
+        text: "In Ameena's framework, a rushed hire can add a second problem to the first: the workload gap remains, while the team must also manage someone who does not meet the role's needs.",
+      },
+      {
+        kind: "p",
+        text: "Her kit uses lateness as an example. If punctuality has been a clear expectation but repeated lateness is suddenly ignored because a new hire is needed, existing staff see inconsistent treatment. The issue becomes bigger than one person's start time.",
+      },
+      {
+        kind: "p",
+        text: "The lesson is not to reject a candidate over an assumption or a single unexplained event. It is to avoid quietly abandoning agreed standards because the practice is under pressure.",
+      },
+      { kind: "h2", id: "non-negotiables", text: "Write down the non-negotiables before comparing candidates", toc: "Write the non-negotiables" },
+      {
+        kind: "p",
+        text: "Ameena recommends identifying non-negotiables before a vacancy becomes urgent. If the gap already exists, make this the first step now.",
+      },
+      {
+        kind: "p",
+        text: "Translate broad values into specific, job-related expectations. “A good fit” is too vague to guide a consistent assessment.",
+      },
+      { kind: "p", text: "For a front-desk role, an illustrative list might include:" },
+      {
+        kind: "ul",
+        items: [
+          "Can carry out the essential scheduling and communication tasks, with a clear plan for any trainable gaps.",
+          "Handles patient information carefully and follows the practice's procedures.",
+          "Can meet the role's agreed schedule and communicates promptly when a problem arises.",
+        ],
+      },
+      {
+        kind: "p",
+        text: "These are editorial examples, not Ameena's prescribed selection criteria. Your list should reflect the actual job, with essential requirements separated from skills you can reasonably teach.",
+      },
+      {
+        kind: "p",
+        text: "Do not use “fit” to mean someone with the same personality or background as the rest of the team. Focus on the work and the standards needed to do it.",
+      },
+      { kind: "h2", id: "consistent-assessment", text: "Keep the assessment consistent when someone can start immediately", toc: "Keep the assessment consistent" },
+      {
+        kind: "p",
+        text: "Availability is useful information. It should not erase an unanswered question about the role.",
+      },
+      {
+        kind: "p",
+        text: "One practical approach is to ask each candidate the same core, job-related scenario question and record the evidence in their answer. For example:",
+      },
+      {
+        kind: "quote",
+        text: "“An appointment change has not reached the next person taking over the desk. How would you identify what changed and make sure the handoff is complete?”",
+      },
+      {
+        kind: "p",
+        text: "This is an editorial application of Ameena's call for a thorough process, not a question taken from her kit.",
+      },
+      {
+        kind: "p",
+        text: "Consider what the answer shows about communication and follow-through. If an important requirement remains unverified, name the missing evidence instead of treating enthusiasm or a fast start date as proof.",
+      },
+      {
+        kind: "p",
+        text: "Ameena also acknowledges that a process cannot guarantee the outcome. Some people interview well and look strong on paper. The aim is a considered decision, not certainty.",
+      },
+      { kind: "h2", id: "temporary-cover", text: "Arrange temporary cover with a clear limit", toc: "Arrange temporary cover" },
+      {
+        kind: "p",
+        text: "Holding to your standards does not solve Tuesday's staffing problem. Ameena specifically suggests interim options such as familiar casual staff, temporary agencies, or extra shifts from existing team members.",
+      },
+      {
+        kind: "p",
+        text: "Review what is actually feasible for your practice. Extra shifts should not become an open-ended assumption that the current team can absorb any workload. Check capacity, arrange appropriate cover, and set a date to review the plan.",
+      },
+      {
+        kind: "p",
+        text: "Separate “How do we cover this week?” from “Should we offer this person a permanent role?” A workable answer to the first question gives you more room to assess the second.",
+      },
+      { kind: "h2", id: "explain-the-plan", text: "Explain the plan to the people carrying the gap", toc: "Explain the plan to the team" },
+      {
+        kind: "p",
+        text: "Ameena emphasizes telling the team what you are doing and why. Without that conversation, a careful recruitment process can look like inaction.",
+      },
+      { kind: "p", text: "Here is illustrative wording:" },
+      {
+        kind: "quote",
+        text: "“We are still recruiting for the role. We are checking the requirements we agreed rather than hiring only for an immediate start. Here is the cover arranged for this week. Please flag where the workload is not manageable, and we will review the plan together on Friday.”",
+      },
+      {
+        kind: "p",
+        text: "Only describe cover that has actually been arranged. Ask for specific workload concerns rather than assuming everyone supports the plan because nobody objects.",
+      },
+      {
+        kind: "p",
+        text: "For the broader communication routine, see **[How to Improve Communication in Your Dental Practice](/blog/improve-dental-team-communication)**. Once someone joins, **[How to Give a Dental Team Member Difficult Feedback Without Making It Personal](/blog/difficult-feedback-dental-team)** addresses the next stage: setting expectations and correcting problems respectfully.",
+      },
+      { kind: "h2", id: "hire-quickly-prepared", text: "Hire quickly because you are prepared", toc: "Hire quickly, prepared" },
+      {
+        kind: "p",
+        text: "Ameena's distinction is useful: fast hiring and rushed hiring are not the same thing. A prepared practice can move promptly because it knows what it is assessing.",
+      },
+      { kind: "p", text: "Her instruction is:" },
+      {
+        kind: "quote",
+        text: "“We shouldn't be pushed by the urgency. We should just do the job thoroughly.”",
+        cite: "Ameena Basile",
+      },
+    ],
+    takeaway: {
+      eyebrow: "The takeaway",
+      title: "Fast hiring and rushed hiring are not the same thing.",
+      body: "Decide the temporary cover and the permanent hire separately. Write the role's non-negotiables before comparing candidates, ask every candidate the same job-related questions, and tell the team what cover is arranged and when you will review it. A prepared practice can move promptly because it knows what it is assessing.",
+    },
+    kitCta: {
+      kitName: "You Just Doubled The Problem",
+      description:
+        "Ameena Basile's complete kit for hiring under pressure, available inside Dental Member Network.",
+      support:
+        "Get the complete **You Just Doubled The Problem** resource kit inside Dental Member Network, including **The Non-Negotiables Worksheet**, to put those expectations into writing before the next hiring decision.",
+      // Standard paid membership route — no trial or free-month wording
+      // (same destination Lester confirmed for Liz Lord's Week 3 article).
+      href: "/join/member",
+      label: "Join Dental Member Network",
+    },
+  },
   // ── Week 3 · article 2 (approved 2026-09-08; release 2026-09-10) ─────
   {
     slug: "difficult-feedback-dental-team",
