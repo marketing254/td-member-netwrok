@@ -56,3 +56,27 @@ export const TOOL_CATEGORIES: { name: string; color: string }[] = [
 export function toolById(id: string): MemberTool | undefined {
   return MEMBER_TOOLS.find((t) => t.id === id);
 }
+
+/**
+ * Static preview image for the PUBLIC /tools pages. Generated from the
+ * private HTML (a screenshot), never the tool itself. Lives in
+ * public/tools/previews/<id>.jpg.
+ */
+export function toolPreviewSrc(id: string): string {
+  return `/tools/previews/${id}.jpg`;
+}
+
+/**
+ * Tools that run on the PUBLIC /tools/[id] page with no account. The
+ * calculator works; the PDF download inside it is gated to members
+ * (see /api/tools/public/[id]). Keep this list to one or two flagship
+ * tools — everything else stays a screenshot preview.
+ */
+// Free access is switched OFF for launch (empty list). To open one tool
+// again, add its id here, e.g. ["ppo-write-off-calculator"] — the public
+// route, results masking and PDF gate are all still in place.
+export const PUBLIC_TOOL_IDS: readonly string[] = [];
+
+export function isPublicTool(id: string): boolean {
+  return PUBLIC_TOOL_IDS.includes(id);
+}

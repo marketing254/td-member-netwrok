@@ -184,7 +184,10 @@ export async function middleware(req: NextRequest) {
   // policy instead. Auth is enforced inside the route itself
   // (requireMemberOrAdminPreview), and 'self' still blocks any other
   // site from embedding the tools.
-  if (pathname.startsWith("/api/member/tools/")) {
+  // /api/tools/public/ serves the one allow-listed free tool to the
+  // public /tools/[id] page in the same way; the allow-list lives in the
+  // route (isPublicTool), and 'self' still blocks third-party embedding.
+  if (pathname.startsWith("/api/member/tools/") || pathname.startsWith("/api/tools/public/")) {
     applySecurityHeaders(res);
     res.headers.set(
       "Content-Security-Policy",
