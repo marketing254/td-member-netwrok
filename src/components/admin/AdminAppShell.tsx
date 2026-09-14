@@ -45,6 +45,9 @@ import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import KeyboardArrowDownOutlinedIcon from "@mui/icons-material/KeyboardArrowDownOutlined";
+import WorkOutlineRoundedIcon from "@mui/icons-material/WorkOutlineRounded";
+import PersonSearchOutlinedIcon from "@mui/icons-material/PersonSearchOutlined";
+import { jobBoardEnabled } from "@/lib/jobs/flag";
 import Logo from "@/components/brand/Logo";
 import NotificationsBell from "@/components/shared/NotificationsBell";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
@@ -145,6 +148,14 @@ const navSections: { label: string; items: NavItem[] }[] = [
       { href: "/admin/spotlights", label: "Spotlights", icon: AutoAwesomeOutlinedIcon },
       { href: "/admin/broadcast", label: "Broadcast", icon: CampaignOutlinedIcon },
       { href: "/admin/hotline", label: "Hotline triage", icon: SupportAgentOutlinedIcon },
+      // Job board — hidden until NEXT_PUBLIC_JOB_BOARD_ENABLED=true (the
+      // middleware 404s the pages too, so the link is only cosmetic).
+      ...(jobBoardEnabled()
+        ? [
+            { href: "/admin/jobs", label: "Job board", icon: WorkOutlineRoundedIcon },
+            { href: "/admin/job-seekers", label: "Job seekers", icon: PersonSearchOutlinedIcon },
+          ]
+        : []),
     ],
   },
   {

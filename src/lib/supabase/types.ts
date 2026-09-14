@@ -314,6 +314,107 @@ export type MembersRow = {
   avatar_url: string | null;
   // Added in 0031_referrals.sql — references referral_codes.id, nullable.
   referral_code_id: string | null;
+  // Added in 0063_job_applications.sql — 'job_seeker' is a free account
+  // created to apply for a job; it must never pass a member-only gate.
+  account_type: MemberAccountType;
+  job_role_interest: JobRoleValue | null;
+  created_at: string;
+  updated_at: string;
+};
+
+// =====================================================================
+// Job board (0061–0064). Enum values mirror src/lib/jobs/constants.ts.
+// =====================================================================
+export type MemberAccountType = "member" | "job_seeker";
+export type JobStatus = "draft" | "pending_review" | "live" | "rejected" | "expired" | "filled";
+export type JobRoleValue =
+  | "associate_dentist"
+  | "dentist_owner"
+  | "dental_hygienist"
+  | "dental_assistant"
+  | "front_desk"
+  | "treatment_coordinator"
+  | "office_manager"
+  | "insurance_billing"
+  | "sterilisation_technician"
+  | "dental_lab_technician"
+  | "virtual_assistant"
+  | "other";
+export type JobEmploymentTypeValue = "full_time" | "part_time" | "temporary" | "contract";
+export type JobWorkplaceValue = "onsite" | "hybrid" | "remote";
+export type JobPayUnitValue = "hour" | "day" | "year";
+export type JobPostFormatValue = "detailed" | "banner";
+export type JobApplicationStatusValue = "submitted" | "viewed" | "shortlisted" | "not_selected" | "hired";
+
+export type JobPostsRow = {
+  id: string;
+  member_id: string;
+  slug: string;
+  practice_name: string;
+  role: JobRoleValue;
+  role_other: string | null;
+  employment_type: JobEmploymentTypeValue;
+  location: string;
+  workplace: JobWorkplaceValue;
+  // Nullable as of 0064 — banner posts may omit pay and description.
+  pay_min: number | null;
+  pay_max: number | null;
+  pay_unit: JobPayUnitValue;
+  description: string | null;
+  requirements: string | null;
+  apply_email: string | null;
+  apply_url: string | null;
+  start_date: string | null;
+  start_flexible: boolean;
+  status: JobStatus;
+  submitted_at: string | null;
+  approved_at: string | null;
+  reviewed_at: string | null;
+  reviewed_by: string | null;
+  rejection_reason: string | null;
+  expires_at: string | null;
+  expiry_warning_sent_at: string | null;
+  renewed_at: string | null;
+  renewal_count: number;
+  filled_at: string | null;
+  promoted_facebook_at: string | null;
+  promoted_email_at: string | null;
+  view_count: number;
+  // Added in 0063.
+  post_format: JobPostFormatValue;
+  banner_path: string | null;
+  banner_alt: string | null;
+  application_count: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type JobPostViewsRow = {
+  id: string;
+  job_post_id: string;
+  viewer_hash: string;
+  viewed_on: string;
+  referrer_kind: string | null;
+  created_at: string;
+};
+
+export type JobApplicationsRow = {
+  id: string;
+  job_post_id: string;
+  applicant_member_id: string;
+  full_name: string;
+  email: string;
+  phone: string | null;
+  message: string | null;
+  cv_path: string | null;
+  cv_filename: string | null;
+  cv_size_bytes: number | null;
+  status: JobApplicationStatusValue;
+  status_changed_at: string | null;
+  status_changed_by: string | null;
+  delivered_at: string | null;
+  delivery_error: string | null;
+  copy_to_applicant: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -486,7 +587,7 @@ export type AuthAuditRow = {
   event: string;
   email: string | null;
   user_id: string | null;
-  user_type: "vendor" | "member" | "admin" | "expert" | null;
+  user_type: "vendor" | "member" | "admin" | "expert" | "job_seeker" | null;
   ip_hash: string | null;
   user_agent: string | null;
   metadata: Record<string, unknown> | null;
@@ -989,6 +1090,9 @@ export type Database = {
       offers: Table<OffersRow>;
       offer_media: Table<OfferMediaRow>;
       members: Table<MembersRow>;
+      job_posts: Table<JobPostsRow>;
+      job_post_views: Table<JobPostViewsRow>;
+      job_applications: Table<JobApplicationsRow>;
       redemptions: Table<RedemptionsRow>;
       admin_users: Table<AdminUsersRow>;
       review_actions: Table<ReviewActionsRow>;
@@ -1117,6 +1221,14 @@ export type Database = {
       post_reaction_kind: PostReactionKind;
       chatbot_message_role: ChatbotMessageRole;
       chatbot_conversation_status: ChatbotConversationStatus;
+      member_account_type: MemberAccountType;
+      job_status: JobStatus;
+      job_role: JobRoleValue;
+      job_employment_type: JobEmploymentTypeValue;
+      job_workplace: JobWorkplaceValue;
+      job_pay_unit: JobPayUnitValue;
+      job_post_format: JobPostFormatValue;
+      job_application_status: JobApplicationStatusValue;
     };
   };
 };
