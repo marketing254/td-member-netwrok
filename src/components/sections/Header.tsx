@@ -27,7 +27,12 @@ import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
 import StoreOutlinedIcon from "@mui/icons-material/StoreOutlined";
 import Logo from "@/components/brand/Logo";
 import ExitIntentOffer from "@/components/sections/ExitIntentOffer";
-import { brand, navLinks } from "@/lib/content";
+import { brand, navLinks as allNavLinks } from "@/lib/content";
+import { jobBoardEnabled } from "@/lib/jobs/flag";
+
+// The Jobs link would 404 behind the kill-switch, so it only appears once
+// NEXT_PUBLIC_JOB_BOARD_ENABLED=true is set (build time, same as the routes).
+const navLinks = allNavLinks.filter((l) => l.href !== "/jobs" || jobBoardEnabled());
 
 const LOGIN_LINKS = [
   {

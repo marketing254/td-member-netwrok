@@ -29,20 +29,31 @@ const SUPPORT_EMAIL = "support@dentalmembernetwork.com";
 /**
  * Who gets the "job pending review" alert in production. Deliberately
  * NOT the whole team distribution list: the queue is one person's job.
- * Rushdha is copied so the alert can be verified after launch.
+ * Rushdha is on CC (visible) so the alert can be verified after launch.
  */
 const QUEUE_ALERT_TO = "lester@ekwa.com";
-const QUEUE_ALERT_BCC = ["rushdhaakbar82@gmail.com"];
+const QUEUE_ALERT_CC = ["rushdhaakbar82@gmail.com"];
 
 /**
- * PRE-LAUNCH SANDBOX. While true, EVERY job-board email — member
- * approvals/rejections, renewal reminders, applications to practices,
- * applicant copies AND the team queue alert — is redirected to one
- * inbox, with the real recipient named in the subject. Nothing reaches
- * a real member, practice, applicant or Lester.
- * Flip to false at launch.
+ * Every OTHER job-board email (to a member, a practice or an applicant)
+ * carries Lester and Rushdha on BCC, so the team sees exactly what went
+ * out without the recipient seeing them. Same rule as the rest of the
+ * member-facing mail.
  */
-const EMAIL_SANDBOX = true;
+const AUDIT_BCC = ["lester@ekwa.com", "rushdhaakbar82@gmail.com"];
+
+/**
+ * PRODUCTION IS THE DEFAULT: real recipients, clean subjects, Lester and
+ * Rushdha on CC/BCC as documented above. Nothing has to be set in Vercel.
+ *
+ * TESTING SANDBOX: set JOB_EMAILS_SANDBOX=true (local .env.local only).
+ * Then EVERY job-board email — member approvals/rejections, renewal
+ * reminders, applications to practices, applicant copies AND the team
+ * queue alert — is redirected to Rushdha's inbox with the real recipient
+ * named in a "[TEST …]" subject, and no CC/BCC. Never set it in Vercel
+ * production.
+ */
+const EMAIL_SANDBOX = process.env.JOB_EMAILS_SANDBOX === "true";
 const SANDBOX_TO = "rushdhaakbar82@gmail.com";
 
 /**
@@ -87,7 +98,8 @@ async function send(opts: {
   attachments?: MailAttachment[];
 }): Promise<boolean> {
   if (approvalPreview) {
-    const label = opts.bcc?.length ? `${opts.to} (bcc ${opts.bcc.join(", ")})` : opts.to;
+    const copies = [...(opts.cc?.length ? [`cc ${opts.cc.join(", ")}`] : []), ...(opts.bcc?.length ? [`bcc ${opts.bcc.join(", ")}`] : [])];
+    const label = copies.length ? `${opts.to} (${copies.join("; ")})` : opts.to;
     opts = {
       ...opts,
       to: approvalPreview.to,
@@ -97,8 +109,9 @@ async function send(opts: {
     };
   } else if (EMAIL_SANDBOX) {
     // BCC is dropped too: nothing but the sandbox inbox is ever addressed.
-    const label = opts.bcc?.length ? `${opts.to} (bcc ${opts.bcc.join(", ")})` : opts.to;
-    opts = { ...opts, to: SANDBOX_TO, bcc: undefined, subject: `[TEST · would go to ${label}] ${opts.subject}` };
+    const copies = [...(opts.cc?.length ? [`cc ${opts.cc.join(", ")}`] : []), ...(opts.bcc?.length ? [`bcc ${opts.bcc.join(", ")}`] : [])];
+    const label = copies.length ? `${opts.to} (${copies.join("; ")})` : opts.to;
+    opts = { ...opts, to: SANDBOX_TO, cc: undefined, bcc: undefined, subject: `[TEST · would go to ${label}] ${opts.subject}` };
   }
   try {
     // Transactional mail goes out through the dentalmembernetwork.com
@@ -415,7 +428,7 @@ export async function notifyTeamNewJob(input: {
     "Approve and publish, edit it first if something small needs fixing, or reject it with a reason the member will receive by email.",
   ].join("\n");
 
-  return send({ to: QUEUE_ALERT_TO, bcc: QUEUE_ALERT_BCC, subject, html, text, tag: "job-submitted" });
+  return send({ to: QUEUE_ALERT_TO, cc: QUEUE_ALERT_CC, subject, html, text, tag: "job-submitted" });
 }
 
 // =====================================================================
@@ -493,6 +506,7 @@ export async function sendJobApproved(input: {
 
   return send({
     to: input.to,
+    bcc: AUDIT_BCC,
     subject: `Your ${role} post is live on the DMN job board`,
     tag: "approved",
     html,
@@ -547,7 +561,7 @@ export async function sendJobRejected(input: {
     textSignoff(),
   ].join("\n");
 
-  return send({ to: input.to, subject: `Your ${role} post needs a change`, tag: "rejected", html, text });
+  return send({ to: input.to, bcc: AUDIT_BCC, subject: `Your ${role} post needs a change`, tag: "rejected", html, text });
 }
 
 // =====================================================================
@@ -604,7 +618,7 @@ export async function sendJobExpiring(input: {
     textSignoff(),
   ].join("\n");
 
-  return send({ to: input.to, subject: `Your ${role} post expires ${days}`, tag: "expiring", html, text });
+  return send({ to: input.to, bcc: AUDIT_BCC, subject: `Your ${role} post expires ${days}`, tag: "expiring", html, text });
 }
 
 // =====================================================================
@@ -678,6 +692,7 @@ export async function sendApplicationToPractice(input: {
 
   return send({
     to: input.to,
+    bcc: AUDIT_BCC,
     subject: `New applicant for your ${role} post: ${input.applicantName}`,
     html,
     text,
@@ -751,6 +766,7 @@ export async function sendApplicationCopyToApplicant(input: {
 
   return send({
     to: input.to,
+    bcc: AUDIT_BCC,
     subject: `Your application for ${role} at ${input.practiceName} has been sent`,
     html,
     text,

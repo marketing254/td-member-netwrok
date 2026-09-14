@@ -233,6 +233,8 @@ export const navLinks = [
   { label: "What is DMN", href: "#features" },
   { label: "Resources", href: "/resources" },
   { label: "Tools", href: "/tools" },
+  // Shown only when the job board is switched on (see Header + lib/jobs/flag).
+  { label: "Jobs", href: "/jobs" },
   { label: "Experts", href: "/experts" },
   { label: "Partners", href: "/partners" },
   { label: "Blog", href: "/blog" },
