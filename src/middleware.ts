@@ -25,6 +25,31 @@ import { createMiddlewareSupabase } from "@/lib/supabase/middleware-ssr";
 
 const VENDOR_LEGACY_COOKIE = "vendor_session";
 
+/** Every surface the job board owns — pages, APIs and its cron. */
+function isJobBoardPath(pathname: string): boolean {
+  return (
+    pathname === "/jobs" ||
+    pathname.startsWith("/jobs/") ||
+    pathname === "/seeker" ||
+    pathname.startsWith("/seeker/") ||
+    pathname === "/dashboard/jobs" ||
+    pathname.startsWith("/dashboard/jobs/") ||
+    pathname === "/admin/jobs" ||
+    pathname.startsWith("/admin/jobs/") ||
+    pathname === "/admin/job-seekers" ||
+    pathname.startsWith("/admin/job-seekers/") ||
+    pathname === "/api/jobs" ||
+    pathname.startsWith("/api/jobs/") ||
+    pathname.startsWith("/api/seeker/") ||
+    pathname === "/api/member/jobs" ||
+    pathname.startsWith("/api/member/jobs/") ||
+    pathname === "/api/admin/jobs" ||
+    pathname.startsWith("/api/admin/jobs/") ||
+    pathname === "/api/admin/job-seekers" ||
+    pathname === "/api/cron/jobs"
+  );
+}
+
 function buildCsp(): string {
   const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/$/, "");
   const supabaseHost = supabaseUrl.replace(/^https?:\/\//, "");
@@ -199,6 +224,52 @@ export async function middleware(req: NextRequest) {
 
   // Only run on protected portal paths. Auth callback is always allowed.
   if (pathname.startsWith("/auth/")) return applySecurityHeaders(res);
+
+  // ─────────────────────────────────────────────────────────────────
+  // JOB BOARD kill-switch. Until NEXT_PUBLIC_JOB_BOARD_ENABLED=true the
+  // whole feature — public board, seeker accounts, member posting, admin
+  // queue, cron — answers 404, so a deploy of the branch shows nothing.
+  // ─────────────────────────────────────────────────────────────────
+  if (isJobBoardPath(pathname) && process.env.NEXT_PUBLIC_JOB_BOARD_ENABLED !== "true") {
+    if (pathname.startsWith("/api/")) {
+      return applySecurityHeaders(NextResponse.json({ error: "Not found." }, { status: 404 }));
+    }
+    const target = req.nextUrl.clone();
+    target.pathname = "/__job-board-disabled";
+    target.search = "";
+    return applySecurityHeaders(NextResponse.rewrite(target, { status: 404 }));
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  // JOB SEEKER  (/seeker/applications) — any signed-in ACTIVE members row,
+  // free job-seeker accounts included. Never a payment check: applying
+  // is free. /seeker/join and /seeker/login are public.
+  // ─────────────────────────────────────────────────────────────────
+  if (pathname === "/seeker" || pathname === "/seeker/applications" || pathname.startsWith("/seeker/applications/")) {
+    try {
+      const supabase = createMiddlewareSupabase(req, res);
+      const { data: userData } = await supabase.auth.getUser();
+      const back = () => {
+        const target = req.nextUrl.clone();
+        target.pathname = "/seeker/login";
+        target.search = `?next=${encodeURIComponent(pathname)}`;
+        return applySecurityHeaders(NextResponse.redirect(target));
+      };
+      if (!userData.user) return back();
+      const { data: memberRow } = await supabase
+        .from("members")
+        .select("id, status")
+        .eq("auth_user_id", userData.user.id)
+        .maybeSingle();
+      if (!memberRow || memberRow.status !== "active") return back();
+      return applySecurityHeaders(res);
+    } catch (err) {
+      console.error("[middleware:seeker] auth check failed:", err);
+      const target = req.nextUrl.clone();
+      target.pathname = "/seeker/login";
+      return applySecurityHeaders(NextResponse.redirect(target));
+    }
+  }
 
   const isVendor = pathname.startsWith("/vendor") && !isPublicVendorPath(pathname);
   const isAdmin = pathname.startsWith("/admin") && !isPublicAdminPath(pathname);

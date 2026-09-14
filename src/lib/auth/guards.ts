@@ -495,7 +495,7 @@ export async function requireMember(): Promise<MemberContext | Failure> {
   const admin = getSupabaseAdmin();
   const { data: row } = await admin
     .from("members")
-    .select("id, status, first_name, auth_user_id")
+    .select("id, status, first_name, auth_user_id, account_type")
     .eq("email", email)
     .maybeSingle();
 
@@ -516,6 +516,20 @@ export async function requireMember(): Promise<MemberContext | Failure> {
     };
   }
 
+  // A job seeker is status='active' (the OTP login needs that) but is
+  // NOT a member. account_type is the discriminator — see §1 of
+  // 0063_job_applications.sql. Without this check every free applicant
+  // would satisfy the member gate the moment they registered.
+  if (row.account_type === "job_seeker") {
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { error: "This is a job-seeker account. Membership is separate.", reason: "job_seeker" },
+        { status: 403 },
+      ),
+    };
+  }
+
   return {
     ok: true,
     userId: userData.user.id,
@@ -523,6 +537,73 @@ export async function requireMember(): Promise<MemberContext | Failure> {
     memberId: row.id,
     firstName: row.first_name,
     status: row.status as MemberContext["status"],
+  };
+}
+
+export type ApplicantContext = {
+  ok: true;
+  userId: string;
+  email: string;
+  memberId: string;
+  firstName: string;
+  lastName: string | null;
+  phone: string | null;
+  accountType: "member" | "job_seeker";
+};
+
+/**
+ * requireApplicant
+ *
+ * The job-application gate. Accepts EITHER account type — a paying
+ * member is a person who might also want to apply for a job, and a free
+ * job-seeker account exists precisely so applying leaves a record. What
+ * it requires is a signed-in session with an active members row; it
+ * never checks payment, because applying is free by design.
+ */
+export async function requireApplicant(): Promise<ApplicantContext | Failure> {
+  const cookieClient = await createServerSupabase();
+  const { data: userData, error: userErr } = await cookieClient.auth.getUser();
+  if (userErr || !userData?.user) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: "Not signed in." }, { status: 401 }),
+    };
+  }
+
+  const email = userData.user.email?.toLowerCase();
+  if (!email) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: "Account is missing an email." }, { status: 403 }),
+    };
+  }
+
+  const admin = getSupabaseAdmin();
+  const { data: row } = await admin
+    .from("members")
+    .select("id, status, first_name, last_name, phone, account_type")
+    .eq("email", email)
+    .maybeSingle();
+
+  if (!row || row.status !== "active") {
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { error: "Create a free account to apply.", reason: "no_account" },
+        { status: 403 },
+      ),
+    };
+  }
+
+  return {
+    ok: true,
+    userId: userData.user.id,
+    email,
+    memberId: row.id,
+    firstName: row.first_name,
+    lastName: row.last_name,
+    phone: row.phone,
+    accountType: row.account_type,
   };
 }
 
