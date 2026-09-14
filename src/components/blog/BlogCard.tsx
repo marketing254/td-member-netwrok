@@ -11,6 +11,12 @@ const INK_SOFT = "#3B4A55";
 const GOLD = "#A07823";
 const LINE = "#E6DDCF";
 
+/** "2026-09-09" → "Sep 9, 2026" (parsed as a plain date, no timezone drift). */
+function formatCardDate(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y!, (m ?? 1) - 1, d ?? 1).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
 /**
  * One blog-index card: featured image, category, title, excerpt, expert
  * row and a "Read article" affordance. Shared by the /blog grid and the
@@ -61,18 +67,25 @@ export function BlogCard({
       </Box>
 
       <Box sx={{ p: compact ? 1.75 : 2.5, display: "flex", flexDirection: "column", flex: 1 }}>
-        <Typography
-          sx={{
-            fontSize: "0.66rem",
-            fontWeight: 800,
-            letterSpacing: "0.18em",
-            textTransform: "uppercase",
-            color: GOLD,
-            mb: 1,
-          }}
-        >
-          {article.category}
-        </Typography>
+        {/* Category + publish date on one line, so readers can see how
+            current a post is before opening it. */}
+        <Stack direction="row" spacing={1} sx={{ alignItems: "baseline", justifyContent: "space-between", mb: 1 }}>
+          <Typography
+            sx={{
+              fontSize: "0.66rem",
+              fontWeight: 800,
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              color: GOLD,
+            }}
+            noWrap
+          >
+            {article.category}
+          </Typography>
+          <Typography component="time" dateTime={article.datePublished} sx={{ fontSize: "0.72rem", color: INK_SOFT, whiteSpace: "nowrap", flexShrink: 0 }}>
+            {formatCardDate(article.datePublished)}
+          </Typography>
+        </Stack>
         <Typography
           component="h3"
           sx={{

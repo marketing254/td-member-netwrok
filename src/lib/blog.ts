@@ -77,6 +77,448 @@ export const BLOG_INDEX_STANDFIRST =
 
 /** Launch order per the build brief: Gary → Ashley → James. */
 export const BLOG_ARTICLES: BlogArticle[] = [
+  // ── Week 3 · article 3 (approved 2026-09-08; release 2026-09-11) ─────
+  {
+    slug: "hire-dental-staff-under-pressure",
+    title: "How to Hire Dental Staff When You're Short-Staffed Without Rushing the Decision",
+    metaTitle: "Hiring Dental Staff When You're Short-Staffed",
+    metaDescription:
+      "Use Ameena Basile's approach to hiring under pressure: define job-related standards, arrange temporary cover, and keep your dental team informed.",
+    excerpt:
+      "An urgent staffing gap does not have to decide your permanent hire. Ameena Basile's approach separates temporary cover from a consistent assessment of the person joining your team.",
+    category: "Team & Culture",
+    dek: "Separate the need for immediate cover from the decision about who should join your team permanently.",
+    expert: {
+      name: "Ameena Basile",
+      role: "Co-founder, Dental Business Mastery",
+      headshotUrl:
+        "https://jbntnrtnaqigsyzgvuyv.supabase.co/storage/v1/object/public/kit-thumbnails/profiles/ameena-basile-1788280179204.jpg",
+      profileHref: "/experts/65479ac7-4739-43a8-ab5d-fdb1ff1b34d2",
+    },
+    kitSlug: "you-just-doubled-the-problem",
+    hero: {
+      src: "/blog/ameena-kit-hero.jpg",
+      alt: "The You Just Doubled The Problem resource kit featuring Ameena Basile",
+    },
+    readTime: "5 minute read",
+    datePublished: "2026-09-11",
+    dateModified: "2026-09-11",
+    // The approved direct opening answer, rendered as the answer-first callout.
+    quickAnswer:
+      "When your dental practice is short-staffed, make two decisions separately: how to cover the immediate workload and how to assess the permanent hire. Define the role's essential requirements, assess candidates against those requirements consistently, and explain the interim plan to your existing team.",
+    body: [
+      {
+        kind: "p",
+        lead: true,
+        text: "*Based on Ameena Basile's DMN resource kit, You Just Doubled The Problem.*",
+      },
+      {
+        kind: "p",
+        text: "Ameena Basile, co-founder of Dental Business Mastery, argues that pressure can change the hiring question from “Who meets our needs?” to “Who can start on Monday?” Her alternative is not to move slowly for its own sake. It is to keep urgency from replacing the standard.",
+      },
+      { kind: "h2", id: "available-not-right", text: "Why an available candidate is not automatically the right hire", toc: "Available is not right" },
+      {
+        kind: "p",
+        text: "A vacancy creates real pressure. Calls still need answering, patients still arrive, and other team members may already be covering unfamiliar work.",
+      },
+      {
+        kind: "p",
+        text: "In Ameena's framework, a rushed hire can add a second problem to the first: the workload gap remains, while the team must also manage someone who does not meet the role's needs.",
+      },
+      {
+        kind: "p",
+        text: "Her kit uses lateness as an example. If punctuality has been a clear expectation but repeated lateness is suddenly ignored because a new hire is needed, existing staff see inconsistent treatment. The issue becomes bigger than one person's start time.",
+      },
+      {
+        kind: "p",
+        text: "The lesson is not to reject a candidate over an assumption or a single unexplained event. It is to avoid quietly abandoning agreed standards because the practice is under pressure.",
+      },
+      { kind: "h2", id: "non-negotiables", text: "Write down the non-negotiables before comparing candidates", toc: "Write the non-negotiables" },
+      {
+        kind: "p",
+        text: "Ameena recommends identifying non-negotiables before a vacancy becomes urgent. If the gap already exists, make this the first step now.",
+      },
+      {
+        kind: "p",
+        text: "Translate broad values into specific, job-related expectations. “A good fit” is too vague to guide a consistent assessment.",
+      },
+      { kind: "p", text: "For a front-desk role, an illustrative list might include:" },
+      {
+        kind: "ul",
+        items: [
+          "Can carry out the essential scheduling and communication tasks, with a clear plan for any trainable gaps.",
+          "Handles patient information carefully and follows the practice's procedures.",
+          "Can meet the role's agreed schedule and communicates promptly when a problem arises.",
+        ],
+      },
+      {
+        kind: "p",
+        text: "These are editorial examples, not Ameena's prescribed selection criteria. Your list should reflect the actual job, with essential requirements separated from skills you can reasonably teach.",
+      },
+      {
+        kind: "p",
+        text: "Do not use “fit” to mean someone with the same personality or background as the rest of the team. Focus on the work and the standards needed to do it.",
+      },
+      { kind: "h2", id: "consistent-assessment", text: "Keep the assessment consistent when someone can start immediately", toc: "Keep the assessment consistent" },
+      {
+        kind: "p",
+        text: "Availability is useful information. It should not erase an unanswered question about the role.",
+      },
+      {
+        kind: "p",
+        text: "One practical approach is to ask each candidate the same core, job-related scenario question and record the evidence in their answer. For example:",
+      },
+      {
+        kind: "quote",
+        text: "“An appointment change has not reached the next person taking over the desk. How would you identify what changed and make sure the handoff is complete?”",
+      },
+      {
+        kind: "p",
+        text: "This is an editorial application of Ameena's call for a thorough process, not a question taken from her kit.",
+      },
+      {
+        kind: "p",
+        text: "Consider what the answer shows about communication and follow-through. If an important requirement remains unverified, name the missing evidence instead of treating enthusiasm or a fast start date as proof.",
+      },
+      {
+        kind: "p",
+        text: "Ameena also acknowledges that a process cannot guarantee the outcome. Some people interview well and look strong on paper. The aim is a considered decision, not certainty.",
+      },
+      { kind: "h2", id: "temporary-cover", text: "Arrange temporary cover with a clear limit", toc: "Arrange temporary cover" },
+      {
+        kind: "p",
+        text: "Holding to your standards does not solve Tuesday's staffing problem. Ameena specifically suggests interim options such as familiar casual staff, temporary agencies, or extra shifts from existing team members.",
+      },
+      {
+        kind: "p",
+        text: "Review what is actually feasible for your practice. Extra shifts should not become an open-ended assumption that the current team can absorb any workload. Check capacity, arrange appropriate cover, and set a date to review the plan.",
+      },
+      {
+        kind: "p",
+        text: "Separate “How do we cover this week?” from “Should we offer this person a permanent role?” A workable answer to the first question gives you more room to assess the second.",
+      },
+      { kind: "h2", id: "explain-the-plan", text: "Explain the plan to the people carrying the gap", toc: "Explain the plan to the team" },
+      {
+        kind: "p",
+        text: "Ameena emphasizes telling the team what you are doing and why. Without that conversation, a careful recruitment process can look like inaction.",
+      },
+      { kind: "p", text: "Here is illustrative wording:" },
+      {
+        kind: "quote",
+        text: "“We are still recruiting for the role. We are checking the requirements we agreed rather than hiring only for an immediate start. Here is the cover arranged for this week. Please flag where the workload is not manageable, and we will review the plan together on Friday.”",
+      },
+      {
+        kind: "p",
+        text: "Only describe cover that has actually been arranged. Ask for specific workload concerns rather than assuming everyone supports the plan because nobody objects.",
+      },
+      {
+        kind: "p",
+        text: "For the broader communication routine, see **[How to Improve Communication in Your Dental Practice](/blog/improve-dental-team-communication)**. Once someone joins, **[How to Give a Dental Team Member Difficult Feedback Without Making It Personal](/blog/difficult-feedback-dental-team)** addresses the next stage: setting expectations and correcting problems respectfully.",
+      },
+      { kind: "h2", id: "hire-quickly-prepared", text: "Hire quickly because you are prepared", toc: "Hire quickly, prepared" },
+      {
+        kind: "p",
+        text: "Ameena's distinction is useful: fast hiring and rushed hiring are not the same thing. A prepared practice can move promptly because it knows what it is assessing.",
+      },
+      { kind: "p", text: "Her instruction is:" },
+      {
+        kind: "quote",
+        text: "“We shouldn't be pushed by the urgency. We should just do the job thoroughly.”",
+        cite: "Ameena Basile",
+      },
+    ],
+    takeaway: {
+      eyebrow: "The takeaway",
+      title: "Fast hiring and rushed hiring are not the same thing.",
+      body: "Decide the temporary cover and the permanent hire separately. Write the role's non-negotiables before comparing candidates, ask every candidate the same job-related questions, and tell the team what cover is arranged and when you will review it. A prepared practice can move promptly because it knows what it is assessing.",
+    },
+    kitCta: {
+      kitName: "You Just Doubled The Problem",
+      description:
+        "Ameena Basile's complete kit for hiring under pressure, available inside Dental Member Network.",
+      support:
+        "Get the complete **You Just Doubled The Problem** resource kit inside Dental Member Network, including **The Non-Negotiables Worksheet**, to put those expectations into writing before the next hiring decision.",
+      // Standard paid membership route — no trial or free-month wording
+      // (same destination Lester confirmed for Liz Lord's Week 3 article).
+      href: "/join/member",
+      label: "Join Dental Member Network",
+    },
+  },
+  // ── Week 3 · article 2 (approved 2026-09-08; release 2026-09-10) ─────
+  {
+    slug: "difficult-feedback-dental-team",
+    title: "How to Give a Dental Team Member Difficult Feedback Without Making It Personal",
+    metaTitle: "Difficult Feedback for Dental Teams: A Practical Approach",
+    metaDescription:
+      "Give dental staff clear, specific feedback using Liz Lord's problem-first approach. Check expectations, training, tools, and support before assigning blame.",
+    excerpt:
+      "Difficult feedback becomes more useful when it addresses a specific problem instead of a person's character. Liz Lord's approach starts with clarity, support, and the standard you need to meet.",
+    category: "Team & Culture",
+    dek: "Address the missed standard, check the support you provided, and agree on what changes next.",
+    expert: {
+      name: "Liz Lord",
+      role: "Founder and Chief Architect, The Practice Transformation Institute",
+      headshotUrl:
+        "https://jbntnrtnaqigsyzgvuyv.supabase.co/storage/v1/object/public/kit-thumbnails/profiles/liz-lord-headshot.jpg",
+      profileHref: "/experts/d53eb2fa-4da9-4cb1-863a-61c1fc6bf2be",
+    },
+    kitSlug: "attack-the-problem-not-the-person",
+    hero: {
+      src: "/blog/liz-kit-hero.jpg",
+      alt: "The Attack The Problem, Not The Person resource kit featuring Liz Lord",
+    },
+    readTime: "5 minute read",
+    datePublished: "2026-09-10",
+    dateModified: "2026-09-10",
+    quickAnswer:
+      "To give a dental team member difficult feedback, describe the specific behavior and its effect rather than making a judgment about their character. Check whether you made the standard clear and provided the training, feedback, and tools to meet it. Then listen to their perspective and agree on a practical next step.",
+    body: [
+      {
+        kind: "p",
+        lead: true,
+        text: "*Based on Liz Lord's DMN resource kit, Attack The Problem, Not The Person.*",
+      },
+      {
+        kind: "p",
+        text: "Liz Lord, Founder and Chief Architect of The Practice Transformation Institute, summarizes the principle this way:",
+      },
+      { kind: "quote", text: "\u201cYou attack problems, you don't attack people.\u201d", cite: "Liz Lord" },
+      {
+        kind: "p",
+        text: "That does not mean avoiding a difficult message. It means being clear about the problem you need to solve.",
+      },
+      { kind: "h2", id: "your-part", text: "Before the conversation, check your part in the problem", toc: "Check your part first" },
+      {
+        kind: "p",
+        text: "It is tempting to begin with what the employee should have done. Liz starts one step earlier: what has the leader done, or failed to do, that contributes to the situation?",
+      },
+      { kind: "p", text: "Her framework asks you to check four things:" },
+      {
+        kind: "ul",
+        items: [
+          "Did you clearly communicate what a good job looks like?",
+          "Did you provide the training needed to do it?",
+          "Did you provide feedback?",
+          "Did you provide the tools the person needs?",
+        ],
+      },
+      {
+        kind: "p",
+        text: "These questions make a vague complaint more useful. \u201cThe handoffs are poor\u201d might mean the team member missed an agreed step. It might also mean that three people use three different handoff processes.",
+      },
+      {
+        kind: "p",
+        text: "If you never established the standard, acknowledge that gap and put it in place. You can still address the immediate problem without pretending the expectations were clear all along.",
+      },
+      { kind: "h2", id: "what-happened", text: "Describe what happened, not who the person is", toc: "Describe what happened" },
+      { kind: "p", text: "Compare these two openings:" },
+      { kind: "quote", text: "\u201cYou're careless with the schedule.\u201d" },
+      {
+        kind: "quote",
+        text: "\u201cYesterday, two appointment changes were not included in the handoff, so the next team member had to reconstruct what had changed.\u201d",
+      },
+      {
+        kind: "p",
+        text: "The second is an illustrative example, not a quote from Liz or a report of an actual DMN practice. It names an observable event and its operational effect. The first assigns a personality trait that the person has little room to respond to constructively.",
+      },
+      {
+        kind: "p",
+        text: "Before your conversation, write down the event, the expected standard, and the impact. If you cannot describe those plainly, you may need more information before drawing a conclusion.",
+      },
+      { kind: "h2", id: "acknowledge", text: "Acknowledge good work without cancelling it", toc: "Acknowledge good work" },
+      {
+        kind: "p",
+        text: "Liz recommends genuinely acknowledging what is going well and letting that acknowledgement land. Her warning is about following praise immediately with \u201cbut,\u201d which can make the positive statement feel disposable.",
+      },
+      {
+        kind: "p",
+        text: "This is not a requirement to invent a compliment. Choose something real and specific. Give it space. Then move to the area that needs attention without turning the first statement into a setup.",
+      },
+      { kind: "p", text: "For example:" },
+      {
+        kind: "quote",
+        text: "\u201cYou handled those patient questions thoughtfully this morning. I appreciate the care you took.\u201d",
+      },
+      {
+        kind: "quote",
+        text: "\u201cI also want us to work through yesterday's handoff. Two appointment changes were missing. Can you walk me through what happened?\u201d",
+      },
+      {
+        kind: "p",
+        text: "This wording is an editorial adaptation of the principle. The important features are genuine acknowledgement, a concrete problem, and an invitation to explain.",
+      },
+      { kind: "h2", id: "standard-and-support", text: "Agree on the standard and the support", toc: "Agree the standard and support" },
+      { kind: "p", text: "Once you understand the issue, make the next step observable." },
+      {
+        kind: "p",
+        text: "In the handoff example, you might agree that appointment changes are recorded in one shared place before the next person takes over. If the person needs training or access, name who will provide it. Agree when you will check whether the process is working.",
+      },
+      {
+        kind: "p",
+        text: "Liz distinguishes accountability from sole ownership. The accountable person does not have to perform every task alone. Other people can help, but someone needs to keep track of whether the work meets the standard.",
+      },
+      {
+        kind: "p",
+        text: "That distinction matters in a busy dental practice. \u201cEveryone helps\u201d should not leave nobody responsible for checking completion.",
+      },
+      {
+        kind: "p",
+        text: "If expectations are inconsistent across the whole team, **[How to Improve Communication in Your Dental Practice](/blog/improve-dental-team-communication)** is a useful companion topic. A private correction cannot solve a process that the entire team understands differently.",
+      },
+      { kind: "h2", id: "keeps-happening", text: "What if the problem keeps happening?", toc: "If it keeps happening" },
+      {
+        kind: "p",
+        text: "Respectful feedback is not the same as indefinite tolerance. Liz is clear that leaders still need to address problems rather than letting them continue.",
+      },
+      {
+        kind: "p",
+        text: "Return to the agreed standard and what has happened since the conversation. Check whether the promised support was provided. Discuss the remaining gap using specific examples rather than escalating to labels such as \u201clazy\u201d or \u201cnot a team player.\u201d",
+      },
+      {
+        kind: "p",
+        text: "Use the practice's established management process for any further action. This article is a communication framework, not a disciplinary procedure.",
+      },
+    ],
+    takeaway: {
+      eyebrow: "Make the next conversation easier to prepare",
+      title: "Four lines before you start.",
+      body: "Before the next difficult conversation, write four lines: what happened, what good work should look like, what support is needed, and when you will follow up. This preparation exercise is an editorial application of Liz's approach. You do not need to choose between protecting the relationship and addressing the work. Be respectful of the person and clear about the standard.",
+    },
+    kitCta: {
+      kitName: "Attack The Problem, Not The Person",
+      description:
+        "Available inside Dental Member Network, to work through Liz Lord's approach to communication, leadership, and accountability.",
+      // Standard paid membership route — no trial or free-month wording.
+      href: "/join/member",
+      label: "Join Dental Member Network",
+    },
+  },
+  // ── Week 3 (approved 2026-09-08; release 2026-09-09) ────────────────
+  {
+    slug: "dental-post-treatment-follow-up-call",
+    title: "What Should a Dentist Say in a Follow-Up Call After Treatment?",
+    metaTitle: "Dental Follow-Up Call After Treatment: What to Say",
+    metaDescription:
+      "Use Gary Takacs's patient follow-up framework to plan a caring check-in after dental treatment, handle questions, and record what needs attention.",
+    excerpt:
+      "A caring after-treatment call needs a clear opening, time to listen, and a reliable next step. Gary Takacs's framework helps your team plan who calls and how to follow through.",
+    category: "Patient Experience",
+    dek: "A useful patient check-in starts with listening, not selling. Gary Takacs's evening call framework gives your team a simple place to begin.",
+    expert: {
+      name: "Gary Takacs",
+      role: "Founder, Thriving Dentist",
+      headshotUrl:
+        "https://jbntnrtnaqigsyzgvuyv.supabase.co/storage/v1/object/public/kit-thumbnails/profiles/gary-takacs-headshot.jpg",
+      profileHref: "/experts/ecf8bd07-66e7-48f9-b002-b1b33adb2548",
+    },
+    kitSlug: "evening-we-care-call",
+    hero: {
+      src: "/blog/gary-we-care-kit-hero.jpg",
+      alt: "The Evening 'We Care' Call resource kit featuring Gary Takacs",
+    },
+    readTime: "5 minute read",
+    datePublished: "2026-09-09",
+    dateModified: "2026-09-09",
+    quickAnswer:
+      "A dental follow-up call should identify who is calling, explain that the practice is checking in after treatment, ask how the patient is feeling, and give them space to raise questions. The caller should then record the conversation and route any clinical concern to the dentist through the practice's agreed process.",
+    body: [
+      {
+        kind: "p",
+        lead: true,
+        text: "*Based on Gary Takacs's DMN resource kit, The Evening 'We Care' Call That Creates Patient Loyalty.*",
+      },
+      {
+        kind: "p",
+        text: "The point is not to complete a script as quickly as possible. It is to make sure the patient has been heard and knows what happens next.",
+      },
+      { kind: "h2", id: "check-in", text: "Start with a genuine check-in", toc: "Start with a check-in" },
+      {
+        kind: "p",
+        text: "Gary Takacs's approach is the evening \u201cWe Care\u201d call: a personal follow-up after a significant procedure. His framework puts a human conversation after the clinical appointment, when the patient is back at home.",
+      },
+      { kind: "p", text: "Here is illustrative wording adapted from that framework, not a verbatim quotation:" },
+      {
+        kind: "quote",
+        text: "\u201cHi, this is Sam calling from your dental practice. Dr. Lee asked me to check in after your visit today. How are you feeling? Is there anything you would like us to help with?\u201d",
+      },
+      {
+        kind: "p",
+        text: "Use the real caller's name and identify the practice. Confirm you are speaking with the intended patient before discussing treatment details.",
+      },
+      {
+        kind: "p",
+        text: "Then stop talking. The question matters only if the patient has room to answer it. A patient who says, \u201cI'm not sure about one of the instructions,\u201d needs a response, not the next line of a script.",
+      },
+      { kind: "h2", id: "who-and-when", text: "Decide who calls and when", toc: "Decide who calls and when" },
+      {
+        kind: "p",
+        text: "Gary suggests that the doctor call after complex procedures and that an assistant can handle routine follow-up calls. His suggested evening window is 6 to 7 p.m.",
+      },
+      {
+        kind: "p",
+        text: "Treat that as a starting point for the practice's workflow, not a reason to ignore a patient's contact preferences. Agree in advance which patients need a call, who owns each call, and who is available if a question needs the dentist's attention.",
+      },
+      {
+        kind: "p",
+        text: "For example, the team could identify the day's follow-up patients before closing and assign one caller to each. That is an editorial implementation suggestion, not an additional rule from Gary's kit.",
+      },
+      { kind: "p", text: "The useful distinction is ownership: someone should know that the call is theirs to make." },
+      { kind: "h2", id: "concerns", text: "Know what to do when the patient raises a concern", toc: "When a concern is raised" },
+      {
+        kind: "p",
+        text: "A caring call can surface a question the patient did not ask at the appointment. It should not turn a non-clinical team member into someone who diagnoses symptoms or improvises treatment advice.",
+      },
+      {
+        kind: "p",
+        text: "Before introducing the routine, the dentist should define how callers route clinical questions and urgent concerns. Follow the practice's clinician-approved instructions and escalation process. This article addresses communication, not clinical aftercare, and the call does not replace written discharge instructions.",
+      },
+      { kind: "p", text: "Consider this illustrative response:" },
+      {
+        kind: "quote",
+        text: "\u201cThank you for telling me. I will pass that question to the dentist through our follow-up process so you can get the right guidance.\u201d",
+      },
+      {
+        kind: "p",
+        text: "Only promise a callback time that the practice can meet. If a concern needs urgent attention, use the agreed urgent-care process rather than leaving it as a routine message.",
+      },
+      { kind: "h2", id: "voicemail", text: "Leave a useful voicemail and record the outcome", toc: "Voicemail and the record" },
+      { kind: "p", text: "Gary recommends leaving a warm voicemail when the patient does not answer and logging each call." },
+      { kind: "p", text: "Keep voicemail wording general and consistent with the patient's communication preferences. For example:" },
+      {
+        kind: "quote",
+        text: "\u201cHi, this is Sam from your dental practice, checking in with you. Please call us back on our practice number if you would like to speak with the team.\u201d",
+      },
+      {
+        kind: "p",
+        text: "In the call record, note whether you reached the patient, left a message, or identified a question needing follow-up. Record the next owner and action when something remains unresolved. These record fields are an editorial suggestion for making Gary's logging step usable.",
+      },
+      { kind: "p", text: "A \u201ccall completed\u201d tick should not hide an unanswered question." },
+      { kind: "h2", id: "not-a-sales-call", text: "Keep this call separate from a sales conversation", toc: "Not a sales conversation" },
+      {
+        kind: "p",
+        text: "An after-treatment check-in has a different purpose from a call that books a new patient. If someone is uncomfortable or uncertain, focus on that concern. Do not treat the moment as an opportunity to sell another service or request a positive review.",
+      },
+      {
+        kind: "p",
+        text: "For the earlier part of the patient journey, our article **[Why New-Patient Calls Fail to Become Appointments](/blog/new-patient-calls-to-appointments)** covers the booking conversation. Here, success starts with a clear answer to a simpler question: did the patient get the support they needed after the visit?",
+      },
+    ],
+    takeaway: {
+      eyebrow: "Put the routine into practice",
+      title: "Start small, and make sure the call has an owner.",
+      body: "Start with a defined group of follow-up patients, a named caller, an agreed contact window, and a clear route back to the dentist. Review any unresolved questions at the next team check-in.",
+    },
+    kitCta: {
+      // The CTA template prefixes "Get the complete … resource kit", so the
+      // leading "The" is dropped here to avoid "the complete The Evening…".
+      kitName: "Evening 'We Care' Call That Creates Patient Loyalty",
+      description:
+        "Available inside Dental Member Network, including the companion call script.",
+      href: "/garytakacs",
+      label: "Join Dental Member Network",
+      support: "Gary's invitation offers three months free with code **GARY**.",
+    },
+  },
   {
     slug: "fill-open-hygiene-appointments",
     title: "How to Fill Open Hygiene Appointments Before They Become Lost Production",

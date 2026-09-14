@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const SITE = "https://dentalmembernetwork.com";
+const SITE = "https://www.dentalmembernetwork.com";
 
 /**
  * Next.js auto-generates /robots.txt from this file.

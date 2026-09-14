@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Fraunces, Manrope } from "next/font/google";
 import Providers from "@/components/Providers";
-import SmoothScroll from "@/components/SmoothScroll";
 import GoogleAnalytics from "@/components/analytics/GoogleAnalytics";
 import "./globals.css";
 
@@ -19,7 +18,7 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://dentalmembernetwork.com"),
+  metadataBase: new URL("https://www.dentalmembernetwork.com"),
   title: {
     default: "Dental Member Network | Expert helpline, partner savings, and the operator playbook",
     template: "%s | Dental Member Network",
@@ -78,11 +77,11 @@ const ORG_AND_WEBSITE_JSONLD = {
   "@graph": [
     {
       "@type": "Organization",
-      "@id": "https://dentalmembernetwork.com/#organization",
+      "@id": "https://www.dentalmembernetwork.com/#organization",
       name: "Dental Member Network",
       alternateName: "DMN",
-      url: "https://dentalmembernetwork.com/",
-      logo: "https://dentalmembernetwork.com/td-logo-horizontal-dark.svg",
+      url: "https://www.dentalmembernetwork.com/",
+      logo: "https://www.dentalmembernetwork.com/td-logo-horizontal-dark.svg",
       sameAs: [],
       contactPoint: [
         {
@@ -99,10 +98,10 @@ const ORG_AND_WEBSITE_JSONLD = {
     },
     {
       "@type": "WebSite",
-      "@id": "https://dentalmembernetwork.com/#website",
-      url: "https://dentalmembernetwork.com/",
+      "@id": "https://www.dentalmembernetwork.com/#website",
+      url: "https://www.dentalmembernetwork.com/",
       name: "Dental Member Network",
-      publisher: { "@id": "https://dentalmembernetwork.com/#organization" },
+      publisher: { "@id": "https://www.dentalmembernetwork.com/#organization" },
       inLanguage: "en-US",
     },
   ],
@@ -125,9 +124,7 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <Providers>
-          <SmoothScroll>{children}</SmoothScroll>
-        </Providers>
+        <Providers>{children}</Providers>
         <GoogleAnalytics />
       </body>
     </html>

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import BlogIndexView from "@/components/blog/BlogIndexView";
 import { PUBLISHED_BLOG_ARTICLES, BLOG_INDEX_HEADING, BLOG_INDEX_STANDFIRST } from "@/lib/blog";
 
-const SITE = "https://dentalmembernetwork.com";
+const SITE = "https://www.dentalmembernetwork.com";
 
 export const metadata: Metadata = {
   title: "Blog — Dental Practice Growth, Operations and Leadership",

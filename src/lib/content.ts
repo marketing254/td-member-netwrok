@@ -232,6 +232,7 @@ export const footerLinks = {
 export const navLinks = [
   { label: "What is DMN", href: "#features" },
   { label: "Resources", href: "/resources" },
+  { label: "Tools", href: "/tools" },
   { label: "Experts", href: "/experts" },
   { label: "Partners", href: "/partners" },
   { label: "Blog", href: "/blog" },

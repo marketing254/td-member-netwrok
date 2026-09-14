@@ -323,6 +323,9 @@ export async function POST(req: Request) {
         plan: p.plan,
         tier: "founding",
         channel: "meta_ads",
+        // Auto sign-in on /welcome only for an account THIS checkout
+        // created; an existing unpaid account signs in by emailed code.
+        auto_login: existing ? "false" : "true",
         meta_event_id: metaEventId,
         ...(recovery ? { recovery_row_id: recovery.rowId, recovery_code: recovery.code } : {}),
         // Browser/network context for Conversions API match quality —

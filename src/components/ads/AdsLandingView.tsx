@@ -328,7 +328,9 @@ export default function AdsLandingView() {
           "& .MuiOutlinedInput-root": {
             borderRadius: "14px",
             bgcolor: "#fff",
-            fontSize: "0.85rem",
+            // 16px on phones: anything smaller makes iOS Safari zoom in
+            // when the field is focused, and the zoom sticks.
+            fontSize: { xs: "1rem", md: "0.85rem" },
             height: 50,
           },
           "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
@@ -545,44 +547,87 @@ export default function AdsLandingView() {
               Every kit turns expert knowledge into tools a dental team can understand and put to work.
             </Typography>
           </Box>
+          {/* Kit strip.
+              Below lg the seven cards are wider than the screen, so instead
+              of a row the reader has to drag (and which looked cut off), the
+              strip glides sideways on its own. Deliberately cheap for an ad
+              landing page:
+                - pure CSS keyframes on `transform` only (compositor thread,
+                  no JavaScript, no layout work per frame);
+                - the second copy of the cards reuses the same image URLs,
+                  so nothing extra is downloaded;
+                - pauses while touched/hovered and is switched off entirely
+                  for prefers-reduced-motion (falls back to a swipeable row).
+              At lg and up it is the same static 7-column grid as before. */}
           <Box
             sx={{
-              display: { xs: "flex", lg: "grid" },
-              gridTemplateColumns: "repeat(7, 1fr)",
-              gap: 1.5,
-              overflowX: { xs: "auto", lg: "visible" },
-              scrollSnapType: { xs: "x mandatory", lg: "none" },
-              pb: { xs: 1, lg: 0 },
+              overflow: "hidden",
+              // Soft edges so cards enter and leave gracefully.
+              maskImage: { xs: "linear-gradient(to right, transparent, #000 6%, #000 94%, transparent)", lg: "none" },
+              WebkitMaskImage: { xs: "linear-gradient(to right, transparent, #000 6%, #000 94%, transparent)", lg: "none" },
+              mx: { xs: -2, sm: -3, lg: 0 },
+              px: { xs: 2, sm: 3, lg: 0 },
+              "@keyframes dmnKitGlide": {
+                from: { transform: "translate3d(0,0,0)" },
+                to: { transform: "translate3d(-50%,0,0)" },
+              },
+              "@media (prefers-reduced-motion: reduce)": {
+                overflowX: "auto",
+                maskImage: "none",
+                WebkitMaskImage: "none",
+                "& > div": { animation: "none", width: "auto" },
+                "& .dmn-kit-dup": { display: "none" },
+              },
             }}
           >
-            {KITS.map((kit) => (
-              <Box
-                key={kit.title}
-                sx={{
-                  position: "relative",
-                  overflow: "hidden",
-                  // Same 5:7 ratio as the pre-cropped images — the photo
-                  // maps 1:1 onto the card at every screen width, so the
-                  // aligned eye-lines never drift responsively.
-                  aspectRatio: "5 / 7",
-                  minWidth: { xs: 215, lg: "auto" },
-                  borderRadius: "18px",
-                  bgcolor: "#15263a",
-                  boxShadow: "0 16px 38px rgba(23,35,49,0.13)",
-                  scrollSnapAlign: "start",
-                  flexShrink: 0,
-                }}
-              >
-                <Image src={kit.img} alt={kit.by} fill sizes="(max-width: 900px) 245px, 20vw" style={{ objectFit: "cover" }} />
-                <Box sx={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(4,12,22,0.94), rgba(4,12,22,0) 68%)" }} />
-                <Box sx={{ position: "absolute", zIndex: 2, left: 14, right: 14, bottom: 14, color: "#fff" }}>
-                  <Typography sx={{ color: "rgba(255,255,255,0.78)", fontSize: "0.64rem", fontWeight: 600 }}>{kit.by}</Typography>
-                  <Typography sx={{ mt: 0.5, fontFamily: "var(--font-display)", fontWeight: 600, fontSize: { xs: "1.1rem", lg: "0.98rem" }, lineHeight: 1.15, color: "#FFFFFF" }}>
-                    {kit.title}
-                  </Typography>
-                </Box>
-              </Box>
-            ))}
+            <Box
+              sx={{
+                display: { xs: "flex", lg: "grid" },
+                gridTemplateColumns: "repeat(7, 1fr)",
+                gap: 1.5,
+                width: { xs: "max-content", lg: "auto" },
+                willChange: { xs: "transform", lg: "auto" },
+                animation: { xs: "dmnKitGlide 42s linear infinite", lg: "none" },
+                "&:hover, &:active": { animationPlayState: "paused" },
+                pb: { xs: 1, lg: 0 },
+              }}
+            >
+              {[...KITS, ...KITS].map((kit, i) => {
+                const dup = i >= KITS.length;
+                return (
+                  <Box
+                    key={`${kit.title}-${dup ? "dup" : "main"}`}
+                    className={dup ? "dmn-kit-dup" : undefined}
+                    aria-hidden={dup || undefined}
+                    sx={{
+                      position: "relative",
+                      overflow: "hidden",
+                      // Same 5:7 ratio as the pre-cropped images — the photo
+                      // maps 1:1 onto the card at every screen width, so the
+                      // aligned eye-lines never drift responsively.
+                      aspectRatio: "5 / 7",
+                      width: { xs: 215, lg: "auto" },
+                      minWidth: { xs: 215, lg: "auto" },
+                      borderRadius: "18px",
+                      bgcolor: "#15263a",
+                      boxShadow: "0 16px 38px rgba(23,35,49,0.13)",
+                      flexShrink: 0,
+                      // The duplicate set only exists to make the loop seamless.
+                      display: dup ? { xs: "block", lg: "none" } : "block",
+                    }}
+                  >
+                    <Image src={kit.img} alt={dup ? "" : kit.by} fill sizes="(max-width: 1200px) 215px, 20vw" style={{ objectFit: "cover" }} />
+                    <Box sx={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(4,12,22,0.94), rgba(4,12,22,0) 68%)" }} />
+                    <Box sx={{ position: "absolute", zIndex: 2, left: 14, right: 14, bottom: 14, color: "#fff" }}>
+                      <Typography sx={{ color: "rgba(255,255,255,0.78)", fontSize: "0.64rem", fontWeight: 600 }}>{kit.by}</Typography>
+                      <Typography sx={{ mt: 0.5, fontFamily: "var(--font-display)", fontWeight: 600, fontSize: { xs: "1.1rem", lg: "0.98rem" }, lineHeight: 1.15, color: "#FFFFFF" }}>
+                        {kit.title}
+                      </Typography>
+                    </Box>
+                  </Box>
+                );
+              })}
+            </Box>
           </Box>
         </Container>
       </Box>
@@ -673,10 +718,15 @@ export default function AdsLandingView() {
               bgcolor: "#fff",
               boxShadow: "0 20px 60px rgba(25,31,38,0.10)",
               border: "1px solid rgba(10,19,32,0.08)",
+              // Small phones (320–359px, e.g. iPhone SE 1st gen and compact
+              // Androids): Stripe's embedded checkout lays itself out at a
+              // minimum of roughly 290px, so the card runs edge to edge
+              // here to give it that room. Standard phones are untouched.
+              "@media (max-width: 359px)": { mx: -2, borderRadius: 0 },
             }}
           >
             {/* Summary */}
-            <Box sx={{ p: { xs: 3, md: 6 }, bgcolor: "#111820", color: "#fff" }}>
+            <Box sx={{ p: { xs: 2.5, sm: 3, md: 6 }, minWidth: 0, bgcolor: "#111820", color: "#fff" }}>
               <Typography sx={{ ...kicker, color: "#e9c979" }}>Founding membership</Typography>
               <Typography component="h2" sx={{ ...display, color: "#fff", fontSize: { xs: "2.4rem", md: "3.2rem" }, mt: 1.25 }}>
                 Join DMN today.
@@ -750,14 +800,14 @@ export default function AdsLandingView() {
             </Box>
 
             {/* Form / embedded payment */}
-            <Box sx={{ p: { xs: 3, md: 6 }, bgcolor: "#fff" }}>
+            <Box sx={{ p: { xs: 2, sm: 3, md: 6 }, minWidth: 0, bgcolor: "#fff", "@media (max-width: 359px)": { px: 1.25 } }}>
               {clientSecret && stripePromise ? (
                 <>
                   <Typography sx={{ ...kicker, fontSize: "0.64rem" }}>Secure payment · Stripe</Typography>
                   <Typography component="h3" sx={{ ...display, fontSize: { xs: "1.8rem", md: "2.2rem" }, mt: 0.75, mb: 1 }}>
                     Complete your payment
                   </Typography>
-                  <Typography sx={{ mb: 2.5, color: MUTED, fontSize: "0.82rem" }}>
+                  <Typography sx={{ mb: 2.5, color: MUTED, fontSize: "0.82rem", overflowWrap: "anywhere" }}>
                     {form.email} · {priceLabel}.{" "}
                     <Box
                       component="button"
@@ -768,9 +818,19 @@ export default function AdsLandingView() {
                       Edit details
                     </Box>
                   </Typography>
-                  <EmbeddedCheckoutProvider stripe={stripePromise} options={{ clientSecret }}>
-                    <EmbeddedCheckout />
-                  </EmbeddedCheckoutProvider>
+                  <Box
+                    sx={{
+                      width: "100%",
+                      maxWidth: "100%",
+                      minWidth: 0,
+                      "& > div": { width: "100%", maxWidth: "100%" },
+                      "& iframe": { width: "100% !important", maxWidth: "100%" },
+                    }}
+                  >
+                    <EmbeddedCheckoutProvider stripe={stripePromise} options={{ clientSecret }}>
+                      <EmbeddedCheckout />
+                    </EmbeddedCheckoutProvider>
+                  </Box>
                 </>
               ) : (
                 <>
@@ -810,7 +870,7 @@ export default function AdsLandingView() {
                         value={form.role}
                                         onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
                         sx={{
-                          "& .MuiOutlinedInput-root": { borderRadius: "14px", bgcolor: "#fff", fontSize: "0.85rem", height: 50 },
+                          "& .MuiOutlinedInput-root": { borderRadius: "14px", bgcolor: "#fff", fontSize: { xs: "1rem", md: "0.85rem" }, height: 50 },
                         }}
                       >
                         {ROLES.map((r) => (
@@ -933,21 +993,6 @@ export default function AdsLandingView() {
         </Container>
       </Box>
 
-      {/* Mobile sticky CTA */}
-      {!clientSecret && (
-        <Box sx={{ display: { xs: "block", md: "none" }, position: "fixed", zIndex: 20, left: 12, right: 12, bottom: 12 }}>
-          <Button
-            href="#checkout"
-            fullWidth
-            sx={{
-              "&&": { bgcolor: GOLD, color: "#111", fontWeight: 800, borderRadius: 999, py: 1.6, textTransform: "none", fontSize: "0.95rem", boxShadow: "0 12px 35px rgba(25,25,25,0.3)" },
-              "&&:hover": { bgcolor: "#e4b95f" },
-            }}
-          >
-            Start your membership ›
-          </Button>
-        </Box>
-      )}
     </Box>
   );
 }
