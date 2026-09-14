@@ -1,127 +1,161 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Box, Button, Chip, Container, Stack, Typography } from "@mui/material";
-import LockRoundedIcon from "@mui/icons-material/LockRounded";
-import CalculateOutlinedIcon from "@mui/icons-material/CalculateOutlined";
+import { Box, Button, Container, Pagination, Stack, Typography } from "@mui/material";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import Header from "@/components/sections/Header";
 import Footer from "@/components/sections/Footer";
 import { MEMBER_TOOLS, TOOL_CATEGORIES } from "@/lib/toolsData";
+import ToolCard from "@/components/tools/ToolCard";
 import { COLORS } from "@/theme";
 
 /**
- * /tools — PUBLIC teaser for the member Tools section.
+ * /tools — PUBLIC directory of the member Tools section.
  *
- * Shows WHAT exists (titles, categories, expert credits) as a reason to
- * join — the tools themselves stay member-gated per the dev spec (the
- * files are never publicly reachable). Every card funnels to /pricing.
+ * Shows WHAT exists (a real preview image, title, category, expert
+ * credit) as a reason to join. Each card opens /tools/[id], a public
+ * preview page with a blurred glimpse and a member lock. The tool HTML
+ * itself is never publicly reachable — it is served only to signed-in
+ * members by /api/member/tools/[id].
  */
+
+const GOLD_DEEP = "#A07823";
+const PAGE_SIZE = 9;
+
 export default function PublicToolsPage() {
-  const count = MEMBER_TOOLS.length;
+  const [cat, setCat] = useState("All");
+  const [page, setPage] = useState(1);
+  const rows = useMemo(
+    () => MEMBER_TOOLS.filter((t) => cat === "All" || t.category === cat),
+    [cat],
+  );
+  const pageCount = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const visible = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: COLORS.surface, display: "flex", flexDirection: "column" }}>
       <Header />
 
       {/* Hero */}
-      <Box sx={{ py: { xs: 6, md: 9 }, borderBottom: `1px solid ${COLORS.line}` }}>
+      <Box sx={{ pt: { xs: 5, md: 7 }, pb: { xs: 4, md: 5 }, borderBottom: `1px solid ${COLORS.line}`, bgcolor: "#fff" }}>
         <Container maxWidth="lg">
-          <Stack spacing={1.5} sx={{ alignItems: "center", textAlign: "center" }}>
-            <Typography sx={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: COLORS.accent }}>
-              Member tools
-            </Typography>
-            <Typography component="h1" sx={{ fontFamily: "var(--font-display)", fontSize: { xs: "2rem", md: "2.8rem" }, fontWeight: 500, color: COLORS.ink, lineHeight: 1.1, letterSpacing: "-0.02em", maxWidth: 760 }}>
-              {count} practice calculators, included with membership
-            </Typography>
-            <Typography sx={{ color: COLORS.muted, fontSize: "1.02rem", maxWidth: 640, lineHeight: 1.6 }}>
-              PPO write-offs, overhead benchmarks, case-acceptance gaps, fee increases, equipment
-              ROI and more — built with the DMN expert bench. Everything runs in your browser;
-              nothing you type is saved or sent anywhere.
-            </Typography>
-            <Button
-              component={Link}
-              href="/pricing"
-              variant="contained"
-              size="large"
-              endIcon={<ArrowForwardRoundedIcon sx={{ fontSize: 18 }} />}
-              sx={{ mt: 1.5, textTransform: "none", borderRadius: 999, px: 3.5, py: 1.25, fontWeight: 700, bgcolor: COLORS.ink, "&:hover": { bgcolor: COLORS.inkSoft } }}
-            >
-              Become a member to use them
-            </Button>
-          </Stack>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: "1fr",
+              gap: { xs: 3, md: 5 },
+              alignItems: "end",
+            }}
+          >
+            <Stack spacing={1.75} sx={{ alignItems: "flex-start" }}>
+              <Typography sx={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: GOLD_DEEP }}>
+                Member tools
+              </Typography>
+              <Typography
+                component="h1"
+                sx={{ fontFamily: "var(--font-display)", fontSize: { xs: "2rem", md: "2.8rem" }, fontWeight: 500, color: COLORS.ink, lineHeight: 1.08, letterSpacing: "-0.02em", maxWidth: 640 }}
+              >
+                {MEMBER_TOOLS.length} practice calculators, included with membership
+              </Typography>
+              <Typography sx={{ color: COLORS.muted, fontSize: "1.05rem", maxWidth: 600, lineHeight: 1.6 }}>
+                PPO write-offs, overhead benchmarks, case-acceptance gaps, fee increases, equipment
+                ROI and more, built with the DMN expert bench. Preview any tool below. Members run
+                them with their own numbers and download the results.
+              </Typography>
+              <Button
+                component={Link}
+                href="/join/member"
+                variant="contained"
+                size="large"
+                endIcon={<ArrowForwardRoundedIcon sx={{ fontSize: 18 }} />}
+                sx={{ mt: 0.5, textTransform: "none", borderRadius: 999, px: 3.5, py: 1.25, fontWeight: 700, bgcolor: COLORS.primary, "&:hover": { bgcolor: COLORS.primaryDark } }}
+              >
+                Become a member to use them
+              </Button>
+            </Stack>
+
+          </Box>
         </Container>
       </Box>
 
-      {/* Locked catalog */}
-      <Box sx={{ py: { xs: 5, md: 7 }, flex: 1 }}>
+      {/* Directory */}
+      <Box sx={{ py: { xs: 3, md: 4 }, flex: 1 }}>
         <Container maxWidth="lg">
-          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(3, 1fr)" }, gap: 2.5, maxWidth: 1000, mx: "auto" }}>
-            {MEMBER_TOOLS.map((t) => {
-              const color = TOOL_CATEGORIES.find((c) => c.name === t.category)?.color ?? COLORS.ink;
+          <Stack direction="row" sx={{ flexWrap: "wrap", gap: 1, alignItems: "center", mb: 3 }}>
+            {["All", ...TOOL_CATEGORIES.map((c) => c.name)].map((c) => {
+              const active = c === cat;
               return (
                 <Box
-                  key={t.id}
-                  component={Link}
-                  href="/pricing"
+                  key={c}
+                  component="button"
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => {
+                    setCat(c);
+                    // Back to page 1 so a category change never lands on an empty page.
+                    setPage(1);
+                  }}
                   sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    textDecoration: "none",
-                    color: "inherit",
-                    borderRadius: 2.5,
-                    border: `1px solid ${COLORS.line}`,
-                    borderTop: `3px solid ${color}`,
-                    bgcolor: "#FFFFFF",
-                    p: 2.5,
-                    transition: "transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease",
-                    "&:hover": { transform: "translateY(-2px)", borderColor: COLORS.accent, borderTopColor: color, boxShadow: "0 16px 32px -16px rgba(217,168,75,0.3)" },
+                    font: "inherit",
+                    cursor: "pointer",
+                    border: `1px solid ${active ? COLORS.primary : COLORS.line}`,
+                    bgcolor: active ? COLORS.primary : "#fff",
+                    color: active ? "#fff" : COLORS.inkSoft,
+                    borderRadius: 999,
+                    px: 1.75,
+                    py: 0.8,
+                    fontWeight: 700,
+                    fontSize: "0.82rem",
+                    "&:hover": { borderColor: COLORS.primary },
                   }}
                 >
-                  <Stack direction="row" spacing={1.25} sx={{ alignItems: "flex-start", mb: 1 }}>
-                    <Box sx={{ width: 36, height: 36, borderRadius: 1.25, bgcolor: `${color}14`, color, display: "grid", placeItems: "center", flexShrink: 0 }}>
-                      <CalculateOutlinedIcon sx={{ fontSize: 20 }} />
-                    </Box>
-                    <Box sx={{ minWidth: 0, flex: 1 }}>
-                      <Typography sx={{ fontFamily: "var(--font-display)", fontSize: "1.05rem", fontWeight: 600, color: COLORS.ink, lineHeight: 1.25 }}>
-                        {t.title}
-                      </Typography>
-                      <Typography sx={{ fontSize: "0.68rem", color, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", mt: 0.4 }}>
-                        {t.category}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                  {t.expert && (
-                    <Typography sx={{ fontSize: "0.78rem", color: COLORS.muted, mb: 1.25 }}>
-                      Built with <Box component="span" sx={{ color: COLORS.accent, fontWeight: 700 }}>{t.expert}</Box>
-                    </Typography>
-                  )}
-                  <Stack direction="row" spacing={0.6} sx={{ alignItems: "center", mt: "auto", pt: 0.75 }}>
-                    <LockRoundedIcon sx={{ fontSize: 13, color: COLORS.accent }} />
-                    <Typography sx={{ fontSize: "0.76rem", fontWeight: 700, color: COLORS.accent }}>
-                      Members only
-                    </Typography>
-                  </Stack>
+                  {c}
                 </Box>
               );
             })}
+            <Typography sx={{ ml: "auto", color: COLORS.muted, fontSize: "0.85rem" }}>
+              {rows.length === MEMBER_TOOLS.length
+                ? `${MEMBER_TOOLS.length} tools`
+                : `${rows.length} of ${MEMBER_TOOLS.length} tools`}
+            </Typography>
+          </Stack>
+
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(3, 1fr)" }, gap: 2.5 }}>
+            {visible.map((t) => (
+              <ToolCard key={t.id} tool={t} />
+            ))}
           </Box>
 
+          {pageCount > 1 ? (
+            <Stack sx={{ alignItems: "center", mt: 4 }}>
+              <Pagination
+                count={pageCount}
+                page={page}
+                onChange={(_, p) => {
+                  setPage(p);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                shape="rounded"
+                sx={{
+                  "& .MuiPaginationItem-root": { fontWeight: 700, borderRadius: 2 },
+                  "& .Mui-selected": { bgcolor: `${COLORS.primary} !important`, color: "#fff" },
+                }}
+              />
+            </Stack>
+          ) : null}
+
           <Stack spacing={1.5} sx={{ alignItems: "center", textAlign: "center", mt: { xs: 5, md: 7 } }}>
-            <Chip
-              label="Founding membership · $49/mo locked for life"
-              sx={{ bgcolor: "rgba(217,168,75,0.14)", color: COLORS.accent, fontWeight: 700 }}
-            />
             <Typography sx={{ color: COLORS.muted, fontSize: "0.98rem", maxWidth: 560, lineHeight: 1.6 }}>
-              Every tool above — plus the full resource library, the expert hotline, and
-              member-exclusive partner offers.
+              Every tool above, plus the full resource library, the expert hotline, and
+              member-exclusive partner offers. Founding membership is $49/mo, locked for life.
             </Typography>
             <Button
               component={Link}
-              href="/pricing"
+              href="/join/member"
               variant="contained"
               size="large"
-              sx={{ textTransform: "none", borderRadius: 999, px: 3.5, py: 1.25, fontWeight: 700, bgcolor: COLORS.accent, color: "#FFFFFF", "&:hover": { bgcolor: COLORS.accent } }}
+              sx={{ textTransform: "none", borderRadius: 999, px: 3.5, py: 1.25, fontWeight: 700, bgcolor: COLORS.accent, color: COLORS.ink, "&:hover": { bgcolor: COLORS.accentDeep, color: "#fff" } }}
             >
               See membership pricing
             </Button>

@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { PUBLISHED_BLOG_ARTICLES } from "@/lib/blog";
+import { MEMBER_TOOLS } from "@/lib/toolsData";
 
 const SITE = "https://www.dentalmembernetwork.com";
 
@@ -26,6 +27,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/partners", priority: 0.8, changeFrequency: "weekly" },
     { path: "/resources", priority: 0.8, changeFrequency: "weekly" },
     { path: "/blog", priority: 0.8, changeFrequency: "weekly" },
+    // Public tool previews — one indexable page per calculator. The tool
+    // itself stays member-gated; only the preview image and copy are public.
+    { path: "/tools", priority: 0.8, changeFrequency: "weekly" },
+    ...MEMBER_TOOLS.map((t) => ({
+      path: `/tools/${t.id}`,
+      priority: 0.6,
+      changeFrequency: "monthly" as const,
+    })),
     // One entry per published article — the registry is the source of truth.
     ...PUBLISHED_BLOG_ARTICLES.map((a) => ({
       path: `/blog/${a.slug}`,

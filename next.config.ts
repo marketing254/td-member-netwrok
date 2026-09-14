@@ -39,6 +39,7 @@ const nextConfig: NextConfig = {
     // (kept OUT of /public so they're member-gated). Trace them into the
     // serving function's bundle.
     "/api/member/tools/\\[id\\]": ["./tools-html/**"],
+    "/api/tools/public/\\[id\\]": ["./tools-html/**"],
   },
   compiler: {
     removeConsole:
