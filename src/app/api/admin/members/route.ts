@@ -47,6 +47,8 @@ export async function GET(req: NextRequest) {
     const { data, error } = await supabase
       .from("members")
       .select("*")
+      // Free job-seeker accounts (0063) live on /admin/job-seekers, never here.
+      .neq("account_type", "job_seeker")
       .order("created_at", { ascending: false })
       .limit(500);
     if (error) throw error;

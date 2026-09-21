@@ -37,6 +37,8 @@ import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import KeyboardArrowDownOutlinedIcon from "@mui/icons-material/KeyboardArrowDownOutlined";
 import PhoneRoundedIcon from "@mui/icons-material/PhoneRounded";
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
+import WorkOutlineRoundedIcon from "@mui/icons-material/WorkOutlineRounded";
+import { jobBoardEnabled } from "@/lib/jobs/flag";
 import Logo from "@/components/brand/Logo";
 import { useSignOut } from "@/lib/auth/identity";
 import { useCurrentMember } from "@/lib/hooks/useCurrentMember";
@@ -53,6 +55,11 @@ const navItems = [
   { href: "/dashboard/partners", label: "Partners", icon: StorefrontOutlinedIcon },
   { href: "/dashboard/tools", label: "Tools", icon: CalculateOutlinedIcon },
   { href: "/dashboard/network", label: "Network", icon: HubOutlinedIcon },
+  // Hidden until NEXT_PUBLIC_JOB_BOARD_ENABLED=true; the middleware 404s
+  // the page as well, so members see nothing before launch.
+  ...(jobBoardEnabled()
+    ? [{ href: "/dashboard/jobs", label: "Jobs", icon: WorkOutlineRoundedIcon }]
+    : []),
   { href: "/dashboard/inbox", label: "Inbox", icon: InboxOutlinedIcon },
   { href: "/dashboard/account", label: "Profile", icon: PersonOutlineOutlinedIcon },
 ];

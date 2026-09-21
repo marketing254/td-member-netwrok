@@ -32,7 +32,12 @@ export async function GET() {
       supabase
         .from("vendors")
         .select("id, status, verified, created_at, plan_id"),
-      supabase.from("members").select("id, email, status, tier, joined_at, created_at, activated_at, stripe_subscription_id"),
+      // Free job-seeker accounts (0063) are never members and must not
+      // inflate any membership number on this page.
+      supabase
+        .from("members")
+        .select("id, email, status, tier, joined_at, created_at, activated_at, stripe_subscription_id")
+        .neq("account_type", "job_seeker"),
       supabase
         .from("waitlist_signups")
         .select("id, role, created_at"),
