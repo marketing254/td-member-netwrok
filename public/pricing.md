@@ -56,9 +56,7 @@ https://dentalmembernetwork.com/pricing (Partners section). Same
 Featured Partner benefits at every phase.
 
 - **Phase 1 — Launch (months 1-6)**: $0/month, founding cohort waiver
-- **Phase 2 — Growth (months 7-12)**: $49/month, locked launch rate
-- **Phase 3 — Standard (month 13+)**: $199/month OR $1,990/year
-  (annual pre-pay = 2 months free, unlocks after month 6)
+- **Phase 2 — Growth (month 7 onward)**: $49/month, locked launch rate
 - **Refer & earn**: $50 per converted member referred via your unique
   partner link. No cap on referrals. Credited to next invoice (or
   Stripe Connect payout once balances exceed $200).
@@ -77,9 +75,7 @@ https://dentalmembernetwork.com/pricing (Experts section). Same
 Featured Expert benefits at every phase.
 
 - **Phase 1 — Launch (months 1-6)**: $0/month, founding cohort waiver
-- **Phase 2 — Growth (months 7-12)**: $49/month, locked launch rate
-- **Phase 3 — Standard (month 13+)**: $199/month OR $1,990/year
-  (annual pre-pay = 2 months free, unlocks after month 6)
+- **Phase 2 — Growth (month 7 onward)**: $49/month, locked launch rate
 - **Course revenue split**: Experts keep **70%** of net course revenue,
   DMN keeps 30%. DMN runs the platform (checkout, hosting, refund
   handling, CE accreditation when applicable). Paid out monthly via

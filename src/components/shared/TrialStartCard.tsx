@@ -145,8 +145,8 @@ export default function TrialStartCard({
         {/* Ramp summary */}
         <Box sx={{ bgcolor: accentTint, borderRadius: 1.5, px: 2, py: 1.5, mb: 2.5 }}>
           <RampLine label="Now to month 6" price="$0/mo" bold />
-          <RampLine label="Months 7 to 12" price="$49/mo" />
-          <RampLine label="Month 13 onward" price="$199/mo" />
+          <RampLine label="Month 7 onward" price="$49/mo" />
+          
         </Box>
 
         {/* Payment element — skeleton while it boots, no status text */}

@@ -77,8 +77,7 @@ const WHAT_YOU_GET = [
 // Featured Expert benefits, and the bench keeps 70% of course revenue.
 const PRICE_TIERS = [
   { cap: "Months 1–6", price: "$0", per: "", body: "Founding-cohort waiver. Build your library + warm-lead pipeline first.", hot: true },
-  { cap: "Months 7–12", price: "$49", per: "/mo", body: "Locked launch rate. Auto-rolls from Phase 1.", hot: true },
-  { cap: "Month 13+", price: "$199", per: "/mo", body: "Standard rate · or $1,990/yr annual pre-pay (2 months free).", hot: false },
+  { cap: "Month 7 onward", price: "$49", per: "/mo", body: "Locked launch rate. Auto-rolls from Phase 1.", hot: true },
 ];
 
 const FIT_YES = [
@@ -297,7 +296,7 @@ export default function ExpertsPage() {
           <Box
             sx={{
               display: "grid",
-              gridTemplateColumns: { xs: "1fr", md: "repeat(3, 1fr)" },
+              gridTemplateColumns: { xs: "1fr", md: "repeat(2, 1fr)" },
               gap: 2.5,
               mt: 4,
             }}

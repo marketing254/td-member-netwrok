@@ -81,6 +81,10 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
     }
     patch.role = body.role;
   }
+  {
+    const plan = (body as { pricing_plan?: unknown }).pricing_plan;
+    if (plan === "ladder" || plan === "flat_49") patch.pricing_plan = plan;
+  }
   if (typeof body.full_name === "string") {
     const v = body.full_name.trim();
     if (v.length < 2) return NextResponse.json({ error: "Full name is too short." }, { status: 400 });
@@ -283,6 +287,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     try {
       pdfBuffer = await renderFoundingAgreementPdf({
         role: invite.role,
+        pricing: invite.pricing_plan,
         signer: { name: signerName, email: invite.email, companyName: invite.company_name },
         companies: invite.companies ?? undefined,
         memberOffer: invite.member_offer,

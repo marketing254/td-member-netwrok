@@ -77,6 +77,452 @@ export const BLOG_INDEX_STANDFIRST =
 
 /** Launch order per the build brief: Gary → Ashley → James. */
 export const BLOG_ARTICLES: BlogArticle[] = [
+  // ── Week 4 · article 3 (approved 2026-09-17; release 2026-09-18) ─────
+  {
+    slug: "train-new-dental-team-member",
+    title: "How to Train a New Dental Team Member, Even When They Have Experience",
+    metaTitle: "How to Train a New Dental Team Member",
+    metaDescription:
+      "Use Debra Engelhardt-Nash's tell, show and practise approach to train new dental staff, clarify expectations, and check skills before independent work.",
+    excerpt:
+      "Use Debra Engelhardt-Nash's tell, show and practise approach to train new dental staff, clarify expectations, and check skills before independent work.",
+    category: "Team & Culture",
+    dek: "A strong resume does not tell a new employee how your practice works.",
+    expert: {
+      name: "Debra Engelhardt-Nash",
+      role: "Consultant and trainer, co-founder of The Nash Institute",
+      headshotUrl:
+        "https://jbntnrtnaqigsyzgvuyv.supabase.co/storage/v1/object/public/kit-thumbnails/profiles/73e4faed-1de8-4f4c-b3dc-e73ce97dedfb-1787632945703.jfif",
+      profileHref: "/experts/73e4faed-1de8-4f4c-b3dc-e73ce97dedfb",
+    },
+    kitSlug: "nobody-walks-in-ready",
+    hero: {
+      src: "/blog/debra-kit-hero.jpg",
+      alt: "The Nobody Walks In Ready resource kit featuring Debra Engelhardt-Nash",
+    },
+    readTime: "5 minute read",
+    datePublished: "2026-09-18",
+    dateModified: "2026-09-18",
+    quickAnswer:
+      "To train a new dental team member, explain the task and expected standard, demonstrate how your practice does it, and give the person a safe opportunity to practise. Check their understanding through an observed example, provide feedback, and agree on the next step before assuming they can work independently.",
+    body: [
+      {
+        kind: "p",
+        lead: true,
+        text: "*Expert guidance from Debra Engelhardt-Nash, consultant, trainer and co-founder of The Nash Institute, adapted from Nobody Walks In Ready.*",
+      },
+      {
+        kind: "p",
+        text: "Debra Engelhardt-Nash's central point is that experience does not replace training. Someone can bring valuable skills from another practice and still need to learn your workflow, handoffs and expectations.",
+      },
+      { kind: "h2", id: "what-is-different", text: "Start with what is different in your practice", toc: "What is different here" },
+      {
+        kind: "p",
+        text: "A new employee may know the software but not your process for recording a callback. They may have handled patient questions for years but not know when your practice expects a question to go to the dentist.",
+      },
+      { kind: "p", text: "That does not automatically make them a weak hire. It identifies the work your onboarding needs to do." },
+      {
+        kind: "p",
+        text: "Debra recommends a written training protocol rather than expecting someone to arrive ready for every part of the role. Start with a specific task, the person teaching it, and what satisfactory performance looks like.",
+      },
+      {
+        kind: "p",
+        text: "If you are still choosing whom to hire, **[hiring dental staff when you are short-staffed](/blog/hire-dental-staff-under-pressure)** addresses the earlier decision. This article starts after that decision, when the practice needs to help the new person succeed.",
+      },
+      { kind: "h2", id: "tell-show-practise", text: "Tell them, show them, then let them practise", toc: "Tell, show, practise" },
+      { kind: "p", text: "Debra's practical sequence has three parts." },
+      { kind: "p", text: "**Tell:** Explain what the person needs to learn and why it matters." },
+      {
+        kind: "p",
+        text: "**Show:** Demonstrate the task or conversation, including the details that an experienced team member may otherwise leave unspoken.",
+      },
+      {
+        kind: "p",
+        text: "**Practise:** Let the learner try it in a supported setting before the same situation arrives during a busy patient day.",
+      },
+      { kind: "p", text: "Watching a video or hearing an explanation can be part of training. It is not the same as demonstrating the skill." },
+      { kind: "p", text: "Debra puts the distinction plainly:" },
+      { kind: "quote", text: "“If you never practice, never assume that they get it.”", cite: "Debra Engelhardt-Nash" },
+      { kind: "h2", id: "rehearse-conversation", text: "Rehearse one patient conversation", toc: "Rehearse one conversation" },
+      {
+        kind: "p",
+        text: "Debra uses patient questions about cost and insurance as examples of conversations worth rehearsing. The aim is to help team members respond thoughtfully, not teach them to make promises they cannot support.",
+      },
+      { kind: "p", text: "Here is an illustrative exercise applying her method, not a transcript from her kit." },
+      { kind: "p", text: "**Situation:** A patient asks why an estimate differs from what they expected." },
+      {
+        kind: "p",
+        text: "**Explain the standard:** Listen, identify what the patient wants clarified, and involve the appropriate team member rather than guessing about benefits or clinical recommendations.",
+      },
+      {
+        kind: "p",
+        text: "**Demonstrate:** An experienced colleague shows how to acknowledge the concern, locate the information available and explain the next step.",
+      },
+      {
+        kind: "p",
+        text: "**Practise:** The new team member responds while a colleague plays the patient. Swap roles so the learner can hear how the explanation feels from the other side.",
+      },
+      {
+        kind: "p",
+        text: "**Review:** Was the response clear? Did the learner avoid unsupported promises? Did they know when and how to ask for help?",
+      },
+      {
+        kind: "p",
+        text: "Use fictional examples for rehearsal and the practice's approved procedures for real situations. Clinical advice and payer-specific decisions require the appropriate professional input.",
+      },
+      { kind: "h2", id: "make-progress-visible", text: "Make progress visible without turning training into a test of confidence", toc: "Make progress visible" },
+      { kind: "p", text: "A confident answer is not always an accurate one. A hesitant learner may understand the task but need more practice." },
+      { kind: "p", text: "As an editorial tool for applying Debra's framework, use a short task record:" },
+      {
+        kind: "ul",
+        items: [
+          "Task being learned.",
+          "Person providing the demonstration.",
+          "Expected standard.",
+          "Practice opportunity completed.",
+          "What the learner can do and where support is still needed.",
+          "Next review.",
+        ],
+      },
+      {
+        kind: "p",
+        text: "This is a suggested training record, not a fixed timetable or certification. Different roles and tasks require different levels of supervision. Do not use one successful rehearsal to authorize work beyond the person's responsibilities or qualifications.",
+      },
+      { kind: "h2", id: "training-time", text: "Put training time in the diary", toc: "Put training in the diary" },
+      {
+        kind: "p",
+        text: "Debra emphasizes scheduling training and holding one-to-one conversations about expectations and growth. If training is always postponed until the practice is quiet, it may never receive focused attention.",
+      },
+      { kind: "p", text: "Protect time for practice, questions and feedback. Ask which part remains unclear and what support the person needs next." },
+      {
+        kind: "p",
+        text: "The leader has a part in this too. If different experienced team members demonstrate conflicting methods, agree on the practice's standard before asking the new employee to follow it consistently.",
+      },
+      {
+        kind: "p",
+        text: "For the wider team habits that make expectations clearer, see **[how to improve communication in your dental practice](/blog/improve-dental-team-communication)**.",
+      },
+      { kind: "h2", id: "first-question", text: "The first question to ask this week", toc: "The first question this week" },
+      {
+        kind: "p",
+        text: "Choose one task a new team member is expected to perform. Has somebody explained it, demonstrated it and watched them practise it?",
+      },
+      {
+        kind: "p",
+        text: "If not, that is a concrete place to begin. Training becomes more useful when the next step is visible to both the learner and the person supporting them.",
+      },
+    ],
+    takeaway: {
+      eyebrow: "The takeaway",
+      title: "Experience does not replace training.",
+      body: "Explain the task and the standard, demonstrate it the way your practice does it, and let the new person practise before it happens with a real patient. Record what they can do and what still needs support, and protect the time to do it.",
+    },
+    kitCta: {
+      kitName: "Nobody Walks In Ready",
+      description:
+        "Available inside Dental Member Network, including The Training Protocol Worksheet.",
+      support:
+        "Get the complete **Nobody Walks In Ready** resource kit inside Dental Member Network, including **The Training Protocol Worksheet**.",
+      href: "/join/member",
+      label: "Join Dental Member Network",
+    },
+  },
+  // ── Week 4 · article 2 (approved 2026-09-17; release 2026-09-17) ─────
+  {
+    slug: "dental-morning-huddle-agenda",
+    title: "Dental Morning Huddle Agenda: What to Cover Before the First Patient",
+    metaTitle: "Dental Morning Huddle Agenda: What to Cover",
+    metaDescription:
+      "Build a useful dental morning huddle with Callie Ward's approach: celebrate good work, learn from yesterday, anticipate today's needs, and prepare tomorrow.",
+    excerpt:
+      "Build a useful dental morning huddle with Callie Ward's approach: celebrate good work, learn from yesterday, anticipate today's needs, and prepare tomorrow.",
+    category: "Team & Culture",
+    dek: "Use the meeting to make decisions the schedule cannot make for you.",
+    expert: {
+      name: "Callie Ward",
+      role: "Founder and CEO, Dash Dental Consulting",
+      headshotUrl:
+        "https://jbntnrtnaqigsyzgvuyv.supabase.co/storage/v1/object/public/kit-thumbnails/profiles/callie-ward-headshot.jpg",
+      profileHref: "/experts/34a927c7-16a3-4fd2-80c5-3dcefd258aef",
+    },
+    kitSlug: "successful-morning-huddle",
+    hero: {
+      src: "/blog/callie-kit-hero.jpg",
+      alt: "The Successful Morning Huddle resource kit featuring Callie Ward",
+    },
+    readTime: "5 minute read",
+    datePublished: "2026-09-17",
+    dateModified: "2026-09-17",
+    quickAnswer:
+      "A dental morning huddle should recognize good work, identify one lesson from yesterday, flag today's patient and scheduling needs, and assign any preparation needed for tomorrow. It should finish with clear actions and owners, not simply a readout of appointment times.",
+    body: [
+      {
+        kind: "p",
+        lead: true,
+        text: "*Expert guidance from Callie Ward, Founder and CEO of Dash Dental Consulting, adapted from Successful Morning Huddle.*",
+      },
+      {
+        kind: "p",
+        text: "Callie Ward describes the huddle as the day's positive kickstart and its air traffic control. Her framework combines the tone of the meeting with the practical decisions that help the team prepare.",
+      },
+      { kind: "h2", id: "celebration", text: "1. Open with a specific celebration", toc: "1. Open with a celebration" },
+      {
+        kind: "p",
+        text: "Start by acknowledging something a team member did well. Callie suggests rotating the huddle leader, with one person leading for a week before handing over.",
+      },
+      {
+        kind: "p",
+        text: "Make the acknowledgement concrete. “Thank you for explaining the delay to that patient yesterday” gives the team a clearer example than “Great job, everyone.”",
+      },
+      {
+        kind: "p",
+        text: "This is not a request to pretend yesterday was perfect. It is a way to recognize the work that can disappear into a busy day before discussing what needs attention.",
+      },
+      { kind: "h2", id: "learn-from-yesterday", text: "2. Learn from yesterday without blaming a person", toc: "2. Learn from yesterday" },
+      { kind: "p", text: "Ask where the day became harder than it needed to be." },
+      {
+        kind: "p",
+        text: "Did a missing handoff cause confusion? Was there a delay nobody communicated? Did a patient leave with a question that still needs an answer?",
+      },
+      {
+        kind: "p",
+        text: "Callie's approach is to examine the situation in a non-threatening way. Keep the group conversation on the process and the next action. Do not turn the huddle into a public performance review.",
+      },
+      {
+        kind: "p",
+        text: "For example, “What information was missing when the appointment changed?” invites a different discussion from “Who messed up the schedule?”",
+      },
+      {
+        kind: "p",
+        text: "If the issue needs an individual conversation, **[giving difficult feedback without making it personal](/blog/difficult-feedback-dental-team)** offers a separate framework for that discussion.",
+      },
+      { kind: "h2", id: "useful-outcomes", text: "3. Review a few useful outcomes", toc: "3. Review useful outcomes" },
+      {
+        kind: "p",
+        text: "Callie's guide includes reviewing production and collections against the measures the practice is already using, checking whether hygiene patients were rescheduled, and identifying follow-up needs.",
+      },
+      { kind: "p", text: "The purpose is to decide what needs attention, not to recite every number available in the software." },
+      {
+        kind: "p",
+        text: "For each item, ask: does this change what somebody needs to do today? If a patient needs a scheduling conversation, name who will follow up. If a recurring issue needs more investigation, assign that work outside the huddle rather than trying to solve everything at once.",
+      },
+      { kind: "h2", id: "underneath-today", text: "4. Look underneath today's appointments", toc: "4. Look underneath today" },
+      { kind: "p", text: "Everyone can read the appointment list. The meeting is useful when it reveals what the list does not explain." },
+      { kind: "p", text: "Discuss the preparations and handoffs that matter today:" },
+      {
+        kind: "ul",
+        items: [
+          "Which appointments need extra coordination?",
+          "Where could an urgent appointment fit, subject to the clinician's direction?",
+          "Is any required information, material or laboratory work missing?",
+          "Which patients have an unresolved question or agreed follow-up?",
+          "Who will communicate a delay if the schedule changes?",
+        ],
+      },
+      {
+        kind: "p",
+        text: "Callie also recommends reviewing existing unscheduled treatment with the clinician's priorities in mind. A patient conversation should explore what has prevented scheduling, not use the huddle's production goals to pressure the patient.",
+      },
+      {
+        kind: "p",
+        text: "Clinical decisions stay with the clinician. The huddle organizes the team's response; it does not create blanket treatment or imaging rules.",
+      },
+      { kind: "h2", id: "prepare-tomorrow", text: "5. Prepare tomorrow before it arrives", toc: "5. Prepare tomorrow" },
+      {
+        kind: "p",
+        text: "Look beyond the current day's urgency. Callie's framework includes checking upcoming openings, laboratory cases and supplies so that tomorrow's missing item does not become tomorrow's disruption.",
+      },
+      {
+        kind: "p",
+        text: "End each issue with an owner and a next step. “Check the lab case” is less useful than knowing who will check it and when the result needs to reach the team.",
+      },
+      {
+        kind: "p",
+        text: "The time you save is not something to assume or promise. Watch whether fewer unresolved preparation questions reach the start of the next day.",
+      },
+      { kind: "h2", id: "simple-agenda", text: "A simple agenda you can use tomorrow", toc: "A simple agenda" },
+      { kind: "p", text: "This is an editorial adaptation of Callie's framework, not a separate worksheet from her kit:" },
+      {
+        kind: "ol",
+        items: [
+          { strong: "Recognize:", text: "What did someone do well?" },
+          { strong: "Learn:", text: "What happened yesterday that needs a process improvement?" },
+          { strong: "Act:", text: "Which results require a follow-up today?" },
+          { strong: "Prepare:", text: "What needs attention underneath today's schedule?" },
+          { strong: "Look ahead:", text: "What must be ready for tomorrow?" },
+          { strong: "Confirm:", text: "Who owns each action?" },
+        ],
+      },
+      {
+        kind: "p",
+        text: "Keep longer problem-solving discussions outside this meeting. A focused huddle can surface an issue without consuming the time needed to resolve it.",
+      },
+      {
+        kind: "p",
+        text: "For habits beyond the daily meeting, read **[how to improve communication in your dental practice](/blog/improve-dental-team-communication)**.",
+      },
+      { kind: "h2", id: "routine", text: "Turn the agenda into a routine", toc: "Turn it into a routine" },
+      {
+        kind: "p",
+        text: "Try the agenda with your team, then ask what helped them prepare and what was merely repeated information. Keep the parts that lead to clearer decisions.",
+      },
+    ],
+    takeaway: {
+      eyebrow: "The takeaway",
+      title: "A huddle is for decisions, not a readout.",
+      body: "Recognize one thing done well, learn one lesson from yesterday, decide which results need action today, look underneath the appointment list, and get tomorrow ready. End every item with an owner and a next step.",
+    },
+    kitCta: {
+      kitName: "Successful Morning Huddle",
+      description:
+        "Available inside Dental Member Network, including the morning huddle worksheet.",
+      support:
+        "Get the complete **Successful Morning Huddle** resource kit inside Dental Member Network, including the morning huddle worksheet.",
+      href: "/join/member",
+      label: "Join Dental Member Network",
+    },
+  },
+  // ── Week 4 · article 1 (approved 2026-09-17; release 2026-09-16) ─────
+  {
+    slug: "dental-practice-sops",
+    title: "How to Write Dental Practice SOPs Your Team Will Actually Use",
+    metaTitle: "Dental Practice SOPs: A Simple Way to Get Started",
+    metaDescription:
+      "Create a practical dental office SOP with Gary Takacs's framework: define the purpose, assign an owner, document the steps, and review one useful measure.",
+    excerpt:
+      "Create a practical dental office SOP with Gary Takacs's framework: define the purpose, assign an owner, document the steps, and review one useful measure.",
+    category: "Practice Management",
+    dek: "Start with one recurring problem, one accountable owner and a process the team can follow.",
+    expert: {
+      name: "Gary Takacs",
+      role: "Founder, Thriving Dentist",
+      headshotUrl:
+        "https://jbntnrtnaqigsyzgvuyv.supabase.co/storage/v1/object/public/kit-thumbnails/profiles/gary-takacs-headshot.jpg",
+      profileHref: "/experts/ecf8bd07-66e7-48f9-b002-b1b33adb2548",
+    },
+    kitSlug: "24-business-systems",
+    hero: {
+      src: "/blog/gary-sops-kit-hero.jpg",
+      alt: "The 24 Business Systems Framework resource kit featuring Gary Takacs",
+    },
+    readTime: "5 minute read",
+    datePublished: "2026-09-16",
+    dateModified: "2026-09-16",
+    quickAnswer:
+      "To write a useful dental practice standard operating procedure, or SOP, define the outcome, name the person responsible for keeping the process on track, and describe the steps in plain language. Add one measure that shows whether the process is working. Test it with the people doing the work before treating the document as finished.",
+    body: [
+      {
+        kind: "p",
+        lead: true,
+        text: "*Expert guidance from Gary Takacs, adapted from The 24 Business Systems Framework.*",
+      },
+      {
+        kind: "p",
+        text: "Gary Takacs's framework recommends a one-page SOP with a purpose, a system champion, a process of no more than ten steps, and a key performance indicator. The point is not to build a large manual before anything improves. It is to make one important activity repeatable.",
+      },
+      { kind: "h2", id: "same-question", text: "Start where the team keeps asking the same question", toc: "Start with the same question" },
+      { kind: "p", text: "Think about a task that regularly gets delayed, handled differently or passed back to the owner." },
+      {
+        kind: "p",
+        text: "Who follows up with an unanswered new-patient inquiry? How does an appointment change reach the next person at the front desk? Who checks that a promised patient callback happened?",
+      },
+      {
+        kind: "p",
+        text: "These are useful starting points because the problem is visible. You can explain what the process needs to accomplish and watch whether the change helps.",
+      },
+      {
+        kind: "p",
+        text: "Gary's suggested starting areas are the morning huddle, new-patient phone calls, case acceptance, scheduling, review generation and KPI tracking. Choose a manageable process within one area rather than trying to document the whole practice at once.",
+      },
+      {
+        kind: "p",
+        text: "For a patient-facing example, **[why new-patient calls fail to become appointments](/blog/new-patient-calls-to-appointments)** examines the conversation your written process needs to support.",
+      },
+      { kind: "h2", id: "four-parts", text: "Give the SOP four clear parts", toc: "Four clear parts" },
+      { kind: "p", text: "Use these four headings:" },
+      {
+        kind: "ul",
+        items: [
+          "**Purpose:** What should happen when the process works?",
+          "**Champion:** Who checks that the process is being followed?",
+          "**Steps:** What does the team do, in what order?",
+          "**Measure:** What evidence will tell you whether it is working?",
+        ],
+      },
+      {
+        kind: "p",
+        text: "Gary distinguishes the champion from the person doing every task. A champion keeps track of the system and reports progress. Other team members can perform its steps.",
+      },
+      {
+        kind: "p",
+        text: "That matters when someone is absent or a busy day requires people to help across roles. A process should explain how work continues, not make one person indispensable.",
+      },
+      { kind: "h2", id: "worked-example", text: "A worked example: closing a patient-callback request", toc: "A worked example" },
+      { kind: "p", text: "The following is an editorial example applying Gary's structure, not a script from his kit." },
+      { kind: "p", text: "**Purpose:** Every callback request has a named owner and a recorded outcome." },
+      { kind: "p", text: "**Champion:** The person assigned to oversee the callback list." },
+      { kind: "p", text: "**Steps:**" },
+      {
+        kind: "ol",
+        items: [
+          { text: "Record the request in the practice's approved system." },
+          { text: "Confirm the appropriate contact details and the reason for the callback." },
+          { text: "Assign the request to the right team member." },
+          { text: "Route clinical questions through the dentist's approved process." },
+          { text: "Record the contact attempt and what happened." },
+          { text: "Keep unanswered or unresolved requests visible." },
+          { text: "Review outstanding requests before the team closes the day." },
+        ],
+      },
+      {
+        kind: "p",
+        text: "**Measure:** The number of callback requests still without an owner or recorded next action at the daily review.",
+      },
+      {
+        kind: "p",
+        text: "The practice must define its own response expectations and escalation rules. A short SOP is not a substitute for clinical protocols, privacy requirements or professional judgment.",
+      },
+      {
+        kind: "p",
+        text: "For the content of an after-treatment call, see **[what to say in a dental follow-up call](/blog/dental-post-treatment-follow-up-call)**. The SOP answers a different question: how will the practice make sure the conversation happens and any remaining question is handled?",
+      },
+      { kind: "h2", id: "test-first", text: "Test the instructions before adding more", toc: "Test before adding more" },
+      {
+        kind: "p",
+        text: "Give the SOP to a team member and ask them to talk through a realistic example. Where do they need to guess? Where do they need information the document never mentions? Is the named owner actually able to check the work?",
+      },
+      {
+        kind: "p",
+        text: "Use those questions to improve the process. If the document requires a lengthy explanation from its author every time, it is not yet doing enough of the work.",
+      },
+      {
+        kind: "p",
+        text: "Gary's suggested implementation rhythm is two systems per month: learn a system, then implement it, assign its champion and track the result. Treat that as his starting cadence, not a guarantee that every practice or process fits the same timetable.",
+      },
+      { kind: "h2", id: "keep-connected", text: "Keep the document connected to the work", toc: "Keep it connected to the work" },
+      {
+        kind: "p",
+        text: "At the weekly check-in, ask what worked, which step caused difficulty and whether the measure is useful. Update the SOP when an agreed process changes. Do not leave the working version in one person's memory while the written version becomes outdated.",
+      },
+      {
+        kind: "p",
+        text: "A useful first result is simple: the team can explain the same process, knows who is checking it, and can see what remains unfinished.",
+      },
+    ],
+    takeaway: {
+      eyebrow: "The takeaway",
+      title: "One page, one owner, one measure.",
+      body: "Pick the process the team keeps asking about, write its purpose, champion, steps and measure on a single page, test it with the people doing the work, and revisit it at the weekly check-in. Repeatable beats comprehensive.",
+    },
+    kitCta: {
+      kitName: "24 Business Systems Framework",
+      description:
+        "Available inside Dental Member Network, including the implementation guide.",
+      support: "Gary's invitation includes three months free with code **GARY**.",
+      href: "/garytakacs",
+      label: "Join Dental Member Network",
+    },
+  },
   // ── Week 3 · article 3 (approved 2026-09-08; release 2026-09-11) ─────
   {
     slug: "hire-dental-staff-under-pressure",

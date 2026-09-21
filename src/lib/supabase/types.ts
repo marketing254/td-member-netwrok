@@ -1026,6 +1026,8 @@ export type LeadMagnetLeadsRow = {
 
 export type FoundingInviteStatus = "draft" | "sent" | "viewed" | "accepted" | "revoked";
 export type FoundingInviteRole = "expert" | "partner" | "both";
+/** Partner price plan chosen per invite (0066). ladder = $49 then $199 from month 13; flat_49 = $49 for good. */
+export type FoundingInvitePricing = "ladder" | "flat_49";
 
 // Added in 0041_founding_invite_companies.sql. One entry per company on a
 // founding invite; [0] is the principal (paying) company, the rest become
@@ -1045,6 +1047,7 @@ export type FoundingInvitesRow = {
   id: string;
   code: string;
   role: FoundingInviteRole;
+  pricing_plan: FoundingInvitePricing;
   full_name: string;
   email: string;
   company_name: string | null;

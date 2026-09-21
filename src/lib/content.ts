@@ -313,7 +313,7 @@ export const pricing = [
     tier: "Vendor Partner",
     audience: "Suppliers, labs, software, services",
     price: "Apply",
-    cadence: "Founding cohort: $0 for 6 months, $49/mo months 7-12, then $199/mo",
+    cadence: "Founding cohort: $0 for 6 months, then $49/mo",
     blurb:
       "Get featured to our member network. Preferred placement, warm introductions, and direct access to practice owners who are actively buying.",
     features: [

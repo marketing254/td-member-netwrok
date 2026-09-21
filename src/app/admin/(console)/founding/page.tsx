@@ -32,6 +32,7 @@ type InviteRow = {
   id: string;
   code: string;
   role: FoundingInviteRoleValue;
+  pricing_plan: "ladder" | "flat_49";
   full_name: string;
   email: string;
   company_name: string | null;
@@ -127,6 +128,7 @@ export default function AdminFoundingPage() {
     setDialogInitial({
       id: r.id,
       role: r.role,
+      pricing_plan: r.pricing_plan ?? "flat_49",
       full_name: r.full_name,
       email: r.email,
       company_name: r.company_name ?? "",
@@ -420,6 +422,19 @@ function InviteCard({
             size="small"
             sx={{ height: 20, fontSize: "0.66rem", fontWeight: 700, bgcolor: "rgba(14,42,61,0.06)" }}
           />
+          {row.role !== "expert" && (
+            <Chip
+              label={row.pricing_plan === "ladder" ? "$49 → $199 ladder" : "$49 flat"}
+              size="small"
+              sx={{
+                height: 20,
+                fontSize: "0.66rem",
+                fontWeight: 700,
+                bgcolor: row.pricing_plan === "ladder" ? "rgba(160,120,35,0.12)" : "rgba(44,122,82,0.12)",
+                color: row.pricing_plan === "ladder" ? "#7A5B17" : "#1F5238",
+              }}
+            />
+          )}
           <StatusChip status={row.status} />
         </Stack>
         <Typography sx={{ color: "text.secondary", fontSize: "0.85rem" }}>

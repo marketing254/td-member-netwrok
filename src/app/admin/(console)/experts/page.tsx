@@ -229,7 +229,7 @@ function Inner() {
           </Typography>
           {/* Founding-expert slots. The first 20 real experts are free for
               life; once these run out every new expert is billed on the
-              normal ladder ($0 months 1-6 → $49 → $199). */}
+              normal ladder ($0 months 1-6 → $49). */}
           {slots && (
             <Stack direction="row" spacing={1} sx={{ alignItems: "center", mt: 1.5 }}>
               <WorkspacePremiumOutlinedIcon fontSize="small" sx={{ color: slots.remaining > 0 ? "#A07823" : "text.disabled" }} />

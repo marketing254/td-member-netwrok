@@ -38,7 +38,7 @@ type Invoice = {
 
 const PLAN_LABELS: Record<string, { name: string; cadenceLabel: string }> = {
   founding: { name: "Founding Partner", cadenceLabel: "12-month founding cohort · waived months 1-6" },
-  standard: { name: "Standard Partner", cadenceLabel: "$199/month, month-to-month" },
+  standard: { name: "Standard Partner", cadenceLabel: "$49/month, month-to-month" },
 };
 
 export default function VendorAccountPage() {
@@ -127,7 +127,7 @@ export default function VendorAccountPage() {
   const plan = PLAN_LABELS[vendor.plan_id ?? "founding"] ?? PLAN_LABELS.founding;
   const monthsLeftInWaiver = Math.max(0, 6 - vendor.months_in_program);
   const waiverProgress = Math.min(100, (vendor.months_in_program / 6) * 100);
-  const nextBill = monthsLeftInWaiver > 0 ? "$0.00" : vendor.months_in_program < 12 ? "$49.00" : "$199.00";
+  const nextBill = monthsLeftInWaiver > 0 ? "$0.00" : "$49.00";
 
   return (
     <Stack spacing={2.5}>
@@ -225,39 +225,12 @@ export default function VendorAccountPage() {
                   current={vendor.months_in_program <= 6}
                 />
                 <LadderRow
-                  period="Months 7-12"
+                  period="Month 7 onward"
                   price="$49/mo"
                   note="Locked launch rate"
-                  current={vendor.months_in_program > 6 && vendor.months_in_program <= 12}
-                />
-                <LadderRow
-                  period="Month 13+"
-                  price="$199/mo"
-                  note="Standard partner rate"
-                  current={vendor.months_in_program > 12}
+                  current={vendor.months_in_program > 6}
                 />
               </Stack>
-
-              <Divider />
-
-              {/* Annual pre-pay teaser */}
-              <Box
-                sx={{
-                  px: 1.5,
-                  py: 1.25,
-                  borderRadius: 1.5,
-                  bgcolor: "rgba(217,168,75,0.06)",
-                  border: "1px dashed rgba(217,168,75,0.32)",
-                }}
-              >
-                <Typography sx={{ fontSize: "0.82rem", fontWeight: 700, color: "#7A5B17", mb: 0.25 }}>
-                  Save with annual pre-pay
-                </Typography>
-                <Typography sx={portalText.body}>
-                  Commit to 12 months at the standard rate and get 2 months free (10 for the price of 12).
-                  Available after month 6.
-                </Typography>
-              </Box>
             </Stack>
           </SectionCard>
         </Grid>

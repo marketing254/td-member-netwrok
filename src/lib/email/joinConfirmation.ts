@@ -80,6 +80,8 @@ function addMonths(date: Date, months: number): Date {
 
 export type JoinConfirmationInput = {
   role: "partner" | "expert" | "both";
+  /** Partner price plan (founding invites, 0066). "ladder" adds the $199 line. */
+  pricing?: "ladder" | "flat_49" | null;
   to: string;
   contactName: string;
   companyName?: string | null;
@@ -251,12 +253,18 @@ function billingDates(opts: BuiltOpts): { freeThrough: string; firstCharge: stri
   const signedAt = opts.signedAt ?? new Date();
   const trialEnd = opts.trialEndsAt ? new Date(opts.trialEndsAt) : addMonths(signedAt, 6);
   const freeThrough = new Date(trialEnd.getTime() - 24 * 60 * 60 * 1000);
-  const standardStart = addMonths(trialEnd, 6);
   return {
     freeThrough: formatDate(freeThrough),
     firstCharge: formatDate(trialEnd),
-    standardStart: formatDate(standardStart),
+    standardStart: formatDate(addMonths(trialEnd, 6)),
   };
+}
+
+/** The "from then on" billing line, per plan. */
+function ongoingBillingLine(opts: BuiltOpts, dates: { standardStart: string }): string {
+  return opts.pricing === "ladder"
+    ? `From ${dates.standardStart}: $199/month standard rate`
+    : `$49/month from then on, with no increase`;
 }
 
 function agreementSection(opts: BuiltOpts): string {
@@ -314,7 +322,7 @@ function buildHtml(opts: BuiltOpts): string {
   <ul style="padding-left:18px;line-height:1.6;color:#3B4A55;font-size:14px;margin:0 0 4px 0;">
     <li>Today through ${dates.freeThrough}: $0 (your 6 founding months)</li>
     <li>First billing on ${dates.firstCharge}: $49/month</li>
-    <li>From ${dates.standardStart}: $199/month standard rate</li>
+    <li>${ongoingBillingLine(opts, dates)}</li>
     <li>Cancel anytime with 30 days&#39; written notice. We&#39;ll remind you 7 days before your free period ends.</li>
   </ul>`;
   }
@@ -441,7 +449,7 @@ function buildText(opts: BuiltOpts): string {
 Your billing, in plain dates:
   - Today through ${dates.freeThrough}: $0 (your 6 founding months)
   - First billing on ${dates.firstCharge}: $49/month
-  - From ${dates.standardStart}: $199/month standard rate
+  - ${ongoingBillingLine(opts, dates)}
   - Cancel anytime with 30 days' written notice. We'll remind you 7 days before your free period ends.
 `;
   }

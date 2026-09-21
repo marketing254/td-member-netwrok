@@ -346,7 +346,7 @@ export default function VendorOverview() {
               }}
             />
             <Typography sx={{ fontSize: "0.74rem", color: "rgba(255,255,255,0.55)", mt: 1, lineHeight: 1.5 }}>
-              Months 7-12 bill at $49/mo (launch rate locked). Standard $199/mo from month 13.
+              From month 7 you bill at $49/mo (launch rate locked).
             </Typography>
           </Box>
         </Box>

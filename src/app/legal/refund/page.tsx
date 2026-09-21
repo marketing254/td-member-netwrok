@@ -59,8 +59,7 @@ const sections: LegalSection[] = [
     title: "Vendor Partner Cancellation & Refunds",
     body: "Founding cohort (months 1–6 free): vendors may cancel during the free period with no charge. No refund applies because no fees were collected.",
     items: [
-      "Months 7–12 ($49/month), cancel anytime with 30 days written notice. Cancellation takes effect at the end of the current billing period. No partial-month refunds. If cancelled during this period, vendor loses founding cohort pricing if they re-enroll.",
-      "Month 13+ ($199/month standard), cancel anytime with 30 days written notice. Cancellation takes effect at the end of the current billing period. No partial-month refunds.",
+      "Month 7 onward ($49/month), cancel anytime with 30 days written notice. Cancellation takes effect at the end of the current billing period. No partial-month refunds. If cancelled during this period, vendor loses founding cohort pricing if they re-enroll.",
       "Initial commitment, the vendor partnership has a 12-month initial commitment term. Early termination within the first 12 months may be subject to the remaining balance for the commitment period unless otherwise agreed in writing.",
       "Upon cancellation, vendor listing removed within 5 business days. Active member deals are honored through their published end date. Vendor loses access to the member network.",
     ],

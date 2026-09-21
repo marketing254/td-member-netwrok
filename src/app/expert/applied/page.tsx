@@ -40,7 +40,7 @@ export default function ExpertAppliedPage() {
     {
       icon: CalendarTodayOutlinedIcon,
       title: "Add your card on first login — trial starts",
-      body: "Once approved, sign in and add your card in the billing tab. That kicks off your 6 months free (Stripe trial). Nothing is charged until month 7 ($49), rolling to $199 at month 13. Cancel anytime.",
+      body: "Once approved, sign in and add your card in the billing tab. That kicks off your 6 months free (Stripe trial). Nothing is charged until month 7 ($49/mo). Cancel anytime.",
     },
   ];
 

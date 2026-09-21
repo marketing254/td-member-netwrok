@@ -49,8 +49,7 @@ const COMMITMENTS = [
 
 const FEES = [
   { period: "Months 1–6", fee: "$0", note: "Founding waiver via 180-day Stripe trial; card on file" },
-  { period: "Months 7–12", fee: "$49/mo", note: "Locked launch rate" },
-  { period: "Month 13+", fee: "$199/mo", note: "Standard rate; annual pre-pay $1,990/yr = 2 months free" },
+  { period: "Month 7 onward", fee: "$49/mo", note: "Locked launch rate" },
 ];
 
 export default function ExpertAgreementPage() {

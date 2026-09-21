@@ -27,11 +27,10 @@ export const vendorPlans: VendorPlan[] = [
     priceLabel: "$0",
     cadenceLabel: "/mo · waived for months 1-6",
     blurb:
-      "Six months free as part of the founding cohort. Auto-rolls to $49/mo for months 7-12, then $199 standard from month 13. Founding badge in the directory launch announcement.",
+      "Six months free as part of the founding cohort. Auto-rolls to $49/mo from month 7 onward. Founding badge in the directory launch announcement.",
     features: [
       "Months 1-6: $0 waiver",
-      "Months 7-12: $49/mo locked",
-      "Month 13+: $199/mo standard rate",
+      "Month 7 onward: $49/mo locked",
       "Founding Partner badge in launch announcement",
       "Featured Partner benefits (Schedule A)",
       "Verified Partner badge",
@@ -41,43 +40,8 @@ export const vendorPlans: VendorPlan[] = [
     ctaLabel: "Apply to the cohort",
     badge: "LIMITED · LAUNCH PROGRAM",
   },
-  {
-    id: "standard",
-    name: "Standard",
-    priceLabel: "$199",
-    cadenceLabel: "/month, billed monthly",
-    blurb:
-      "Open enrollment from month 13. Full Featured Partner tier — enhanced directory listing, priority placement, quarterly newsletter mentions, dedicated email, lead dashboard.",
-    features: [
-      "Enhanced directory listing",
-      "Priority placement within category",
-      "Quarterly newsletter mentions",
-      "1 dedicated email to members per year",
-      "Eligible for podcast / webinar features",
-      "Full lead dashboard access",
-      "Verified Partner badge",
-      "Refer & earn — $50 per converted member",
-    ],
-    highlight: false,
-    ctaLabel: "Become a Partner",
-  },
-  {
-    id: "annual",
-    name: "Standard Annual",
-    priceLabel: "$1,990",
-    cadenceLabel: "/year · 12 months for the price of 10",
-    blurb:
-      "Pre-pay 12 months upfront, get 2 months free (~17% savings). Same Featured Partner benefits, locked for 12 months. Available from month 7 onward.",
-    features: [
-      "All Featured Partner benefits",
-      "$1,990 / year ($165.83 effective monthly)",
-      "Save ~$398 vs monthly",
-      "Locked rate for 12 months",
-      "Refer & earn — $50 per converted member",
-    ],
-    highlight: false,
-    ctaLabel: "Save with Annual",
-  },
+  // The Standard ($199) and Standard Annual ($1,990) plans were switched off on
+  // 2026-09-15; every partner past the waiver stays on the $49 launch rate.
 ];
 
 export const vendorCategories = [
@@ -649,7 +613,7 @@ export const vendorCommitments: VendorCommitment[] = [
     number: "05",
     title: "Pay the fee, waived for your first six months.",
     body:
-      "The standard fee is $199 per month. Founding partners pay $0 for months 1-6, $49 for months 7-12, and the standard $199 from month thirteen onward. You're free to cancel with 30 days' written notice at any time, but you remain responsible for fees accrued during notice.",
+      "The partner fee is $49 per month. Founding partners pay $0 for months 1-6 and $49 per month from month seven onward. You're free to cancel with 30 days' written notice at any time, but you remain responsible for fees accrued during notice.",
   },
 ];
 
@@ -662,15 +626,13 @@ export type FeeScheduleRow = {
 
 export const vendorFeeSchedule: FeeScheduleRow[] = [
   { period: "Months 1-6", fee: "$0", note: "Founding partner waiver, applies automatically" },
-  { period: "Months 7-12", fee: "$49", note: "Locked-in launch rate" },
-  { period: "Month 13 onward", fee: "$199", note: "Standard partner rate" },
+  { period: "Month 7 onward", fee: "$49", note: "Locked-in launch rate" },
 ];
 
 // Headline numbers shown above the agreement (the "key terms band" in the HTML).
 export const vendorAgreementKeyTerms = [
   { label: "Months 1-6", value: "$0", sub: "Waived" },
-  { label: "Months 7-12", value: "$49", sub: "per month" },
-  { label: "Month 13+", value: "$199", sub: "per month" },
+  { label: "Month 7 onward", value: "$49", sub: "per month" },
   { label: "Commitment", value: "12 mo", sub: "Initial term" },
   { label: "Cancel", value: "30 d", sub: "Written notice" },
 ];

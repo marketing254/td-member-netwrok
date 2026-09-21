@@ -38,8 +38,7 @@ const SubHead = ({ children }: { children: React.ReactNode }) => (
 // source HTML put it without breaking the rest of the page's visual rhythm.
 const SCHEDULE_ROWS: { period: string; price: string; note: string }[] = [
   { period: "Months 1-6", price: "$0", note: "Founding partner waiver, applies automatically" },
-  { period: "Months 7-12", price: "$49", note: "Locked-in launch rate" },
-  { period: "Month 13 onward", price: "$199", note: "Standard partner rate" },
+  { period: "Month 7 onward", price: "$49", note: "Locked-in launch rate" },
 ];
 
 function FeeScheduleTable() {
@@ -167,8 +166,8 @@ const sections: LegalSection[] = [
       </span>,
       <span key="commit-fees">
         <Strong>Pay the fee, waived for your first six months.</Strong> Founding partners pay
-        nothing for the first six months. Reduced rates apply for the second six months before
-        the standard partner fee takes effect. Full schedule in Section 03.
+        nothing for the first six months, then $49 per month from month seven onward. Full
+        schedule in Section 03.
       </span>,
     ],
   },
@@ -212,11 +211,6 @@ const sections: LegalSection[] = [
       </Box>
     ),
     items: [
-      <span key="fees-annual">
-        <Strong>Annual pre-pay option.</Strong> If you commit to twelve months at the standard
-        rate up front, you get two months free (effectively 10 months for the price of 12).
-        Available after the founding partner period or at any time during the term.
-      </span>,
       <span key="fees-norefund">
         <Strong>No refunds.</Strong> Except as expressly stated in this Agreement, fees are
         non-refundable.
@@ -368,8 +362,7 @@ export default function VendorAgreementPage() {
         lastUpdated="Active draft"
         keyTerms={[
           { label: "Months 1-6", value: "$0", sub: "Waived" },
-          { label: "Months 7-12", value: "$49", sub: "per month" },
-          { label: "Month 13+", value: "$199", sub: "per month" },
+          { label: "Month 7 onward", value: "$49", sub: "per month" },
           { label: "Commitment", value: "12 mo", sub: "Initial term" },
           { label: "Cancel", value: "30 d", sub: "Written notice" },
         ]}
