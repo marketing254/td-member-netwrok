@@ -64,6 +64,12 @@ function loadTemplate(role: FoundingAgreementPdfInput["role"]): Promise<string> 
 
 export type FoundingAgreementPdfInput = {
   role: "partner" | "expert" | "both";
+  /**
+   * Partner price plan (0066). "ladder" prints the original $49 → $199
+   * ramp with the annual pre-pay line; anything else prints the flat $49
+   * plan. Expert-only agreements have no ramp block at all.
+   */
+  pricing?: "ladder" | "flat_49" | null;
   signer: {
     name: string;
     email: string;
@@ -78,6 +84,26 @@ export type FoundingAgreementPdfInput = {
   ipHashLast6: string;
   accepted?: boolean;
 };
+
+/**
+ * Fee ramp for the partner agreements ("3. What it costs"). Static HTML,
+ * no user input, so it is injected raw like {{COMPANIES_LIST}}.
+ */
+function rampBlockHtml(pricing: FoundingAgreementPdfInput["pricing"]): string {
+  const step = (amount: string, label: string) =>
+    `<div class="rstep"><div class="n">${amount}</div><div class="l">${label}</div></div>`;
+  const mo = `<span style="font-size:9pt;color:#5C6B7A;">/mo</span>`;
+  if (pricing === "ladder") {
+    return (
+      `<div class="ramp">${step("$0", "Months 1&ndash;6")}${step(`$49${mo}`, "Months 7&ndash;12")}${step(`$199${mo}`, "Month 13+ &middot; standard")}</div>` +
+      `<p style="font-size:9pt;color:#5C6B7A;">Annual pre-pay = 2 months free. You&#39;ll see this on the sign-up page before you pay.</p>`
+    );
+  }
+  return (
+    `<div class="ramp">${step("$0", "Months 1&ndash;6")}${step(`$49${mo}`, "Month 7 onward")}</div>` +
+    `<p style="font-size:9pt;color:#5C6B7A;">Your rate stays at $49 a month for as long as your membership stays continuously active. You&#39;ll see this on the sign-up page before you pay.</p>`
+  );
+}
 
 /** Join names for prose: ["A","B","C"] → "A, B and C". */
 function joinAnd(names: string[]): string {
@@ -182,7 +208,9 @@ async function renderAgreementHtml(input: FoundingAgreementPdfInput): Promise<st
     (html, [token, value]) => html.replaceAll(`{{${token}}}`, escapeHtml(value)),
     withFonts,
   );
-  return withTokens.replaceAll("{{COMPANIES_LIST}}", companiesListHtml);
+  return withTokens
+    .replaceAll("{{COMPANIES_LIST}}", companiesListHtml)
+    .replaceAll("{{RAMP_BLOCK}}", rampBlockHtml(input.pricing));
 }
 
 async function launchBrowser(): Promise<Browser> {

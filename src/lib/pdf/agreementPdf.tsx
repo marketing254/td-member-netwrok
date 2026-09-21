@@ -396,16 +396,9 @@ function AgreementDoc({ input }: { input: AgreementPdfInput }) {
           </Text>
         </View>
         <View style={styles.feeRow}>
-          <Text style={styles.feeCol}>Months 7–12</Text>
+          <Text style={styles.feeCol}>Month 7 onward</Text>
           <Text style={styles.feeCol}>$49/mo</Text>
           <Text style={styles.feeCol}>Locked launch rate</Text>
-        </View>
-        <View style={styles.feeRow}>
-          <Text style={styles.feeCol}>Month 13+</Text>
-          <Text style={styles.feeCol}>$199/mo</Text>
-          <Text style={styles.feeCol}>
-            Standard rate; annual pre-pay $1,990/yr = 2 months free
-          </Text>
         </View>
 
         {/* Member offer — personalized. Shown for partner / both. */}

@@ -26,9 +26,13 @@ export type AdditionalCompany = {
   contact_email: string;
 };
 
+export type FoundingInvitePricingValue = "ladder" | "flat_49";
+
 export type FoundingInviteFormValues = {
   id?: string;
   role: FoundingInviteRoleValue;
+  /** Partner price plan. flat_49 = $49 from month 7 for good; ladder = $49 then $199 from month 13. */
+  pricing_plan: FoundingInvitePricingValue;
   full_name: string;
   email: string;
   company_name: string;
@@ -50,6 +54,7 @@ export type FoundingInviteFormValues = {
 
 const EMPTY: FoundingInviteFormValues = {
   role: "partner",
+  pricing_plan: "flat_49",
   full_name: "",
   email: "",
   company_name: "",
@@ -153,6 +158,7 @@ export default function FoundingInviteDialog({
 
       const payload = {
         role: v.role,
+        pricing_plan: v.pricing_plan,
         full_name: v.full_name.trim(),
         email: v.email.trim(),
         company_name: v.company_name.trim(),
@@ -223,6 +229,26 @@ export default function FoundingInviteDialog({
               <MenuItem value="both">Both — Expert + Partner (one fee covers both)</MenuItem>
             </TextField>
           </Grid>
+
+          {needsCompany && (
+            <Grid size={{ xs: 12 }}>
+              <TextField
+                label="Partner pricing"
+                value={v.pricing_plan}
+                onChange={set("pricing_plan")}
+                fullWidth
+                select
+                helperText={
+                  v.pricing_plan === "ladder"
+                    ? "Agreement, acceptance page, email and Stripe schedule all show $49 for months 7-12 and $199 from month 13."
+                    : "One rate only: $0 for months 1-6, then $49 a month with no increase. Nothing they see mentions $199."
+                }
+              >
+                <MenuItem value="flat_49">$49 flat — $0 months 1-6, then $49/mo for good</MenuItem>
+                <MenuItem value="ladder">Standard ladder — $49 months 7-12, then $199/mo from month 13</MenuItem>
+              </TextField>
+            </Grid>
+          )}
 
           <Grid size={{ xs: 12 }}>
             <SectionLabel>01 · Company{needsCompany ? "" : " (optional for expert-only)"}</SectionLabel>

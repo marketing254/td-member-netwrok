@@ -16,12 +16,14 @@ export const dynamic = "force-dynamic";
 const TRIAL_DAYS = 180;
 
 // Founding billing anchor. The founding ramp is a fixed-date schedule tied
-// to the Aug 1, 2026 launch: 6 months free → $49/mo → $199/mo, the same for
-// every founding partner regardless of when they accept (the "clock anchors
-// to launch" rule). Verify/adjust these two dates if the launch shifts.
+// to the Aug 1, 2026 launch, the same for every founding partner regardless
+// of when they accept (the "clock anchors to launch" rule). Verify/adjust
+// the dates if the launch shifts.
 //   • Free ($0)      : acceptance → FOUNDING_TRIAL_END_ISO
-//   • Growth ($49/mo): FOUNDING_TRIAL_END_ISO → FOUNDING_STANDARD_START_ISO
-//   • Standard ($199): FOUNDING_STANDARD_START_ISO onward
+//   • Growth ($49/mo): FOUNDING_TRIAL_END_ISO onward
+//   • Standard ($199): FOUNDING_STANDARD_START_ISO onward — ONLY when the
+//     invite's pricing_plan is "ladder" (0066). The flat_49 plan (default
+//     since 2026-09-15) never leaves the $49 phase.
 const FOUNDING_TRIAL_END_ISO = "2027-02-01T00:00:00Z";
 const FOUNDING_STANDARD_START_ISO = "2027-08-01T00:00:00Z";
 
@@ -142,13 +144,14 @@ export async function POST(req: Request, ctx: { params: Promise<{ code: string }
 
     // Partner-bearing invites keep ONE Stripe subscription for the paid
     // partner ramp. Expert-only founding invites do not enter Stripe.
-    // The ramp is a phased subscription schedule so month 13 steps up to
-    // $199 on its own: $0 (trial) → $49 growth → $199 standard.
+    // The ramp is a phased subscription schedule: $0 (trial) → $49 growth,
+    // and for "ladder" invites a third $199 phase from month 13.
+    const ladder = invite.pricing_plan === "ladder";
     let growthPrice: string;
-    let standardPrice: string;
+    let standardPrice: string | null = null;
     try {
       growthPrice = partnerPriceIdFor("partner_growth_monthly");
-      standardPrice = partnerPriceIdFor("partner_standard_monthly");
+      if (ladder) standardPrice = partnerPriceIdFor("partner_standard_monthly");
     } catch (err) {
       return NextResponse.json(
         { error: err instanceof Error ? err.message : "Stripe price missing." },
@@ -160,7 +163,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ code: string }
     const nowSec = Math.floor(Date.now() / 1000);
     const trialEndSec = Math.floor(new Date(FOUNDING_TRIAL_END_ISO).getTime() / 1000);
     const standardStartSec = Math.floor(new Date(FOUNDING_STANDARD_START_ISO).getTime() / 1000);
-    const canSchedule = trialEndSec > nowSec && standardStartSec > trialEndSec;
+    const canSchedule = trialEndSec > nowSec && (!ladder || standardStartSec > trialEndSec);
 
     let subscription;
     try {
@@ -174,15 +177,23 @@ export async function POST(req: Request, ctx: { params: Promise<{ code: string }
             default_payment_method: paymentMethodId,
             collection_method: "charge_automatically",
           },
-          phases: [
-            // $0 until the free period ends (card on file, no charge).
-            { items: [{ price: growthPrice }], trial: true, end_date: trialEndSec },
-            // $49/mo growth phase (months 7–12).
-            { items: [{ price: growthPrice }], end_date: standardStartSec },
-            // $199/mo standard, month 13 onward (open-ended).
-            { items: [{ price: standardPrice }] },
-          ],
-          metadata: { founding_invite: code, role: invite.role },
+          phases:
+            ladder && standardPrice
+              ? [
+                  // $0 until the free period ends (card on file, no charge).
+                  { items: [{ price: growthPrice }], trial: true, end_date: trialEndSec },
+                  // $49/mo growth phase (months 7–12).
+                  { items: [{ price: growthPrice }], end_date: standardStartSec },
+                  // $199/mo standard, month 13 onward (open-ended).
+                  { items: [{ price: standardPrice }] },
+                ]
+              : [
+                  // $0 until the free period ends (card on file, no charge).
+                  { items: [{ price: growthPrice }], trial: true, end_date: trialEndSec },
+                  // $49/mo, month 7 onward (open-ended, no increase).
+                  { items: [{ price: growthPrice }] },
+                ],
+          metadata: { founding_invite: code, role: invite.role, pricing_plan: invite.pricing_plan },
         });
         const subId =
           typeof schedule.subscription === "string"
@@ -193,14 +204,14 @@ export async function POST(req: Request, ctx: { params: Promise<{ code: string }
       } else {
         // Safety fallback (only if the anchor dates have already passed):
         // a simple 180-day trial on the growth price so acceptance never
-        // breaks. The $199 step can be scheduled manually if this fires.
+        // breaks.
         subscription = await stripe.subscriptions.create({
           customer: customerId,
           items: [{ price: growthPrice }],
           trial_period_days: TRIAL_DAYS,
           default_payment_method: paymentMethodId,
           trial_settings: { end_behavior: { missing_payment_method: "pause" } },
-          metadata: { founding_invite: code, role: invite.role, ramp: "fallback-no-schedule" },
+          metadata: { founding_invite: code, role: invite.role, pricing_plan: invite.pricing_plan, ramp: "fallback-no-schedule" },
         });
       }
     } catch (err) {
@@ -432,6 +443,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ code: string }
   try {
     signedPdf = await renderFoundingAgreementPdf({
       role: invite.role,
+      pricing: invite.pricing_plan,
       signer: { name: signerName, email, companyName: invite.company_name },
       companies: invite.companies ?? undefined,
       memberOffer: invite.member_offer,
@@ -474,6 +486,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ code: string }
   if (signedPdf) {
     void sendJoinConfirmationEmail({
       role: invite.role,
+      pricing: invite.pricing_plan,
       to: email,
       contactName: signerName,
       companyName: invite.company_name,

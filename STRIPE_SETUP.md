@@ -1,5 +1,11 @@
 # DMN Stripe Dashboard setup
 
+> **2026-09-15:** the $199 Standard phase (month 13+) and the $1,990 annual
+> pre-pay are switched off for partners and experts. Everyone past the
+> 6-month waiver stays on the $49 Growth rate. The Standard prices can stay
+> in Stripe; nothing in the site, the agreements or the emails offers them.
+> Sections below that mention $199 / $1,990 describe the original design.
+
 Step-by-step config for the 3 audiences that subscribe through Stripe:
 **members**, **vendor partners**, and **experts**. Same Stripe account
 for all three — no separate sub-accounts, no Stripe Connect for

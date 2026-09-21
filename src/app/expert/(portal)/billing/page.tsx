@@ -36,8 +36,8 @@ type Invoice = {
 
 /**
  * Expert billing — mirrors the structure of the member BillingSection
- * but adapted to the expert phase ladder ($0/$49/$199 over months 1-6,
- * 7-12, 13+). Adds a "phase ladder" card showing where the expert is
+ * but adapted to the expert phase ladder ($0 months 1-6, $49 month 7
+ * onward; the $199 phase is switched off). Adds a "phase ladder" card showing where the expert is
  * today and what's next.
  */
 export default function ExpertBillingPage() {
@@ -393,8 +393,7 @@ export default function ExpertBillingPage() {
       >
         <Stack spacing={0.75} sx={{ p: { xs: 1.5, md: 2 } }}>
           <LadderRow period="Months 1–6" price="$0/mo" note="Founding waiver" current={phase === "launch"} />
-          <LadderRow period="Months 7–12" price="$49/mo" note="Locked launch rate" current={phase === "growth"} />
-          <LadderRow period="Month 13+" price="$199/mo" note="Standard · or $1,990/yr annual" current={phase === "standard"} />
+          <LadderRow period="Month 7 onward" price="$49/mo" note="Locked launch rate" current={phase === "growth"} />
         </Stack>
         <Box sx={{ px: 2.5, py: 1.75, borderTop: "1px solid rgba(14,42,61,0.06)", bgcolor: "#FBFAF6" }}>
           <Typography sx={{ fontSize: "0.8rem", color: "#5C6770", lineHeight: 1.55 }}>

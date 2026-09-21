@@ -74,8 +74,7 @@ const PRICING_JSONLD = {
       url: "https://www.dentalmembernetwork.com/pricing",
       offers: [
         { "@type": "Offer", name: "Expert Launch — months 1-6", price: "0.00", priceCurrency: "USD", url: "https://www.dentalmembernetwork.com/experts" },
-        { "@type": "Offer", name: "Expert Growth — months 7-12", price: "49.00", priceCurrency: "USD", url: "https://www.dentalmembernetwork.com/experts" },
-        { "@type": "Offer", name: "Expert Standard — month 13+", price: "199.00", priceCurrency: "USD", url: "https://www.dentalmembernetwork.com/experts" },
+        { "@type": "Offer", name: "Expert Growth — month 7 onward", price: "49.00", priceCurrency: "USD", url: "https://www.dentalmembernetwork.com/experts" },
       ],
     },
     {
@@ -87,8 +86,7 @@ const PRICING_JSONLD = {
       url: "https://www.dentalmembernetwork.com/pricing",
       offers: [
         { "@type": "Offer", name: "Partner Launch — months 1-6", price: "0.00", priceCurrency: "USD", url: "https://www.dentalmembernetwork.com/partners" },
-        { "@type": "Offer", name: "Partner Growth — months 7-12", price: "49.00", priceCurrency: "USD", url: "https://www.dentalmembernetwork.com/partners" },
-        { "@type": "Offer", name: "Partner Standard — month 13+", price: "199.00", priceCurrency: "USD", url: "https://www.dentalmembernetwork.com/partners" },
+        { "@type": "Offer", name: "Partner Growth — month 7 onward", price: "49.00", priceCurrency: "USD", url: "https://www.dentalmembernetwork.com/partners" },
       ],
     },
   ],
@@ -423,7 +421,7 @@ export default function PricingPage() {
         </Container>
       </Box>
 
-      {/* EXPERTS & PARTNERS — single combined section. Same $0/$49/$199
+      {/* EXPERTS & PARTNERS — single combined section. Same $0/$49
           ramp serves both roles; we show it once. Two role cards above
           the ramp explain the two doors (Expert = your knowledge in the
           library; Partner = your company listed with a member offer)
@@ -551,12 +549,11 @@ export default function PricingPage() {
             <Box
               sx={{
                 display: "grid",
-                gridTemplateColumns: { xs: "1fr", md: "repeat(3, 1fr)" },
+                gridTemplateColumns: { xs: "1fr", md: "repeat(2, 1fr)" },
               }}
             >
               <RampStep cap="Months 1–6" price="$0" sub="Free while you build your library / pipeline." hot />
-              <RampStep cap="Months 7–12" price="$49/mo" sub="Locked launch rate." hot />
-              <RampStep cap="Month 13+" price="$199/mo" sub="Standard rate · $1,990/yr annual = 2 months free." />
+              <RampStep cap="Month 7 onward" price="$49/mo" sub="Locked launch rate." hot />
             </Box>
           </Box>
 

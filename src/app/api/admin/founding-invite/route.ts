@@ -23,6 +23,8 @@ const AGREEMENT_VERSION = "v4";
  */
 type Body = {
   role?: FoundingInviteRole;
+  /** Partner price plan. Ignored for expert-only invites. Defaults to flat_49. */
+  pricing_plan?: string;
   full_name?: string;
   email?: string;
   company_name?: string;
@@ -77,7 +79,7 @@ export async function GET() {
   const { data, error } = await sb
     .from("founding_invites")
     .select(
-      "id, code, role, full_name, email, company_name, member_offer, phone, notes, website, category, calendar_link, description, secondary_email, secondary_phone, signer_name, signer_title, companies, status, agreement_pdf_path, viewed_at, accepted_at, expires_at, created_at",
+      "id, code, role, pricing_plan, full_name, email, company_name, member_offer, phone, notes, website, category, calendar_link, description, secondary_email, secondary_phone, signer_name, signer_title, companies, status, agreement_pdf_path, viewed_at, accepted_at, expires_at, created_at",
     )
     .order("created_at", { ascending: false });
   if (error) {
@@ -107,6 +109,9 @@ export async function POST(req: Request) {
   if (role !== "expert" && role !== "partner" && role !== "both") {
     return NextResponse.json({ error: "role must be expert, partner or both." }, { status: 400 });
   }
+  // "ladder" keeps the original $49 → $199 ramp for this one person;
+  // anything else is the flat $49 plan (the default since 2026-09-15).
+  const pricingPlan = body.pricing_plan === "ladder" ? "ladder" : "flat_49";
   const fullName = (body.full_name ?? "").trim();
   const email = (body.email ?? "").trim().toLowerCase();
   const companyName = (body.company_name ?? "").trim() || null;
@@ -134,6 +139,7 @@ export async function POST(req: Request) {
   const { data: inserted, error: insErr } = await sb
     .from("founding_invites")
     .insert({
+      pricing_plan: pricingPlan,
       code,
       role,
       full_name: fullName,

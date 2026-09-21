@@ -22,7 +22,7 @@ export default async function FoundingInvitePage({
   const { data: invite } = await sb
     .from("founding_invites")
     .select(
-      "code, role, full_name, email, company_name, member_offer, signer_name, status, expires_at, agreement_version, agreement_pdf_path",
+      "code, role, pricing_plan, full_name, email, company_name, member_offer, signer_name, status, expires_at, agreement_version, agreement_pdf_path",
     )
     .eq("code", code)
     .maybeSingle();
@@ -69,6 +69,7 @@ export default async function FoundingInvitePage({
           fullName={invite!.full_name}
           signerName={invite!.signer_name}
           role={invite!.role}
+          pricing={invite!.pricing_plan}
           companyName={invite!.company_name}
           memberOffer={invite!.member_offer}
           agreementUrl={agreementUrl}

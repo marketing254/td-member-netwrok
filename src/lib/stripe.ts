@@ -13,13 +13,19 @@ import Stripe from "stripe";
  *   STRIPE_PRICE_STANDARD_MONTHLY            - $199/mo  (CAD)  — open enrollment
  *   STRIPE_PRICE_STANDARD_ANNUAL             - $1,990/yr (CAD)
  *
- *   STRIPE_PRICE_PARTNER_GROWTH_MONTHLY      - $49/mo   (USD)  — partner months 7-12
- *   STRIPE_PRICE_PARTNER_STANDARD_MONTHLY    - $199/mo  (USD)  — partner month 13+
- *   STRIPE_PRICE_PARTNER_STANDARD_ANNUAL     - $1,990/yr (USD) — annual pre-pay
+ *   STRIPE_PRICE_PARTNER_GROWTH_MONTHLY      - $49/mo   (USD)  — partner month 7 onward
+ *   STRIPE_PRICE_PARTNER_STANDARD_MONTHLY    - (switched off 2026-09-15, price kept in Stripe)
+ *   STRIPE_PRICE_PARTNER_STANDARD_ANNUAL     - (switched off 2026-09-15, price kept in Stripe)
  *
- *   STRIPE_PRICE_EXPERT_GROWTH_MONTHLY       - $49/mo   (USD)  — expert months 7-12
- *   STRIPE_PRICE_EXPERT_STANDARD_MONTHLY     - $199/mo  (USD)  — expert month 13+
- *   STRIPE_PRICE_EXPERT_STANDARD_ANNUAL      - $1,990/yr (USD) — annual pre-pay
+ *   STRIPE_PRICE_EXPERT_GROWTH_MONTHLY       - $49/mo   (USD)  — expert month 7 onward
+ *   STRIPE_PRICE_EXPERT_STANDARD_MONTHLY     - (switched off 2026-09-15, price kept in Stripe)
+ *   STRIPE_PRICE_EXPERT_STANDARD_ANNUAL      - (switched off 2026-09-15, price kept in Stripe)
+ *
+ * 2026-09-15: the $199 Standard phase and the $1,990 annual pre-pay are
+ * NOT offered to partners or experts for now. Everyone past the 6-month
+ * waiver stays on the $49 Growth rate. The plan keys and env vars remain
+ * so the Stripe prices don't have to be deleted; nothing in the UI, the
+ * agreements or the emails mentions them any more.
  *
  * Note: months 1-6 (launch / founding waiver) are NOT in Stripe at all —
  * the partner/expert signs up via form, an admin activates them from the
@@ -159,9 +165,9 @@ export function billingIntervalFor(plan: SubscriptionPlanKey): "month" | "year" 
 // the same 3-phase ladder:
 //
 //   Phase 1 (months 1-6)   $0/mo   "Launch" — waived founding cohort
-//   Phase 2 (months 7-12)  $49/mo  "Growth" — locked launch rate
-//   Phase 3 (month 13+)    $199/mo "Standard" — open rate
-//   Annual pre-pay         $1,990/yr — 2 months free, available after month 6
+//   Phase 2 (month 7+)     $49/mo  "Growth" — locked launch rate
+//   Phase 3 "Standard" ($199) and the annual pre-pay are switched off
+//   (2026-09-15). The keys stay so existing Stripe prices keep working.
 //
 // The "phase" is just the price the customer is paying RIGHT NOW. We move
 // them between prices either by:
@@ -250,9 +256,9 @@ export function expertPriceIdFor(plan: ExpertPlanKey): string {
  * round-tripping to Stripe on every render.
  */
 export function phaseForMonth(monthsInProgram: number): "launch" | "growth" | "standard" {
+  // Standard is switched off (2026-09-15): month 7 onward stays on Growth.
   if (monthsInProgram <= 6) return "launch";
-  if (monthsInProgram <= 12) return "growth";
-  return "standard";
+  return "growth";
 }
 
 /**
@@ -260,8 +266,9 @@ export function phaseForMonth(monthsInProgram: number): "launch" | "growth" | "s
  */
 export function priceLabelForPhase(phase: "launch" | "growth" | "standard"): string {
   if (phase === "launch") return "$0 / mo";
-  if (phase === "growth") return "$49 / mo";
-  return "$199 / mo";
+  // "standard" is unreachable while the $199 phase is switched off; keep
+  // the label at the Growth rate so nothing can ever render $199.
+  return "$49 / mo";
 }
 
 // =====================================================================
