@@ -326,7 +326,7 @@ export default function ResourceInquiries({ resourceId, resourceTitle }: Props) 
               letterSpacing: "-0.005em",
             }}
           >
-            Ask a question about this kit
+            Ask a question about this Playbook
           </Typography>
           <Typography
             sx={{
@@ -381,7 +381,7 @@ export default function ResourceInquiries({ resourceId, resourceTitle }: Props) 
                   },
                 }}
               >
-                Ask a question about this kit…
+                Ask a question about this Playbook…
               </Box>
             ) : (
               <Stack spacing={1.5}>

@@ -32,7 +32,7 @@ const CARDS: Array<{
     body: "Bring any practice problem to the Hotline and get a written action plan plus the right experts to call — within 2–3 business days.",
     perks: [
       "Expert Hotline with written action plans",
-      "Growing resource library — new content weekly",
+      "Growing Practice Playbook library — new content weekly",
       "Exclusive partner discounts on software, supplies & services",
       "Exclusive DMN Expert Podcasts",
       "Live AMAs and CE events",
@@ -44,7 +44,7 @@ const CARDS: Array<{
   {
     eyebrow: "Experts",
     title: "For coaches, consultants & specialists",
-    body: "Share one recording. We build your full content kit, put it in front of thousands of practice owners, and send warm leads to your calendar.",
+    body: "Share one recording. We build your full Practice Playbook, put it in front of thousands of practice owners, and send warm leads to your calendar.",
     perks: [
       "A done-for-you content library — built for you",
       "Your featured expert profile",

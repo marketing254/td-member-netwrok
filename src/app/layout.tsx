@@ -24,14 +24,14 @@ export const metadata: Metadata = {
     template: "%s | Dental Member Network",
   },
   description:
-    "The only US dental network with a human expert on the line for every practice problem. An expert helpline that returns a written action plan in 2–3 business days, $6,400+ average partner-network savings, and a curated kit library. Founding rate $49/mo, locked for life.",
+    "The only US dental network with a human expert on the line for every practice problem. An expert helpline that returns a written action plan in 2–3 business days, $6,400+ average partner-network savings, and a curated Practice Playbook library. Founding rate $49/mo, locked for life.",
   alternates: { canonical: "/" },
   openGraph: {
     type: "website",
     siteName: "Dental Member Network",
     title: "Dental Member Network — Expert helpline, partner savings, and the operator playbook",
     description:
-      "Expert helpline with written action plans in 2–3 business days, exclusive partner discounts averaging $6,400/year, and a curated kit library taught by the operators who built it. Founding rate $49/mo, locked for life. First 100 only.",
+      "Expert helpline with written action plans in 2–3 business days, exclusive partner discounts averaging $6,400/year, and a curated Practice Playbook library taught by the operators who built it. Founding rate $49/mo, locked for life. First 100 only.",
     images: [
       {
         url: "/td-logo-horizontal-dark.svg",

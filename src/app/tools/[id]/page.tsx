@@ -144,7 +144,7 @@ export default async function PublicToolPage({ params }: { params: Promise<{ id:
                 </span>
                 {tool.kit ? (
                   <span>
-                    From the kit <b>{tool.kit}</b>
+                    From the Playbook <b>{tool.kit}</b>
                   </span>
                 ) : null}
                 <span>
@@ -162,8 +162,8 @@ export default async function PublicToolPage({ params }: { params: Promise<{ id:
               </Typography>
               <Typography sx={{ color: COLORS.muted, fontSize: "0.8rem", lineHeight: 1.5 }}>
                 {live
-                  ? `See your results and download them as a PDF, plus the other ${MEMBER_TOOLS.length - 1} tools, the resource library and the expert hotline.`
-                  : `Locked for life. All ${MEMBER_TOOLS.length} tools, the resource library, the expert hotline and partner offers.`}
+                  ? `See your results and download them as a PDF, plus the other ${MEMBER_TOOLS.length - 1} tools, the Practice Playbook library and the expert hotline.`
+                  : `Locked for life. All ${MEMBER_TOOLS.length} tools, the Practice Playbook library, the expert hotline and partner offers.`}
               </Typography>
               <Button
                 href="/join/member"
@@ -288,14 +288,14 @@ export default async function PublicToolPage({ params }: { params: Promise<{ id:
               <Box component="ul" sx={{ m: 0, pl: 2.5, color: COLORS.inkSoft, lineHeight: 1.7, "& li": { mb: 0.5 } }}>
                 <li>Runs entirely in your browser. Nothing you type is saved or sent anywhere.</li>
                 {live ? <li>Enter your numbers free right here. Members see the results and download them as a PDF.</li> : null}
-                {tool.kit ? <li>Built to pair with the expert kit, so the numbers feed straight into the playbook.</li> : null}
+                {tool.kit ? <li>Built to pair with the expert Playbook, so the numbers feed straight into it.</li> : null}
                 <li>Works on a phone at chairside as well as on a desktop.</li>
               </Box>
             </Box>
             <Box sx={{ bgcolor: "#fff", border: `1px solid ${COLORS.line}`, borderRadius: 3.5, p: { xs: 2.5, md: 3 }, display: "grid", gap: 1.5, alignContent: "start" }}>
               <Fact label="Category" value={tool.category} />
               <Fact label="Expert" value={tool.expert ?? "DMN original"} />
-              <Fact label="Companion kit" value={tool.kit ?? "—"} />
+              <Fact label="Companion Playbook" value={tool.kit ?? "—"} />
               <Fact label="Access" value={live ? "Free to try · results for members" : "Members only · included"} />
             </Box>
           </Box>

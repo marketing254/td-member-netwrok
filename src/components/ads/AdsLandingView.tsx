@@ -71,19 +71,19 @@ const KITS = [
 // prototype. Applied on mount so the page itself stays fully static.
 const CREATIVE_VARIANTS: Record<string, { badge: string; title: [string, string]; copy: string }> = {
   laura: {
-    badge: "Expert resource kit · Laura Phillips, E.A.",
+    badge: "Practice Playbook · Laura Phillips, E.A.",
     title: ["Cash is not always ", "profit."],
     copy: "Learn to read the numbers that explain the health of your dental practice, then access the full Know Your Real Numbers resource inside DMN.",
   },
   makkar: {
-    badge: "Expert resource kit · Dr. Parul Dua Makkar",
+    badge: "Practice Playbook · Dr. Parul Dua Makkar",
     title: ["Patients remember how you made them ", "feel."],
-    copy: "Explore a practical patient-experience resource from Dr. Parul Dua Makkar, plus a growing library of expert-led kits inside DMN.",
+    copy: "Explore a practical patient-experience resource from Dr. Parul Dua Makkar, plus a growing library of Practice Playbooks inside DMN.",
   },
   ashley: {
     badge: "Practice transitions · Ashley Boaz",
     title: ["Don’t break every system on ", "day one."],
-    copy: "Protect the people, processes and value behind a practice transition with Ashley Boaz’s practical resource kit inside DMN.",
+    copy: "Protect the people, processes and value behind a practice transition with Ashley Boaz’s Practice Playbook inside DMN.",
   },
   callie: {
     badge: "Practice management · Callie Ward",
@@ -93,7 +93,7 @@ const CREATIVE_VARIANTS: Record<string, { badge: string; title: [string, string]
   savings: {
     badge: "Vetted partner savings",
     title: ["Membership savings for your ", "practice."],
-    copy: "Access confirmed offers from The Phillips Group alongside DMN’s experts, resource kits, tools and wider company network.",
+    copy: "Access confirmed offers from The Phillips Group alongside DMN’s experts, Practice Playbooks, tools and wider company network.",
   },
   hotline: {
     badge: "The DMN Expert Hotline",
@@ -105,7 +105,7 @@ const CREATIVE_VARIANTS: Record<string, { badge: string; title: [string, string]
 const DEFAULT_HERO = {
   badge: "Curated by the Thriving Dentist team — not an algorithm",
   title: ["Never solve a practice problem ", "alone again."] as [string, string],
-  copy: "Bring DMN a real dental-practice problem and get a written response within 2–3 business days, plus a growing library of practical resources from vetted experts.",
+  copy: "Bring DMN a real dental-practice problem and receive a written response within 2–3 business days. Explore Practice Playbooks with training videos, guides, checklists and worksheets your team can put to use.",
 };
 
 function readCookie(name: string): string | null {
@@ -331,7 +331,7 @@ export default function AdsLandingView() {
             // 16px on phones: anything smaller makes iOS Safari zoom in
             // when the field is focused, and the zoom sticks.
             fontSize: { xs: "1rem", md: "0.85rem" },
-            height: 50,
+            height: { xs: 42, md: 44 },
           },
           "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
             borderColor: GOLD_DARK,
@@ -373,7 +373,7 @@ export default function AdsLandingView() {
           >
             {(
               [
-                ["Resources", "#library"],
+                ["Playbooks", "#library"],
                 ["Expert Hotline", "#hotline"],
                 ["What is included", "#inside"],
                 ["Pricing", "#checkout"],
@@ -428,7 +428,7 @@ export default function AdsLandingView() {
       </Container>
 
       {/* Hero */}
-      <Box component="section" sx={{ position: "relative", overflow: "hidden", textAlign: "center", py: { xs: 7, md: 9 } }}>
+      <Box component="section" sx={{ position: "relative", overflow: "hidden", textAlign: "center", pt: { xs: 3.5, md: 6 }, pb: { xs: 4.5, md: 6 } }}>
         <Container maxWidth="lg">
           <Box
             sx={{
@@ -448,14 +448,14 @@ export default function AdsLandingView() {
           >
             {hero.badge}
           </Box>
-          <Typography component="h1" sx={{ ...display, fontSize: { xs: "2.8rem", md: "4.4rem" }, maxWidth: 850, mx: "auto", mt: 2.5 }}>
+          <Typography component="h1" sx={{ ...display, fontSize: { xs: "2.8rem", md: "4.4rem" }, maxWidth: 980, mx: "auto", mt: { xs: 2, md: 2.5 } }}>
             {hero.title[0]}
             <Box component="span" sx={{ color: GOLD_DARK, fontStyle: "italic" }}>{hero.title[1]}</Box>
           </Typography>
-          <Typography sx={{ maxWidth: 700, mx: "auto", mt: 2.5, color: "#59636e", fontSize: { xs: "0.95rem", md: "1.06rem" }, lineHeight: 1.6 }}>
+          <Typography sx={{ maxWidth: 900, mx: "auto", mt: 2, color: "#59636e", fontSize: { xs: "0.95rem", md: "1.1rem" }, lineHeight: 1.6 }}>
             {hero.copy}
           </Typography>
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ justifyContent: "center", alignItems: "center", mt: 3.5 }}>
+          <Stack sx={{ alignItems: "center", mt: { xs: 3, md: 3.5 } }}>
             <Button
               href="#checkout"
               sx={{
@@ -465,18 +465,21 @@ export default function AdsLandingView() {
             >
               Start your membership ›
             </Button>
-            <Typography sx={{ fontSize: "0.76rem", color: "#727982" }}>
-              Founding rate · $49/month · locked while active
+            <Typography sx={{ mt: 1.5, fontSize: { xs: "1.05rem", md: "1.15rem" }, fontWeight: 700, color: INK, lineHeight: 1.3 }}>
+              Membership from $49/month
+            </Typography>
+            <Typography sx={{ mt: 0.4, fontSize: "0.8rem", fontWeight: 600, color: "#5b6570" }}>
+              Founding rate · locked while active
             </Typography>
           </Stack>
-          <Stack direction="row" sx={{ justifyContent: "center", flexWrap: "wrap", gap: "10px 24px", mt: 3.25, color: "#69717a", fontSize: "0.7rem" }}>
+          <Stack direction="row" sx={{ justifyContent: "center", flexWrap: "wrap", gap: "10px 26px", mt: 2.75, color: "#333d47", fontSize: { xs: "0.88rem", md: "0.92rem" }, fontWeight: 600 }}>
             {["30-day money-back guarantee", "Cancel anytime", "Real human replies"].map((t) => (
               <Box key={t} component="span" sx={{ "&::before": { content: '"✓"', mr: 0.9, color: GREEN, fontWeight: 900 } }}>
                 {t}
               </Box>
             ))}
           </Stack>
-          <Typography sx={{ maxWidth: 720, mx: "auto", mt: 3.25, pt: 2.25, borderTop: `1px solid ${LINE}`, fontSize: "0.76rem", color: "#717780" }}>
+          <Typography sx={{ maxWidth: 900, mx: "auto", mt: 3, pt: 2, borderTop: `1px solid ${LINE}`, fontSize: "0.8rem", color: "#717780" }}>
             One short form. Choose monthly or annual and pay securely on this page—no registration detour.
           </Typography>
 
@@ -485,7 +488,7 @@ export default function AdsLandingView() {
           <Stack
             direction="row"
             spacing={{ xs: 2, md: 3.5 }}
-            sx={{ alignItems: "center", justifyContent: "center", mt: { xs: 5, md: 6.5 } }}
+            sx={{ alignItems: "center", justifyContent: "center", mt: { xs: 3.5, md: 4.5 } }}
           >
             <Box
               sx={{
@@ -536,15 +539,15 @@ export default function AdsLandingView() {
       </Box>
 
       {/* Library */}
-      <Box component="section" id="library" sx={{ bgcolor: "#eee9de", borderTop: "1px solid #e2dccf", borderBottom: "1px solid #e2dccf", py: { xs: 8, md: 11 }, scrollMarginTop: 16 }}>
+      <Box component="section" id="library" sx={{ bgcolor: "#eee9de", borderTop: "1px solid #e2dccf", borderBottom: "1px solid #e2dccf", py: { xs: 6, md: 8 }, scrollMarginTop: 16 }}>
         <Container maxWidth="lg">
-          <Box sx={{ textAlign: "center", maxWidth: 760, mx: "auto", mb: 5 }}>
-            <Typography sx={kicker}>The library</Typography>
+          <Box sx={{ textAlign: "center", maxWidth: 900, mx: "auto", mb: 4 }}>
+            <Typography sx={kicker}>Practice Playbooks</Typography>
             <Typography component="h2" sx={{ ...display, fontSize: { xs: "2.2rem", md: "3.2rem" }, mt: 1.25 }}>
               Real experts. Practical resources.
             </Typography>
             <Typography sx={{ mt: 2, color: MUTED, fontSize: "1rem" }}>
-              Every kit turns expert knowledge into tools a dental team can understand and put to work.
+              Every Playbook turns expert knowledge into tools a dental team can understand and put to work.
             </Typography>
           </Box>
           {/* Kit strip.
@@ -632,8 +635,99 @@ export default function AdsLandingView() {
         </Container>
       </Box>
 
+      {/* A look inside one Playbook */}
+      <Box component="section" id="playbook" sx={{ pt: { xs: 5, md: 7 }, pb: { xs: 1, md: 2 }, scrollMarginTop: 16 }}>
+        <Container maxWidth="lg">
+          <Box sx={{ textAlign: "center", maxWidth: 900, mx: "auto" }}>
+            <Typography sx={kicker}>Included in your membership</Typography>
+            <Typography component="h2" sx={{ ...display, fontSize: { xs: "2.2rem", md: "3.2rem" }, mt: 1.25 }}>
+              Practice Playbooks
+            </Typography>
+            <Typography sx={{ mt: 1.5, color: MUTED, fontSize: "1rem" }}>
+              Built from real experts. Ready for you &amp; your team. Take a look inside one of the Playbooks.
+            </Typography>
+          </Box>
+
+          <Box sx={{ mt: 3, maxWidth: 1000, mx: "auto", border: `1px solid ${LINE}`, borderRadius: "22px", bgcolor: "#fff", overflow: "hidden", boxShadow: "0 16px 44px rgba(25,31,38,0.08)" }}>
+            <Stack direction="row" spacing={{ xs: 1.75, md: 2.5 }} sx={{ p: { xs: 2, md: 2.5 }, alignItems: "center", bgcolor: "#fbf9f4", borderBottom: `1px solid ${LINE}` }}>
+              <Box sx={{ position: "relative", width: { xs: 88, md: 120 }, aspectRatio: "1 / 1", borderRadius: "10px", overflow: "hidden", flexShrink: 0, bgcolor: "#15263a", boxShadow: "0 8px 20px rgba(23,35,49,0.18)" }}>
+                <Image src="/rida/kit-huddle.jpg" alt="The Successful Morning Huddle Playbook cover" fill sizes="120px" style={{ objectFit: "cover" }} />
+              </Box>
+              <Box sx={{ minWidth: 0 }}>
+                <Typography sx={{ fontSize: "0.66rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.12em", color: GOLD_DARK }}>A look inside</Typography>
+                <Typography sx={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: { xs: "1.3rem", md: "1.7rem" }, lineHeight: 1.15, mt: 0.5 }}>
+                  The Successful Morning Huddle
+                </Typography>
+                <Typography sx={{ color: MUTED, fontSize: "0.86rem", mt: 0.35 }}>Callie Ward · Dash Dental Consulting</Typography>
+              </Box>
+            </Stack>
+
+            <Box sx={{ p: { xs: 2, md: 2.5 } }}>
+              <Box sx={{ p: { xs: 2, md: 2.5 }, border: `1px solid ${LINE}`, borderRadius: "14px" }}>
+                <Typography sx={{ fontSize: "0.66rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.12em", color: GOLD_DARK }}>Checklist sample</Typography>
+                <Typography sx={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: { xs: "1.4rem", md: "1.7rem" }, lineHeight: 1.15, mt: 0.75 }}>
+                  Start in positivity.
+                </Typography>
+                <Typography sx={{ fontSize: "0.78rem", color: NAVY, mt: 0.4, pb: 1.25, borderBottom: `2px solid ${NAVY}` }}>
+                  From The Successful Morning Huddle by Callie Ward
+                </Typography>
+                <Stack spacing={1.1} sx={{ mt: 1.75 }}>
+                  {[
+                    "Rotate who runs the huddle each week for a fresh perspective",
+                    "Give a specific shout out for yesterday (a great case presentation, a patient connection)",
+                    "Name what was great: the schedule, patients showing up, goals hit",
+                  ].map((t) => (
+                    <Stack key={t} direction="row" spacing={1.4} sx={{ alignItems: "flex-start" }}>
+                      <Box aria-hidden sx={{ width: 17, height: 17, mt: "3px", border: "2px solid #98a2ad", borderRadius: "4px", flexShrink: 0 }} />
+                      <Typography sx={{ fontSize: { xs: "0.9rem", md: "0.95rem" }, lineHeight: 1.45 }}>{t}</Typography>
+                    </Stack>
+                  ))}
+                </Stack>
+                <Typography sx={{ mt: 1.5, fontSize: "0.72rem", color: MUTED }}>
+                  An excerpt from the actual checklist, typeset for readability.
+                </Typography>
+              </Box>
+
+              <Stack direction="row" sx={{ flexWrap: "wrap", gap: 0.9, mt: 2 }}>
+                {["Training video", "Action guide", "Checklist", "Worksheet"].map((c) => (
+                  <Box key={c} sx={{ px: 1.5, py: 0.55, borderRadius: 999, border: `1px solid ${LINE}`, bgcolor: "#f5f2ea", fontSize: "0.76rem", fontWeight: 700 }}>
+                    {c}
+                  </Box>
+                ))}
+              </Stack>
+              <Typography sx={{ mt: 1.75, fontSize: "0.86rem", color: "#53606c", lineHeight: 1.55 }}>
+                Every Playbook comes with all four. One example from the DMN library — membership also includes written Expert Hotline support.
+              </Typography>
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25} sx={{ mt: 2, alignItems: { xs: "stretch", sm: "center" } }}>
+                <Button
+                  href="#checkout"
+                  sx={{
+                    "&&": { bgcolor: GOLD, color: "#111", fontWeight: 800, borderRadius: 999, px: 3, py: 1.2, textTransform: "none", fontSize: "0.9rem" },
+                    "&&:hover": { bgcolor: "#e4b95f" },
+                  }}
+                >
+                  Join DMN — $49/month
+                </Button>
+                <Button
+                  href="#library"
+                  sx={{
+                    "&&": { color: INK, fontWeight: 700, borderRadius: 999, px: 2.75, py: 1.15, textTransform: "none", fontSize: "0.88rem", border: `1px solid ${INK}` },
+                    "&&:hover": { bgcolor: "#f1eee6" },
+                  }}
+                >
+                  See all Playbooks
+                </Button>
+              </Stack>
+              <Typography sx={{ mt: 1.1, fontSize: "0.76rem", color: MUTED }}>
+                Annual option: $490 · 30-day money-back guarantee
+              </Typography>
+            </Box>
+          </Box>
+        </Container>
+      </Box>
+
       {/* Hotline */}
-      <Box component="section" id="hotline" sx={{ py: { xs: 8, md: 11 }, scrollMarginTop: 16 }}>
+      <Box component="section" id="hotline" sx={{ pt: { xs: 6, md: 7 }, pb: { xs: 6, md: 8 }, scrollMarginTop: 16 }}>
         <Container maxWidth="lg">
           <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "0.9fr 1.1fr" }, alignItems: "center", gap: { xs: 5, md: 8.5 } }}>
             <Box>
@@ -679,9 +773,9 @@ export default function AdsLandingView() {
       </Box>
 
       {/* Value */}
-      <Box component="section" id="inside" sx={{ bgcolor: NAVY, color: "#fff", py: { xs: 8, md: 11 }, scrollMarginTop: 16 }}>
+      <Box component="section" id="inside" sx={{ bgcolor: NAVY, color: "#fff", py: { xs: 6, md: 8 }, scrollMarginTop: 16 }}>
         <Container maxWidth="lg">
-          <Box sx={{ textAlign: "center", maxWidth: 760, mx: "auto", mb: 5 }}>
+          <Box sx={{ textAlign: "center", maxWidth: 900, mx: "auto", mb: 4 }}>
             <Typography sx={{ ...kicker, color: "#e9c979" }}>One membership</Typography>
             <Typography component="h2" sx={{ ...display, color: "#fff", fontSize: { xs: "2.2rem", md: "3.2rem" }, mt: 1.25 }}>
               What your practice unlocks.
@@ -692,7 +786,7 @@ export default function AdsLandingView() {
           </Box>
           <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(3, 1fr)" }, gap: 2 }}>
             {[
-              ["Learn", "Expert directory and resource kits", "Find trusted specialists and practical materials built around real dental-practice problems."],
+              ["Learn", "Expert directory and Practice Playbooks", "Find trusted specialists and practical materials built around real dental-practice problems."],
               ["Act", "Tools, worksheets and templates", "Move from knowing what to do to having something your team can actually use."],
               ["Connect", "Vetted companies and member offers", "Discover relevant providers and confirmed savings available through the network."],
             ].map(([b, h, p]) => (
@@ -707,7 +801,7 @@ export default function AdsLandingView() {
       </Box>
 
       {/* Checkout */}
-      <Box component="section" id="checkout" sx={{ pt: { xs: 6, md: 8 }, pb: { xs: 8, md: 11 }, scrollMarginTop: 18 }}>
+      <Box component="section" id="checkout" sx={{ pt: { xs: 5, md: 6 }, pb: { xs: 6, md: 8 }, scrollMarginTop: 18 }}>
         <Container maxWidth="lg">
           <Box
             sx={{
@@ -787,7 +881,7 @@ export default function AdsLandingView() {
               <Box component="ul" sx={{ listStyle: "none", p: 0, mt: 3, mb: 0, color: "rgba(255,255,255,0.77)", fontSize: "0.76rem" }}>
                 {[
                   "Expert Hotline and written practice support",
-                  "Expert kits, tools and templates",
+                  "Practice Playbooks, tools and templates",
                   "Vetted companies and member offers",
                   "30-day money-back guarantee",
                   "Cancel anytime",
@@ -852,10 +946,10 @@ export default function AdsLandingView() {
                     Your membership details and payment stay together—no extra registration screens.
                   </Typography>
 
-                  <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
+                  <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: { xs: 1.25, sm: 1.75 }, maxWidth: 560 }}>
                     {field("First name", "firstName", { auto: "given-name" })}
                     {field("Last name", "lastName", { auto: "family-name" })}
-                    <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                    <Box sx={{ gridColumn: "1 / -1" }}>
                       {field("Work email", "email", { type: "email", auto: "email", onBlur: () => captureAbandon(form, plan) })}
                     </Box>
                     {field("Practice name", "practiceName", { auto: "organization" })}
@@ -870,7 +964,7 @@ export default function AdsLandingView() {
                         value={form.role}
                                         onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
                         sx={{
-                          "& .MuiOutlinedInput-root": { borderRadius: "14px", bgcolor: "#fff", fontSize: { xs: "1rem", md: "0.85rem" }, height: 50 },
+                          "& .MuiOutlinedInput-root": { borderRadius: "14px", bgcolor: "#fff", fontSize: { xs: "1rem", md: "0.85rem" }, height: { xs: 42, md: 44 } },
                         }}
                       >
                         {ROLES.map((r) => (
@@ -930,7 +1024,7 @@ export default function AdsLandingView() {
                         color: "#111",
                         fontWeight: 800,
                         borderRadius: 999,
-                        py: 1.6,
+                        py: 1.3,
                         textTransform: "none",
                         fontSize: "0.95rem",
                         boxShadow: "0 10px 25px rgba(188,137,30,0.18)",
@@ -956,7 +1050,7 @@ export default function AdsLandingView() {
       </Box>
 
       {/* FAQ */}
-      <Box component="section" id="faq" sx={{ pb: { xs: 9, md: 12 }, scrollMarginTop: 16 }}>
+      <Box component="section" id="faq" sx={{ pb: { xs: 7, md: 9 }, scrollMarginTop: 16 }}>
         <Container maxWidth="md">
           <Box sx={{ textAlign: "center", mb: 4 }}>
             <Typography sx={kicker}>Questions</Typography>
@@ -966,7 +1060,7 @@ export default function AdsLandingView() {
           </Box>
           {[
             ["Who is DMN membership for?", "Dental practice owners, dentists, office managers, and clinical and administrative team members."],
-            ["What is included?", "The Expert Hotline, a curated expert directory, a growing resource-kit library, practical tools and templates, a vetted company directory, and confirmed member offers."],
+            ["What is included?", "The Expert Hotline, a curated expert directory, a growing Practice Playbook library, practical tools and templates, a vetted company directory, and confirmed member offers."],
             ["How does registration work?", "Complete your essential membership details, choose monthly or annual billing, agree to the member terms, and pay securely—all on the same page."],
             ["When will I be charged?", "Payment is collected securely in the payment section on this page. Your DMN portal unlocks once Stripe confirms the payment."],
             ["Can I cancel?", "Yes. Membership can be cancelled anytime and includes a 30-day money-back guarantee."],

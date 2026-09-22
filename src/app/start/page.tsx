@@ -17,7 +17,7 @@ import AdsLandingView from "@/components/ads/AdsLandingView";
 export const metadata: Metadata = {
   title: "Join Dental Member Network",
   description:
-    "Join Dental Member Network for expert resource kits, written practice support, vetted companies, tools and member offers.",
+    "Join Dental Member Network for Practice Playbooks, written practice support, vetted companies, tools and member offers.",
   robots: { index: false, follow: false },
 };
 

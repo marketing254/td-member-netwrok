@@ -127,7 +127,7 @@ export default function ExpertResourcesPage() {
           Resources published in your voice
         </Typography>
         <Typography sx={{ color: INK_SOFT, fontSize: "0.98rem", lineHeight: 1.55, maxWidth: 640 }}>
-          The DMN content team produces and publishes your kits — videos, action guides, worksheets — and tags them to your name. Anything live in the member library that originated from you shows up here. To request a new kit, email{" "}
+          The DMN content team produces and publishes your Practice Playbooks — videos, action guides, worksheets — and tags them to your name. Anything live in the member library that originated from you shows up here. To request a new Playbook, email{" "}
           <Box
             component="a"
             href="mailto:experts@joindmn.com"
@@ -186,7 +186,7 @@ export default function ExpertResourcesPage() {
             Nothing live yet
           </Typography>
           <Typography sx={{ fontSize: "0.92rem", color: INK_SOFT, maxWidth: 460, mx: "auto" }}>
-            When the team publishes a kit tagged with your name, it'll appear here. Member inquiries on those kits will land in your Inquiries inbox.
+            When the team publishes a Playbook tagged with your name, it'll appear here. Member inquiries on those Playbooks will land in your Inquiries inbox.
           </Typography>
         </Box>
       ) : (
@@ -214,7 +214,7 @@ export default function ExpertResourcesPage() {
               >
                 <Box sx={{ minWidth: 0, flex: 1 }}>
                   <Typography sx={{ fontSize: "0.62rem", color: INK_MUTED, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase" }}>
-                    Kit
+                    Playbook
                   </Typography>
                   <Typography sx={{ fontSize: "1rem", fontWeight: 700, color: INK, lineHeight: 1.2, mt: 0.25 }}>
                     {topic.topic_title}

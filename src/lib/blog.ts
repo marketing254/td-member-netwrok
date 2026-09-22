@@ -98,7 +98,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
     kitSlug: "nobody-walks-in-ready",
     hero: {
       src: "/blog/debra-kit-hero.jpg",
-      alt: "The Nobody Walks In Ready resource kit featuring Debra Engelhardt-Nash",
+      alt: "The Nobody Walks In Ready Practice Playbook featuring Debra Engelhardt-Nash",
     },
     readTime: "5 minute read",
     datePublished: "2026-09-18",
@@ -148,7 +148,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
         kind: "p",
         text: "Debra uses patient questions about cost and insurance as examples of conversations worth rehearsing. The aim is to help team members respond thoughtfully, not teach them to make promises they cannot support.",
       },
-      { kind: "p", text: "Here is an illustrative exercise applying her method, not a transcript from her kit." },
+      { kind: "p", text: "Here is an illustrative exercise applying her method, not a transcript from her Playbook." },
       { kind: "p", text: "**Situation:** A patient asks why an estimate differs from what they expected." },
       {
         kind: "p",
@@ -222,7 +222,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
       description:
         "Available inside Dental Member Network, including The Training Protocol Worksheet.",
       support:
-        "Get the complete **Nobody Walks In Ready** resource kit inside Dental Member Network, including **The Training Protocol Worksheet**.",
+        "Get the complete **Nobody Walks In Ready** Practice Playbook inside Dental Member Network, including **The Training Protocol Worksheet**.",
       href: "/join/member",
       label: "Join Dental Member Network",
     },
@@ -248,7 +248,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
     kitSlug: "successful-morning-huddle",
     hero: {
       src: "/blog/callie-kit-hero.jpg",
-      alt: "The Successful Morning Huddle resource kit featuring Callie Ward",
+      alt: "The Successful Morning Huddle Practice Playbook featuring Callie Ward",
     },
     readTime: "5 minute read",
     datePublished: "2026-09-17",
@@ -377,7 +377,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
       description:
         "Available inside Dental Member Network, including the morning huddle worksheet.",
       support:
-        "Get the complete **Successful Morning Huddle** resource kit inside Dental Member Network, including the morning huddle worksheet.",
+        "Get the complete **Successful Morning Huddle** Practice Playbook inside Dental Member Network, including the morning huddle worksheet.",
       href: "/join/member",
       label: "Join Dental Member Network",
     },
@@ -403,7 +403,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
     kitSlug: "24-business-systems",
     hero: {
       src: "/blog/gary-sops-kit-hero.jpg",
-      alt: "The 24 Business Systems Framework resource kit featuring Gary Takacs",
+      alt: "The 24 Business Systems Framework Practice Playbook featuring Gary Takacs",
     },
     readTime: "5 minute read",
     datePublished: "2026-09-16",
@@ -458,7 +458,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
         text: "That matters when someone is absent or a busy day requires people to help across roles. A process should explain how work continues, not make one person indispensable.",
       },
       { kind: "h2", id: "worked-example", text: "A worked example: closing a patient-callback request", toc: "A worked example" },
-      { kind: "p", text: "The following is an editorial example applying Gary's structure, not a script from his kit." },
+      { kind: "p", text: "The following is an editorial example applying Gary's structure, not a script from his Playbook." },
       { kind: "p", text: "**Purpose:** Every callback request has a named owner and a recorded outcome." },
       { kind: "p", text: "**Champion:** The person assigned to oversee the callback list." },
       { kind: "p", text: "**Steps:**" },
@@ -544,7 +544,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
     kitSlug: "you-just-doubled-the-problem",
     hero: {
       src: "/blog/ameena-kit-hero.jpg",
-      alt: "The You Just Doubled The Problem resource kit featuring Ameena Basile",
+      alt: "The You Just Doubled The Problem Practice Playbook featuring Ameena Basile",
     },
     readTime: "5 minute read",
     datePublished: "2026-09-11",
@@ -556,7 +556,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
       {
         kind: "p",
         lead: true,
-        text: "*Based on Ameena Basile's DMN resource kit, You Just Doubled The Problem.*",
+        text: "*Based on Ameena Basile's DMN Practice Playbook, You Just Doubled The Problem.*",
       },
       {
         kind: "p",
@@ -573,7 +573,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
       },
       {
         kind: "p",
-        text: "Her kit uses lateness as an example. If punctuality has been a clear expectation but repeated lateness is suddenly ignored because a new hire is needed, existing staff see inconsistent treatment. The issue becomes bigger than one person's start time.",
+        text: "Her Playbook uses lateness as an example. If punctuality has been a clear expectation but repeated lateness is suddenly ignored because a new hire is needed, existing staff see inconsistent treatment. The issue becomes bigger than one person's start time.",
       },
       {
         kind: "p",
@@ -620,7 +620,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
       },
       {
         kind: "p",
-        text: "This is an editorial application of Ameena's call for a thorough process, not a question taken from her kit.",
+        text: "This is an editorial application of Ameena's call for a thorough process, not a question taken from her Playbook.",
       },
       {
         kind: "p",
@@ -681,9 +681,9 @@ export const BLOG_ARTICLES: BlogArticle[] = [
     kitCta: {
       kitName: "You Just Doubled The Problem",
       description:
-        "Ameena Basile's complete kit for hiring under pressure, available inside Dental Member Network.",
+        "Ameena Basile's complete Practice Playbook for hiring under pressure, available inside Dental Member Network.",
       support:
-        "Get the complete **You Just Doubled The Problem** resource kit inside Dental Member Network, including **The Non-Negotiables Worksheet**, to put those expectations into writing before the next hiring decision.",
+        "Get the complete **You Just Doubled The Problem** Practice Playbook inside Dental Member Network, including **The Non-Negotiables Worksheet**, to put those expectations into writing before the next hiring decision.",
       // Standard paid membership route — no trial or free-month wording
       // (same destination Lester confirmed for Liz Lord's Week 3 article).
       href: "/join/member",
@@ -711,7 +711,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
     kitSlug: "attack-the-problem-not-the-person",
     hero: {
       src: "/blog/liz-kit-hero.jpg",
-      alt: "The Attack The Problem, Not The Person resource kit featuring Liz Lord",
+      alt: "The Attack The Problem, Not The Person Practice Playbook featuring Liz Lord",
     },
     readTime: "5 minute read",
     datePublished: "2026-09-10",
@@ -722,7 +722,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
       {
         kind: "p",
         lead: true,
-        text: "*Based on Liz Lord's DMN resource kit, Attack The Problem, Not The Person.*",
+        text: "*Based on Liz Lord's DMN Practice Playbook, Attack The Problem, Not The Person.*",
       },
       {
         kind: "p",
@@ -860,7 +860,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
     kitSlug: "evening-we-care-call",
     hero: {
       src: "/blog/gary-we-care-kit-hero.jpg",
-      alt: "The Evening 'We Care' Call resource kit featuring Gary Takacs",
+      alt: "The Evening 'We Care' Call Practice Playbook featuring Gary Takacs",
     },
     readTime: "5 minute read",
     datePublished: "2026-09-09",
@@ -871,7 +871,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
       {
         kind: "p",
         lead: true,
-        text: "*Based on Gary Takacs's DMN resource kit, The Evening 'We Care' Call That Creates Patient Loyalty.*",
+        text: "*Based on Gary Takacs's DMN Practice Playbook, The Evening 'We Care' Call That Creates Patient Loyalty.*",
       },
       {
         kind: "p",
@@ -906,7 +906,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
       },
       {
         kind: "p",
-        text: "For example, the team could identify the day's follow-up patients before closing and assign one caller to each. That is an editorial implementation suggestion, not an additional rule from Gary's kit.",
+        text: "For example, the team could identify the day's follow-up patients before closing and assign one caller to each. That is an editorial implementation suggestion, not an additional rule from Gary's Playbook.",
       },
       { kind: "p", text: "The useful distinction is ownership: someone should know that the call is theirs to make." },
       { kind: "h2", id: "concerns", text: "Know what to do when the patient raises a concern", toc: "When a concern is raised" },
@@ -985,7 +985,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
     kitSlug: "9-kpis",
     hero: {
       src: "/blog/gary-kit-hero.jpg",
-      alt: "The 9 KPIs That Drive Your Practice resource kit featuring Gary Takacs",
+      alt: "The 9 KPIs That Drive Your Practice Practice Playbook featuring Gary Takacs",
     },
     readTime: "7 minute read",
     datePublished: "2026-08-28",
@@ -1074,7 +1074,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
     kitCta: {
       kitName: "9 KPIs That Drive Your Practice",
       description:
-        "The member kit includes the complete nine-KPI framework, benchmarks, an implementation checklist, and tools for building a weekly practice dashboard.",
+        "The member Playbook includes the complete nine-KPI framework, benchmarks, an implementation checklist, and tools for building a weekly practice dashboard.",
       href: "/garytakacs",
     },
   },
@@ -1098,7 +1098,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
     kitSlug: "transition-without-turbulence",
     hero: {
       src: "/blog/ashley-kit-hero.jpg",
-      alt: "Transition Without Turbulence resource kit featuring Ashley E. Boaz",
+      alt: "Transition Without Turbulence Practice Playbook featuring Ashley E. Boaz",
     },
     readTime: "8 minute read",
     datePublished: "2026-08-28",
@@ -1201,7 +1201,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
     kitCta: {
       kitName: "Transition Without Turbulence",
       description:
-        "The member kit includes Ashley’s complete transition framework, key takeaways, implementation checklist, worksheet, and training resources for protecting people and cash flow during a handover.",
+        "The member Playbook includes Ashley’s complete transition framework, key takeaways, implementation checklist, worksheet, and training resources for protecting people and cash flow during a handover.",
       href: "/mintconceptions",
     },
   },
@@ -1224,7 +1224,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
     kitSlug: "close-the-case-not-just-the-patient",
     hero: {
       src: "/blog/james-kit-hero-v3.jpg",
-      alt: "Close the Case, Not Just the Patient resource kit featuring James DeLuca",
+      alt: "Close the Case, Not Just the Patient Practice Playbook featuring James DeLuca",
     },
     readTime: "6 minute read",
     datePublished: "2026-08-28",
@@ -1241,7 +1241,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
       },
       {
         kind: "p",
-        text: "James DeLuca's *Close the Case, Not Just the Patient* kit focuses on this distinction. It gives owners and teams a way to look beyond arrivals and improve the system that turns a diagnosis into an informed patient decision.",
+        text: "James DeLuca's *Close the Case, Not Just the Patient* Playbook focuses on this distinction. It gives owners and teams a way to look beyond arrivals and improve the system that turns a diagnosis into an informed patient decision.",
       },
       { kind: "h2", id: "first-door", text: "New-patient growth is only the first door", toc: "The first door" },
       {
@@ -1369,7 +1369,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
     kitCta: {
       kitName: "Close the Case, Not Just the Patient",
       description:
-        "The member kit gives owners and teams a way to look beyond arrivals and improve the system that turns a diagnosis into an informed patient decision.",
+        "The member Playbook gives owners and teams a way to look beyond arrivals and improve the system that turns a diagnosis into an informed patient decision.",
       href: "/jamesdeluca",
     },
   },
@@ -1394,7 +1394,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
     kitSlug: "new-patient-phone-call",
     hero: {
       src: "/blog/gary-phone-kit-hero.jpg",
-      alt: "The New Patient Phone Call resource kit featuring Gary Takacs",
+      alt: "The New Patient Phone Call Practice Playbook featuring Gary Takacs",
     },
     readTime: "7 minute read",
     datePublished: "2026-08-31",
@@ -1521,7 +1521,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
       },
       {
         kind: "p",
-        text: "Gary's member kit uses a 70% or better call-to-appointment benchmark. Treat that as his coaching target, not a universal guarantee. The useful habit is to measure the practice against its own starting point and improve the conversation consistently.",
+        text: "Gary's member Playbook uses a 70% or better call-to-appointment benchmark. Treat that as his coaching target, not a universal guarantee. The useful habit is to measure the practice against its own starting point and improve the conversation consistently.",
       },
       {
         kind: "quote",
@@ -1551,7 +1551,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
     kitCta: {
       kitName: "The New Patient Phone Call: From Ring to Booking",
       description:
-        "The member kit includes Gary's Action Guide, seven-question call flow, scripts, checklist, worksheet, wall poster, and team training resources.",
+        "The member Playbook includes Gary's Action Guide, seven-question call flow, scripts, checklist, worksheet, wall poster, and team training resources.",
       href: "/garytakacs",
       label: "Start Your Three Months Free",
       support:
@@ -1578,7 +1578,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
     kitSlug: "you-cant-over-communicate",
     hero: {
       src: "/blog/monica-kit-hero.jpg",
-      alt: "You Can't Over-Communicate resource kit featuring Monica Watson",
+      alt: "You Can't Over-Communicate Practice Playbook featuring Monica Watson",
     },
     readTime: "8 minute read",
     datePublished: "2026-08-31",
@@ -1781,7 +1781,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
     kitCta: {
       kitName: "You Can't Over-Communicate",
       description:
-        "The member kit includes Monica's Action Guide, checklist, worksheet, wall poster, scripts, and team implementation resources.",
+        "The member Playbook includes Monica's Action Guide, checklist, worksheet, wall poster, scripts, and team implementation resources.",
       // Monica's expert referral link (confirmed by Lester via Rushdha,
       // 2026-08-31). Her promo code is inactive, so signups via this link
       // see standard pricing — matching the article's no-promotion rule.
@@ -1809,7 +1809,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
     kitSlug: "the-process-comes-first",
     hero: {
       src: "/blog/devon-kit-hero.jpg",
-      alt: "The Process Comes First resource kit featuring DeVon Banks",
+      alt: "The Process Comes First Practice Playbook featuring DeVon Banks",
     },
     readTime: "8 minute read",
     datePublished: "2026-08-31",
@@ -2010,7 +2010,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
     kitCta: {
       kitName: "The Process Comes First",
       description:
-        "The member kit includes DeVon's Action Guide, claims-process checklist, workflow worksheet, wall poster, and billing implementation resources.",
+        "The member Playbook includes DeVon's Action Guide, claims-process checklist, workflow worksheet, wall poster, and billing implementation resources.",
       // DeVon's expert referral link (confirmed by Lester via Rushdha,
       // 2026-08-31).
       href: "/devonbanks",

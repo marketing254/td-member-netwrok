@@ -33,7 +33,7 @@ const PRICING_JSONLD = {
       "@type": "Product",
       name: "Dental Member Network — Founding Membership",
       description:
-        "Membership for US + Canadian dental practice owners. Expert hotline returning a written action plan in 2–3 business days, partner-network discounts averaging $6,400/year, and a curated kit library.",
+        "Membership for US + Canadian dental practice owners. Expert hotline returning a written action plan in 2–3 business days, partner-network discounts averaging $6,400/year, and a curated Practice Playbook library.",
       brand: { "@type": "Brand", name: "Dental Member Network" },
       image: "https://www.dentalmembernetwork.com/td-logo-horizontal-dark.svg",
       url: "https://www.dentalmembernetwork.com/pricing",
@@ -69,7 +69,7 @@ const PRICING_JSONLD = {
       "@type": "Product",
       name: "Dental Member Network — Expert Bench",
       description:
-        "Featured spot on the DMN expert bench for coaches, consultants and educators. We produce your kits, surface them in the member library, route warm leads to your calendar. Sell your own courses with a 70/30 split.",
+        "Featured spot on the DMN expert bench for coaches, consultants and educators. We produce your Practice Playbooks, surface them in the member library, route warm leads to your calendar. Sell your own courses with a 70/30 split.",
       brand: { "@type": "Brand", name: "Dental Member Network" },
       url: "https://www.dentalmembernetwork.com/pricing",
       offers: [

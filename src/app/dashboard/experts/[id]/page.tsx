@@ -294,7 +294,7 @@ export default function ExpertProfilePage() {
           <Section title={kits.length ? `Kits by ${expert.name}` : "Kits"}>
             {kits.length === 0 ? (
               <Typography sx={{ color: INK_MUTED, fontSize: "0.92rem" }}>
-                No published kits yet — check back soon.
+                No published Playbooks yet — check back soon.
               </Typography>
             ) : (
               <Box

@@ -91,7 +91,7 @@ export default function VendorAnalyticsPage() {
           How your resources are landing
         </Typography>
         <Typography sx={{ fontSize: "0.96rem", color: INK_SOFT, maxWidth: 640, lineHeight: 1.55 }}>
-          Views, unique members reached, member inquiries, and the average rating for each kit attributed to your name. Updated in near real-time.
+          Views, unique members reached, member inquiries, and the average rating for each Practice Playbook attributed to your name. Updated in near real-time.
         </Typography>
       </Box>
 
@@ -128,7 +128,7 @@ export default function VendorAnalyticsPage() {
             Nothing to show yet
           </Typography>
           <Typography sx={{ fontSize: "0.92rem", color: INK_SOFT, maxWidth: 460, mx: "auto" }}>
-            When the team publishes a kit tagged with your name, the views, inquiries, and ratings will appear here.
+            When the team publishes a Playbook tagged with your name, the views, inquiries, and ratings will appear here.
           </Typography>
         </Box>
       ) : (
@@ -203,7 +203,7 @@ export default function VendorAnalyticsPage() {
                           "&:hover": { textDecoration: "underline" },
                         }}
                       >
-                        View kit <OpenInNewRoundedIcon sx={{ fontSize: 12 }} />
+                        View Playbook <OpenInNewRoundedIcon sx={{ fontSize: 12 }} />
                       </Box>
                     </Stack>
                   </Stack>

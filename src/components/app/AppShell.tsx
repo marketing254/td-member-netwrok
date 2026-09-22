@@ -49,7 +49,7 @@ const SIDEBAR_W = 240;
 
 const navItems = [
   { href: "/dashboard", label: "Overview", icon: DashboardOutlinedIcon },
-  { href: "/dashboard/resources", label: "Resource library", icon: LibraryBooksOutlinedIcon },
+  { href: "/dashboard/resources", label: "Practice Playbooks", icon: LibraryBooksOutlinedIcon },
   { href: "/dashboard/systems", label: "Systems", icon: FactCheckOutlinedIcon },
   { href: "/dashboard/experts", label: "Experts", icon: SchoolOutlinedIcon },
   { href: "/dashboard/partners", label: "Partners", icon: StorefrontOutlinedIcon },

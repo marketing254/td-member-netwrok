@@ -264,10 +264,10 @@ export default function DashboardHome() {
           resuming={!!continueKit}
           standfirst={
             viewedCount === 0
-              ? "Your founding-member library is open. Pick a kit and start with the training video — most members finish their first kit in under an hour."
+              ? "Your founding-member library is open. Pick a Playbook and start with the training video — most members finish their first Playbook in under an hour."
               : startedKits === topics.length
-                ? "You have started every kit. Completed kits earn a check mark and stay in your library."
-                : `You have opened ${startedKits} of ${topics.length} kits. Keep momentum — pick up where you left off, or start something new.`
+                ? "You have started every Playbook. Completed Playbooks earn a check mark and stay in your library."
+                : `You have opened ${startedKits} of ${topics.length} Playbooks. Keep momentum — pick up where you left off, or start something new.`
           }
         />
       </Reveal>
@@ -278,17 +278,17 @@ export default function DashboardHome() {
           <MetricStrip
             items={[
               {
-                label: "Kits available",
+                label: "Playbooks available",
                 value: String(topics.length),
                 meta: topics.length === 1 ? "in your library" : "available to you",
               },
               {
                 label: "Resources viewed",
                 value: String(viewedCount),
-                meta: `${startedKits}/${topics.length} kits started`,
+                meta: `${startedKits}/${topics.length} Playbooks started`,
               },
               {
-                label: "Kits completed",
+                label: "Playbooks completed",
                 value: String(completedKits),
                 meta: `${Math.max(topics.length - completedKits, 0)} to go`,
               },
@@ -307,8 +307,8 @@ export default function DashboardHome() {
       <Reveal delay={200}>
       <EditorialSection
         eyebrow={spotKit?.lastViewedAt ? "Continue watching" : "Begin"}
-        title={spotKit?.lastViewedAt ? "Your most recent kit" : "Start with this kit"}
-        actions={<SeeAllLink href="/dashboard/resources" label="All kits" />}
+        title={spotKit?.lastViewedAt ? "Your most recent Playbook" : "Start with this Playbook"}
+        actions={<SeeAllLink href="/dashboard/resources" label="All Playbooks" />}
       >
         {resourcesLoading ? (
           <Stack sx={{ alignItems: "center", py: 4 }}>
@@ -342,7 +342,7 @@ export default function DashboardHome() {
         <EditorialSection
           eyebrow="Trending"
           title="Top 5 in the network"
-          actions={<SeeAllLink href="/dashboard/resources" label="All kits" />}
+          actions={<SeeAllLink href="/dashboard/resources" label="All Playbooks" />}
         >
           <KitRail>
             {topFive.map((t, i) => (
@@ -433,7 +433,7 @@ export default function DashboardHome() {
           sx={{ alignItems: { sm: "center" }, justifyContent: "space-between" }}
         >
           <Typography sx={{ ...editorialText.body, maxWidth: 560 }}>
-            Can&apos;t find what you&apos;re looking for, or have feedback on a kit? We read every email — usually back within a business day.
+            Can&apos;t find what you&apos;re looking for, or have feedback on a Playbook? We read every email — usually back within a business day.
           </Typography>
           <Box
             component="a"
@@ -499,10 +499,10 @@ function EmptyState() {
       }}
     >
       <Typography sx={{ ...editorialText.heading, mb: 0.5 }}>
-        No resource kits published yet
+        No Practice Playbooks published yet
       </Typography>
       <Typography sx={editorialText.meta}>
-        Kits will appear here as soon as the content team adds them.
+        Playbooks will appear here as soon as the content team adds them.
       </Typography>
     </Box>
   );
@@ -1052,7 +1052,7 @@ function RecentKitCard({ topic }: { topic: TopicCard }) {
               mb: 0.5,
             }}
           >
-            {started ? "Most recently opened" : topic.isFree ? "Free starter kit" : "Recommended kit"}
+            {started ? "Most recently opened" : topic.isFree ? "Free starter Playbook" : "Recommended Playbook"}
           </Typography>
           <Typography
             sx={{
@@ -1259,7 +1259,7 @@ function BillboardHero({
                   mb: 0.5,
                 }}
               >
-                {resuming ? "Continue watching" : "Featured kit"}
+                {resuming ? "Continue watching" : "Featured Playbook"}
               </Typography>
               <Typography
                 sx={{

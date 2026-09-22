@@ -19,7 +19,7 @@ const sections: LegalSection[] = [
       "Exclusive content library with recorded expert panels and training resources.",
       "Member directory of practice owners searchable by city, specialty, and revenue.",
       "Proven systems with templates, checklists, and SOPs.",
-      "A growing library of expert kits from real sessions.",
+      "A growing library of Practice Playbooks from real sessions.",
       "Content and features may be modified at our discretion with reasonable notice.",
     ],
   },

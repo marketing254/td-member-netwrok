@@ -20,7 +20,7 @@ const MotionBox = motion.create(Box);
 const VALUE_STACK = [
   { label: "Expert helpline — written replies in 2–3 business days", value: "$2,400/yr" },
   { label: "Vendor savings access", value: "$6,000+/yr" },
-  { label: "Content & kit library", value: "$1,200/yr" },
+  { label: "Practice Playbook library", value: "$1,200/yr" },
   { label: "Systems, SOPs & templates", value: "$900/yr" },
 ];
 

@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Start your membership — Dental Member Network",
   description:
-    "Three short steps to join the Dental Member Network: the expert helpline, partner savings, and the full resource library.",
+    "Three short steps to join the Dental Member Network: the expert helpline, partner savings, and the full Practice Playbook library.",
 };
 
 /**

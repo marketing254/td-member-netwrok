@@ -128,7 +128,7 @@ export default function JustDropped() {
           Just dropped.
         </Typography>
         <Typography sx={{ color: "#5C6770", fontSize: "1rem", lineHeight: 1.6, maxWidth: 640, mx: "auto", mb: 3.5 }}>
-          New kits from real expert sessions land every week. Every one is yours
+          New Practice Playbooks from real expert sessions land every week. Every one is yours
           from day one: action guide, checklist, worksheet, training video, and
           the expert a booking button away.
         </Typography>

@@ -363,7 +363,7 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
     [orderedResources, effectiveActiveId],
   );
 
-  const topicTitle = resources[0]?.topic_title ?? "Resource Kit";
+  const topicTitle = resources[0]?.topic_title ?? "Practice Playbook";
   const topicSummary = resources[0]?.topic_summary ?? null;
   const isFree = resources.length > 0 && resources.every((r) => r.is_free);
   const viewedCount = resources.filter((r) => r.progress?.last_viewed_at).length;
@@ -425,9 +425,9 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
             borderBottom: "1px solid var(--paper-rule)",
           }}
         >
-          <Typography sx={{ ...editorialText.heading, mb: 0.5 }}>Kit not found</Typography>
+          <Typography sx={{ ...editorialText.heading, mb: 0.5 }}>Playbook not found</Typography>
           <Typography sx={editorialText.meta}>
-            This resource kit isn&apos;t published yet, or the URL is wrong.
+            This Playbook isn&apos;t published yet, or the URL is wrong.
           </Typography>
         </Box>
       </Stack>
@@ -459,7 +459,7 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", mb: 1, flexWrap: "wrap", rowGap: 0.5 }}>
               <Typography sx={editorialText.eyebrow}>
-                {isBookClub ? "Book club kit" : "Resource kit"}
+                {isBookClub ? "Book club Playbook" : "Practice Playbook"}
               </Typography>
               {isBookClub && (
                 <Box
@@ -827,7 +827,7 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
                 mt: 0.25,
               }}
             >
-              {shortResources.length} quick ideas from {isBookClub ? "the book" : "this kit"}
+              {shortResources.length} quick ideas from {isBookClub ? "the book" : "this Playbook"}
             </Typography>
           </Box>
           <Box
@@ -1032,7 +1032,7 @@ function BackLink() {
         "&:focus-visible": { outline: "2px solid var(--gold)", outlineOffset: 2 },
       }}
     >
-      <ArrowBackIcon sx={{ fontSize: 13 }} /> All kits
+      <ArrowBackIcon sx={{ fontSize: 13 }} /> All Playbooks
     </Box>
   );
 }

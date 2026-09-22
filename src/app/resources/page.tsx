@@ -150,7 +150,7 @@ export default function PublicResourcesPage() {
               maxWidth: 760,
             }}
           >
-            Practical kits for practice owners. Free with founding membership.
+            Practice Playbooks for practice owners. Free with founding membership.
           </Typography>
           <Typography
             sx={{
@@ -160,7 +160,7 @@ export default function PublicResourcesPage() {
               maxWidth: 640,
             }}
           >
-            Each kit pairs a short training video with the action guide, worksheet,
+            Built from real experts. Ready for you &amp; your team. Each Playbook pairs a short training video with the action guide, worksheet,
             checklist, and slide deck your team can use this week. Sign up to
             unlock and download — every founding member gets the full library.
           </Typography>
@@ -201,7 +201,7 @@ export default function PublicResourcesPage() {
 
           <TextField
             size="small"
-            placeholder="Search kits"
+            placeholder="Search Playbooks"
             value={q}
             onChange={(e) => setQuery(e.target.value)}
             variant="standard"
@@ -243,7 +243,7 @@ export default function PublicResourcesPage() {
             }}
           >
             <Typography sx={{ fontFamily: "var(--font-display)", fontSize: "1.1rem", color: "#0A1A2F", mb: 0.5 }}>
-              {q ? `No kits match "${q}"` : "No kits in this filter"}
+              {q ? `No Playbooks match "${q}"` : "No Playbooks in this filter"}
             </Typography>
             <Typography sx={{ fontSize: "0.86rem", color: "#5C6770" }}>
               Try a different filter or clear the search.
@@ -864,10 +864,10 @@ function LockModal({
             mb: 1,
           }}
         >
-          {kit?.title ?? "Resource kit"}
+          {kit?.title ?? "Practice Playbook"}
         </Typography>
         <Typography sx={{ fontSize: "0.88rem", color: "#3B4A55", lineHeight: 1.6, mb: 2.5 }}>
-          This kit is free with founding membership. Join the waitlist and you&apos;ll
+          This Playbook is free with founding membership. Join the waitlist and you&apos;ll
           unlock the full library — training videos, action guides, worksheets,
           and slide decks — the moment your portal goes live.
         </Typography>

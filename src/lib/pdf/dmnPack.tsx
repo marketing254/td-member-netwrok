@@ -124,7 +124,7 @@ function PackDocument({ memberName, question, dateLabel, experts, partners, kits
         <SectionHead
           title="Your Experts"
           count={`${experts.length} on the bench`}
-          intro="Practicing specialists who teach inside the portal. Open any profile from Experts in your dashboard to see their kits, spotlights, and how to reach them."
+          intro="Practicing specialists who teach inside the portal. Open any profile from Experts in your dashboard to see their Playbooks, spotlights, and how to reach them."
         />
         {experts.length === 0 ? (
           <Text style={s.empty}>New experts are being onboarded — check the Experts page in your portal.</Text>
@@ -176,10 +176,10 @@ function PackDocument({ memberName, question, dateLabel, experts, partners, kits
         <SectionHead
           title="The Resource Library"
           count={`${kits.length} kits`}
-          intro="Training videos, action guides, checklists, and slide decks — organised as kits. Open the Resource Library in your dashboard and pick up any of these."
+          intro="Training videos, action guides, checklists, and slide decks — organised as Practice Playbooks. Open the Resource Library in your dashboard and pick up any of these."
         />
         {kits.length === 0 ? (
-          <Text style={s.empty}>Kits are being published — check the Resource Library in your portal.</Text>
+          <Text style={s.empty}>Playbooks are being published — check the Resource Library in your portal.</Text>
         ) : (
           kits.map((k) => (
             <View key={k.slug} style={s.card} wrap={false}>
