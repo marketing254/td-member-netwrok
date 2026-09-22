@@ -33,7 +33,7 @@ const LINE = "#E6DDCF";
 const NAVY = "#0E2A3D";
 
 export const metadata: Metadata = {
-  title: "Dental jobs — hygienist, assistant, front desk and associate roles",
+  title: "Dental jobs: hygienist, assistant, front desk and associate roles",
   description:
     "Dental practice jobs posted by member practices across the US. Every listing shows its pay range. Free to browse, no account needed.",
   alternates: { canonical: "/jobs" },
@@ -204,20 +204,24 @@ export default async function JobsBoardPage({
                 <Typography
                   sx={{ color: "rgba(255,255,255,0.8)", maxWidth: 560, lineHeight: 1.7, fontSize: "1.05rem" }}
                 >
-                  Posted by member practices across the US. Every listing shows its pay range —
-                  that&apos;s a rule, not a preference. Free to browse, and you don&apos;t need an
+                  Posted by member practices across the US. Every listing shows its pay range.
+                  That is a rule, not a preference. Free to browse, and you don&apos;t need an
                   account.
                 </Typography>
               </Stack>
 
-              <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 1.5 }}>
-                <Stat value={String(totalLive)} label={totalLive === 1 ? "open role" : "open roles"} />
-                <Stat
-                  value={String(practicesHiring)}
-                  label={practicesHiring === 1 ? "practice hiring" : "practices hiring"}
-                />
-                <Stat value="100%" label="show pay" />
-              </Box>
+              {/* Counters stay hidden until the first real listing is live: a
+                  zero next to "100%" reads as a broken page. */}
+              {totalLive > 0 ? (
+                <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 1.5 }}>
+                  <Stat value={String(totalLive)} label={totalLive === 1 ? "open role" : "open roles"} />
+                  <Stat
+                    value={String(practicesHiring)}
+                    label={practicesHiring === 1 ? "practice hiring" : "practices hiring"}
+                  />
+                  <Stat value="100%" label="show pay" />
+                </Box>
+              ) : null}
             </Box>
           </Container>
         </Box>
@@ -695,7 +699,7 @@ function PostYourOwn() {
       </Typography>
       <Typography sx={{ color: "rgba(255,255,255,0.78)", lineHeight: 1.65, fontSize: "0.9rem", mb: 2 }}>
         Members post a vacancy here and it gets its own public page, written so Google can list it
-        as a job. Included in membership, and it replaces a $300+ job board spend.
+        as a job. Included in membership, and it replaces a paid job board.
       </Typography>
       <Link
         href="/pricing"

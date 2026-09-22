@@ -17,6 +17,12 @@ import { EmbeddedCheckoutProvider, EmbeddedCheckout } from "@stripe/react-stripe
 import Logo from "@/components/brand/Logo";
 import { initMetaPixel, trackMeta } from "@/components/ads/metaPixel";
 import { trackEvent } from "@/lib/analytics";
+import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
+import ForumOutlinedIcon from "@mui/icons-material/ForumOutlined";
+import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
+import HeadphonesOutlinedIcon from "@mui/icons-material/HeadphonesOutlined";
+import WorkOutlineOutlinedIcon from "@mui/icons-material/WorkOutlineOutlined";
+import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
 
 /**
  * /start — the Meta paid-ads direct-purchase page (approved prototype:
@@ -98,14 +104,14 @@ const CREATIVE_VARIANTS: Record<string, { badge: string; title: [string, string]
   hotline: {
     badge: "The DMN Expert Hotline",
     title: ["When your practice gets stuck, get a ", "written next step."],
-    copy: "Describe the problem in plain English. Receive a written response and the right people to consider within 2–3 business days.",
+    copy: "Describe the problem in plain English. Get a real answer right away, and when you need a person, our team comes back in writing with the right experts to talk to.",
   },
 };
 
 const DEFAULT_HERO = {
-  badge: "Curated by the Thriving Dentist team — not an algorithm",
+  badge: "Curated by the Thriving Dentist team, not an algorithm",
   title: ["Never solve a practice problem ", "alone again."] as [string, string],
-  copy: "Bring DMN a real dental-practice problem and receive a written response within 2–3 business days. Explore Practice Playbooks with training videos, guides, checklists and worksheets your team can put to use.",
+  copy: "Bring DMN any practice problem. Get a real answer, and the right expert to talk to. Plus a growing library of Practice Playbooks from vetted experts.",
 };
 
 function readCookie(name: string): string | null {
@@ -285,7 +291,7 @@ export default function AdsLandingView() {
       };
       if (!res.ok || !body.clientSecret) {
         if (body.alreadyMember) setAlreadyMember(true);
-        setErrorMsg(body.error ?? "Something went wrong — please try again.");
+        setErrorMsg(body.error ?? "Something went wrong. Please try again.");
         return;
       }
       // GA4 key events: account created + embedded checkout opened.
@@ -480,7 +486,7 @@ export default function AdsLandingView() {
             ))}
           </Stack>
           <Typography sx={{ maxWidth: 900, mx: "auto", mt: 3, pt: 2, borderTop: `1px solid ${LINE}`, fontSize: "0.8rem", color: "#717780" }}>
-            One short form. Choose monthly or annual and pay securely on this page—no registration detour.
+            One short form. Choose monthly or annual and pay securely on this page, no registration detour.
           </Typography>
 
           {/* Founded-by endorsement — a quiet, engraved lockup between the
@@ -509,7 +515,7 @@ export default function AdsLandingView() {
                   mb: 0.5,
                 }}
               >
-                Founded by
+                Powered by
               </Typography>
               <Typography
                 sx={{
@@ -544,10 +550,10 @@ export default function AdsLandingView() {
           <Box sx={{ textAlign: "center", maxWidth: 900, mx: "auto", mb: 4 }}>
             <Typography sx={kicker}>Practice Playbooks</Typography>
             <Typography component="h2" sx={{ ...display, fontSize: { xs: "2.2rem", md: "3.2rem" }, mt: 1.25 }}>
-              Real experts. Practical resources.
+              Expert advice your team can run on Monday.
             </Typography>
             <Typography sx={{ mt: 2, color: MUTED, fontSize: "1rem" }}>
-              Every Playbook turns expert knowledge into tools a dental team can understand and put to work.
+              Each playbook turns one expert’s session into a short training video, a guide, a checklist, a worksheet and a wall poster.
             </Typography>
           </Box>
           {/* Kit strip.
@@ -696,7 +702,7 @@ export default function AdsLandingView() {
                 ))}
               </Stack>
               <Typography sx={{ mt: 1.75, fontSize: "0.86rem", color: "#53606c", lineHeight: 1.55 }}>
-                Every Playbook comes with all four. One example from the DMN library — membership also includes written Expert Hotline support.
+                Every Playbook comes with all four. One example from the DMN library. Membership also includes the Expert Hotline.
               </Typography>
               <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25} sx={{ mt: 2, alignItems: { xs: "stretch", sm: "center" } }}>
                 <Button
@@ -706,7 +712,7 @@ export default function AdsLandingView() {
                     "&&:hover": { bgcolor: "#e4b95f" },
                   }}
                 >
-                  Join DMN — $49/month
+                  Join DMN: $49/month
                 </Button>
                 <Button
                   href="#library"
@@ -741,8 +747,8 @@ export default function AdsLandingView() {
               <Stack spacing={1.5} sx={{ mt: 3.25 }}>
                 {[
                   ["Describe the problem", "Clinical, financial, team or operational."],
-                  ["DMN reviews and routes it", "The right expertise and resources are considered."],
-                  ["Receive a written response", "Within 2–3 business days, with the right people to consider."],
+                  ["Get an answer right away", "Beacon answers from our experts’ own sessions, with links to the right page."],
+                  ["Need a person?", "Our team comes back to you in writing, with the experts worth calling."],
                 ].map(([title, sub], i) => (
                   <Stack key={title} direction="row" spacing={1.6} sx={{ alignItems: "flex-start" }}>
                     <Box sx={{ display: "grid", placeItems: "center", width: 38, height: 38, borderRadius: "50%", bgcolor: GOLD, fontSize: "0.8rem", fontWeight: 800, flexShrink: 0 }}>
@@ -765,7 +771,7 @@ export default function AdsLandingView() {
                 “Our hygiene schedule has been flat for six months.”
               </Typography>
               <Typography sx={{ p: 2.25, borderRadius: "16px", bgcolor: "#f1eee6", color: "#53606c", fontSize: "0.82rem" }}>
-                A clear written response, relevant practical resources and vetted expertise to help the practice decide what to do next.
+                A real answer, the playbook that fits, and the expert worth calling, so the practice can decide what to do next.
               </Typography>
             </Box>
           </Box>
@@ -781,22 +787,44 @@ export default function AdsLandingView() {
               What your practice unlocks.
             </Typography>
             <Typography sx={{ mt: 2, color: "rgba(255,255,255,0.64)", fontSize: "1rem" }}>
-              A growing operating resource for practice owners, dentists, office managers and dental teams.
+              Practical tools, expert support and more ways to learn and connect.
             </Typography>
           </Box>
-          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(3, 1fr)" }, gap: 2 }}>
-            {[
-              ["Learn", "Expert directory and Practice Playbooks", "Find trusted specialists and practical materials built around real dental-practice problems."],
-              ["Act", "Tools, worksheets and templates", "Move from knowing what to do to having something your team can actually use."],
-              ["Connect", "Vetted companies and member offers", "Discover relevant providers and confirmed savings available through the network."],
-            ].map(([b, h, p]) => (
-              <Box key={b} sx={{ p: 3.5, border: "1px solid rgba(255,255,255,0.14)", borderRadius: "20px", bgcolor: "rgba(255,255,255,0.06)" }}>
-                <Typography sx={{ color: "#e9c979", fontSize: "0.7rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.12em" }}>{b}</Typography>
-                <Typography sx={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: "1.5rem", mt: 3, color: "#fff", lineHeight: 1.15 }}>{h}</Typography>
-                <Typography sx={{ color: "rgba(255,255,255,0.65)", fontSize: "0.82rem", mt: 1.4 }}>{p}</Typography>
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(3, 1fr)" }, gap: 2 }}>
+            {(
+              [
+                ["Put into practice", MenuBookOutlinedIcon, "Practice Playbooks", "Expert training videos, guides, checklists and worksheets your dental team can put to use."],
+                ["Ask an expert", ForumOutlinedIcon, "Expert Hotline", "Ask any practice problem in plain English. Beacon answers right away, and our team follows up in writing when you need a person."],
+                ["Keep learning", CalendarMonthOutlinedIcon, "CE Events", "Explore continuing education events. See each event for access details and available CE credits."],
+                ["Listen & learn", HeadphonesOutlinedIcon, "Exclusive Podcast Content", "Go beyond the public episodes with podcast content reserved for DMN members."],
+                ["Hire for your practice", WorkOutlineOutlinedIcon, "Member Job Postings", "Post your open roles on the public DMN Dental Job Board. Job seekers can view and apply for free. No membership required to apply."],
+                ["Make connections", GroupOutlinedIcon, "Directories & Member Offers", "Explore expert and company directories, relevant providers and available member offers."],
+              ] as const
+            ).map(([b, Icon, h, p]) => (
+              <Box key={h} sx={{ p: { xs: 2.75, md: 3.25 }, border: "1px solid rgba(255,255,255,0.14)", borderRadius: "20px", bgcolor: "rgba(255,255,255,0.06)" }}>
+                <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "flex-start", gap: 1.5 }}>
+                  <Typography sx={{ color: "#e9c979", fontSize: "0.7rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.12em", lineHeight: 1.5 }}>{b}</Typography>
+                  <Icon sx={{ fontSize: 20, color: "#e9c979", flexShrink: 0 }} />
+                </Stack>
+                <Typography sx={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: "1.45rem", mt: 2, color: "#fff", lineHeight: 1.15 }}>{h}</Typography>
+                <Typography sx={{ color: "rgba(255,255,255,0.68)", fontSize: "0.86rem", mt: 1.25, lineHeight: 1.6 }}>{p}</Typography>
               </Box>
             ))}
           </Box>
+          <Stack sx={{ alignItems: "center", mt: { xs: 4, md: 5 } }}>
+            <Button
+              href="#checkout"
+              sx={{
+                "&&": { bgcolor: GOLD, color: "#111", fontWeight: 800, borderRadius: 999, px: 3.75, py: 1.4, textTransform: "none", fontSize: "0.95rem" },
+                "&&:hover": { bgcolor: "#e4b95f" },
+              }}
+            >
+              Explore membership: $49/month
+            </Button>
+            <Typography sx={{ mt: 1.5, fontSize: "0.8rem", color: "rgba(255,255,255,0.62)" }}>
+              Annual option: $490 · 30-day money-back guarantee
+            </Typography>
+          </Stack>
         </Container>
       </Box>
 
@@ -934,7 +962,7 @@ export default function AdsLandingView() {
                   </Typography>
                   {codeState === "active" && (
                     <Box sx={{ mb: 2.5, p: 1.75, borderRadius: "12px", bgcolor: "rgba(44,122,82,0.09)", border: "1px solid rgba(44,122,82,0.35)", color: "#1F5238", fontSize: "0.82rem", fontWeight: 600 }}>
-                      Your first month is free — the code from Lester's email is applied automatically at checkout. After that it is $49 a month, locked while you stay.
+                      Your first month is free. The code from Lester's email is applied automatically at checkout. After that it is $49 a month, locked while you stay.
                     </Box>
                   )}
                   {codeState === "expired" && (
@@ -943,7 +971,7 @@ export default function AdsLandingView() {
                     </Box>
                   )}
                   <Typography sx={{ mb: 3, color: MUTED, fontSize: "0.82rem" }}>
-                    Your membership details and payment stay together—no extra registration screens.
+                    Your membership details and payment stay together, with no extra registration screens.
                   </Typography>
 
                   <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: { xs: 1.25, sm: 1.75 }, maxWidth: 560 }}>
@@ -982,7 +1010,7 @@ export default function AdsLandingView() {
                     <Typography sx={{ fontSize: "0.66rem", color: MUTED }}>Secured by Stripe</Typography>
                   </Stack>
                   <Typography sx={{ fontSize: "0.78rem", color: MUTED, mb: 2 }}>
-                    Card, Apple Pay and Link open in Stripe’s secure payment window on this page after you continue. Card details are entered with Stripe only — they never touch our servers.
+                    Card, Apple Pay and Link open in Stripe’s secure payment window on this page after you continue. Card details are entered with Stripe only. They never touch our servers.
                   </Typography>
 
                   <Stack direction="row" spacing={1.25} sx={{ alignItems: "flex-start", my: 2.25 }}>
@@ -1036,7 +1064,7 @@ export default function AdsLandingView() {
                     {submitting ? (
                       <CircularProgress size={20} sx={{ color: "#111" }} />
                     ) : (
-                      `Continue to secure payment — ${priceLabel}`
+                      `Continue to secure payment: ${priceLabel}`
                     )}
                   </Button>
                   <Typography sx={{ textAlign: "center", mt: 1.4, color: "#7b8289", fontSize: "0.66rem" }}>
@@ -1060,8 +1088,9 @@ export default function AdsLandingView() {
           </Box>
           {[
             ["Who is DMN membership for?", "Dental practice owners, dentists, office managers, and clinical and administrative team members."],
-            ["What is included?", "The Expert Hotline, a curated expert directory, a growing Practice Playbook library, practical tools and templates, a vetted company directory, and confirmed member offers."],
-            ["How does registration work?", "Complete your essential membership details, choose monthly or annual billing, agree to the member terms, and pay securely—all on the same page."],
+            ["What is included?", "The Expert Hotline, a curated expert directory, a growing library of Practice Playbooks, practical tools and templates, the job board, a vetted company directory, and confirmed member offers."],
+            ["How does the Expert Hotline work?", "Ask in plain English, typed or spoken. Beacon answers right away from our experts’ own sessions. Anything clinical, legal or personal never gets a guess: it goes to our team, and you get a written answer plus the right experts to talk to. A person, not a search box."],
+            ["How does registration work?", "Complete your essential membership details, choose monthly or annual billing, agree to the member terms, and pay securely, all on the same page."],
             ["When will I be charged?", "Payment is collected securely in the payment section on this page. Your DMN portal unlocks once Stripe confirms the payment."],
             ["Can I cancel?", "Yes. Membership can be cancelled anytime and includes a 30-day money-back guarantee."],
           ].map(([q, a]) => (
