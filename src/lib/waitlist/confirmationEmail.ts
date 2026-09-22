@@ -693,7 +693,7 @@ function buildMemberWelcomeEmail({ firstName, portalUrl }: MemberWelcomeInput): 
   <div style="font-family:${FONT_UI};font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:${BRAND.goldDeep};font-weight:700;margin-bottom:18px;">FOUNDING MEMBER · PORTAL ACTIVE</div>
   <h1 style="font-family:${FONT_DISPLAY};font-size:30px;line-height:1.18;font-weight:500;color:${BRAND.ink};margin:0 0 18px;letter-spacing:-.02em;">Welcome, ${safeName}.</h1>
   <p style="font-size:16px;line-height:1.7;color:${BRAND.inkSoft};margin:0 0 14px;">
-    Your founding-member portal is live. You'll find the full Resource Kit library waiting for you — practical, no-fluff training built for practice owners. Pick a topic and dig in.
+    Your founding-member portal is live. You'll find the full Practice Playbook library waiting for you — practical, no-fluff training built for practice owners. Pick a topic and dig in.
   </p>
   <p style="font-size:16px;line-height:1.7;color:${BRAND.inkSoft};margin:0 0 28px;">
     To get in, click the button below. We'll email you a one-time sign-in link.
@@ -702,7 +702,7 @@ function buildMemberWelcomeEmail({ firstName, portalUrl }: MemberWelcomeInput): 
   <hr style="border:0;border-top:1px solid ${BRAND.line};margin:36px 0 24px;" />
   <h2 style="font-family:${FONT_UI};font-size:14px;font-weight:700;color:${BRAND.ink};letter-spacing:.005em;margin:0 0 10px;text-transform:uppercase;">What you have access to today</h2>
   <ul style="font-size:14.5px;line-height:1.75;color:${BRAND.inkSoft};margin:0;padding-left:20px;">
-    <li>The full Resource Kit library — videos, action guides, worksheets, checklists</li>
+    <li>The full Practice Playbook library — videos, action guides, worksheets, checklists</li>
     <li>Topic packs on KPIs, scheduling, PPO renegotiation, marketing, SEO and more</li>
     <li>Your member profile (practice details, contact info)</li>
     <li>Future drops auto-unlock — you don't need to do anything</li>
@@ -715,14 +715,14 @@ function buildMemberWelcomeEmail({ firstName, portalUrl }: MemberWelcomeInput): 
 
   const text = `Welcome, ${firstName}.
 
-Your founding-member portal is live. You'll find the full Resource Kit library waiting for you — practical, no-fluff training built for practice owners. Pick a topic and dig in.
+Your founding-member portal is live. You'll find the full Practice Playbook library waiting for you — practical, no-fluff training built for practice owners. Pick a topic and dig in.
 
 To get in, click the link below. We'll email you a one-time sign-in link.
 
 Open your portal: ${portalUrl}
 
 What you have access to today:
-- The full Resource Kit library — videos, action guides, worksheets, checklists
+- The full Practice Playbook library — videos, action guides, worksheets, checklists
 - Topic packs on KPIs, scheduling, PPO renegotiation, marketing, SEO and more
 - Your member profile (practice details, contact info)
 - Future drops auto-unlock — you don't need to do anything

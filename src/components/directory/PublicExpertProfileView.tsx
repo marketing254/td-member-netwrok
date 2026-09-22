@@ -155,7 +155,7 @@ export default function PublicExpertProfileView({
               ))}
             </Stack>
             <Typography sx={{ color: COLORS.muted, fontSize: "0.88rem", mb: 2 }}>
-              {name.split(/\s+/)[0]}&apos;s full resource kit{kits.length === 1 ? " is" : "s are"} available to Dental Member Network members.
+              {name.split(/\s+/)[0]}&apos;s full Practice Playbook{kits.length === 1 ? " is" : "s are"} available to Dental Member Network members.
             </Typography>
             <Button component={Link} href="/pricing" variant="contained" sx={{ textTransform: "none", borderRadius: 999, bgcolor: COLORS.accent, color: "#FFFFFF", "&:hover": { bgcolor: COLORS.accent } }}>
               Become a member

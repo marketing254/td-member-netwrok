@@ -512,7 +512,7 @@ export default function BlogArticleView({
                       mb: 1.75,
                     }}
                   >
-                    Resource kit · Action guide
+                    Practice Playbook · Action guide
                   </Box>
                   <Typography sx={{ fontSize: "0.64rem", fontWeight: 800, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(246,241,231,0.55)", mb: 0.75 }}>
                     {article.category}

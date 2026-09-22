@@ -147,7 +147,7 @@ export default function PublicToolsPage() {
 
           <Stack spacing={1.5} sx={{ alignItems: "center", textAlign: "center", mt: { xs: 5, md: 7 } }}>
             <Typography sx={{ color: COLORS.muted, fontSize: "0.98rem", maxWidth: 560, lineHeight: 1.6 }}>
-              Every tool above, plus the full resource library, the expert hotline, and
+              Every tool above, plus the full Practice Playbook library, the expert hotline, and
               member-exclusive partner offers. Founding membership is $49/mo, locked for life.
             </Typography>
             <Button

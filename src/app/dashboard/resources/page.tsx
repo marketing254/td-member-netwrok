@@ -251,9 +251,9 @@ export default function ResourceLibraryPage() {
   return (
     <Box sx={{ color: ink.primary }}>
       <EditorialHeader
-        eyebrow="Resource library"
-        title="Done for you, ready to use"
-        standfirst="Each kit is a topic pack — training video, action guide, worksheets, checklist, and ready-to-use templates. Stream the video, download the rest."
+        eyebrow="Practice Playbooks"
+        title="Built from real experts. Ready for you & your team."
+        standfirst="Each Playbook is a topic pack — training video, action guide, worksheets, checklist, and ready-to-use templates. Stream the video, download the rest."
       />
 
       {/* Toolbar — dropdown filters + sort + search. Scales as we add more
@@ -375,7 +375,7 @@ export default function ResourceLibraryPage() {
           }}
         >
           <Typography sx={{ ...editorialText.heading, mb: 0.5 }}>
-            {q ? `No kits match "${q}"` : "No kits in this filter"}
+            {q ? `No Playbooks match "${q}"` : "No Playbooks in this filter"}
           </Typography>
           <Typography sx={editorialText.meta}>
             Try a different filter or clear the search.

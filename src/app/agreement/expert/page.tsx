@@ -33,7 +33,7 @@ const COMMITMENTS = [
   {
     n: "3",
     title: "Keep a working calendar link",
-    body: "Provide a working booking link (Calendly, HubSpot, Cal.com — any) we feature on every kit and on your profile.",
+    body: "Provide a working booking link (Calendly, HubSpot, Cal.com — any) we feature on every Practice Playbook and on your profile.",
   },
   {
     n: "4",

@@ -276,7 +276,7 @@ function whatsNextItems(opts: BuiltOpts): string[] {
   const partner = hasPartnerRole(opts.role);
   const expert = hasExpertRole(opts.role);
   const items: string[] = [];
-  if (expert) items.push("Your profile and resource kit go live at launch");
+  if (expert) items.push("Your profile and Practice Playbook go live at launch");
   if (partner) items.push("Your listing, member offer, and resources go live at launch");
   items.push("We&#39;ll email you when members start reaching out");
   return items;

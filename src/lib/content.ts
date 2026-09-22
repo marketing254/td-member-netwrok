@@ -155,7 +155,7 @@ export const faqs = [
       "An Expert Hotline — leave a voicemail with your question, get a written action plan plus the right experts to contact, by text and email, within 2–3 business days.",
       "Exclusive partner discounts averaging $6,000+ per year on supplies, labs, equipment, and services.",
       "An exclusive content library with recorded expert panels, training, and knowledge resources.",
-      "A growing library of expert kits, each built from a real session.",
+      "A growing library of Practice Playbooks, each built from a real session.",
     ],
     aClose: "Plus proven systems, SOPs, and templates.",
   },
@@ -302,7 +302,7 @@ export const pricing = [
       "Exclusive content library, recorded expert panels, training, and knowledge resources",
       "Member directory — practice owners searchable by city, specialty, revenue",
       "Proven systems, battle-tested templates, checklists, and SOPs",
-      "A growing library of expert kits from real sessions",
+      "A growing library of Practice Playbooks from real sessions",
     ],
     cta: "Claim founding spot",
     ctaHref: "/#waitlist",
@@ -421,6 +421,6 @@ export const portalNavItems = [
   { label: "Library", badge: "Live" },
   { label: "Vendor Deals", badge: "$6.4K" },
   { label: "Directory", badge: "Growing" },
-  { label: "Kits", badge: "Weekly" },
+  { label: "Practice Playbooks", badge: "Weekly" },
 ];
 

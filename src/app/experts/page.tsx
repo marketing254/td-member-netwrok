@@ -39,7 +39,7 @@ const HOW_IT_WORKS = [
   {
     n: "2",
     title: "We build",
-    body: "Your full kit (video, action guide, checklist, worksheet, slide deck, poster) live under your profile.",
+    body: "Your full Practice Playbook (video, action guide, checklist, worksheet, slide deck, poster) live under your profile.",
   },
   {
     n: "3",
@@ -128,7 +128,7 @@ export default function ExpertsPage() {
               Turn your expertise into a done-for-you library and a pipeline of warm leads.
             </Typography>
             <Typography sx={{ color: "rgba(255,255,255,0.82)", fontSize: "1.05rem", lineHeight: 1.65, maxWidth: 660 }}>
-              Share one recording. We build the full content kit, put it in
+              Share one recording. We build the full Practice Playbook, put it in
               front of thousands of practice owners, and send interested members
               straight to your calendar.
             </Typography>
@@ -191,7 +191,7 @@ export default function ExpertsPage() {
         kind="experts"
         eyebrow="The bench"
         title="Meet the DMN experts"
-        subtitle="The people behind the resource library — our house experts and every hand-picked founding expert, all live inside the member portal."
+        subtitle="The people behind the Practice Playbooks — our house experts and every hand-picked founding expert, all live inside the member portal."
       />
 
       {/* Cream band quote */}

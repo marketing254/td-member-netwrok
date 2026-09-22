@@ -252,7 +252,7 @@ export default function SummitLandingView() {
             </div>
             <div className="c-checks">
               <p><span>✓</span> Two live panels and 2 CE credits</p>
-              <p><span>✓</span> DMN Expert Hotline, resource kits and templates</p>
+              <p><span>✓</span> DMN Expert Hotline, Practice Playbooks and templates</p>
               <p><span>✓</span> Expert &amp; company directories and member offers</p>
               <p><span>✓</span> $0 today. Then $49/month unless cancelled</p>
             </div>
@@ -287,7 +287,7 @@ export default function SummitLandingView() {
               <div className="signup-includes">
                 <b>Your trial includes</b>
                 <span>September 16 summit access + DMN membership</span>
-                <small>Expert Hotline · resource kits &amp; templates · directories &amp; member offers</small>
+                <small>Expert Hotline · Practice Playbooks &amp; templates · directories &amp; member offers</small>
               </div>
               <div className="divider" />
 
@@ -402,7 +402,7 @@ export default function SummitLandingView() {
             </div>
             <div className="benefit-grid">
               <article><span className="benefit-label">01 / ASK</span><h3>A real practice question. <br />A human response.</h3><p>Bring a clinical, financial, team or operational question to the Expert Hotline. Get a written response within 2–3 business days.</p></article>
-              <article><span className="benefit-label">02 / PUT INTO PRACTICE</span><h3>Expert knowledge you <br />can work with.</h3><p>Explore a growing library of expert kits, practical tools and templates, with resources such as checklists, worksheets and action guides.</p></article>
+              <article><span className="benefit-label">02 / PUT INTO PRACTICE</span><h3>Expert knowledge you <br />can work with.</h3><p>Explore a growing library of Practice Playbooks, practical tools and templates, with resources such as checklists, worksheets and action guides.</p></article>
               <article><span className="benefit-label">03 / FIND SUPPORT</span><h3>Find the right expertise <br />for your next step.</h3><p>Browse the curated expert directory and vetted company directory when you need to find specialist support for your practice.</p></article>
               <article><span className="benefit-label">04 / EXPLORE</span><h3>Member offers, <br />in one place.</h3><p>Explore confirmed member offers alongside the people, resources and companies in DMN. Individual offer terms apply.</p></article>
             </div>
@@ -412,12 +412,12 @@ export default function SummitLandingView() {
                   <span className="eyebrow">A LOOK INSIDE THE RESOURCE LIBRARY</span>
                   <h3>Start with a challenge your practice knows.</h3>
                 </div>
-                <p>A few of the expert kits to explore.</p>
+                <p>A few of the Practice Playbooks to explore.</p>
               </div>
               <div className="kit-grid">
-                <article><Image src="/rida/kit-huddle.jpg" width={360} height={360} sizes="(max-width: 760px) 30vw, 120px" alt="Successful Morning Huddle expert kit cover" /><div><span>TEAM ROUTINES</span><h4>Successful Morning Huddle</h4><p>Callie Ward</p></div></article>
-                <article><Image src="/rida/kit-numbers.jpg" width={360} height={360} sizes="(max-width: 760px) 30vw, 120px" alt="Know Your Real Numbers expert kit cover" /><div><span>PRACTICE FINANCES</span><h4>Know Your Real Numbers</h4><p>Laura Phillips, E.A.</p></div></article>
-                <article><Image src="/rida/kit-process.jpg" width={360} height={360} sizes="(max-width: 760px) 30vw, 120px" alt="The Process Comes First expert kit cover" /><div><span>PRACTICE SYSTEMS</span><h4>The Process Comes First</h4><p>DeVon Banks</p></div></article>
+                <article><Image src="/rida/kit-huddle.jpg" width={360} height={360} sizes="(max-width: 760px) 30vw, 120px" alt="Successful Morning Huddle Practice Playbook cover" /><div><span>TEAM ROUTINES</span><h4>Successful Morning Huddle</h4><p>Callie Ward</p></div></article>
+                <article><Image src="/rida/kit-numbers.jpg" width={360} height={360} sizes="(max-width: 760px) 30vw, 120px" alt="Know Your Real Numbers Practice Playbook cover" /><div><span>PRACTICE FINANCES</span><h4>Know Your Real Numbers</h4><p>Laura Phillips, E.A.</p></div></article>
+                <article><Image src="/rida/kit-process.jpg" width={360} height={360} sizes="(max-width: 760px) 30vw, 120px" alt="The Process Comes First Practice Playbook cover" /><div><span>PRACTICE SYSTEMS</span><h4>The Process Comes First</h4><p>DeVon Banks</p></div></article>
               </div>
             </div>
             <div className="membership-close">
@@ -473,7 +473,7 @@ export default function SummitLandingView() {
             <div className="c-steps">
               <article><span>01</span><h3>Activate your trial</h3><p>Enter your card securely at checkout. Your trial starts at $0.</p></article>
               <article><span>02</span><h3>Receive event access</h3><p>Get confirmation and your personal Zoom access details by email.</p></article>
-              <article><span>03</span><h3>Use your 30 days</h3><p>Join the summit and explore DMN’s expert kits, tools and Expert Hotline.</p></article>
+              <article><span>03</span><h3>Use your 30 days</h3><p>Join the summit and explore DMN’s Practice Playbooks, tools and Expert Hotline.</p></article>
             </div>
             <a className="cta" href="#signup">Start my free trial ↗</a>
             <p className="offer-terms">
@@ -488,7 +488,7 @@ export default function SummitLandingView() {
             <h2>Before you join.</h2>
           </div>
           <div>
-            <details><summary>What does DMN membership include?</summary><p>Alongside access to this summit, your trial includes the Expert Hotline, a growing expert resource-kit library, practical tools and templates, curated expert and company directories, and confirmed member offers. These ongoing membership benefits continue while your subscription stays active.</p></details>
+            <details><summary>What does DMN membership include?</summary><p>Alongside access to this summit, your trial includes the Expert Hotline, a growing Practice Playbook library, practical tools and templates, curated expert and company directories, and confirmed member offers. These ongoing membership benefits continue while your subscription stays active.</p></details>
             <details><summary>What happens after the 30 days?</summary><p>Your DMN trial is $0 for 30 days, then $49/month unless cancelled before the trial ends. A card is required at checkout. Your exact first billing date is shown before you confirm, and you can cancel from your member portal at any time.</p></details>
             <details><summary>How do I get my summit access?</summary><p>Once your trial is active we register you for the live session and Zoom emails your personal join link, usually within a few minutes. The link is unique to you, so please don’t forward it.</p></details>
             <details><summary>What do I need to do for CE credit?</summary><p>Attend the qualifying session and complete the CE provider’s required attendance verification and evaluation. Registration alone does not earn credit.</p></details>

@@ -177,17 +177,17 @@ function renderKit(opts: {
   const intro =
     matchKind === "best"
       ? `You mentioned your biggest challenge right now is <b>${escapeHtml(challenge)}</b> — so rather than pointing you at the whole library, here's the one place to start.`
-      : `You mentioned your biggest challenge right now is <b>${escapeHtml(challenge)}</b>. There isn't a kit aimed squarely at that yet, but this is the closest starting point in the library today — and we're adding new kits every week.`;
+      : `You mentioned your biggest challenge right now is <b>${escapeHtml(challenge)}</b>. There isn't a Playbook aimed squarely at that yet, but this is the closest starting point in the library today — and we're adding new Playbooks every week.`;
   const body = `<p style="margin:0 0 14px;">Hi ${escapeHtml(firstName)},</p>
 
 <p style="margin:0 0 14px;">${intro}</p>
 
 <div style="background:#FBF8F1;border:1px solid #E6DDCF;border-radius:10px;padding:18px 20px;margin:18px 0;">
-  <div style="font-size:11px;font-weight:800;letter-spacing:0.14em;color:#A07823;text-transform:uppercase;margin-bottom:6px;">Your starting kit</div>
+  <div style="font-size:11px;font-weight:800;letter-spacing:0.14em;color:#A07823;text-transform:uppercase;margin-bottom:6px;">Your starting Playbook</div>
   <div style="font-family:Georgia,'Times New Roman',serif;font-size:20px;font-weight:700;color:#0A1A2F;line-height:1.3;">${escapeHtml(kitTitle)}</div>
   <div style="font-size:13.5px;color:#3B4A55;margin-top:6px;">Action guide &middot; checklist &middot; worksheet &middot; training video</div>
   ${emailCtaButton(kitUrl, "Open the kit →")}
-  <div style="font-size:12.5px;color:#7A8590;text-align:center;">You'll be asked to sign in first — use the email you joined with, and the kit opens right after.</div>
+  <div style="font-size:12.5px;color:#7A8590;text-align:center;">You'll be asked to sign in first — use the email you joined with, and the Playbook opens right after.</div>
 </div>
 
 <p style="margin:0 0 14px;">Open the action guide and the worksheet together — you'll finish knowing
@@ -199,7 +199,7 @@ Dr. Parul Dua Makkar. Full terms are on their listings in the portal. We're addi
 partners confirm them.</p>
 
 <p style="margin:0 0 18px;">If something else is more pressing right now, just reply and tell us
-what it is. We'll point you at the right kit ourselves.</p>
+what it is. We'll point you at the right Playbook ourselves.</p>
 
 ${SIGNATURE}`;
   return { subject: "Start with this one", html: memberEmailLayout(body) };
@@ -388,11 +388,11 @@ async function matchKit(challenge: string, kits: KitOption[]): Promise<MatchResu
       {
         role: "system",
         content: [
-          "You match a dental practice owner's stated biggest challenge to ONE resource kit from a catalog.",
+          "You match a dental practice owner's stated biggest challenge to ONE Practice Playbook from a catalog.",
           "Rules:",
-          '- If a kit clearly addresses the challenge, answer match:"best" with its slug.',
+          '- If a Playbook clearly addresses the challenge, answer match:"best" with its slug.',
           '- If nothing addresses it squarely but one is a reasonable nearby starting point, answer match:"closest" with its slug.',
-          '- If the challenge is outside anything the catalog covers (or is not a practice-management topic at all), answer match:"none" with slug:null. Do NOT stretch a kit to fit.',
+          '- If the challenge is outside anything the catalog covers (or is not a practice-management topic at all), answer match:"none" with slug:null. Do NOT stretch a Playbook to fit.',
           'Respond as JSON: {"match":"best"|"closest"|"none","slug":string|null,"reason":"one sentence"}',
         ].join("\n"),
       },

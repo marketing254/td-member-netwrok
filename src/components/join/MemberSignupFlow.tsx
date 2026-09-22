@@ -630,7 +630,7 @@ function InvitationHeader({ ctx }: { ctx: RefContext }) {
     { icon: MessageCircle, title: "Get practical answers", sub: "The expert hotline — a written answer within 2 to 3 working days." },
     { icon: Search, title: "Find trusted help", sub: "The expert directory and the company directory, curated by the team." },
     { icon: Tag, title: "Access member savings", sub: "Member-only offers from vetted partner companies." },
-    { icon: BookOpen, title: "Done-for-you resources", sub: "A growing library of kits — action guide, checklist, worksheet, video." },
+    { icon: BookOpen, title: "Done-for-you resources", sub: "A growing library of Practice Playbooks — action guide, checklist, worksheet, video." },
   ];
   return (
     <Box sx={{ mb: 4 }}>

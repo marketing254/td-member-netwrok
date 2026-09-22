@@ -25,8 +25,8 @@ const FEATURES = [
   },
   {
     Icon: Video,
-    title: "A growing resource library",
-    body: "New content every week — videos, action guides, checklists, worksheets and CE-ready kits.",
+    title: "A growing Playbook library",
+    body: "New content every week — videos, action guides, checklists, worksheets and CE-ready Playbooks.",
   },
   {
     Icon: Users,
