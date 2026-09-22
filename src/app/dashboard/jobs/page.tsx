@@ -539,7 +539,7 @@ function EmptyState() {
   return (
     <Box sx={{ border: `1px dashed ${LINE}`, borderRadius: 3, p: { xs: 4, md: 6 }, textAlign: "center", bgcolor: "#fff" }}>
       <WorkOutlineRoundedIcon sx={{ fontSize: 40, color: GOLD, mb: 1.5 }} />
-      <Typography sx={{ fontWeight: 600, color: INK, fontSize: "1.1rem", mb: 1 }}>Hiring? Skip the $300 job board spend</Typography>
+      <Typography sx={{ fontWeight: 600, color: INK, fontSize: "1.1rem", mb: 1 }}>Hiring? Skip the paid job board</Typography>
       <Typography sx={{ color: INK_MUTED, maxWidth: 460, mx: "auto", lineHeight: 1.7, mb: 3 }}>
         Post your vacancy here and it gets its own public page, written so Google can list it as a job.
         It&apos;s part of your membership.
