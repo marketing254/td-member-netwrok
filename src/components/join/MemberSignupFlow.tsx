@@ -3,6 +3,7 @@ import { trackEvent } from "@/lib/analytics";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import {
   Box,
   Button,
@@ -15,14 +16,14 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { ArrowLeft, ArrowRight, Check, ExternalLink, MessageCircle, Search, Tag, BookOpen, Play } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, ExternalLink } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { challengeOptions, heardAboutOptions, locationOptions, memberRoles } from "@/lib/content";
 
 const MotionBox = motion.create(Box);
 
 // Resolved server-side by the page (lib/referralContext) so the
-// invitation header is in the first paint — type mirrored here because
+// invitation header is in the first paint; type mirrored here because
 // the lib is server-only.
 type RefContext = {
   name: string;
@@ -71,6 +72,9 @@ const STEPS = [
  * unchanged, and success continues into the existing pay-first flow
  * (/upgrade → Stripe checkout).
  */
+export type LatestJob = { title: string; where: string; pay: string };
+export type ReferrerQuoteProp = { quote: string; role: string };
+
 export type SignupPrefill = {
   firstName: string | null;
   lastName: string | null;
@@ -81,9 +85,13 @@ export type SignupPrefill = {
 export default function MemberSignupFlow({
   refCtx = null,
   prefill = null,
+  latestJob = null,
+  quote = null,
 }: {
   refCtx?: RefContext | null;
   prefill?: SignupPrefill | null;
+  latestJob?: LatestJob | null;
+  quote?: ReferrerQuoteProp | null;
 }) {
   const router = useRouter();
   const params = useSearchParams();
@@ -253,332 +261,718 @@ export default function MemberSignupFlow({
     "& .MuiInputLabel-root": { fontSize: "0.95rem" },
   } as const;
 
+  // Referral visits get the invitation page; organic visits keep the
+  // single-column form. Nothing about the steps themselves differs.
+  const cardMode = !!refCtx;
+  const offerN = refCtx?.offerActive ? refCtx.offerMonths : 0;
+
+  const cardTitle =
+    offerN > 1 ? `Start your ${numberWord(offerN)} months` : offerN === 1 ? "Start your free month" : "Start your membership";
+
+  const continueLabel =
+    step === 2 ? "Start your membership" : cardMode ? `Continue, step ${step + 1} of 3` : "Continue";
+
+  const formSteps = (
+    <AnimatePresence mode="wait" initial={false}>
+      <MotionBox
+        key={step}
+        initial={reduced ? false : { opacity: 0, x: dir * 36 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={reduced ? undefined : { opacity: 0, x: dir * -36 }}
+        transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+      >
+        {cardMode && step === 0 ? (
+          <Typography
+            component="h2"
+            sx={{
+              fontFamily: "var(--font-display)",
+              fontSize: { xs: "1.5rem", md: "1.65rem" },
+              fontWeight: 600,
+              color: INK,
+              letterSpacing: "-0.01em",
+              lineHeight: 1.15,
+              mb: 2.5,
+            }}
+          >
+            {cardTitle}
+          </Typography>
+        ) : (
+          <>
+            <Typography
+              sx={{
+                color: GOLD_DARK,
+                fontSize: "0.72rem",
+                fontWeight: 800,
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                mb: 1,
+              }}
+            >
+              {STEPS[step]!.eyebrow}
+            </Typography>
+            <Typography
+              component={cardMode ? "h2" : "h1"}
+              sx={{
+                fontFamily: "var(--font-display)",
+                fontSize: cardMode ? { xs: "1.5rem", md: "1.65rem" } : { xs: "1.8rem", md: "2.2rem" },
+                fontWeight: cardMode ? 600 : 500,
+                color: INK,
+                letterSpacing: "-0.02em",
+                lineHeight: 1.1,
+                mb: 1,
+              }}
+            >
+              {STEPS[step]!.title}
+            </Typography>
+            <Typography sx={{ color: MUTED, fontSize: "0.95rem", lineHeight: 1.6, mb: 3.5 }}>
+              {step === 0 && "Three short steps and you're picking your plan. No payment on this page."}
+              {step === 1 && "So the helpline and your member directory listing fit your practice."}
+              {step === 2 && "One optional question, one agreement, and you're through to plan and checkout."}
+            </Typography>
+          </>
+        )}
+
+        {step === 0 && (
+          <Stack spacing={2.25}>
+            <Stack direction={cardMode ? "column" : { xs: "column", sm: "row" }} spacing={2.25}>
+              <TextField label="First name" value={firstName} onChange={(e) => setFirstName(e.target.value)} autoComplete="given-name" autoFocus={!cardMode} fullWidth required sx={fieldSx} />
+              <TextField label="Last name" value={lastName} onChange={(e) => setLastName(e.target.value)} autoComplete="family-name" fullWidth required sx={fieldSx} />
+            </Stack>
+            <TextField label="Work email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} onBlur={() => captureAbandon()} autoComplete="email" fullWidth required sx={fieldSx} />
+          </Stack>
+        )}
+
+        {step === 1 && (
+          <Stack spacing={2.25}>
+            <TextField select label="What best describes your role?" value={roleLabel} onChange={(e) => setRoleLabel(e.target.value)} fullWidth sx={fieldSx}>
+              {memberRoles.map((r) => (
+                <MenuItem key={r} value={r}>{r}</MenuItem>
+              ))}
+            </TextField>
+            {roleLabel === OTHER && (
+              <TextField label="Tell us your role" value={roleLabelOther} onChange={(e) => setRoleLabelOther(e.target.value)} placeholder="e.g. Director of Operations" fullWidth required sx={fieldSx} />
+            )}
+            <TextField label="Practice name" value={practiceName} onChange={(e) => setPracticeName(e.target.value)} autoComplete="organization" fullWidth required sx={fieldSx} />
+            <Stack direction={cardMode ? "column" : { xs: "column", sm: "row" }} spacing={2.25}>
+              <TextField select label="Number of locations" value={locations} onChange={(e) => setLocations(e.target.value)} fullWidth sx={fieldSx}>
+                {locationOptions.map((o) => (
+                  <MenuItem key={o} value={o}>{o}</MenuItem>
+                ))}
+              </TextField>
+              <TextField label="Phone (optional)" value={phone} onChange={(e) => setPhone(e.target.value)} autoComplete="tel" fullWidth sx={fieldSx} />
+            </Stack>
+          </Stack>
+        )}
+
+        {step === 2 && (
+          <Stack spacing={2.25}>
+            <TextField select label="Biggest challenge right now?" value={challenge} onChange={(e) => setChallenge(e.target.value)} fullWidth sx={fieldSx}>
+              {challengeOptions.map((c) => (
+                <MenuItem key={c} value={c}>{c}</MenuItem>
+              ))}
+            </TextField>
+            {challenge === OTHER && (
+              <TextField label="Describe your biggest challenge" value={challengeOther} onChange={(e) => setChallengeOther(e.target.value)} placeholder="e.g. Hiring & retaining hygienists" multiline minRows={2} fullWidth required sx={fieldSx} />
+            )}
+            <TextField select label="How did you hear about us?" value={heardAbout} onChange={(e) => setHeardAbout(e.target.value)} fullWidth sx={fieldSx}>
+              {heardAboutOptions.map((o) => (
+                <MenuItem key={o} value={o}>{o}</MenuItem>
+              ))}
+            </TextField>
+            {heardAbout === OTHER && (
+              <TextField label="Tell us where you heard about us" value={heardAboutOther} onChange={(e) => setHeardAboutOther(e.target.value)} placeholder="e.g. A study club, a Facebook group…" fullWidth required sx={fieldSx} />
+            )}
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={agreed}
+                  onChange={(e) => setAgreed(e.target.checked)}
+                  size="small"
+                  sx={{ color: "#A8A29E", "&.Mui-checked": { color: GOLD_DARK }, p: 0.5, mr: 0.5 }}
+                />
+              }
+              label={
+                <Typography sx={{ fontSize: "0.82rem", color: "#52525B", lineHeight: 1.5 }}>
+                  I agree to the{" "}
+                  <Box
+                    component={Link}
+                    href="/agreements/dmn-member-agreement.pdf"
+                    target="_blank"
+                    rel="noopener"
+                    sx={{
+                      color: GOLD_DARK,
+                      fontWeight: 700,
+                      textDecoration: "underline",
+                      textDecorationColor: "rgba(155,123,58,0.4)",
+                      textUnderlineOffset: 3,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 0.4,
+                    }}
+                  >
+                    Member Agreement
+                    <ExternalLink size={11} />
+                  </Box>{" "}
+                  and to receive launch updates from DMN.
+                </Typography>
+              }
+              sx={{ alignItems: "flex-start", m: 0 }}
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={smsConsent}
+                  onChange={(e) => setSmsConsent(e.target.checked)}
+                  size="small"
+                  sx={{ color: "#A8A29E", "&.Mui-checked": { color: GOLD_DARK }, p: 0.5, mr: 0.5 }}
+                />
+              }
+              label={
+                <Typography sx={{ fontSize: "0.82rem", color: "#52525B", lineHeight: 1.5 }}>
+                  {SMS_CONSENT_TEXT}
+                </Typography>
+              }
+              sx={{ alignItems: "flex-start", m: 0 }}
+            />
+          </Stack>
+        )}
+
+        {error && (
+          <Typography
+            role="alert"
+            sx={{
+              mt: 2.5,
+              color: "#991B1B",
+              fontWeight: 600,
+              fontSize: "0.82rem",
+              bgcolor: "#FEF2F2",
+              border: "1px solid #FECACA",
+              borderRadius: 1.5,
+              px: 1.25,
+              py: 0.85,
+            }}
+          >
+            {error}
+          </Typography>
+        )}
+
+        <Stack direction="row" spacing={1.5} sx={{ mt: cardMode ? 3 : 4, alignItems: "center" }}>
+          {step > 0 && (
+            <Button
+              onClick={() => go(-1)}
+              startIcon={<ArrowLeft size={15} />}
+              sx={{ textTransform: "none", color: MUTED, fontWeight: 600, borderRadius: cardMode ? 999 : 2, px: 1.5 }}
+            >
+              Back
+            </Button>
+          )}
+          <Button
+            onClick={() => (step === 2 ? void submit() : go(1))}
+            disabled={!stepValid || submitting}
+            endIcon={
+              submitting ? (
+                <CircularProgress size={15} sx={{ color: INK }} />
+              ) : step === 2 ? (
+                <Check size={16} />
+              ) : (
+                <ArrowRight size={16} />
+              )
+            }
+            sx={{
+              flex: 1,
+              py: 1.5,
+              fontSize: "1rem",
+              fontWeight: 800,
+              textTransform: "none",
+              borderRadius: cardMode ? 999 : 2,
+              bgcolor: GOLD,
+              color: INK,
+              "&:hover": { bgcolor: "#E5BA63" },
+              "&.Mui-disabled": { bgcolor: "rgba(217,168,75,0.35)", color: "rgba(10,26,47,0.5)" },
+            }}
+          >
+            {continueLabel}
+          </Button>
+        </Stack>
+
+        {cardMode ? (
+          step === 0 && (
+            <Typography sx={{ mt: 2, fontSize: "0.8rem", color: SOFT, textAlign: "center", lineHeight: 1.55 }}>
+              {offerN > 0
+                ? `A card goes on file at step 3. Nothing is charged until month ${numberWord(offerN + 1)}, and we remind you twice before that.`
+                : "No payment on this page. You choose your plan after step 3."}
+            </Typography>
+          )
+        ) : (
+          step === 0 && (
+            <Typography sx={{ mt: 2.5, fontSize: "0.8rem", color: SOFT, textAlign: "center" }}>
+              Founding 100 · $49 a month, locked for life · cancel anytime
+            </Typography>
+          )
+        )}
+      </MotionBox>
+    </AnimatePresence>
+  );
+
+  const progressBar = (
+    <Box sx={{ height: 4, bgcolor: "rgba(155,123,58,0.15)" }}>
+      <Box
+        sx={{
+          height: "100%",
+          width: `${((step + 1) / 3) * 100}%`,
+          bgcolor: GOLD,
+          transition: "width 420ms cubic-bezier(0.16, 1, 0.3, 1)",
+        }}
+      />
+    </Box>
+  );
+
+  const fullFormLink = (
+    <Typography sx={{ mt: 3, fontSize: "0.78rem", color: SOFT, textAlign: "center" }}>
+      An expert, partner, or team application instead?{" "}
+      <Box component={Link} href="/join" sx={{ color: GOLD_DARK, fontWeight: 700 }}>
+        Use the full form
+      </Box>
+    </Typography>
+  );
+
+  // ── Organic visit: the single-column form, unchanged ────────────────
+  if (!refCtx) {
+    return (
+      <Box sx={{ minHeight: "100dvh", bgcolor: PAPER, display: "flex", flexDirection: "column" }}>
+        {progressBar}
+        <Container maxWidth="sm" sx={{ flex: 1, display: "flex", flexDirection: "column", py: { xs: 4, md: 7 } }}>
+          <Box sx={{ maxWidth: 460, width: "100%", mx: "auto", flex: 1 }}>{formSteps}</Box>
+          {fullFormLink}
+        </Container>
+      </Box>
+    );
+  }
+
+  // ── Referral visit: the invitation page around the same form ────────
+  // Phone order is header, headline, form, then everything else: the
+  // grid below stacks in DOM order at xs, so nothing needs reordering.
+  const short = shortNameOf(refCtx);
+  const inviteLine =
+    refCtx.kind === "team"
+      ? `A gift from the Dental Member Network team.${offerN > 0 ? ` ${monthsPhrase(offerN)} free, already applied.` : ""}`
+      : `Invited by ${refCtx.name}.${offerN > 0 ? ` ${monthsPhrase(offerN)} free, already applied.` : ""}`;
+  const howItWorks = [
+    { title: "Your details", text: "Name, email and your practice. About a minute." },
+    { title: "Card on file", text: "Added at step 3. Nothing is charged today." },
+    {
+      title: offerN > 0 ? `${monthsPhrase(offerN)} free` : "Your portal opens",
+      text:
+        offerN > 0
+          ? `Everything unlocks now. $49 a month starts in month ${numberWord(offerN + 1)}.`
+          : "Everything unlocks as soon as payment is confirmed.",
+    },
+  ];
+  const heroPoints = [
+    ...(offerN > 0 ? [`${monthsPhrase(offerN)} free from ${refCtx.kind === "team" ? "the team" : short}`] : []),
+    "Nothing charged today",
+    "Cancel any time",
+  ];
+
   return (
-    <Box sx={{ minHeight: "100dvh", bgcolor: "#FBF8F1", display: "flex", flexDirection: "column" }}>
-      {/* Thin gold progress bar — fills a third per step */}
-      <Box sx={{ height: 4, bgcolor: "rgba(155,123,58,0.15)" }}>
+    <Box sx={{ minHeight: "100dvh", bgcolor: PAPER, overflowX: "hidden" }}>
+      {progressBar}
+      <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
+        {/* Header */}
+        <Stack
+          direction="row"
+          sx={{ alignItems: "center", justifyContent: "space-between", gap: 2, pt: { xs: 1.5, md: 2.5 } }}
+        >
+          {/* Wordmark without the "Founded by" caption the standard logo
+              file carries; this page says "Powered by" only. */}
+          <Box component={Link} href="/" aria-label="Dental Member Network" sx={{ display: "block", flexShrink: 0, width: { xs: 120, md: 168 }, lineHeight: 0 }}>
+            <Image src="/dmn-wordmark.png" alt="Dental Member Network" width={720} height={243} priority style={{ width: "100%", height: "auto" }} />
+          </Box>
+          <Stack direction="row" spacing={1.25} sx={{ alignItems: "center", minWidth: 0 }}>
+            <RefAvatar ctx={refCtx} size={32} />
+            <Typography sx={{ fontSize: { xs: "0.76rem", sm: "0.85rem" }, color: MUTED, fontWeight: 600, lineHeight: 1.35 }}>
+              {inviteLine}
+            </Typography>
+          </Stack>
+        </Stack>
+
+        {/* Headline and form */}
         <Box
           sx={{
-            height: "100%",
-            width: `${((step + 1) / 3) * 100}%`,
-            bgcolor: "#D9A84B",
-            transition: "width 420ms cubic-bezier(0.16, 1, 0.3, 1)",
+            display: "grid",
+            gridTemplateColumns: { xs: "minmax(0, 1fr)", md: "minmax(0, 1fr) 420px" },
+            gap: { xs: 3.5, md: 8 },
+            alignItems: { xs: "start", md: "center" },
+            pt: { xs: 3.5, md: 5.5 },
           }}
-        />
-      </Box>
-
-      <Container
-        maxWidth={refCtx ? "lg" : "sm"}
-        sx={{ flex: 1, display: "flex", flexDirection: "column", py: { xs: 4, md: 7 } }}
-      >
-        <Box
-          sx={
-            refCtx
-              ? {
-                  // Referred desktop: two columns — invitation rail left,
-                  // form card right. Mobile stacks (rail hidden; the
-                  // step-0 header + slim strip carry the invitation).
-                  display: "grid",
-                  gridTemplateColumns: { xs: "1fr", md: "minmax(0, 0.95fr) minmax(0, 1.05fr)" },
-                  gap: { xs: 0, md: 7 },
-                  alignItems: "start",
-                  maxWidth: { xs: 460, md: "none" },
-                  width: "100%",
-                  mx: "auto",
-                  flex: 1,
-                }
-              : { maxWidth: 460, width: "100%", mx: "auto", flex: 1 }
-          }
         >
-          {/* Desktop invitation rail — persistent through all steps */}
-          {refCtx && (
-            <Box sx={{ display: { xs: "none", md: "block" }, position: "sticky", top: 32 }}>
-              <InvitationHeader ctx={refCtx} />
+          <Box sx={{ minWidth: 0 }}>
+            <Typography
+              component="h1"
+              sx={{
+                fontFamily: "var(--font-display)",
+                fontSize: { xs: "2.2rem", sm: "2.6rem", md: "3.1rem" },
+                fontWeight: 500,
+                color: INK,
+                letterSpacing: "-0.02em",
+                lineHeight: 1.08,
+              }}
+            >
+              Expert advice your team can run on Monday.
+            </Typography>
+            <Typography sx={{ mt: 2.25, fontSize: { xs: "1rem", md: "1.08rem" }, color: "#3B4A55", lineHeight: 1.65, maxWidth: 580 }}>
+              Bring any practice problem. Get a real answer, and the right expert to talk to. Then open a Practice
+              Playbook and hand your team the video, the checklist and the wall poster that go with it.
+            </Typography>
+            <Stack direction="row" sx={{ flexWrap: "wrap", gap: "10px 22px", mt: 2.5 }}>
+              {heroPoints.map((t) => (
+                <Stack key={t} direction="row" spacing={0.75} sx={{ alignItems: "center" }}>
+                  <Check size={15} color={GREEN} strokeWidth={3} />
+                  <Typography sx={{ fontSize: "0.9rem", color: "#3B4A55", fontWeight: 600 }}>{t}</Typography>
+                </Stack>
+              ))}
+            </Stack>
+
+            {/* How it works: the three form steps, then the trial. Facts
+                only, all stated elsewhere on the page. */}
+            <Box
+              sx={{
+                mt: { xs: 3, md: 4 },
+                display: "grid",
+                gridTemplateColumns: { xs: "minmax(0, 1fr)", sm: "repeat(3, minmax(0, 1fr))" },
+                gap: { xs: 1.25, sm: 1.5 },
+                maxWidth: 620,
+              }}
+            >
+              {howItWorks.map((h, i) => (
+                <Box key={h.title} sx={{ bgcolor: "#FFFFFF", border: `1px solid ${LINE}`, borderRadius: "16px", px: 2, py: 1.75, minWidth: 0 }}>
+                  <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 0.75 }}>
+                    <Box sx={{ width: 24, height: 24, borderRadius: "50%", bgcolor: GOLD, color: INK, display: "grid", placeItems: "center", fontSize: "0.75rem", fontWeight: 800, flexShrink: 0 }}>
+                      {i + 1}
+                    </Box>
+                    <Typography sx={{ fontSize: "0.88rem", fontWeight: 700, color: INK, lineHeight: 1.25 }}>{h.title}</Typography>
+                  </Stack>
+                  <Typography sx={{ fontSize: "0.8rem", color: MUTED, lineHeight: 1.5 }}>{h.text}</Typography>
+                </Box>
+              ))}
             </Box>
-          )}
+          </Box>
 
           <Box sx={{ minWidth: 0 }}>
-            {/* Mobile: full invitation header on step 1, then a slim
-                reminder strip while they complete the form. */}
-            {refCtx && step === 0 && (
-              <Box sx={{ display: { xs: "block", md: "none" } }}>
-                <InvitationHeader ctx={refCtx} />
-              </Box>
-            )}
-            {refCtx && step > 0 && (
-              <Stack
-                direction="row"
-                spacing={1.25}
-                sx={{
-                  display: { xs: "flex", md: "none" },
-                  alignItems: "center",
-                  mb: 3,
-                  px: 1.75,
-                  py: 1,
-                  borderRadius: 2,
-                  bgcolor: "#FFFFFF",
-                  border: "1px solid #E6DDCF",
-                }}
-              >
-                <RefAvatar ctx={refCtx} size={26} />
-                <Typography sx={{ fontSize: "0.8rem", color: "#3B4A55", fontWeight: 600 }}>
-                  {refCtx.kind === "team" ? "Your welcome gift" : `Invited by ${refCtx.name}`}
-                  {refCtx.offerActive && (
-                    <Box component="span" sx={{ color: "#9B7B3A", fontWeight: 700 }}>
-                      {" "}· {refCtx.offerMonths} month{refCtx.offerMonths === 1 ? "" : "s"} free, applied at checkout
-                    </Box>
-                  )}
-                </Typography>
-              </Stack>
-            )}
-
-            {/* On referred desktop the form sits in a white card, matching
-                the invitation mock; mobile + organic stay flush on paper. */}
             <Box
-              sx={
-                refCtx
-                  ? {
-                      bgcolor: { xs: "transparent", md: "#FFFFFF" },
-                      border: { xs: "none", md: "1px solid #E6DDCF" },
-                      borderRadius: { xs: 0, md: 3 },
-                      p: { xs: 0, md: 3.5 },
-                      boxShadow: { xs: "none", md: "0 18px 40px -30px rgba(10,26,47,0.25)" },
-                    }
-                  : undefined
-              }
+              sx={{
+                bgcolor: "#FFFFFF",
+                border: `1px solid ${LINE}`,
+                borderRadius: "20px",
+                p: { xs: 2.5, sm: 3.25 },
+                boxShadow: "0 18px 40px -28px rgba(10,26,47,0.3)",
+              }}
             >
-          <AnimatePresence mode="wait" initial={false}>
-            <MotionBox
-              key={step}
-              initial={reduced ? false : { opacity: 0, x: dir * 36 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={reduced ? undefined : { opacity: 0, x: dir * -36 }}
-              transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
-            >
-              <Typography
-                sx={{
-                  color: "#9B7B3A",
-                  fontSize: "0.72rem",
-                  fontWeight: 800,
-                  letterSpacing: "0.18em",
-                  textTransform: "uppercase",
-                  mb: 1,
-                }}
-              >
-                {STEPS[step]!.eyebrow}
-              </Typography>
-              <Typography
-                component="h1"
-                sx={{
-                  fontFamily: "var(--font-display)",
-                  fontSize: { xs: "1.8rem", md: "2.2rem" },
-                  fontWeight: 500,
-                  color: "#0A1A2F",
-                  letterSpacing: "-0.02em",
-                  lineHeight: 1.1,
-                  mb: 1,
-                }}
-              >
-                {STEPS[step]!.title}
-              </Typography>
-              <Typography sx={{ color: "#5C6770", fontSize: "0.95rem", lineHeight: 1.6, mb: 3.5 }}>
-                {step === 0 && "Three short steps and you're picking your plan. No payment on this page."}
-                {step === 1 && "So the helpline and your member directory listing fit your practice."}
-                {step === 2 && "One optional question, one agreement, and you're through to plan + checkout."}
-              </Typography>
-
-              {step === 0 && (
-                <Stack spacing={2.25}>
-                  <Stack direction={{ xs: "column", sm: "row" }} spacing={2.25}>
-                    <TextField label="First name" value={firstName} onChange={(e) => setFirstName(e.target.value)} autoComplete="given-name" autoFocus fullWidth required sx={fieldSx} />
-                    <TextField label="Last name" value={lastName} onChange={(e) => setLastName(e.target.value)} autoComplete="family-name" fullWidth required sx={fieldSx} />
-                  </Stack>
-                  <TextField label="Work email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} onBlur={() => captureAbandon()} autoComplete="email" fullWidth required sx={fieldSx} />
-                </Stack>
-              )}
-
-              {step === 1 && (
-                <Stack spacing={2.25}>
-                  <TextField select label="What best describes your role?" value={roleLabel} onChange={(e) => setRoleLabel(e.target.value)} fullWidth sx={fieldSx}>
-                    {memberRoles.map((r) => (
-                      <MenuItem key={r} value={r}>{r}</MenuItem>
-                    ))}
-                  </TextField>
-                  {roleLabel === OTHER && (
-                    <TextField label="Tell us your role" value={roleLabelOther} onChange={(e) => setRoleLabelOther(e.target.value)} placeholder="e.g. Director of Operations" fullWidth required sx={fieldSx} />
-                  )}
-                  <TextField label="Practice name" value={practiceName} onChange={(e) => setPracticeName(e.target.value)} autoComplete="organization" fullWidth required sx={fieldSx} />
-                  <Stack direction={{ xs: "column", sm: "row" }} spacing={2.25}>
-                    <TextField select label="Number of locations" value={locations} onChange={(e) => setLocations(e.target.value)} fullWidth sx={fieldSx}>
-                      {locationOptions.map((o) => (
-                        <MenuItem key={o} value={o}>{o}</MenuItem>
-                      ))}
-                    </TextField>
-                    <TextField label="Phone (optional)" value={phone} onChange={(e) => setPhone(e.target.value)} autoComplete="tel" fullWidth sx={fieldSx} />
-                  </Stack>
-                </Stack>
-              )}
-
-              {step === 2 && (
-                <Stack spacing={2.25}>
-                  <TextField select label="Biggest challenge right now?" value={challenge} onChange={(e) => setChallenge(e.target.value)} fullWidth sx={fieldSx}>
-                    {challengeOptions.map((c) => (
-                      <MenuItem key={c} value={c}>{c}</MenuItem>
-                    ))}
-                  </TextField>
-                  {challenge === OTHER && (
-                    <TextField label="Describe your biggest challenge" value={challengeOther} onChange={(e) => setChallengeOther(e.target.value)} placeholder="e.g. Hiring & retaining hygienists" multiline minRows={2} fullWidth required sx={fieldSx} />
-                  )}
-                  <TextField select label="How did you hear about us?" value={heardAbout} onChange={(e) => setHeardAbout(e.target.value)} fullWidth sx={fieldSx}>
-                    {heardAboutOptions.map((o) => (
-                      <MenuItem key={o} value={o}>{o}</MenuItem>
-                    ))}
-                  </TextField>
-                  {heardAbout === OTHER && (
-                    <TextField label="Tell us where you heard about us" value={heardAboutOther} onChange={(e) => setHeardAboutOther(e.target.value)} placeholder="e.g. A study club, a Facebook group…" fullWidth required sx={fieldSx} />
-                  )}
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={agreed}
-                        onChange={(e) => setAgreed(e.target.checked)}
-                        size="small"
-                        sx={{ color: "#A8A29E", "&.Mui-checked": { color: "#9B7B3A" }, p: 0.5, mr: 0.5 }}
-                      />
-                    }
-                    label={
-                      <Typography sx={{ fontSize: "0.82rem", color: "#52525B", lineHeight: 1.5 }}>
-                        I agree to the{" "}
-                        <Box
-                          component={Link}
-                          href="/agreements/dmn-member-agreement.pdf"
-                          target="_blank"
-                          rel="noopener"
-                          sx={{
-                            color: "#9B7B3A",
-                            fontWeight: 700,
-                            textDecoration: "underline",
-                            textDecorationColor: "rgba(155,123,58,0.4)",
-                            textUnderlineOffset: 3,
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 0.4,
-                          }}
-                        >
-                          Member Agreement
-                          <ExternalLink size={11} />
-                        </Box>{" "}
-                        and to receive launch updates from DMN.
-                      </Typography>
-                    }
-                    sx={{ alignItems: "flex-start", m: 0 }}
-                  />
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={smsConsent}
-                        onChange={(e) => setSmsConsent(e.target.checked)}
-                        size="small"
-                        sx={{ color: "#A8A29E", "&.Mui-checked": { color: "#9B7B3A" }, p: 0.5, mr: 0.5 }}
-                      />
-                    }
-                    label={
-                      <Typography sx={{ fontSize: "0.82rem", color: "#52525B", lineHeight: 1.5 }}>
-                        {SMS_CONSENT_TEXT}
-                      </Typography>
-                    }
-                    sx={{ alignItems: "flex-start", m: 0 }}
-                  />
-                </Stack>
-              )}
-
-              {error && (
-                <Typography
-                  role="alert"
-                  sx={{
-                    mt: 2.5,
-                    color: "#991B1B",
-                    fontWeight: 600,
-                    fontSize: "0.82rem",
-                    bgcolor: "#FEF2F2",
-                    border: "1px solid #FECACA",
-                    borderRadius: 1.5,
-                    px: 1.25,
-                    py: 0.85,
-                  }}
-                >
-                  {error}
-                </Typography>
-              )}
-
-              <Stack direction="row" spacing={1.5} sx={{ mt: 4, alignItems: "center" }}>
-                {step > 0 && (
-                  <Button
-                    onClick={() => go(-1)}
-                    startIcon={<ArrowLeft size={15} />}
-                    sx={{ textTransform: "none", color: "#5C6770", fontWeight: 600, borderRadius: 2, px: 1.5 }}
-                  >
-                    Back
-                  </Button>
-                )}
-                <Button
-                  onClick={() => (step === 2 ? void submit() : go(1))}
-                  disabled={!stepValid || submitting}
-                  endIcon={
-                    submitting ? (
-                      <CircularProgress size={15} sx={{ color: "#0A1A2F" }} />
-                    ) : step === 2 ? (
-                      <Check size={16} />
-                    ) : (
-                      <ArrowRight size={16} />
-                    )
-                  }
-                  sx={{
-                    flex: 1,
-                    py: 1.5,
-                    fontSize: "1rem",
-                    fontWeight: 800,
-                    textTransform: "none",
-                    borderRadius: 2,
-                    bgcolor: "#D9A84B",
-                    color: "#0A1A2F",
-                    "&:hover": { bgcolor: "#E5BA63" },
-                    "&.Mui-disabled": { bgcolor: "rgba(217,168,75,0.35)", color: "rgba(10,26,47,0.5)" },
-                  }}
-                >
-                  {step === 2 ? "Start your membership" : "Continue"}
-                </Button>
-              </Stack>
-
-              {step === 0 && (
-                <Typography sx={{ mt: 2.5, fontSize: "0.8rem", color: "#7A8590", textAlign: "center" }}>
-                  Founding 100 · $49 a month, locked for life · cancel anytime
-                </Typography>
-              )}
-              {refCtx?.offerActive && (
-                <Typography sx={{ mt: step === 0 ? 0.75 : 2.5, fontSize: "0.8rem", color: "#7A8590", textAlign: "center" }}>
-                  You&apos;ll review {shortNameOf(refCtx)}&apos;s offer before entering any payment information.
-                </Typography>
-              )}
-            </MotionBox>
-          </AnimatePresence>
+              {formSteps}
             </Box>
+            {fullFormLink}
           </Box>
         </Box>
 
-        <Typography sx={{ mt: 4, fontSize: "0.78rem", color: "#7A8590", textAlign: "center" }}>
-          An expert, partner, or team application instead?{" "}
-          <Box component={Link} href="/join" sx={{ color: "#9B7B3A", fontWeight: 700 }}>
-            Use the full form
+        {/* Why we built this */}
+        {quote && (
+          <Box
+            sx={{
+              mt: { xs: 5, md: 6 },
+              p: { xs: 2.5, md: 3.5 },
+              bgcolor: "#FFFFFF",
+              border: `1px solid ${LINE}`,
+              borderLeft: `5px solid ${GOLD}`,
+              borderRadius: "20px",
+              display: "flex",
+              flexDirection: { xs: "column", sm: "row" },
+              gap: { xs: 2.25, sm: 3.5 },
+              alignItems: { xs: "flex-start", sm: "center" },
+            }}
+          >
+            {refCtx.imageUrl ? (
+              <Box
+                component="img"
+                src={refCtx.imageUrl}
+                alt={refCtx.name}
+                sx={{
+                  width: { xs: 96, md: 128 },
+                  height: { xs: 96, md: 128 },
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                  objectPosition: "center top",
+                  border: `3px solid ${GOLD}`,
+                  flexShrink: 0,
+                }}
+              />
+            ) : (
+              <RefAvatar ctx={refCtx} size={96} />
+            )}
+            <Box sx={{ minWidth: 0 }}>
+              <Typography sx={kickerSx}>Why we built this</Typography>
+              <Typography
+                component="blockquote"
+                sx={{
+                  m: 0,
+                  mt: 1.25,
+                  fontFamily: "var(--font-display)",
+                  fontSize: { xs: "1.12rem", md: "1.32rem" },
+                  lineHeight: 1.45,
+                  color: INK,
+                }}
+              >
+                “{quote.quote}”
+              </Typography>
+              <Stack direction={{ xs: "column", sm: "row" }} sx={{ mt: 1.75, gap: { xs: 0.25, sm: 1.5 }, alignItems: { sm: "baseline" } }}>
+                <Typography sx={{ fontFamily: "var(--font-display)", fontSize: "1.1rem", fontWeight: 600, color: INK }}>
+                  {refCtx.name}
+                </Typography>
+                <Typography sx={{ fontSize: "0.84rem", color: MUTED }}>{quote.role}</Typography>
+              </Stack>
+            </Box>
           </Box>
-        </Typography>
+        )}
+
+        {/* Practice Playbooks */}
+        <Box sx={{ mt: { xs: 5, md: 6 } }}>
+          <SectionHead title="Practice Playbooks" sub="Each one turns an expert's session into a short training video, a guide, a checklist, a worksheet and a wall poster." />
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", sm: "repeat(3, minmax(0, 1fr))", md: "repeat(6, minmax(0, 1fr))" },
+              gap: { xs: 1.5, md: 2.25 },
+            }}
+          >
+            {PLAYBOOK_CARDS.map((c) => (
+              <Box
+                key={c.src}
+                sx={{
+                  position: "relative",
+                  aspectRatio: "3 / 4",
+                  borderRadius: "14px",
+                  overflow: "hidden",
+                  bgcolor: "#15263a",
+                  boxShadow: "0 10px 24px -12px rgba(10,26,47,0.35)",
+                }}
+              >
+                <Image src={c.src} alt={c.alt} fill sizes="(max-width: 600px) 50vw, (max-width: 900px) 33vw, 200px" style={{ objectFit: "cover" }} />
+              </Box>
+            ))}
+          </Box>
+          <Typography sx={{ mt: 1.75, fontSize: "0.84rem", color: MUTED }}>
+            A growing library. New playbooks are added, and every one carries the expert&apos;s name.
+          </Typography>
+        </Box>
+
+        {/* Everything in the membership */}
+        <Box sx={{ mt: { xs: 5, md: 6 } }}>
+          <SectionHead title="Everything in the membership" sub="One login. All of it included." />
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "minmax(0, 1fr)", md: "repeat(2, minmax(0, 1fr))" },
+              gap: 2,
+            }}
+          >
+            <Tile kicker="Ask" title="Expert Hotline">
+              <Box sx={{ bgcolor: "rgba(217,168,75,0.13)", borderRadius: "12px", px: 1.75, py: 1.25, fontSize: "0.86rem", lineHeight: 1.55, color: "#27323D" }}>
+                <b>You:</b> Our hygiene schedule has been flat for six months.
+                <br />
+                <b>Beacon:</b>{" "}Three playbooks cover this. Start with Heidi Mount&apos;s Every Unit of Time Matters. Want a
+                person to look at your numbers?
+              </Box>
+              <TileText>
+                Any practice problem. An answer right away, built on our experts&apos; own sessions. Need more? Our team
+                comes back in writing, with the experts worth calling.
+              </TileText>
+            </Tile>
+            <Tile kicker="Hire" title="Job board">
+              <Box sx={{ border: `1px solid ${LINE}`, borderRadius: "12px", px: 1.75, py: 1.25 }}>
+                <Typography sx={{ fontSize: "0.92rem", fontWeight: 700, color: INK }}>
+                  {latestJob ? latestJob.title : "Dental hygienist, full time"}
+                </Typography>
+                <Typography sx={{ fontSize: "0.8rem", color: latestJob ? MUTED : PLACEHOLDER, mt: 0.25 }}>
+                  {latestJob ? latestJob.where : "Practice name, City, State"}
+                </Typography>
+                <Typography sx={{ fontSize: "0.86rem", fontWeight: 700, color: latestJob ? INK : PLACEHOLDER, mt: 0.25 }}>
+                  {latestJob ? latestJob.pay : "Pay range per hour"}
+                </Typography>
+              </Box>
+              <TileText>
+                Post your vacancy, included in membership. Every listing shows pay, and each post gets its own page Google
+                can list.
+              </TileText>
+            </Tile>
+          </Box>
+          <Box
+            sx={{
+              mt: 2,
+              display: "grid",
+              gridTemplateColumns: { xs: "minmax(0, 1fr)", sm: "repeat(2, minmax(0, 1fr))", md: "repeat(3, minmax(0, 1fr))" },
+              gap: 2,
+            }}
+          >
+            {MEMBERSHIP_TILES.map((t) => (
+              <Tile key={t.title} kicker={t.kicker} title={t.title} chip={t.chip}>
+                <TileText>{t.text}</TileText>
+              </Tile>
+            ))}
+          </Box>
+          <Typography sx={{ mt: 1.75, fontSize: "0.84rem", color: MUTED }}>
+            Live CE events, carrying credit through Thriving Dentist&apos;s own accreditation, are planned. Dates to come.
+          </Typography>
+        </Box>
+
+        {/* Footer */}
+        <Stack
+          direction={{ xs: "column", md: "row" }}
+          sx={{
+            mt: { xs: 5, md: 6 },
+            py: 3.5,
+            gap: { xs: 1, md: 5 },
+            justifyContent: "center",
+            alignItems: "center",
+            textAlign: "center",
+            borderTop: `1px solid ${LINE}`,
+            fontSize: "0.84rem",
+            color: MUTED,
+          }}
+        >
+          <span>Powered by Thriving Dentist Inc.</span>
+          <span>
+            {offerN > 0
+              ? `$49 a month after ${numberWord(offerN)} month${offerN === 1 ? "" : "s"}. Cancel any time.`
+              : "$49 a month. Cancel any time."}
+          </span>
+          <Box component="a" href="mailto:support@dentalmembernetwork.com" sx={{ color: MUTED, textDecoration: "none", "&:hover": { color: INK } }}>
+            support@dentalmembernetwork.com
+          </Box>
+        </Stack>
       </Container>
     </Box>
   );
 }
 
+// ── Page tokens (the site's own palette, not the mock's) ──────────────
+const INK = "#0A1A2F";
+const GOLD = "#D9A84B";
+const GOLD_DARK = "#9B7B3A";
+const GREEN = "#2C7A52";
+const LINE = "#E6DDCF";
+const MUTED = "#5C6770";
+const SOFT = "#7A8590";
+const PAPER = "#FBF8F1";
+const PLACEHOLDER = "#A3A9B0";
+
+const kickerSx = {
+  color: GOLD_DARK,
+  fontSize: "0.7rem",
+  fontWeight: 800,
+  letterSpacing: "0.16em",
+  textTransform: "uppercase",
+} as const;
+
+const NUMBER_WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen"];
+function numberWord(n: number): string {
+  return NUMBER_WORDS[n] ?? String(n);
+}
+/** "Six months" / "One month", sentence case, for the invitation lines. */
+function monthsPhrase(n: number): string {
+  const w = numberWord(n);
+  return `${w.charAt(0).toUpperCase()}${w.slice(1)} month${n === 1 ? "" : "s"}`;
+}
+
+// Portal cards for six published or upcoming playbooks (public/join/playbooks).
+const PLAYBOOK_CARDS = [
+  { src: "/join/playbooks/gary-9-kpis.jpg", alt: "Gary Takacs playbook, The 9 KPIs That Drive Your Practice" },
+  { src: "/join/playbooks/laura-finger-pointing.jpg", alt: "Laura Webber playbook, Where the Finger Pointing Stops" },
+  { src: "/join/playbooks/danielle-insurance-secondary.jpg", alt: "Danielle Kramer playbook, Make Insurance Secondary" },
+  { src: "/join/playbooks/debra-nobody-walks-in-ready.jpg", alt: "Debra Engelhardt-Nash playbook, Nobody Walks In Ready" },
+  { src: "/join/playbooks/devon-process-comes-first.jpg", alt: "DeVon Banks playbook, The Process Comes First" },
+  { src: "/join/playbooks/makkar-hidden-in-plain-sight.jpg", alt: "Dr. Parul Dua Makkar playbook, Hidden in Plain Sight" },
+];
+
+const MEMBERSHIP_TILES: { kicker: string; title: string; text: string; chip?: string }[] = [
+  {
+    kicker: "Learn",
+    title: "Practice Playbooks",
+    text: "A growing library. Each one turns an expert's session into a training video, a guide, a checklist, a worksheet and a wall poster.",
+  },
+  {
+    kicker: "Run",
+    title: "SOPs and templates",
+    text: "Procedures written from an expert's own process and approved by them, so a front desk or a treatment coordinator can run them on Monday.",
+  },
+  {
+    kicker: "Measure",
+    title: "Tools and calculators",
+    text: "Fill-in tools for the numbers a practice lives on: overhead, KPIs, fee and scheduling maths.",
+  },
+  {
+    kicker: "Find",
+    title: "Expert directory",
+    text: "Vetted experts with a booking link on every profile. Beacon names the right one for your question.",
+  },
+  {
+    kicker: "Save",
+    title: "Partner offers",
+    text: "Companies vetted by the team behind the Thriving Dentist Show, with offers only members get.",
+  },
+  {
+    kicker: "Listen",
+    title: "Chairside, the podcast",
+    chip: "Episode one: DeVon Banks",
+    text: "Our members-only podcast with the experts in the network. The first episode is booked. A short piece of each one is public; the full episode is yours.",
+  },
+];
+
+function SectionHead({ title, sub }: { title: string; sub: string }) {
+  return (
+    <Stack direction={{ xs: "column", md: "row" }} sx={{ alignItems: { md: "baseline" }, gap: { xs: 0.5, md: 1.75 }, mb: 2.25 }}>
+      <Typography component="h2" sx={{ fontFamily: "var(--font-display)", fontSize: { xs: "1.5rem", md: "1.7rem" }, fontWeight: 600, color: INK, lineHeight: 1.2 }}>
+        {title}
+      </Typography>
+      <Typography sx={{ fontSize: "0.9rem", color: MUTED, lineHeight: 1.5 }}>{sub}</Typography>
+    </Stack>
+  );
+}
+
+function Tile({ kicker, title, chip, children }: { kicker: string; title: string; chip?: string; children: React.ReactNode }) {
+  return (
+    <Box
+      sx={{
+        bgcolor: "#FFFFFF",
+        border: `1px solid ${LINE}`,
+        borderRadius: "16px",
+        p: { xs: 2.25, md: 2.5 },
+        display: "flex",
+        flexDirection: "column",
+        gap: 1.1,
+        minWidth: 0,
+      }}
+    >
+      <Typography sx={kickerSx}>{kicker}</Typography>
+      <Stack direction="row" sx={{ alignItems: "center", flexWrap: "wrap", gap: 1 }}>
+        <Typography component="h3" sx={{ fontFamily: "var(--font-display)", fontSize: "1.18rem", fontWeight: 600, color: INK, lineHeight: 1.2 }}>
+          {title}
+        </Typography>
+        {chip && (
+          <Box component="span" sx={{ fontSize: "0.72rem", fontWeight: 700, px: 1.1, py: 0.35, borderRadius: 999, bgcolor: "rgba(217,168,75,0.16)", color: GOLD_DARK }}>
+            {chip}
+          </Box>
+        )}
+      </Stack>
+      {children}
+    </Box>
+  );
+}
+
+function TileText({ children }: { children: React.ReactNode }) {
+  return <Typography sx={{ fontSize: "0.86rem", color: "#3B4A55", lineHeight: 1.55 }}>{children}</Typography>;
+}
+
 /** Avatar for the referring expert (headshot) or partner (logo), with an
- *  initials fallback. Plain <img> — these are user-supplied URLs, so we
+ *  initials fallback. Plain <img>: these are user-supplied URLs, so we
  *  deliberately skip the Next image optimizer. */
 function RefAvatar({ ctx, size }: { ctx: RefContext; size: number }) {
   if (ctx.imageUrl) {
@@ -594,7 +988,7 @@ function RefAvatar({ ctx, size }: { ctx: RefContext; size: number }) {
           objectFit: ctx.kind === "expert" ? "cover" : "contain",
           objectPosition: "center top",
           bgcolor: "#FFFFFF",
-          border: "1px solid #E6DDCF",
+          border: `1px solid ${LINE}`,
           flexShrink: 0,
         }}
       />
@@ -608,7 +1002,7 @@ function RefAvatar({ ctx, size }: { ctx: RefContext; size: number }) {
         borderRadius: "50%",
         bgcolor: "rgba(217,168,75,0.18)",
         border: "1px solid rgba(217,168,75,0.5)",
-        color: "#9B7B3A",
+        color: GOLD_DARK,
         display: "grid",
         placeItems: "center",
         fontSize: size * 0.38,
@@ -617,154 +1011,6 @@ function RefAvatar({ ctx, size }: { ctx: RefContext; size: number }) {
       }}
     >
       {initialsOf(ctx.name)}
-    </Box>
-  );
-}
-
-/** The personalized invitation block shown above step 1 when someone
- *  arrives through a referral link. The "months free" promise renders
- *  ONLY while the owner's promo code is actually active. */
-function InvitationHeader({ ctx }: { ctx: RefContext }) {
-  const short = shortNameOf(ctx);
-  const benefits = [
-    { icon: MessageCircle, title: "Get practical answers", sub: "The expert hotline — a written answer within 2 to 3 working days." },
-    { icon: Search, title: "Find trusted help", sub: "The expert directory and the company directory, curated by the team." },
-    { icon: Tag, title: "Access member savings", sub: "Member-only offers from vetted partner companies." },
-    { icon: BookOpen, title: "Done-for-you resources", sub: "A growing library of Practice Playbooks — action guide, checklist, worksheet, video." },
-  ];
-  return (
-    <Box sx={{ mb: 4 }}>
-      <Typography
-        sx={{ color: "#9B7B3A", fontSize: "0.72rem", fontWeight: 800, letterSpacing: "0.18em", textTransform: "uppercase", mb: 1 }}
-      >
-        {ctx.kind === "team" ? "Your invitation" : `${ctx.name} invitation`}
-      </Typography>
-      <Typography
-        component="p"
-        sx={{
-          fontFamily: "var(--font-display)",
-          fontSize: { xs: "1.7rem", md: "2rem" },
-          fontWeight: 500,
-          color: "#0A1A2F",
-          letterSpacing: "-0.02em",
-          lineHeight: 1.12,
-          mb: 2,
-        }}
-      >
-        {ctx.offerActive
-          ? `${ctx.offerMonths} month${ctx.offerMonths === 1 ? "" : "s"} free for your practice.`
-          : "You've been personally invited."}
-      </Typography>
-      <Typography sx={{ fontSize: "0.92rem", color: "#5C6770", lineHeight: 1.6, mb: 2.5, mt: -1 }}>
-        One place to find practical answers, trusted resources, and the right expert when your
-        practice is stuck.
-      </Typography>
-
-      {/* Recommended-by card */}
-      <Stack
-        direction="row"
-        spacing={1.75}
-        sx={{
-          alignItems: "center",
-          p: 2,
-          borderRadius: 2.5,
-          bgcolor: "#FFFFFF",
-          border: "1px solid #E6DDCF",
-          mb: ctx.offerActive ? 1.5 : 2.5,
-        }}
-      >
-        <RefAvatar ctx={ctx} size={52} />
-        <Box sx={{ minWidth: 0 }}>
-          <Typography sx={{ fontSize: "0.95rem", fontWeight: 700, color: "#0A1A2F", lineHeight: 1.3 }}>
-            {ctx.kind === "team" ? "A gift from the Dental Member Network team" : `Recommended by ${ctx.name}`}
-          </Typography>
-          {ctx.tagline && (
-            <Typography sx={{ fontSize: "0.82rem", color: "#5C6770", mt: 0.25 }} noWrap>
-              {ctx.tagline}
-            </Typography>
-          )}
-          {ctx.pairedName && (
-            <Typography sx={{ fontSize: "0.8rem", color: "#9B7B3A", fontWeight: 700, mt: 0.25 }} noWrap>
-              {ctx.kind === "expert" ? ctx.pairedName : `with ${ctx.pairedName}`}
-            </Typography>
-          )}
-        </Box>
-      </Stack>
-
-      {/* Offer recognition note — only while the code is live */}
-      {ctx.offerActive && (
-        <Box
-          sx={{
-            borderLeft: "3px solid #D9A84B",
-            bgcolor: "rgba(217,168,75,0.08)",
-            borderRadius: "0 10px 10px 0",
-            px: 2,
-            py: 1.5,
-            mb: 2.5,
-          }}
-        >
-          <Typography sx={{ fontSize: "0.88rem", fontWeight: 700, color: "#0A1A2F", mb: 0.25 }}>
-            Your invitation is recognized.
-          </Typography>
-          <Typography sx={{ fontSize: "0.84rem", color: "#3B4A55", lineHeight: 1.55 }}>
-            Complete your details first — {short === "the team" ? "your" : `${short}’s`} {ctx.offerMonths}-month-free offer is applied
-            automatically and shown before you choose a plan.
-          </Typography>
-        </Box>
-      )}
-
-      {/* What membership includes */}
-      <Typography sx={{ fontSize: "0.95rem", fontWeight: 700, color: "#0A1A2F", mb: 1.25 }}>
-        Everything your practice can use
-      </Typography>
-      <Stack spacing={1.25} sx={{ mb: 2 }}>
-        {benefits.map(({ icon: Icon, title, sub }) => (
-          <Stack key={title} direction="row" spacing={1.5} sx={{ alignItems: "flex-start" }}>
-            <Box
-              sx={{
-                width: 28,
-                height: 28,
-                borderRadius: "50%",
-                bgcolor: "rgba(217,168,75,0.12)",
-                display: "grid",
-                placeItems: "center",
-                flexShrink: 0,
-                mt: 0.2,
-              }}
-            >
-              <Icon size={14} color="#9B7B3A" />
-            </Box>
-            <Box>
-              <Typography sx={{ fontSize: "0.88rem", fontWeight: 700, color: "#0A1A2F", lineHeight: 1.35 }}>
-                {title}
-              </Typography>
-              <Typography sx={{ fontSize: "0.8rem", color: "#5C6770", lineHeight: 1.5 }}>{sub}</Typography>
-            </Box>
-          </Stack>
-        ))}
-      </Stack>
-      <Box
-        component={Link}
-        href="/#tour"
-        target="_blank"
-        rel="noopener"
-        sx={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 0.75,
-          fontSize: "0.84rem",
-          fontWeight: 700,
-          color: "#9B7B3A",
-          textDecoration: "none",
-          borderBottom: "1px dashed rgba(155,123,58,0.5)",
-          pb: "1px",
-          mb: 1,
-          "&:hover": { color: "#0A1A2F" },
-        }}
-      >
-        <Play size={13} />
-        See what membership includes — watch the 2-minute tour
-      </Box>
     </Box>
   );
 }

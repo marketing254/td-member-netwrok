@@ -77,6 +77,169 @@ export const BLOG_INDEX_STANDFIRST =
 
 /** Launch order per the build brief: Gary → Ashley → James. */
 export const BLOG_ARTICLES: BlogArticle[] = [
+  // ── Week 5 · article 1 (approved 2026-09-23; published 2026-09-23) ─────
+  {
+    slug: "dental-block-scheduling",
+    title: "Dental Block Scheduling: How to Build a Day That Works",
+    metaTitle: "Dental Block Scheduling: Build a Better Day | DMN",
+    metaDescription:
+      "Use Gary Takacs's approach to dental block scheduling: set a daily goal, protect treatment time, plan for emergencies, and give the schedule a clear owner.",
+    excerpt:
+      "Use Gary Takacs's approach to dental block scheduling: set a daily goal, protect treatment time, plan for emergencies, and give the schedule a clear owner.",
+    category: "Practice Management",
+    dek: "A full appointment book is not the same as a well-designed day. Gary Takacs's scheduling framework helps dental teams give different types of care the time and attention they need.",
+    expert: {
+      name: "Gary Takacs",
+      role: "Founder, Thriving Dentist",
+      headshotUrl:
+        "https://jbntnrtnaqigsyzgvuyv.supabase.co/storage/v1/object/public/kit-thumbnails/profiles/gary-takacs-headshot.jpg",
+      profileHref: "/experts/ecf8bd07-66e7-48f9-b002-b1b33adb2548",
+    },
+    kitSlug: "scheduling-for-profitability",
+    hero: {
+      src: "/blog/gary-scheduling-kit-hero.jpg",
+      alt: "Scheduling for Profitability Practice Playbook featuring Gary Takacs",
+    },
+    readTime: "5 minute read",
+    datePublished: "2026-09-23",
+    dateModified: "2026-09-23",
+    quickAnswer:
+      "Dental block scheduling means reserving parts of the day for defined appointment types instead of filling every opening in the order patients call. Start with a realistic daily production goal, plan treatment blocks around your team's capacity, leave room for emergencies, and give one scheduling coordinator responsibility for keeping the plan useful.",
+    body: [
+      {
+        kind: "p",
+        lead: true,
+        text: "*Expert guidance from Gary Takacs, based on the DMN Practice Playbook, Scheduling for Profitability.*",
+      },
+      {
+        kind: "p",
+        text: "The purpose is not to push more treatment into less time. It is to make the day more deliberate without losing sight of patient needs.",
+      },
+      { kind: "h2", id: "full-schedule", text: "Why a full schedule can still feel unmanageable", toc: "Why a full schedule still struggles" },
+      {
+        kind: "p",
+        text: "Imagine a day with no obvious gaps. Several appointments need the dentist at the same time, an emergency has nowhere to go, and a longer procedure has been squeezed into whatever space remained.",
+      },
+      { kind: "p", text: "The calendar looks busy. The team still has to solve the day as it happens." },
+      {
+        kind: "p",
+        text: "Gary's *Scheduling for Profitability* Playbook starts with a different question: what should this day be designed to deliver? That includes a production target, a planned mix of appointments and someone who owns the schedule.",
+      },
+      {
+        kind: "p",
+        text: "If your main problem is empty hygiene time, our guide to **[filling open hygiene appointments](/blog/fill-open-hygiene-appointments)** focuses on that specific gap. Block scheduling looks at how the whole day fits together.",
+      },
+      { kind: "h2", id: "daily-target", text: "Start with a target the team understands", toc: "A target the team understands" },
+      {
+        kind: "p",
+        text: "Gary's starting calculation is simple: divide the annual production goal by the number of working days to establish a daily target.",
+      },
+      {
+        kind: "p",
+        text: "Use that number as a planning reference, not a reason to recommend unnecessary care or shorten appointments below what the clinician needs. A schedule still has to fit the actual team, treatment rooms and care being provided.",
+      },
+      {
+        kind: "p",
+        text: "Ask the scheduling coordinator to explain tomorrow's plan. Does the booked work fit the intended day? Where is the plan vulnerable? What needs the dentist's decision?",
+      },
+      { kind: "p", text: "A number on a dashboard is not much help if nobody knows what to do with it." },
+      { kind: "h2", id: "appointment-blocks", text: "Give appointment types a deliberate place", toc: "Give appointment types a place" },
+      {
+        kind: "p",
+        text: "Gary's Playbook illustrates a day with higher-production procedures in the morning, shorter appointments and emergency capacity around midday, and follow-ups later.",
+      },
+      {
+        kind: "p",
+        text: "Treat that as a starting pattern, not a universal timetable. The right arrangement depends on your clinician's working preferences, your staffing and the appointment lengths your practice actually needs.",
+      },
+      { kind: "p", text: "For each block, agree on:" },
+      {
+        kind: "ul",
+        items: [
+          "Which appointment types belong there.",
+          "How much time the team needs.",
+          "Who can approve a change when the planned appointment does not fit.",
+        ],
+      },
+      {
+        kind: "p",
+        text: "These are practical planning prompts for applying the framework. They are not a rigid template that every practice must follow.",
+      },
+      { kind: "h2", id: "emergencies", text: "Plan for emergencies before one arrives", toc: "Plan for emergencies" },
+      {
+        kind: "p",
+        text: "An emergency should not force the front desk to invent a solution with a patient waiting on the phone.",
+      },
+      {
+        kind: "p",
+        text: "Gary recommends protecting emergency capacity and using a short-call list when that capacity can be released. Your practice should decide when unused time may be offered to another patient and who makes that decision.",
+      },
+      {
+        kind: "p",
+        text: "Clinical urgency belongs with the clinical team. A reserved slot is a scheduling tool, not a substitute for triage.",
+      },
+      {
+        kind: "p",
+        text: "At the **[dental morning huddle](/blog/dental-morning-huddle-agenda)**, identify the day's pressure points and confirm where the team can respond if the plan changes.",
+      },
+      { kind: "h2", id: "ownership", text: "Give one person ownership, with support", toc: "One owner, with support" },
+      {
+        kind: "p",
+        text: "Gary gives the scheduling coordinator responsibility for the daily target, short-call list, cancellations and pre-appointments.",
+      },
+      {
+        kind: "p",
+        text: "Ownership does not mean doing everything alone. It means the team knows who is checking the plan and where an unresolved scheduling question goes.",
+      },
+      {
+        kind: "p",
+        text: "For example, if a longer procedure cannot fit into the available block, the coordinator should have a clear route to the dentist. If a cancellation creates an opening, someone needs time to work the short-call list.",
+      },
+      { kind: "p", text: "An owner without time or decision support is only a name beside a task." },
+      { kind: "h2", id: "review", text: "Review the design, not just the empty spaces", toc: "Review the design" },
+      { kind: "p", text: "Start by testing a manageable version of the template. At the end of the day, ask:" },
+      {
+        kind: "ul",
+        items: [
+          "Which appointments fitted the time reserved?",
+          "Where did the team need to override the plan?",
+          "Did emergency capacity help?",
+          "What should change before the next similar day?",
+        ],
+      },
+      {
+        kind: "p",
+        text: "This review is an editorial application of Gary's approach. It turns the schedule into a process the team can improve, rather than a pattern it must defend even when it is not working.",
+      },
+    ],
+    faqs: [
+      {
+        q: "What is dental block scheduling?",
+        a: "It is a way of reserving time for specific appointment types so the day is built intentionally around care needs, team capacity and practice goals.",
+      },
+      {
+        q: "Does every dental practice need the same block template?",
+        a: "No. Gary provides a starting pattern, but appointment lengths, provider availability, emergency demand and staffing should shape the practice's own version.",
+      },
+      {
+        q: "Who should manage a dental block schedule?",
+        a: "A named scheduling coordinator should own the process, with clear support from the dentist and the rest of the team when a decision or exception is needed.",
+      },
+    ],
+    takeaway: {
+      eyebrow: "The takeaway",
+      title: "Design the day, then improve it.",
+      body: "Set a daily target the team understands, give each appointment type a deliberate place, protect emergency capacity, and make one coordinator responsible with support. Review what fitted at the end of the day and adjust before the next one.",
+    },
+    kitCta: {
+      kitName: "Scheduling for Profitability",
+      description:
+        "Available inside Dental Member Network. Its implementation worksheet gives your team a place to record the daily target, block schedule, emergency capacity, confirmation sequence and scheduling owner.",
+      support: "Gary's invitation includes three months free with code **GARY**.",
+      href: "/garytakacs",
+      label: "Join Dental Member Network",
+    },
+  },
   // ── Week 4 · article 3 (approved 2026-09-17; release 2026-09-18) ─────
   {
     slug: "train-new-dental-team-member",

@@ -75,7 +75,14 @@ export default async function BlogArticlePage({
         datePublished: article.datePublished,
         dateModified: article.dateModified,
         inLanguage: "en-US",
+        // DMN editorial team writes the article; the expert's guidance is
+        // the source. Never mark the expert as author (brief rule).
         author: {
+          "@type": "Organization",
+          name: "Dental Member Network editorial team",
+          url: SITE,
+        },
+        mentions: {
           "@type": "Person",
           name: article.expert.name,
           jobTitle: article.expert.role,

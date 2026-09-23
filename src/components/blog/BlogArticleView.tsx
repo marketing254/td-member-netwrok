@@ -574,7 +574,7 @@ export default function BlogArticleView({
                     mb: 1.25,
                   }}
                 >
-                  Get the complete {article.kitCta.kitName} resource kit.
+                  Get the complete {article.kitCta.kitName} Practice Playbook.
                 </Typography>
                 <Typography sx={{ fontSize: "0.92rem", color: "rgba(246,241,231,0.82)", lineHeight: 1.65, mb: 2.5 }}>
                   {article.kitCta.description}
