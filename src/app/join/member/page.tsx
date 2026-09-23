@@ -1,6 +1,10 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import MemberSignupFlow, { type SignupPrefill } from "@/components/join/MemberSignupFlow";
+import MemberSignupFlow, { type LatestJob, type SignupPrefill } from "@/components/join/MemberSignupFlow";
+import { getSupabaseAdmin } from "@/lib/supabase/server";
+import { quoteFor } from "@/lib/referrerQuotes";
+import { employmentLabel, roleLabel } from "@/lib/jobs/constants";
+import { formatPay } from "@/lib/jobs/format";
 import { getPromoContext, getReferralContext, type RefContext } from "@/lib/referralContext";
 import { resolveResumeToken } from "@/lib/abandoned";
 
@@ -8,10 +12,37 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Start your membership — Dental Member Network",
+  title: "Start your membership | Dental Member Network",
   description:
     "Three short steps to join the Dental Member Network: the expert helpline, partner savings, and the full Practice Playbook library.",
 };
+
+/** Newest live job-board listing, shown in the membership tiles on the
+ *  referral page. Null until the board has its first live post, and on
+ *  any error, so the page never fails because of the board. */
+async function loadLatestJob(): Promise<LatestJob | null> {
+  try {
+    const { data } = await getSupabaseAdmin()
+      .from("job_posts")
+      .select("role, role_other, employment_type, practice_name, location, pay_min, pay_max, pay_unit")
+      .eq("status", "live")
+      .order("approved_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!data) return null;
+    const pay =
+      data.pay_min === null || data.pay_max === null
+        ? "Pay on the listing"
+        : formatPay(data.pay_min, data.pay_max, data.pay_unit);
+    return {
+      title: `${roleLabel(data.role, data.role_other)}, ${employmentLabel(data.employment_type).toLowerCase()}`,
+      where: `${data.practice_name}, ${data.location}`,
+      pay,
+    };
+  } catch {
+    return null;
+  }
+}
 
 /**
  * /join/member — the streamlined Netflix-style member signup.
@@ -70,10 +101,13 @@ export default async function JoinMemberPage({
     }
   }
 
+  const latestJob = refCtx ? await loadLatestJob() : null;
+  const quote = refCtx && refCtx.kind !== "team" ? quoteFor(refCtx.name) : null;
+
   return (
-    // Suspense boundary required — the flow reads useSearchParams().
+    // Suspense boundary required: the flow reads useSearchParams().
     <Suspense fallback={null}>
-      <MemberSignupFlow refCtx={refCtx} prefill={prefill} />
+      <MemberSignupFlow refCtx={refCtx} prefill={prefill} latestJob={latestJob} quote={quote} />
     </Suspense>
   );
 }
