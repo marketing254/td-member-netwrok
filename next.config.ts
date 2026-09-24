@@ -27,7 +27,7 @@ const nextConfig: NextConfig = {
   // from node_modules at runtime, not bundled/tree-shaken by Next — same
   // for puppeteer-core's native bits. Without this, PDF generation can
   // fail on Vercel even when `next build` succeeds locally.
-  serverExternalPackages: ["@sparticuz/chromium", "puppeteer-core"],
+  serverExternalPackages: ["@sparticuz/chromium", "puppeteer-core", "pdfjs-dist"],
   // Next's file tracer can't see that @sparticuz/chromium reaches into
   // its own bin/ folder for the actual browser binary at runtime, so it
   // silently drops those files from the deployed function unless we

@@ -1010,7 +1010,7 @@ export default function AdsLandingView() {
                     <Typography sx={{ fontSize: "0.66rem", color: MUTED }}>Secured by Stripe</Typography>
                   </Stack>
                   <Typography sx={{ fontSize: "0.78rem", color: MUTED, mb: 2 }}>
-                    Card, Apple Pay and Link open in Stripe’s secure payment window on this page after you continue. Card details are entered with Stripe only. They never touch our servers.
+                    Handled by Stripe on this page after you continue. Nothing you enter for payment touches our servers.
                   </Typography>
 
                   <Stack direction="row" spacing={1.25} sx={{ alignItems: "flex-start", my: 2.25 }}>

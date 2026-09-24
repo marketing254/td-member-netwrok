@@ -801,6 +801,34 @@ export type MemberInquiriesRow = {
   updated_at: string;
 };
 
+export type ToolRunsRow = {
+  id: string;
+  member_id: string;
+  tool: "second_opinion" | "found_money";
+  status: "processing" | "done" | "failed";
+  file_name: string;
+  file_path: string;
+  file_mime: string;
+  file_size_bytes: number;
+  extracted_chars: number | null;
+  result: Record<string, unknown> | null;
+  error: string | null;
+  model: string | null;
+  share_to_pool: boolean;
+  created_at: string;
+  completed_at: string | null;
+};
+
+export type ToolVendorPoolRow = {
+  id: string;
+  tool: "second_opinion" | "found_money";
+  vendor: string;
+  category: string;
+  price_band: string;
+  practice_size_band: string;
+  run_date: string;
+};
+
 export type PostReactionsRow = {
   id: string;
   post_id: string;
@@ -1112,6 +1140,8 @@ export type Database = {
       expert_posts: Table<ExpertPostsRow>;
       profile_spotlights: Table<ProfileSpotlightsRow>;
       member_inquiries: Table<MemberInquiriesRow>;
+      tool_runs: Table<ToolRunsRow>;
+      tool_vendor_pool: Table<ToolVendorPoolRow>;
       invite_links: Table<InviteLinksRow>;
       post_reactions: Table<PostReactionsRow>;
       post_comments: Table<PostCommentsRow>;

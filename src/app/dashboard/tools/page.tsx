@@ -21,6 +21,7 @@ import HealthAndSafetyOutlinedIcon from "@mui/icons-material/HealthAndSafetyOutl
 import SupportAgentOutlinedIcon from "@mui/icons-material/SupportAgentOutlined";
 import MedicalServicesOutlinedIcon from "@mui/icons-material/MedicalServicesOutlined";
 import CalculateOutlinedIcon from "@mui/icons-material/CalculateOutlined";
+import GavelOutlinedIcon from "@mui/icons-material/GavelOutlined";
 import { MEMBER_TOOLS, TOOL_CATEGORIES, type MemberTool } from "@/lib/toolsData";
 
 /* A restrained, professional palette — neutral surfaces, one gold accent. */
@@ -120,6 +121,40 @@ export default function MemberToolsPage() {
           sx={{ width: { xs: "100%", md: 260 }, "& .MuiOutlinedInput-root": { borderRadius: 2, fontSize: "0.9rem", bgcolor: "#FFFFFF", "& fieldset": { borderColor: LINE } } }}
         />
       </Stack>
+
+      {/* Reading tool: Second Opinion (and Found Money, next). Sits above the calculators. */}
+      <Box
+        component={Link}
+        href="/dashboard/tools/second-opinion"
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 2,
+          mb: 3.5,
+          p: { xs: 2.25, md: 2.75 },
+          bgcolor: "#FFFFFF",
+          border: `1px solid ${LINE}`,
+          borderLeft: `4px solid ${GOLD}`,
+          borderRadius: 2.5,
+          textDecoration: "none",
+          transition: "box-shadow 150ms",
+          "&:hover": { boxShadow: "0 10px 30px -18px rgba(26,34,48,0.3)" },
+        }}
+      >
+        <Box sx={{ width: 44, height: 44, borderRadius: "50%", bgcolor: "rgba(160,120,35,0.12)", color: GOLD, display: "grid", placeItems: "center", flexShrink: 0 }}>
+          <GavelOutlinedIcon sx={{ fontSize: 22 }} />
+        </Box>
+        <Box sx={{ minWidth: 0, flex: 1 }}>
+          <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap" }}>
+            <Typography sx={{ fontWeight: 700, color: INK, fontSize: "1.02rem" }}>Second Opinion</Typography>
+            <Box component="span" sx={{ fontSize: "0.64rem", fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", px: 0.9, py: 0.3, borderRadius: 999, bgcolor: "rgba(160,120,35,0.12)", color: GOLD }}>New</Box>
+          </Stack>
+          <Typography sx={{ fontSize: "0.88rem", color: INK_SOFT, mt: 0.25, lineHeight: 1.5 }}>
+            Upload a quote, proposal, contract or renewal before you sign it. Facts from the document, what our experts notice, and what we would do. In minutes.
+          </Typography>
+        </Box>
+        <NorthEastRoundedIcon sx={{ fontSize: 18, color: INK_MUTED, flexShrink: 0, display: { xs: "none", sm: "block" } }} />
+      </Box>
 
       {/* Two-pane: category rail + tool list */}
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "212px 1fr" }, gap: { xs: 2, md: 4 }, alignItems: "start" }}>

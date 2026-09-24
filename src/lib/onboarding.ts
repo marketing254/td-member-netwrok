@@ -458,8 +458,8 @@ months end soon.</p>
   <div style="font-size:13px;color:#3B4A55;margin-top:6px;">Your founding rate — locked for life, even when the price rises for everyone else.</div>
 </div>
 
-<p style="margin:0 0 14px;">If you're staying, there's nothing to do — your card on file will be
-charged on that date and nothing changes in your portal.</p>
+<p style="margin:0 0 14px;">If you're staying, there's nothing to do. Your first payment goes
+through on that date and nothing changes in your portal.</p>
 
 <p style="margin:0 0 18px;">If you'd rather not continue, cancel any time before then from the
 billing section of your portal, or just reply to this email and we'll take care of it — you won't
