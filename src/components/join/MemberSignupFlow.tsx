@@ -499,8 +499,8 @@ export default function MemberSignupFlow({
           step === 0 && (
             <Typography sx={{ mt: 2, fontSize: "0.8rem", color: SOFT, textAlign: "center", lineHeight: 1.55 }}>
               {offerN > 0
-                ? `A card goes on file at step 3. Nothing is charged until month ${numberWord(offerN + 1)}, and we remind you twice before that.`
-                : "No payment on this page. You choose your plan after step 3."}
+                ? `${monthsPhrase(offerN)} free. Nothing charged until month ${numberWord(offerN + 1)}, and we'll remind you twice before then.`
+                : "Nothing charged on this page. You pick your plan after step 3."}
             </Typography>
           )
         ) : (
@@ -557,15 +557,16 @@ export default function MemberSignupFlow({
     refCtx.kind === "team"
       ? `A gift from the Dental Member Network team.${offerN > 0 ? ` ${monthsPhrase(offerN)} free, already applied.` : ""}`
       : `Invited by ${refCtx.name}.${offerN > 0 ? ` ${monthsPhrase(offerN)} free, already applied.` : ""}`;
+  // Two steps, per Lester (24 September): never narrate the payment step
+  // in marketing copy. The dates stay exact; only the mechanism is unnamed.
   const howItWorks = [
     { title: "Your details", text: "Name, email and your practice. About a minute." },
-    { title: "Card on file", text: "Added at step 3. Nothing is charged today." },
     {
-      title: offerN > 0 ? `${monthsPhrase(offerN)} free` : "Your portal opens",
+      title: "You're in",
       text:
         offerN > 0
-          ? `Everything unlocks now. $49 a month starts in month ${numberWord(offerN + 1)}.`
-          : "Everything unlocks as soon as payment is confirmed.",
+          ? `Everything unlocks now. First payment in month ${numberWord(offerN + 1)}.`
+          : "Everything unlocks as soon as you pick a plan.",
     },
   ];
   const heroPoints = [
@@ -639,9 +640,9 @@ export default function MemberSignupFlow({
               sx={{
                 mt: { xs: 3, md: 4 },
                 display: "grid",
-                gridTemplateColumns: { xs: "minmax(0, 1fr)", sm: "repeat(3, minmax(0, 1fr))" },
+                gridTemplateColumns: { xs: "minmax(0, 1fr)", sm: "repeat(2, minmax(0, 1fr))" },
                 gap: { xs: 1.25, sm: 1.5 },
-                maxWidth: 620,
+                maxWidth: 560,
               }}
             >
               {howItWorks.map((h, i) => (

@@ -328,8 +328,8 @@ export default function JoinApplicationForm({
       )}
 
       <Typography sx={{ fontSize: "0.78rem", color: COLORS.muted, mt: 2, textAlign: "center" }}>
-        No card required today · Team review within 2 business days · You&apos;ll add your
-        card in the portal after we approve
+        Nothing to pay today · Team review within 2 business days · Your free trial starts
+        in the portal after we approve
       </Typography>
     </Box>
   );

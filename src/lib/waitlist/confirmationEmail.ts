@@ -638,7 +638,7 @@ function buildVendorApprovalEmail({
     <li>Add your first catalog items — services, products, or courses.</li>
     <li>Attach member offers (discounts, bonuses) to each item.</li>
     <li>Upload your logo, spec sheets, and any supporting documents.</li>
-    <li>The first 6 months are on us — you'll add a payment method ahead of month 7.</li>
+    <li>The first 6 months are on us. Your first payment is in month 7, and we'll remind you before then.</li>
   </ul>
   <p style="font-size:13px;line-height:1.65;color:${BRAND.inkMute};margin:32px 0 0;">
     Questions? Reply to this email and our partnerships team will get back to you.
@@ -657,7 +657,7 @@ What's next:
 - Add your first catalog items (services, products, courses)
 - Attach member offers to each item
 - Upload your logo and supporting documents
-- The first 6 months are on us — you'll add a payment method ahead of month 7
+- The first 6 months are on us. Your first payment is in month 7, and we'll remind you before then
 
 Questions? Reply to this email.`;
   return { subject, html, text, replyTo: PARTNERSHIPS_EMAIL };

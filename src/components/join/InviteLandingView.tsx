@@ -90,14 +90,14 @@ export default function InviteLandingView({
                     Your {roleLabel.toLowerCase()} profile
                     {companyName ? <> for <Box component="strong">{companyName}</Box></> : null}
                     {cardRequired
-                      ? " is ready in the Dental Member Network. Accept the standard agreement below, then sign in — you'll add your card in the portal to activate your free trial."
+                      ? " is ready in the Dental Member Network. Accept the standard agreement below, then sign in to start your free trial in the portal."
                       : " is ready in the Dental Member Network. Accept the standard agreement below, then sign in — your billing is already set up, so the portal is one login away."}
                   </>
                 ) : (
                   <>
                     We&apos;d love to have {companyName ? <Box component="strong">{companyName}</Box> : "you"} in the Dental
                     Member Network as a {roleLabel.toLowerCase()}. We&apos;ve pre-filled your details — review the standard
-                    agreement, confirm, and the team takes it from there. You&apos;ll add your card in the portal once approved.
+                    agreement, confirm, and the team takes it from there. Your free trial starts in the portal once approved.
                   </>
                 )}
               </Typography>
@@ -170,7 +170,7 @@ function ProfileAcceptCard({ kind, code, loginHref, cardRequired = true }: { kin
         </Typography>
         <Typography sx={{ color: COLORS.inkSoft, fontSize: "0.95rem", lineHeight: 1.6, mb: 2.5 }}>
           {cardRequired
-            ? "Next step: sign in with your email — a 6-digit code, no password. Inside the portal you'll add your card to activate your free trial (nothing is charged today)."
+            ? "Next step: sign in with your email, a 6-digit code, no password. Your free trial starts inside the portal. Nothing is charged today."
             : "Next step: sign in with your email — a 6-digit code, no password. Your billing is already set up, so you're straight into the portal."}
         </Typography>
         <Button component={Link} href={loginHref} variant="contained" endIcon={<ArrowForwardRoundedIcon />}
@@ -217,7 +217,7 @@ function ProfileAcceptCard({ kind, code, loginHref, cardRequired = true }: { kin
       {error && <Alert severity="error" sx={{ mt: 2, fontSize: "0.82rem" }}>{error}</Alert>}
       <Typography sx={{ fontSize: "0.78rem", color: COLORS.muted, mt: 2, textAlign: "center" }}>
         {cardRequired
-          ? "No card needed on this page · You'll add it inside the portal to start your free trial"
+          ? "Nothing to pay on this page · Your free trial starts inside the portal"
           : "Nothing to pay here — your billing is already in place"}
       </Typography>
     </Box>

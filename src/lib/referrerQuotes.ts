@@ -13,6 +13,13 @@ export type ReferrerQuote = {
 };
 
 export const REFERRER_QUOTES: Record<string, ReferrerQuote> = {
+  // Drafted from Gary's own directory bio, 24 September 2026. Replace with
+  // his approved wording when it arrives.
+  "Gary Takacs": {
+    quote:
+      "I started coaching because I believed dentists deserved better. After 42 years and more than 2,200 practices, that belief has not changed. The Dental Member Network is where the systems, the people and the answers a practice needs sit in one place, so you are never solving a problem on your own. Your first three months are on me.",
+    role: "Founder, Thriving Dentist. Host of the Thriving Dentist Show.",
+  },
   "Naren Arulrajah": {
     quote:
       "Working with dental practices, I see how often an owner or a team member has a question and no obvious place to take it. A staffing problem, a process that leaks money, a decision about growing. We built the Dental Member Network to be that place: one dependable spot for practical answers, useful tools, and people who can actually help. Your first six months are on me.",
