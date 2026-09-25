@@ -127,7 +127,9 @@ export default function VendorAccountPage() {
   const plan = PLAN_LABELS[vendor.plan_id ?? "founding"] ?? PLAN_LABELS.founding;
   const monthsLeftInWaiver = Math.max(0, 6 - vendor.months_in_program);
   const waiverProgress = Math.min(100, (vendor.months_in_program / 6) * 100);
-  const nextBill = monthsLeftInWaiver > 0 ? "$0.00" : "$49.00";
+  const ladder = vendor.pricing_plan === "ladder";
+  const nextBill =
+    monthsLeftInWaiver > 0 ? "$0.00" : ladder && vendor.months_in_program > 12 ? "$199.00" : "$49.00";
 
   return (
     <Stack spacing={2.5}>
@@ -224,12 +226,29 @@ export default function VendorAccountPage() {
                   note="Founding waiver, applies automatically"
                   current={vendor.months_in_program <= 6}
                 />
-                <LadderRow
-                  period="Month 7 onward"
-                  price="$49/mo"
-                  note="Locked launch rate"
-                  current={vendor.months_in_program > 6}
-                />
+                {ladder ? (
+                  <>
+                    <LadderRow
+                      period="Months 7-12"
+                      price="$49/mo"
+                      note="Locked launch rate"
+                      current={vendor.months_in_program > 6 && vendor.months_in_program <= 12}
+                    />
+                    <LadderRow
+                      period="Month 13 onward"
+                      price="$199/mo"
+                      note="Standard partner rate"
+                      current={vendor.months_in_program > 12}
+                    />
+                  </>
+                ) : (
+                  <LadderRow
+                    period="Month 7 onward"
+                    price="$49/mo"
+                    note="Locked launch rate"
+                    current={vendor.months_in_program > 6}
+                  />
+                )}
               </Stack>
             </Stack>
           </SectionCard>
@@ -370,6 +389,7 @@ export default function VendorAccountPage() {
           prepareEndpoint="/api/vendor/billing/trial/prepare"
           startEndpoint="/api/vendor/billing/trial/start"
           audience="gold"
+          pricing={vendor.pricing_plan}
         />
       )}
 

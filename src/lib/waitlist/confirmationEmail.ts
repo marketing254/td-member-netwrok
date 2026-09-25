@@ -65,6 +65,10 @@ const PARTNERSHIPS_EMAIL =
 const FROM_EMAIL =
   process.env.WAITLIST_EMAIL_FROM ??
   "Dental Member Network <hello@joindmn.com>";
+/** Partner-facing emails send from the partnerships mailbox when its own
+ *  SMTP credentials (SMTP_PARTNER_*) are configured. */
+const PARTNER_FROM_EMAIL =
+  process.env.PARTNER_EMAIL_FROM ?? `Dental Member Network <${PARTNERSHIPS_EMAIL}>`;
 
 // Brand palette, used inline in the email HTML
 const BRAND = {
@@ -458,8 +462,26 @@ async function dispatchMail(args: {
   from: string;
   mail: BuiltMail;
   tag: string;
+  /** Optional dedicated mailbox (env prefix, e.g. "SMTP_PARTNER"). Tried
+   *  before the generic transport; silently skipped if not configured. */
+  mailbox?: string;
 }): Promise<{ id?: string; transport: "smtp" | "gmail" | "resend" | "log" }> {
   const { to, from, mail, tag } = args;
+
+  // 0. Dedicated mailbox for this audience (e.g. partnerships@)
+  if (args.mailbox) {
+    const h = process.env[`${args.mailbox}_HOST`];
+    const u = process.env[`${args.mailbox}_USER`];
+    const pw = process.env[`${args.mailbox}_PASS`];
+    if (h && u && pw) {
+      const port = Number(process.env[`${args.mailbox}_PORT`] ?? "465");
+      const nodemailer = (await import("nodemailer")).default;
+      const transporter = nodemailer.createTransport({ host: h, port, secure: port === 465, auth: { user: u, pass: pw } });
+      const info = await transporter.sendMail({ from, to, replyTo: mail.replyTo, subject: mail.subject, html: mail.html, text: mail.text });
+      console.info(`[${tag}] sent via ${args.mailbox} mailbox`, { to, host: h, messageId: info.messageId });
+      return { id: info.messageId, transport: "smtp" };
+    }
+  }
 
   // 1. Generic SMTP (Rackspace + most other providers)
   const smtpHost = process.env.SMTP_HOST;
@@ -565,36 +587,6 @@ export async function sendWaitlistConfirmationEmail(
 // transport stack as the waitlist confirmation; if neither is configured the
 // link is logged so a dev can copy it.
 // ─────────────────────────────────────────────────────────────────────────
-
-type VendorMagicInput = { email: string; link: string };
-
-function buildVendorMagicEmail({ link }: VendorMagicInput): { subject: string; html: string; text: string; replyTo: string } {
-  const subject = "Your partner sign-in link";
-  const safeLink = escapeHtml(link);
-  const html = `<!doctype html>
-<html><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>${escapeHtml(subject)}</title></head>
-<body style="margin:0;padding:0;background:${BRAND.creamSoft};font-family:${FONT_BODY};color:${BRAND.ink};">
-<div style="max-width:560px;margin:0 auto;padding:40px 24px;">
-  <div style="font-family:${FONT_UI};font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:${BRAND.goldDeep};font-weight:700;margin-bottom:16px;">PARTNER PORTAL</div>
-  <h1 style="font-family:${FONT_DISPLAY};font-size:28px;line-height:1.2;font-weight:500;color:${BRAND.ink};margin:0 0 16px;">Your sign-in link</h1>
-  <p style="font-size:15px;line-height:1.65;color:${BRAND.inkSoft};margin:0 0 28px;">
-    Click the button below to access your Dental Member Network partner portal. The link expires in 30 minutes for your security.
-  </p>
-  <a href="${safeLink}" style="display:inline-block;background:${BRAND.ink};color:#FFFFFF;text-decoration:none;padding:14px 28px;border-radius:999px;font-weight:600;font-size:15px;">Sign in to portal →</a>
-  <p style="font-size:13px;line-height:1.6;color:${BRAND.inkMute};margin:28px 0 0;">
-    If the button doesn't work, paste this link into your browser:<br/>
-    <span style="word-break:break-all;color:${BRAND.goldDeep};">${safeLink}</span>
-  </p>
-  <hr style="border:0;border-top:1px solid ${BRAND.line};margin:32px 0;" />
-  <p style="font-size:12px;line-height:1.6;color:${BRAND.inkMute};margin:0;">
-    Didn't request this? You can safely ignore the email — the link won't sign anyone in unless they click it from your inbox.
-  </p>
-</div>
-</body></html>`;
-  const text = `Your Dental Member Network partner sign-in link.\n\nOpen this URL to access the portal (expires in 30 minutes):\n${link}\n\nIf you didn't request this, ignore the email.`;
-  return { subject, html, text, replyTo: PARTNERSHIPS_EMAIL };
-}
 
 // ─────────────────────────────────────────────────────────────────────────
 // VENDOR APPROVAL NOTIFICATION
@@ -757,9 +749,10 @@ export async function sendVendorApprovalEmail(input: VendorApprovalInput): Promi
   const mail = buildVendorApprovalEmail(input);
   const result = await dispatchMail({
     to: input.email,
-    from: FROM_EMAIL,
+    from: PARTNER_FROM_EMAIL,
     mail,
     tag: "vendor:approval",
+    mailbox: "SMTP_PARTNER",
   });
   if (result.transport === "log") {
     return { sent: false, reason: "missing_api_key" };
@@ -767,23 +760,6 @@ export async function sendVendorApprovalEmail(input: VendorApprovalInput): Promi
   return { sent: true, id: result.id };
 }
 
-export async function sendVendorMagicLinkEmail(input: VendorMagicInput): Promise<SendResult> {
-  if (process.env.WAITLIST_EMAIL_DISABLED === "true") {
-    return { sent: false, reason: "disabled" };
-  }
-
-  const mail = buildVendorMagicEmail(input);
-  const result = await dispatchMail({
-    to: input.email,
-    from: FROM_EMAIL,
-    mail,
-    tag: "vendor:magic-link",
-  });
-  if (result.transport === "log") {
-    return { sent: false, reason: "missing_api_key" };
-  }
-  return { sent: true, id: result.id };
-}
 
 // ─────────────────────────────────────────────────────────────────────────
 // EXPERT APPLICATION CONFIRMATION
@@ -998,4 +974,19 @@ export async function sendExpertApprovalEmail(
     return { sent: false, reason: "missing_api_key" };
   }
   return { sent: true, id: result.id };
+}
+
+
+/**
+ * Renders the partner-facing emails with sample data so the team can review
+ * the exact copy partners receive. Pure rendering, nothing is sent here.
+ */
+export function buildPartnerDraftsForReview(): { name: string; subject: string; html: string; text: string; replyTo: string }[] {
+  const approval = buildVendorApprovalEmail({
+    email: "sample.partner@example.com",
+    contactName: "Sample Contact",
+    companyName: "Sample Dental Supplies Co.",
+    portalUrl: "https://www.dentalmembernetwork.com/vendor",
+  });
+  return [{ name: "Partner approved (sent when the team approves an application)", ...approval }];
 }

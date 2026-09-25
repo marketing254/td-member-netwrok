@@ -188,6 +188,10 @@ export type VendorsRow = {
   card_brand: string | null;
   card_last4: string | null;
   founding_partner_locked: boolean;
+  // Added in 0068_vendor_pricing_plan.sql. "ladder" = $49 months 7-12 then
+  // $199 from month 13 (partners who accepted that wording); "flat_49" =
+  // $49 from month 7 with no increase (everyone else).
+  pricing_plan: "flat_49" | "ladder";
   // Added in 0039_vendor_billing_parent.sql — when set, this company's
   // billing + access inherit the referenced (paying) partner vendor.
   billing_parent_id: string | null;

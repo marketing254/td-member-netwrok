@@ -77,6 +77,325 @@ export const BLOG_INDEX_STANDFIRST =
 
 /** Launch order per the build brief: Gary → Ashley → James. */
 export const BLOG_ARTICLES: BlogArticle[] = [
+  // ── Week 5 · article 3 (approved 2026-09-23; published 2026-09-25) ─────
+  {
+    slug: "dental-practice-cash-vs-profit",
+    title: "Is Your Dental Practice Profitable, or Is There Just Money in the Bank?",
+    metaTitle: "Dental Practice Cash vs. Profit: What to Check | DMN",
+    metaDescription:
+      "Laura Phillips, E.A., explains why cash and profit are different. Learn which dental practice reports to review and what to ask your accountant each month.",
+    excerpt:
+      "Laura Phillips, E.A., explains why cash and profit are different. Learn which dental practice reports to review and what to ask your accountant each month.",
+    category: "Tax & Accounting",
+    dek: "A busy schedule and a reassuring bank balance do not tell the whole financial story. Laura Phillips, E.A., helps practice owners ask better questions about production, collections and profit.",
+    expert: {
+      name: "Laura Phillips, E.A.",
+      role: "The Phillips Group, Tax & Accounting",
+      headshotUrl:
+        "https://jbntnrtnaqigsyzgvuyv.supabase.co/storage/v1/object/public/kit-thumbnails/profiles/laura-phillips-ea-headshot.jpg",
+      profileHref: "/experts/c90bc4a7-e5c7-4e42-9639-f1de985b1341",
+    },
+    kitSlug: "know-your-real-numbers",
+    hero: {
+      src: "/blog/laura-kit-hero.jpg",
+      alt: "Know Your Real Numbers Practice Playbook featuring Laura Phillips, E.A.",
+    },
+    readTime: "5 minute read",
+    datePublished: "2026-09-25",
+    dateModified: "2026-09-25",
+    quickAnswer:
+      "Money in the bank does not, by itself, prove that a dental practice is profitable. Review accurate monthly financial statements, including a profit-and-loss statement and a balance sheet, alongside production and collections reports. Laura Phillips, E.A., recommends understanding cash and profit separately and asking a qualified accounting professional to explain what the numbers mean for your practice.",
+    body: [
+      {
+        kind: "p",
+        lead: true,
+        text: "*Expert guidance from Laura Phillips, E.A., based on the DMN Practice Playbook, Know Your Real Numbers.*",
+      },
+      { kind: "p", text: "The bank balance answers an immediate question: how much cash is there?" },
+      {
+        kind: "p",
+        text: "It does not answer every question behind it. What does the practice owe? Is the money coming from profitable operations? Are expenses rising faster than the work being produced?",
+      },
+      { kind: "h2", id: "four-terms", text: "Separate production, collections, profit and cash", toc: "Production, collections, profit, cash" },
+      { kind: "p", text: "These terms often appear in the same conversation, but they are not interchangeable." },
+      {
+        kind: "ul",
+        items: [
+          "**Production** describes the value of work recorded in the practice-management system. Ask which adjustments are included in the report you use.",
+          "**Collections** describes money received. Payments may relate to care provided in an earlier period.",
+          "**Profit** is the result shown after relevant income and expenses are accounted for under the basis used in your books.",
+          "**Cash** is the money available at a point in time, which can also be affected by borrowing, repayments and other movements.",
+        ],
+      },
+      {
+        kind: "p",
+        text: "These are general explanations, not a substitute for interpreting your own accounts with your advisor.",
+      },
+      {
+        kind: "p",
+        text: "Laura's central message is that activity can hide the underlying picture. More appointments or higher production does not automatically mean more profit.",
+      },
+      {
+        kind: "p",
+        text: "Our article on **[why new-patient growth can hide a weak case-acceptance system](/blog/why-counting-new-patients-can-hide-a-broken-case-acceptance-system)** examines another version of that problem: measuring activity without checking what happens next.",
+      },
+      { kind: "h2", id: "two-statements", text: "Read the profit-and-loss statement and balance sheet together", toc: "Read both statements together" },
+      {
+        kind: "p",
+        text: "Laura's Playbook asks owners to use both statements, rather than relying on a bank balance or a once-a-year tax conversation.",
+      },
+      {
+        kind: "p",
+        text: "The profit-and-loss statement helps you examine performance over a period. The balance sheet helps you understand the financial position at a particular date, including assets and liabilities. The **[SEC's plain-language guide to financial statements](https://www.sec.gov/about/reports-publications/investorpubsbegfinstmtguide)** explains these distinctions in more detail.",
+      },
+      {
+        kind: "p",
+        text: "Ask your accountant to walk you through any gap between the profit shown and the cash you expected to have. The difference may have an explanation, but you need to understand it before making decisions.",
+      },
+      {
+        kind: "p",
+        text: "Do not assume that a positive bank balance means every upcoming obligation is covered. Equally, do not assume that a tight cash position proves the practice has no profit.",
+      },
+      { kind: "h2", id: "comparable-numbers", text: "Make the monthly numbers comparable", toc: "Make the numbers comparable" },
+      { kind: "p", text: "Laura recommends looking at collections and major expenses as percentages of production." },
+      {
+        kind: "p",
+        text: "When using that approach, confirm the definitions first. Are you using gross or adjusted production? Are the dates consistent? Does the comparison help answer the question you are asking?",
+      },
+      {
+        kind: "p",
+        text: "A collection figure from one period may include payments for earlier treatment. That is why a single month's ratio needs context.",
+      },
+      {
+        kind: "p",
+        text: "Keep the basis consistent when comparing your own results over time. If an outside benchmark uses collections rather than production as its denominator, it is not the same ratio and should not be treated as a direct comparison.",
+      },
+      {
+        kind: "p",
+        text: "The useful conversation is not just whether a number went up. It is why it changed and whether the change deserves attention.",
+      },
+      { kind: "h2", id: "busier-practice", text: "Ask what is behind a busier practice", toc: "Behind a busier practice" },
+      {
+        kind: "p",
+        text: "Suppose production rises while profit does not improve. That is a reason to investigate, not a reason to jump immediately to cutting staff or changing fees.",
+      },
+      {
+        kind: "p",
+        text: "Laura's Playbook encourages owners to review the other side of the ledger: costs, collections and whether the services or arrangements in place still make financial sense.",
+      },
+      {
+        kind: "p",
+        text: "Bring a specific question to your advisor. Which expense changed? Is it a timing issue? Is it recurring? Is the report complete and accurate?",
+      },
+      {
+        kind: "p",
+        text: "If collections are part of the concern, our guide to **[preventing dental insurance claim denials](/blog/prevent-dental-insurance-claim-denials)** covers the operational process behind one possible source of delay.",
+      },
+      { kind: "h2", id: "next-step", text: "Turn a report into one clear next step", toc: "One clear next step" },
+      { kind: "p", text: "A useful monthly review can finish with three simple notes:" },
+      {
+        kind: "ol",
+        items: [
+          { text: "What changed?" },
+          { text: "What explanation still needs checking?" },
+          { text: "Who will check it, and when will you review the answer?" },
+        ],
+      },
+      {
+        kind: "p",
+        text: "This is an editorial way to apply Laura's emphasis on regular financial clarity. It is not a new accounting standard or a promise that one review will improve profit.",
+      },
+      {
+        kind: "p",
+        text: "Her **Financial-Clarity Worksheet** brings production, collections, expenses, bank cash, reported profit and liabilities into the same review. It also asks which number you will start tracking each month.",
+      },
+      { kind: "p", text: "The value is in connecting the figures to a question you can act on." },
+    ],
+    faqs: [
+      {
+        q: "Can a dental practice have cash in the bank without being profitable?",
+        a: "Yes. Cash and profit measure different things. Borrowing and the timing of money coming in or going out can affect cash, so the balance alone is not a profitability test.",
+      },
+      {
+        q: "Which financial reports should a dental practice owner review?",
+        a: "Laura recommends accurate monthly financials, including the profit-and-loss statement and balance sheet, together with an understanding of production and collections. Ask your accounting professional which additional reports your situation needs.",
+      },
+      {
+        q: "Should I compare expenses with production or collections?",
+        a: "Laura's Playbook uses production for its review. Other reports may use collections. Confirm the definition and use a consistent basis; ratios with different denominators are not directly interchangeable.",
+      },
+    ],
+    takeaway: {
+      eyebrow: "The takeaway",
+      title: "Know what your numbers are telling you.",
+      body: "Cash and profit answer different questions. Read the profit-and-loss statement and balance sheet together, keep production and collections comparisons on a consistent basis, and finish each monthly review with one question your advisor can help you answer. This article provides general business education, not personalized accounting, tax or financial advice. Review decisions with a qualified professional who understands your practice.",
+    },
+    kitCta: {
+      kitName: "Know Your Real Numbers",
+      description:
+        "Available inside Dental Member Network, including the Financial-Clarity Worksheet. Use it to prepare clearer questions for the professional who helps you manage the practice's accounts.",
+      href: "/join/member",
+      label: "Join Dental Member Network",
+    },
+  },
+  // ── Week 5 · article 2 (approved 2026-09-23; published 2026-09-24) ─────
+  {
+    slug: "reduce-dental-front-desk-overload",
+    title: "How to Reduce Dental Front Desk Overload Without Asking Everyone to Work Faster",
+    metaTitle: "Reduce Dental Front Desk Overload | DMN",
+    metaDescription:
+      "Rebecca Herring's approach to front-desk overload: find the work that keeps slipping, move one task with clear ownership, and review whether the pressure falls.",
+    excerpt:
+      "Rebecca Herring's approach to front-desk overload: find the work that keeps slipping, move one task with clear ownership, and review whether the pressure falls.",
+    category: "Front Desk",
+    dek: "When patients, calls and unfinished admin compete for the same person's attention, speed is not the only problem. Rebecca Herring's approach starts by changing who has the capacity to do the work.",
+    expert: {
+      name: "Rebecca Herring",
+      role: "DAADOM, Transformational Dental Coaching",
+      headshotUrl:
+        "https://jbntnrtnaqigsyzgvuyv.supabase.co/storage/v1/object/public/kit-thumbnails/profiles/rebecca-herring-headshot-2.jpg",
+      profileHref: "/experts/8f8de38c-52f6-4580-8471-d334f0da700c",
+    },
+    kitSlug: "room-to-breathe",
+    hero: {
+      src: "/blog/rebecca-kit-hero.jpg",
+      alt: "Room to Breathe Practice Playbook featuring Rebecca Herring",
+    },
+    readTime: "5 minute read",
+    datePublished: "2026-09-24",
+    dateModified: "2026-09-24",
+    quickAnswer:
+      "To reduce dental front desk overload, identify which essential tasks repeatedly go unfinished, choose one area for dedicated support, and make the handoff clear. Rebecca Herring recommends starting small, often with insurance verification, then comparing the workload before and after. The aim is to give the in-office team more attention for patients, not simply a longer task list.",
+    body: [
+      {
+        kind: "p",
+        lead: true,
+        text: "*Expert guidance from Rebecca Herring, based on the DMN Practice Playbook, Room to Breathe.*",
+      },
+      {
+        kind: "p",
+        text: "A patient is ready to check out. The phone rings. Someone needs an insurance answer. A cancellation has just opened up tomorrow.",
+      },
+      {
+        kind: "p",
+        text: "Each request matters. Asking one person to treat all of them as the immediate priority does not make the conflict disappear.",
+      },
+      { kind: "h2", id: "slipping-work", text: "Start with the work that is slipping", toc: "Start with the work that is slipping" },
+      {
+        kind: "p",
+        text: "Rebecca identifies insurance verification, scheduling, billing, phone support and follow-up as work that can pile up when a practice is overwhelmed.",
+      },
+      { kind: "p", text: "Before deciding to hire, outsource or buy another tool, look at what did not get finished last week." },
+      {
+        kind: "p",
+        text: "Write down the task, who was supposed to handle it, and what interrupted them. Include work that was started but never resolved, such as a patient question passed between several people.",
+      },
+      {
+        kind: "p",
+        text: "The goal is not to catch someone failing. It is to see where the workload depends on a quiet moment that rarely arrives.",
+      },
+      {
+        kind: "p",
+        text: "If responsibilities are unclear as well as overloaded, begin with **[clearer dental-team communication and handoffs](/blog/improve-dental-team-communication)**. More capacity cannot fix a task nobody understands.",
+      },
+      { kind: "h2", id: "one-area", text: "Choose one area for dedicated support", toc: "Choose one area for support" },
+      {
+        kind: "p",
+        text: "Rebecca's first suggested area is insurance verification and benefit breakdowns. Her reasoning is that incomplete or inaccurate information can create trouble further along the patient and payment process.",
+      },
+      {
+        kind: "p",
+        text: "That does not mean every office should outsource verification immediately. It means looking carefully at a time-consuming task that has consequences beyond the desk.",
+      },
+      {
+        kind: "p",
+        text: "Ask whether someone can complete it consistently without also handling the patient standing in front of them. Support could come from a differently allocated in-office role or a suitably trained remote team member.",
+      },
+      {
+        kind: "p",
+        text: "Rebecca's wider advice is to start with one area and track the effect. You do not need to transfer the entire front desk at once.",
+      },
+      { kind: "h2", id: "complete-responsibility", text: "Move a complete responsibility, not a vague instruction", toc: "Move a complete responsibility" },
+      { kind: "p", text: "“Please help with insurance” leaves plenty of room for misunderstanding." },
+      {
+        kind: "p",
+        text: "A practical handoff should explain what information is needed, where it is recorded, what counts as complete, and who handles questions the assigned person cannot resolve.",
+      },
+      {
+        kind: "p",
+        text: "Those handoff details are an editorial way to make Rebecca's start-small approach usable. Use the practice's approved systems and access arrangements. Moving a task does not remove the need for oversight.",
+      },
+      {
+        kind: "p",
+        text: "For a closer look at the underlying billing process, see our article on **[preventing dental insurance claim denials](/blog/prevent-dental-insurance-claim-denials)**. Here, the focus is giving someone the capacity to carry that process through.",
+      },
+      { kind: "h2", id: "protect-attention", text: "Protect the attention you free up", toc: "Protect the attention you free up" },
+      {
+        kind: "p",
+        text: "Rebecca's central point is that the return is not only more completed admin. It is a front desk that can welcome a patient properly and explain a next step without competing demands taking over the conversation.",
+      },
+      { kind: "p", text: "Do not immediately fill every recovered minute with another assignment." },
+      {
+        kind: "p",
+        text: "Ask the team what has become easier. Can they finish a patient conversation? Are promised callbacks happening? Does a question still sit unresolved because nobody has time to investigate it?",
+      },
+      { kind: "p", text: "A lower task count is useful only if the experience of doing the work improves too." },
+      { kind: "h2", id: "unfinished-work", text: "Watch the unfinished work, not just activity", toc: "Watch the unfinished work" },
+      { kind: "p", text: "Sending more messages is not the same as resolving more questions." },
+      {
+        kind: "p",
+        text: "Rebecca's worksheet asks practices to identify what is waiting on a callback or insurance answer, how long it has been waiting, and what the patient might conclude from that delay.",
+      },
+      {
+        kind: "p",
+        text: "You can use that idea for a short review of unresolved work. Record the next action and the person who owns it. Avoid turning it into a public display of patient information.",
+      },
+      {
+        kind: "p",
+        text: "Also look at cancellations. If the practice expects someone to fill an opening, does that person actually have time to contact suitable patients when it happens?",
+      },
+      { kind: "h2", id: "before-after", text: "Compare before and after", toc: "Compare before and after" },
+      {
+        kind: "p",
+        text: "Choose a practical measure before moving the first task. Possible measures include unfinished verifications, unresolved callbacks or time the in-office team spends chasing answers.",
+      },
+      { kind: "p", text: "These are suggested measures, not promised results." },
+      {
+        kind: "p",
+        text: "Set a review date. Compare what changed, ask whether the handoff caused extra rework, and decide whether to keep, adjust or expand the arrangement.",
+      },
+      {
+        kind: "p",
+        text: "Do not judge the change solely by whether the practice looked busier. Rebecca's aim is a more sustainable workload and more attention for patients.",
+      },
+    ],
+    faqs: [
+      {
+        q: "What should an overwhelmed dental front desk delegate first?",
+        a: "Start with the task that repeatedly slips and can be clearly defined. Rebecca suggests insurance verification as one starting point because later patient and payment conversations depend on the information.",
+      },
+      {
+        q: "Do we have to replace the front desk with a virtual assistant?",
+        a: "No. Rebecca's approach is about supporting the in-office team. Start with one suitable area of work and assess the result before changing anything else.",
+      },
+      {
+        q: "How do we know whether delegation is helping?",
+        a: "Compare a relevant before-and-after measure, ask the team about interruptions and rework, and check whether patient questions are being resolved more reliably.",
+      },
+    ],
+    takeaway: {
+      eyebrow: "The takeaway",
+      title: "Give your team room to breathe.",
+      body: "Find the work that keeps slipping, move one complete responsibility with clear ownership, protect the attention that frees up, and compare a practical measure before and after. The aim is a sustainable workload and a front desk that can give patients its full attention.",
+    },
+    kitCta: {
+      kitName: "Room to Breathe",
+      description:
+        "Available inside Dental Member Network, including the Front Desk Load Worksheet. Use it to identify unfinished work, examine callbacks and cancellations, and choose one area to change first.",
+      href: "/join/member",
+      label: "Join Dental Member Network",
+    },
+  },
   // ── Week 5 · article 1 (approved 2026-09-23; published 2026-09-23) ─────
   {
     slug: "dental-block-scheduling",

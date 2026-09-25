@@ -287,6 +287,10 @@ export type AgreementPdfInput = {
   // invites merge Lester's noted offer here so the person reads their
   // own terms, not a blank.
   memberOffer?: string | null;
+  // Partner price plan (0066 invites, 0068 vendors). "ladder" prints the
+  // $49 months 7-12 / $199 month 13+ schedule; anything else prints the
+  // flat $49 from month 7.
+  pricing?: "ladder" | "flat_49" | null;
   signedAt: Date;
   ipHashLast6: string;
   // false → render as the personalized-but-unaccepted copy shown on the
@@ -395,11 +399,26 @@ function AgreementDoc({ input }: { input: AgreementPdfInput }) {
             Founding waiver via 180-day Stripe trial; card on file
           </Text>
         </View>
-        <View style={styles.feeRow}>
-          <Text style={styles.feeCol}>Month 7 onward</Text>
-          <Text style={styles.feeCol}>$49/mo</Text>
-          <Text style={styles.feeCol}>Locked launch rate</Text>
-        </View>
+        {input.pricing === "ladder" && input.role !== "expert" ? (
+          <>
+            <View style={styles.feeRow}>
+              <Text style={styles.feeCol}>Months 7–12</Text>
+              <Text style={styles.feeCol}>$49/mo</Text>
+              <Text style={styles.feeCol}>Locked launch rate</Text>
+            </View>
+            <View style={styles.feeRow}>
+              <Text style={styles.feeCol}>Month 13 onward</Text>
+              <Text style={styles.feeCol}>$199/mo</Text>
+              <Text style={styles.feeCol}>Standard partner rate</Text>
+            </View>
+          </>
+        ) : (
+          <View style={styles.feeRow}>
+            <Text style={styles.feeCol}>Month 7 onward</Text>
+            <Text style={styles.feeCol}>$49/mo</Text>
+            <Text style={styles.feeCol}>Locked launch rate</Text>
+          </View>
+        )}
 
         {/* Member offer — personalized. Shown for partner / both. */}
         {input.memberOffer && input.role !== "expert" ? (
