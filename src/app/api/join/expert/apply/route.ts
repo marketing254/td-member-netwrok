@@ -3,6 +3,7 @@ import crypto from "node:crypto";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { renderAgreementPdf } from "@/lib/pdf/agreementPdf";
 import { sendJoinConfirmationEmail } from "@/lib/email/joinConfirmation";
+import { notifySignup } from "@/lib/email/teamNotify";
 import { appOrigin } from "@/lib/stripe";
 
 export const runtime = "nodejs";
@@ -163,6 +164,23 @@ export async function POST(req: Request) {
       agreementVersion,
     });
   }
+
+  // Alert the team, same as the /experts page form does. Best-effort:
+  // a mail outage never blocks the application.
+  void notifySignup({
+    role: "expert",
+    name,
+    email,
+    adminLink: "https://dentalmembernetwork.com/admin/experts?filter=new",
+    fields: [
+      { label: "Full name", value: name },
+      { label: "Email", value: email },
+      { label: "Teaches / coaches on", value: focusArea },
+      { label: "Agreement accepted", value: agreementVersion },
+      { label: "Invite code", value: inviteCode || null },
+      { label: "Source", value: "join-expert-form" },
+    ],
+  });
 
   return NextResponse.json({ ok: true, expertId });
 }
