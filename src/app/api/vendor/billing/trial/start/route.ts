@@ -60,7 +60,7 @@ export async function POST(req: Request) {
   const sb = getSupabaseAdmin();
   const { data: vendor } = await sb
     .from("vendors")
-    .select("id, contact_email, billing_email, company_name, contact_name, stripe_customer_id, stripe_subscription_id, subscription_status")
+    .select("id, contact_email, billing_email, company_name, contact_name, stripe_customer_id, stripe_subscription_id, subscription_status, pricing_plan")
     .eq("id", guard.vendorId)
     .maybeSingle();
   if (!vendor?.stripe_customer_id) {
@@ -101,24 +101,69 @@ export async function POST(req: Request) {
     invoice_settings: { default_payment_method: paymentMethodId },
   });
 
+  // Price plan (0068). "ladder" partners accepted the original v1.0 wording
+  // ($49 months 7-12, $199 from month 13) and get a phased subscription
+  // schedule; everyone else gets the flat $49 subscription.
+  const pricing: "ladder" | "flat_49" =
+    (vendor as { pricing_plan?: string | null }).pricing_plan === "ladder" ? "ladder" : "flat_49";
+  let priceStandard: string | null = null;
+  if (pricing === "ladder") {
+    try {
+      priceStandard = partnerPriceIdFor("partner_standard_monthly");
+    } catch (err) {
+      return NextResponse.json(
+        { error: err instanceof Error ? err.message : "Stripe standard price missing." },
+        { status: 503 },
+      );
+    }
+  }
+
   // Create the subscription with 180-day trial. missing_payment_method:
   // pause means Stripe pauses instead of hard-fails if the card fails
   // when the trial converts.
   let subscription;
   try {
-    subscription = await stripe.subscriptions.create({
-      customer: vendor.stripe_customer_id,
-      items: [{ price: priceGrowth }],
-      trial_period_days: TRIAL_DAYS,
-      default_payment_method: paymentMethodId,
-      trial_settings: { end_behavior: { missing_payment_method: "pause" } },
-      metadata: {
-        audience: "vendor",
-        vendor_id: vendor.id,
-        plan: "partner_growth_monthly",
-      },
-      expand: ["latest_invoice"],
-    });
+    if (pricing === "ladder" && priceStandard) {
+      // Three phases: $0 for 180 days (card on file), $49 for six monthly
+      // cycles, then $199 open-ended. The schedule releases the
+      // subscription at the end so it keeps renewing on $199.
+      const nowSec = Math.floor(Date.now() / 1000);
+      const trialEndSec = nowSec + TRIAL_DAYS * 24 * 60 * 60;
+      const schedule = await stripe.subscriptionSchedules.create({
+        customer: vendor.stripe_customer_id,
+        start_date: nowSec,
+        end_behavior: "release",
+        default_settings: {
+          default_payment_method: paymentMethodId,
+          collection_method: "charge_automatically",
+        },
+        phases: [
+          { items: [{ price: priceGrowth }], trial: true, end_date: trialEndSec, metadata: { audience: "vendor", vendor_id: vendor.id, plan: "partner_growth_monthly", pricing_plan: "ladder" } },
+          { items: [{ price: priceGrowth }], duration: { interval: "month", interval_count: 6 }, metadata: { audience: "vendor", vendor_id: vendor.id, plan: "partner_growth_monthly", pricing_plan: "ladder" } },
+          { items: [{ price: priceStandard }], metadata: { audience: "vendor", vendor_id: vendor.id, plan: "partner_standard_monthly", pricing_plan: "ladder" } },
+        ],
+        metadata: { audience: "vendor", vendor_id: vendor.id, pricing_plan: "ladder" },
+      });
+      const subId =
+        typeof schedule.subscription === "string" ? schedule.subscription : schedule.subscription?.id;
+      if (!subId) throw new Error("Schedule did not create a subscription.");
+      subscription = await stripe.subscriptions.retrieve(subId, { expand: ["latest_invoice"] });
+    } else {
+      subscription = await stripe.subscriptions.create({
+        customer: vendor.stripe_customer_id,
+        items: [{ price: priceGrowth }],
+        trial_period_days: TRIAL_DAYS,
+        default_payment_method: paymentMethodId,
+        trial_settings: { end_behavior: { missing_payment_method: "pause" } },
+        metadata: {
+          audience: "vendor",
+          vendor_id: vendor.id,
+          plan: "partner_growth_monthly",
+          pricing_plan: "flat_49",
+        },
+        expand: ["latest_invoice"],
+      });
+    }
   } catch (err) {
     return NextResponse.json(
       {
@@ -177,6 +222,7 @@ export async function POST(req: Request) {
     const pdfBuffer = await renderAgreementPdf({
       role: "partner",
       agreementVersion,
+      pricing,
       signer: {
         name: vendor.contact_name ?? "Partner",
         email: vendor.contact_email,
@@ -197,6 +243,9 @@ export async function POST(req: Request) {
     }
     void sendJoinConfirmationEmail({
       role: "partner",
+      pricing,
+      trialEndsAt: subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null,
+      cardCaptured: true,
       to: vendor.billing_email ?? vendor.contact_email,
       contactName: vendor.contact_name ?? "Partner",
       companyName: vendor.company_name ?? null,

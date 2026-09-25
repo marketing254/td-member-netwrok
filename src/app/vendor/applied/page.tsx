@@ -22,24 +22,24 @@ import Footer from "@/components/sections/Footer";
  * Reached after submitting the partner WaitlistSection on /partners
  * (which posts to /api/vendor/signup). Tells the partner exactly what
  * happens next + points them at /vendor/login so they can hit the
- * portal as soon as the magic-link email arrives.
+ * portal once the approval email arrives. Sign-in is by six-digit code.
  */
 export default function VendorAppliedPage() {
   const STEPS = [
     {
       icon: MailOutlineRoundedIcon,
-      title: "Check your email for the sign-in link",
-      body: "We sent a one-time link to the contact email on your application. It expires in 30 minutes. Click it to open your partner portal.",
+      title: "Your application is in",
+      body: "We have it, and the team has been notified. You do not need to do anything else right now.",
     },
     {
       icon: VerifiedUserOutlinedIcon,
       title: "Our team reviews your application",
-      body: "We verify the category fit, your member-discount commitment, and your service responsiveness. Within 5 business days you'll get an approval (or a clarification request) by email.",
+      body: "We verify the category fit, your member-discount commitment, and your service responsiveness. Within 5 business days you'll get an approval (or a clarification request) by email, with your sign-in details.",
     },
     {
       icon: CalendarTodayOutlinedIcon,
       title: "Founding pricing locks in",
-      body: "Six months free, then $49/mo from month 7. Your portal lets you set up your catalog and offers right away — they go live to members the day your application is approved.",
+      body: "Six months free, then $49/mo from month 7. Once approved, sign in with your email and a six-digit code, set up your catalog and offers, and they go live to members.",
     },
   ];
 
@@ -115,8 +115,8 @@ export default function VendorAppliedPage() {
                   lineHeight: 1.65,
                 }}
               >
-                Your application is in. We sent a sign-in link to your email so you can start setting
-                up your catalog while our team reviews your details.
+                Your application is in. Our team will review it and email you once you are approved,
+                with everything you need to sign in.
               </Typography>
             </Box>
           </Stack>
@@ -221,7 +221,7 @@ export default function VendorAppliedPage() {
                 mx: "auto",
               }}
             >
-              Already got your sign-in link? Open the portal and start adding your catalog.
+              Already approved? Sign in with your email and the six-digit code we send you.
             </Typography>
             <Stack
               direction={{ xs: "column", sm: "row" }}

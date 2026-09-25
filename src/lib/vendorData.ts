@@ -637,6 +637,50 @@ export const vendorAgreementKeyTerms = [
   { label: "Cancel", value: "30 d", sub: "Written notice" },
 ];
 
+// ---------------------------------------------------------------------
+// Per-partner price plan (0068). The site-wide default is the flat $49.
+// "ladder" is the original v1.0 wording ($49 months 7-12, $199 from month
+// 13) kept for the partners who accepted it before the 2026-09-15
+// switch-off. The portal, the agreement page, the PDF and the email all
+// pick their wording from these helpers so one row can stay on the terms
+// it signed while nobody else ever sees $199.
+// ---------------------------------------------------------------------
+export type PartnerPricingPlan = "flat_49" | "ladder";
+
+const vendorCommitmentsLadder: VendorCommitment[] = vendorCommitments.map((c) =>
+  c.number === "05"
+    ? {
+        ...c,
+        body:
+          "The standard fee is $199 per month. Founding partners pay $0 for months 1-6, $49 for months 7-12, and the standard $199 from month thirteen onward. You're free to cancel with 30 days' written notice at any time, but you remain responsible for fees accrued during notice.",
+      }
+    : c,
+);
+
+const vendorFeeScheduleLadder: FeeScheduleRow[] = [
+  { period: "Months 1-6", fee: "$0", note: "Founding partner waiver, applies automatically" },
+  { period: "Months 7-12", fee: "$49", note: "Locked-in launch rate" },
+  { period: "Month 13 onward", fee: "$199", note: "Standard partner rate" },
+];
+
+const vendorAgreementKeyTermsLadder = [
+  { label: "Months 1-6", value: "$0", sub: "Waived" },
+  { label: "Months 7-12", value: "$49", sub: "per month" },
+  { label: "Month 13+", value: "$199", sub: "per month" },
+  { label: "Commitment", value: "12 mo", sub: "Initial term" },
+  { label: "Cancel", value: "30 d", sub: "Written notice" },
+];
+
+export function vendorCommitmentsFor(plan: PartnerPricingPlan | null | undefined): VendorCommitment[] {
+  return plan === "ladder" ? vendorCommitmentsLadder : vendorCommitments;
+}
+export function vendorFeeScheduleFor(plan: PartnerPricingPlan | null | undefined): FeeScheduleRow[] {
+  return plan === "ladder" ? vendorFeeScheduleLadder : vendorFeeSchedule;
+}
+export function vendorAgreementKeyTermsFor(plan: PartnerPricingPlan | null | undefined) {
+  return plan === "ladder" ? vendorAgreementKeyTermsLadder : vendorAgreementKeyTerms;
+}
+
 // The 9 operational/legal sections that follow the five commitments.
 export const vendorAgreementSections: AgreementSection[] = [
   {

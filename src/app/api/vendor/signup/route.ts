@@ -16,10 +16,11 @@ export const dynamic = "force-dynamic";
  * embedded on /partners (or the homepage form) and:
  *   1. Validates the minimum required fields
  *   2. Inserts a row into vendor_applications (status='pending_review')
- *   3. Generates a magic-link token + URL (vendors can sign in immediately;
+ *   3. Pre-creates the auth user (sign-in later is by six-digit code;
  *      the team reviews their application asynchronously)
- *   4. Logs an email_event row for the magic link
- *   5. Sends the magic-link email via the existing Resend/Gmail transport
+ *   4. Logs the application in auth_audit and the admin bell
+ *   5. Emails the team the full application (no email to the applicant here;
+ *      the approval email is their first)
  *   6. Returns the application reference id
  *
  * Errors are returned with safe, user-facing messages. Internal errors are
@@ -277,8 +278,8 @@ export async function POST(req: Request) {
   }
 
   // 3. Pre-create the Supabase auth user for this email so they can sign in
-  //    later via magic link. With shouldCreateUser:false on /vendor/login,
-  //    only emails that exist in auth.users can receive a magic link — this
+  //    later with a six-digit code. With shouldCreateUser:false on /vendor/login,
+  //    only emails that exist in auth.users can receive a code, so this
   //    is how we lock the portal to actual applicants.
   //
   //    If the user already exists (e.g. duplicate application attempt), the
@@ -288,7 +289,7 @@ export async function POST(req: Request) {
     const supabase = getSupabaseAdmin();
     const { data: created, error: createErr } = await supabase.auth.admin.createUser({
       email: data.contactEmail,
-      email_confirm: true, // Skip the "confirm your email" step. Magic-link verifies the address anyway.
+      email_confirm: true, // Skip the "confirm your email" step. The sign-in code verifies the address anyway.
       user_metadata: {
         application_id: applicationId,
         company: data.companyName,
@@ -321,33 +322,11 @@ export async function POST(req: Request) {
     console.error("[vendor:signup] auth user create threw:", err);
   }
 
-  // 4. Auto-send the first magic-link email so the applicant can sign in
-  //    immediately. The /vendor/applied confirmation page tells them
-  //    "we sent you a link" — this is the call that makes that true.
-  //    Uses the anon-key client (not service role) because signInWithOtp
-  //    isn't an admin method; it triggers Supabase Auth's regular email
-  //    flow (subject to the custom SMTP configured in the dashboard).
-  let magicLinkSent = false;
-  try {
-    const origin =
-      req.headers.get("origin") ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-    const supabase = await createServerSupabase();
-    const { error: otpErr } = await supabase.auth.signInWithOtp({
-      email: data.contactEmail,
-      options: {
-        emailRedirectTo: `${origin}/auth/callback?next=/vendor&role=vendor`,
-        shouldCreateUser: false, // we just pre-created above
-      },
-    });
-    if (otpErr) {
-      console.error("[vendor:signup] magic-link send failed:", otpErr);
-    } else {
-      magicLinkSent = true;
-    }
-  } catch (err) {
-    console.error("[vendor:signup] magic-link send threw:", err);
-  }
-
+  // 4. No sign-in email at application time. Sign-in uses a six-digit code
+  //    that expires in minutes, so sending one here (before the applicant
+  //    is at the sign-in screen) only ever produced dead codes. The
+  //    applicant gets the approval email, then requests a code when they
+  //    sign in.
   // 5. Audit log for the application receipt (best-effort) + admin alert
   try {
     const supabase = getSupabaseAdmin();
@@ -357,15 +336,7 @@ export async function POST(req: Request) {
       user_type: "vendor",
       ip_hash: hashIp(clientIp(req)),
       user_agent: req.headers.get("user-agent")?.slice(0, 500) ?? null,
-      metadata: { application_id: applicationId, source: data.source, magic_link_sent: magicLinkSent },
-    });
-    await supabase.from("email_events").insert({
-      template: "vendor_magic_link",
-      recipient: data.contactEmail,
-      provider: "supabase_auth",
-      status: magicLinkSent ? "queued" : "failed",
-      subject: "Sign in to your partner portal",
-      metadata: { trigger: "signup", application_id: applicationId },
+      metadata: { application_id: applicationId, source: data.source },
     });
     // Broadcast to the admin team — show up in everyone's bell.
     await supabase.from("notifications").insert({
@@ -424,10 +395,8 @@ export async function POST(req: Request) {
   return NextResponse.json({
     success: true,
     applicationId,
-    magicLinkSent,
     status: "pending_review",
-    message: magicLinkSent
-      ? "Application received. Check your email — we sent a sign-in link to your inbox. Click it to access your partner portal. Our team will review your application within 5 business days."
-      : "Application received. Head to the partner portal sign-in page to request a magic-link email. Our team will review your application within 5 business days.",
+    message:
+      "Application received. Our team will review it within 5 business days and email you once you are approved, with everything you need to sign in.",
   });
 }

@@ -11,11 +11,11 @@ import {
 import GavelOutlinedIcon from "@mui/icons-material/GavelOutlined";
 import VerifiedUserOutlinedIcon from "@mui/icons-material/VerifiedUserOutlined";
 import {
-  vendorAgreementKeyTerms,
+  vendorAgreementKeyTermsFor,
   vendorAgreementMeta,
   vendorAgreementSections,
-  vendorCommitments,
-  vendorFeeSchedule,
+  vendorCommitmentsFor,
+  vendorFeeScheduleFor,
 } from "@/lib/vendorData";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { fetchCurrentVendor } from "@/lib/supabase/vendorQueries";
@@ -49,6 +49,11 @@ export default function VendorAgreementPage() {
 
   const signedAt = vendor?.agreement_signed_at?.slice(0, 10) ?? "—";
   const version = vendor?.agreement_version ?? "v1.0";
+  // Wording follows the plan on the row (0068): ladder partners see the
+  // $199 month-13 terms they accepted; everyone else the flat $49.
+  const vendorAgreementKeyTerms = vendorAgreementKeyTermsFor(vendor?.pricing_plan);
+  const vendorCommitments = vendorCommitmentsFor(vendor?.pricing_plan);
+  const vendorFeeSchedule = vendorFeeScheduleFor(vendor?.pricing_plan);
   return (
     <Stack spacing={4}>
       <Box>
@@ -97,7 +102,7 @@ export default function VendorAgreementPage() {
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(5, 1fr)" },
+          gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: `repeat(${vendorAgreementKeyTerms.length}, 1fr)` },
           borderRadius: "16px",
           border: "1px solid",
           borderColor: "divider",
