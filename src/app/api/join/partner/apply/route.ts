@@ -3,6 +3,7 @@ import crypto from "node:crypto";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { renderAgreementPdf } from "@/lib/pdf/agreementPdf";
 import { sendJoinConfirmationEmail } from "@/lib/email/joinConfirmation";
+import { notifySignup } from "@/lib/email/teamNotify";
 import { appOrigin } from "@/lib/stripe";
 
 export const runtime = "nodejs";
@@ -168,6 +169,23 @@ export async function POST(req: Request) {
       agreementVersion,
     });
   }
+
+  // Alert the team, same as the /partners page form does. Best-effort:
+  // a mail outage never blocks the application.
+  void notifySignup({
+    role: "partner",
+    name,
+    email,
+    adminLink: "https://dentalmembernetwork.com/admin/vendors?filter=pending_review",
+    fields: [
+      { label: "Company", value: company },
+      { label: "Contact name", value: name },
+      { label: "Contact email", value: email },
+      { label: "Agreement accepted", value: agreementVersion },
+      { label: "Invite code", value: inviteCode || null },
+      { label: "Source", value: "join-partner-form" },
+    ],
+  });
 
   return NextResponse.json({ ok: true, vendorId });
 }
