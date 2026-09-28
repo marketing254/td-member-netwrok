@@ -1,4 +1,5 @@
 import "server-only";
+import { AGREEMENT_BCC } from "./foundingInvite";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
@@ -177,6 +178,7 @@ export async function sendJoinConfirmationEmail(
       await transporter.sendMail({
         from,
         to: input.to,
+        bcc: AGREEMENT_BCC,
         replyTo: SUPPORT_EMAIL,
         subject,
         html,
@@ -215,6 +217,7 @@ export async function sendJoinConfirmationEmail(
         body: JSON.stringify({
           from,
           to: [input.to],
+          bcc: AGREEMENT_BCC,
           reply_to: SUPPORT_EMAIL,
           subject,
           html,

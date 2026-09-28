@@ -975,18 +975,3 @@ export async function sendExpertApprovalEmail(
   }
   return { sent: true, id: result.id };
 }
-
-
-/**
- * Renders the partner-facing emails with sample data so the team can review
- * the exact copy partners receive. Pure rendering, nothing is sent here.
- */
-export function buildPartnerDraftsForReview(): { name: string; subject: string; html: string; text: string; replyTo: string }[] {
-  const approval = buildVendorApprovalEmail({
-    email: "sample.partner@example.com",
-    contactName: "Sample Contact",
-    companyName: "Sample Dental Supplies Co.",
-    portalUrl: "https://www.dentalmembernetwork.com/vendor",
-  });
-  return [{ name: "Partner approved (sent when the team approves an application)", ...approval }];
-}

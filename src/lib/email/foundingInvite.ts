@@ -9,6 +9,13 @@ import "server-only";
 
 const DEFAULT_FROM = "Dental Member Network <hello@joindmn.com>";
 
+/**
+ * Every personalized agreement email (the invite with the unsigned PDF and
+ * the signed copy after acceptance) is BCC'd to the team so there is a
+ * record of exactly what each person received. Rushdha, 28 Sep 2026.
+ */
+export const AGREEMENT_BCC = ["lester@ekwa.com", "rushdhaakbar82@gmail.com"];
+
 function fromAddress(): string {
   return process.env.WAITLIST_EMAIL_FROM ?? DEFAULT_FROM;
 }
@@ -69,6 +76,7 @@ export async function sendFoundingInviteEmail(
       await transporter.sendMail({
         from,
         to: input.to,
+        bcc: AGREEMENT_BCC,
         subject,
         html,
         text,
@@ -91,7 +99,7 @@ export async function sendFoundingInviteEmail(
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ from, to: [input.to], subject, html, text, attachments }),
+        body: JSON.stringify({ from, to: [input.to], bcc: AGREEMENT_BCC, subject, html, text, attachments }),
       });
       if (!res.ok) {
         console.error(`[founding-invite:${input.role}] Resend failed`, await res.text().catch(() => ""));
