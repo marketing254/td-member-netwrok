@@ -323,13 +323,17 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     });
 
     // Only advance a draft to 'sent'. A re-send of an already
-    // sent/viewed invite keeps its lifecycle status.
+    // sent/viewed invite keeps its lifecycle status. Every send (first
+    // or re-send) restarts the 30-day window, otherwise a re-sent link
+    // for an old draft would already be expired when it lands.
     const nextStatus = invite.status === "draft" ? "sent" : invite.status;
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
     await sb
       .from("founding_invites")
       .update({
         status: nextStatus,
         agreement_pdf_path: pdfPath,
+        expires_at: expiresAt,
         updated_at: new Date().toISOString(),
       } as never)
       .eq("id", id);
