@@ -11,8 +11,8 @@ All prices in USD. Cancel anytime — no contracts, no retention call.
 - **Availability**: First 100 members only; sold out afterwards
 - **Rate lock**: Locked for life while membership stays active
 - **Includes**:
-  - Expert Hotline — written action plan + recommended experts
-    within 2–3 business days
+  - Expert Hotline — an answer right away from Beacon, then a person
+    follows up in writing with recommended experts
   - Full library access — a growing library of expert kits across
     Practice Management, Front Desk, Team & Culture, Patient
     Experience, Billing & Collections, and a Book Club track

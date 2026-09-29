@@ -1,38 +1,83 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
+import { RIDA_TRIAL_END_ISO } from "@/lib/events/ridaReplay";
 
 /**
- * DMN × RIDA summit — 16 September 2026.
+ * DMN × RIDA events.
  *
  * The flow, in one line: verified entitlement → one "Pending" row in the
- * team's Google Sheet → n8n's sheet trigger registers the person in Zoom
- * on Naren's account and writes the join link back → Zoom emails them.
+ * team's Google Sheet → the team registers the person in Zoom on Naren's
+ * account (n8n or Amani's daily import) and Zoom emails the join link.
  *
  * The rule this module enforces: the sheet row (and therefore the Zoom
  * registration) is only ever written by the SERVER after the Stripe
  * webhook confirmed the trial subscription, or after a signed-in
  * member's active subscription was verified in the database. Nothing
  * the browser sends can create that row.
+ *
+ * SUMMIT is the LIVE offer: the RIDA Annual Summit on 6 November 2026,
+ * with one fixed first-charge date for the whole cohort (offer spec,
+ * updated 29 Sep 2026). SUMMIT_SEPT is the 16 September event, kept for
+ * the admin list and the campaign export of people who registered
+ * through us and did not finish joining.
  */
 
-export const SUMMIT = {
+export type SummitEvent = {
+  eventId: string;
+  title: string;
+  subtitle: string;
+  dateLabel: string;
+  timeLabel: string;
+  startsAt: string;
+  zoomWebinarId: string;
+  plan: "founding_monthly";
+  /** Either a rolling trial in days, or one fixed trial_end for everyone. */
+  trialDays: number | null;
+  trialEnd: string | null;
+  campaign: string;
+  closesAt: string;
+  ceCredits: number;
+};
+
+export const SUMMIT_SEPT: SummitEvent = {
   eventId: "rida-summit-2026-09-16",
   title: "Stop Losing Revenue You Already Earned",
   subtitle: "The Dental Practice Team Performance and Patient Retention System",
   dateLabel: "Wednesday, September 16, 2026",
-  timeLabel: "7–9 PM Eastern",
-  /** ISO start, Eastern Daylight Time (UTC−4). Confirm against Zoom before launch. */
+  timeLabel: "7 to 9 PM Eastern",
   startsAt: "2026-09-16T19:00:00-04:00",
   zoomWebinarId: "83649870723",
-  /** The Stripe offer for this campaign: $0 for 30 days, then $49/month. */
-  plan: "founding_monthly" as const,
+  plan: "founding_monthly",
   trialDays: 30,
-  /** utm_campaign the ads use for this event (confirm with the team). */
+  trialEnd: null,
   campaign: "rida_summit_2026_09",
-  /** Registrations close when the event ends. */
   closesAt: "2026-09-16T21:00:00-04:00",
-} as const;
+  ceCredits: 2,
+};
+
+export const SUMMIT: SummitEvent = {
+  eventId: "rida-annual-summit-2026-11-06",
+  title: "Built to Stay: The Independent Practice Operating System",
+  subtitle: "The Playbook for Practices Feeling the Squeeze",
+  dateLabel: "Friday, November 6, 2026",
+  timeLabel: "12:00 to 4:30 PM Eastern",
+  /** ISO start, Eastern Standard Time (UTC−5). Confirm against Zoom before launch. */
+  startsAt: "2026-11-06T12:00:00-05:00",
+  /** The November webinar runs on Naren's Zoom account; set SUMMIT_ZOOM_WEBINAR_ID in the environment once it exists. */
+  zoomWebinarId: process.env.SUMMIT_ZOOM_WEBINAR_ID ?? "",
+  plan: "founding_monthly",
+  /** The campaign offer: $0 today, nothing to pay until Wednesday 6 January 2027 for everyone, then $49/month. */
+  trialDays: null,
+  trialEnd: RIDA_TRIAL_END_ISO,
+  /** utm_campaign the ads use for this event. The replay page sends utm_source=replay&utm_campaign=rida. */
+  campaign: "rida_summit_2026_11",
+  /** Registrations close when the event ends. */
+  closesAt: "2026-11-06T16:30:00-05:00",
+  ceCredits: 4,
+};
+
+export const SUMMIT_EVENTS: SummitEvent[] = [SUMMIT, SUMMIT_SEPT];
 
 export type RegistrationStatus =
   | "pending_payment"
@@ -80,6 +125,11 @@ export function eventsDb(): SupabaseClient {
 
 export function summitOpen(now: Date = new Date()): boolean {
   return now.getTime() < new Date(SUMMIT.closesAt).getTime();
+}
+
+/** Stripe `trial_end` (unix seconds) for the live offer, or null when the event uses rolling trial days. */
+export function summitTrialEndUnix(): number | null {
+  return SUMMIT.trialEnd ? Math.floor(new Date(SUMMIT.trialEnd).getTime() / 1000) : null;
 }
 
 // ---------------------------------------------------------------------

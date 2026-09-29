@@ -33,7 +33,7 @@ const PRICING_JSONLD = {
       "@type": "Product",
       name: "Dental Member Network — Founding Membership",
       description:
-        "Membership for US + Canadian dental practice owners. Expert hotline returning a written action plan in 2–3 business days, partner-network discounts averaging $6,400/year, and a curated Practice Playbook library.",
+        "Membership for US + Canadian dental practice owners. Expert hotline that answers right away and follows up in writing, partner-network discounts averaging $6,400/year, and a curated Practice Playbook library.",
       brand: { "@type": "Brand", name: "Dental Member Network" },
       image: "https://www.dentalmembernetwork.com/td-logo-horizontal-dark.svg",
       url: "https://www.dentalmembernetwork.com/pricing",

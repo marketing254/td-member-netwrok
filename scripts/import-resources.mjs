@@ -159,7 +159,12 @@ const SHORT_RE = /^Short (\d+) \(9x16\) - (.+?)\.mp4$/i;
 // video_short — that kind drives the portal's vertical 9x16 shorts rail.
 //   "Expert Spotlight - Connect Before You Treat.mp4"
 //   "Highlight 2 (16x9) - Know the End Goal.mp4"
-const SPOTLIGHT_RE = /^Expert Spotlight( \(Full\))? - (.+?)\.mp4$/i;
+// Event kits ship "Event Spotlight - <title>.mp4" (RIDA, Sep 2026): same slot.
+const SPOTLIGHT_RE = /^(?:Expert|Event) Spotlight( \(Full\))? - (.+?)\.mp4$/i;
+// Event kits also ship SOP drafts and a two-page Kit Overview PDF. They load
+// as plain files (kind "other") after the wall poster.
+const SOP_RE = /^SOP(?: DRAFT)? - (.+?)\.pdf$/i;
+const KIT_OVERVIEW_RE = /^Kit Overview - .+\.pdf$/i;
 const HIGHLIGHT_RE = /^Highlight (\d+) \(16x9\) - (.+?)\.mp4$/i;
 
 const MIME = {
@@ -497,6 +502,32 @@ async function runOneKit(folderName, parentDir) {
       file_size_bytes: stats.size,
       position,
     });
+  }
+
+  // SOP drafts and the Kit Overview PDF (event kits). Positions 71+ keep
+  // them after the wall poster and before the video rails.
+  {
+    let sopIndex = 0;
+    for (const filename of filenames) {
+      const sop = SOP_RE.exec(filename);
+      const overview = KIT_OVERVIEW_RE.test(filename);
+      if (!sop && !overview) continue;
+      const title = sop ? `SOP: ${sop[1].replace(/_/g, "'").trim()}` : "Kit Overview";
+      const position = sop ? 71 + sopIndex++ : 75;
+      const safeName = filename.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9._-]/g, "");
+      const storagePath = `${slug}/${safeName}`;
+      const stats = await fs.stat(path.join(abs, filename));
+      const publicLink = await uploadFile("member-resources", storagePath, path.join(abs, filename), mimeFor(filename));
+      rows.push({
+        title,
+        kind: "other",
+        storage_path: storagePath,
+        external_url: publicLink,
+        mime_type: mimeFor(filename),
+        file_size_bytes: stats.size,
+        position,
+      });
+    }
   }
 
   // Shorts upload for ANY kit that has them (expert kits ship 9×16 shorts

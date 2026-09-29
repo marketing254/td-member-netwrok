@@ -19,6 +19,7 @@ import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import MarkEmailReadOutlinedIcon from "@mui/icons-material/MarkEmailReadOutlined";
 import SavingsOutlinedIcon from "@mui/icons-material/SavingsOutlined";
 import TrendingUpOutlinedIcon from "@mui/icons-material/TrendingUpOutlined";
+import PlayCircleOutlineIcon from "@mui/icons-material/PlayCircleOutlined";
 
 type Overview = {
   vendors: { total: number; pending: number; approved: number; suspended: number; rejected: number; verified: number };
@@ -44,6 +45,8 @@ type Overview = {
     catalog_items: { name: string; type: string } | null;
   }[];
   foundingCap: number;
+  /** Public replay page counters (0069). Zeros until the table exists. */
+  replay?: { views: number; plays: number; ctaClicks: number; uniqueViewers: number; last7Plays: number };
 };
 
 export default function AdminOverviewPage() {
@@ -178,9 +181,15 @@ export default function AdminOverviewPage() {
           <Stat
             icon={SavingsOutlinedIcon}
             label="Partner savings · lifetime"
-            value={`$${data.redemptions.lifetimeSavings.toLocaleString()}`}
+            value={`${data.redemptions.lifetimeSavings.toLocaleString()}`}
             footer={`${data.offers.approved} active offers in market`}
             accent="secondary"
+          />
+          <Stat
+            icon={PlayCircleOutlineIcon}
+            label="RIDA replay · plays"
+            value={`${data.replay?.plays ?? 0}`}
+            footer={`${data.replay?.ctaClicks ?? 0} join-button clicks · ${data.replay?.uniqueViewers ?? 0} unique viewers · ${data.replay?.last7Plays ?? 0} plays this week`}
           />
         </Grid>
       </Box>

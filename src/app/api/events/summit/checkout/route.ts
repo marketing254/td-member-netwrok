@@ -5,7 +5,7 @@ import { checkRateLimit } from "@/lib/waitlist/rateLimit";
 import { apiError, serverError } from "@/lib/api/errorResponse";
 import { SIGNUP_CHECKOUT_COOKIE, signCheckoutToken } from "@/lib/auth/guards";
 import { appOrigin, getStripe, priceIdFor } from "@/lib/stripe";
-import { SUMMIT, eventsDb, summitOpen } from "@/lib/events/summit";
+import { SUMMIT, eventsDb, summitOpen, summitTrialEndUnix } from "@/lib/events/summit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -290,6 +290,7 @@ export async function POST(req: Request) {
 
     // ---- Stripe: embedded trial checkout ------------------------------
     const metaEventId = randomUUID();
+    const trialEndUnix = summitTrialEndUnix();
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       ui_mode: "embedded_page",
@@ -298,9 +299,11 @@ export async function POST(req: Request) {
       allow_promotion_codes: false,
       billing_address_collection: "auto",
       subscription_data: {
-        // The campaign offer, and the only place it is set: $0 today,
-        // 30-day trial, then the founding monthly rate.
-        trial_period_days: SUMMIT.trialDays,
+        // The campaign offer, and the only place it is set: $0 today, then
+        // the founding monthly rate. The live event uses ONE fixed trial_end
+        // for the whole cohort (Wednesday 6 January 2027, offer spec 29 Sep);
+        // an event with rolling trial days falls back to trial_period_days.
+        ...(trialEndUnix ? { trial_end: trialEndUnix } : { trial_period_days: SUMMIT.trialDays ?? 30 }),
         metadata: {
           member_id: memberId,
           plan: SUMMIT.plan,

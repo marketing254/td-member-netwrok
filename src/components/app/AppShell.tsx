@@ -54,6 +54,9 @@ const navItems = [
   { href: "/dashboard/experts", label: "Experts", icon: SchoolOutlinedIcon },
   { href: "/dashboard/partners", label: "Partners", icon: StorefrontOutlinedIcon },
   { href: "/dashboard/tools", label: "Tools", icon: CalculateOutlinedIcon },
+  // Event Replays (RIDA brief, 29 Sep 2026). The NEW pill shows for the
+  // first month after launch, then the item stays without it.
+  { href: "/dashboard/replays", label: "Event Replays", icon: EventAvailableOutlinedIcon, badge: new Date() < new Date("2026-11-01T00:00:00Z") ? "NEW" : undefined },
   { href: "/dashboard/network", label: "Network", icon: HubOutlinedIcon },
   // Hidden until NEXT_PUBLIC_JOB_BOARD_ENABLED=true; the middleware 404s
   // the page as well, so members see nothing before launch.
@@ -235,6 +238,26 @@ function SidebarContent({
                   }}
                 />
                 {item.label}
+                {"badge" in item && item.badge ? (
+                  <Box
+                    component="span"
+                    sx={{
+                      ml: "auto",
+                      px: 0.7,
+                      py: 0.2,
+                      borderRadius: 999,
+                      bgcolor: "rgba(217,168,75,0.18)",
+                      border: "1px solid rgba(217,168,75,0.45)",
+                      color: "#F0C16E",
+                      fontSize: "0.55rem",
+                      fontWeight: 800,
+                      letterSpacing: "0.08em",
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    {item.badge}
+                  </Box>
+                ) : null}
               </Box>
             );
           })}

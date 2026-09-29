@@ -115,18 +115,18 @@ export default function SummitConfirmedView({
           {state === "paid" && (
             <div className="success-card">
               <span className="tick">✓</span>
-              <h3>Your trial is active. You&apos;re in.</h3>
+              <h3>Your membership is open. You&apos;re in.</h3>
               <p>
-                <b>$0 charged today.</b> Your 30-day Dental Member Network trial has started. Your first billing date and the $49/month renewal were shown at checkout, and you can cancel from your portal at any time before then.
+                <b>$0 charged today.</b> Your Dental Member Network membership is open now, and there is nothing to pay until Wednesday 6 January 2027. From then it is $49 a month, as shown at checkout, and you can cancel from your portal at any time before then.
               </p>
               <p>
-                <b>Summit access.</b>{" "}
+                <b>You are registered for RIDA.</b>{" "}
                 {queued
-                  ? "You're on the list for September 16. Zoom will email your personal join link within a few minutes; check your spam folder if it doesn't appear. Please don't forward it, it's unique to you."
-                  : "We're registering you for September 16 now. Zoom will email your personal join link within a few minutes."}
+                  ? "You came in through the Dental Member Network, so your seat on 6 November is booked for you. Your Zoom link will be emailed to this address by the RIDA team, usually within one business day. It comes from Zoom, on behalf of RIDA, so keep an eye out for it and check your spam folder if it has not arrived by tomorrow. Please don't forward it, it's unique to you."
+                  : "Your seat on 6 November is being booked for you now. Your Zoom link will be emailed to this address by the RIDA team, usually within one business day. It comes from Zoom, on behalf of RIDA."}
               </p>
               <p style={{ fontSize: 13 }}>
-                Wednesday, September 16, 2026 · 7–9 PM Eastern · 2 CE credits, subject to the provider&apos;s attendance and completion requirements.
+                Friday, November 6, 2026 · 12:00 to 4:30 PM Eastern · 4 CE credits, subject to the provider&apos;s attendance and completion requirements. The Practice Playbook from RIDA Live is on your dashboard now; you do not have to wait for the event to start using your membership.
               </p>
               <div className="divider" />
               <p>
@@ -146,7 +146,7 @@ export default function SummitConfirmedView({
 
           {state === "processing" && (
             <div className="success-card">
-              <h3>Confirming your trial…</h3>
+              <h3>Confirming your membership…</h3>
               <p>Stripe is finishing up. This page updates on its own within a few seconds.</p>
             </div>
           )}
@@ -165,7 +165,7 @@ export default function SummitConfirmedView({
 
       <footer className="event-footer container">
         <Image src="/rida/dmn-logo.png" alt="Dental Member Network" width={160} height={52} />
-        <p>September 16, 2026 · DMN × RIDA</p>
+        <p>November 6, 2026 · DMN × RIDA</p>
         <nav className="site-links" aria-label="Legal">
           <Link href="/legal/privacy">Privacy</Link>
           <Link href="/legal/refund">Cancellation</Link>

@@ -786,7 +786,7 @@ function EscalationCard({ question }: { question: string }) {
     return (
       <Box sx={{ mt: 1.25, bgcolor: "rgba(34,108,78,0.08)", border: "1px solid rgba(34,108,78,0.25)", borderRadius: 2, px: 1.5, py: 1.25 }}>
         <Typography sx={{ fontSize: "0.82rem", color: "#1F5C40", lineHeight: 1.5, fontWeight: 600 }}>
-          Done — the team will get back to you within 2–3 business days.
+          Done — a person on the team will follow up in writing.
         </Typography>
         <Typography sx={{ fontSize: "0.78rem", color: "#3B4A55", lineHeight: 1.5, mt: 0.5 }}>
           Keep an eye on your inbox — we&apos;ll send everything DMN offers your way.

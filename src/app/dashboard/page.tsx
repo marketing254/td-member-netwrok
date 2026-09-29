@@ -322,6 +322,82 @@ export default function DashboardHome() {
       </EditorialSection>
       </Reveal>
 
+      {/* Event replay + the playbook built from it (RIDA brief, 29 Sep 2026).
+          Every member sees it from their first sign-in; it links to the
+          Event Replays section and to the playbook in the library. */}
+      <Reveal delay={240}>
+        <EditorialSection
+          eyebrow="Event replay"
+          title="RIDA Live: Stop Losing Revenue You Already Earned"
+          actions={<SeeAllLink href="/dashboard/replays" label="All replays" />}
+        >
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", md: "minmax(0, 1.4fr) minmax(0, 1fr)" },
+              gap: 2,
+            }}
+          >
+            <Link href="/dashboard/replays/rida-live-2026-09-16" style={{ textDecoration: "none" }}>
+              <Box
+                sx={{
+                  position: "relative",
+                  borderRadius: 2.5,
+                  overflow: "hidden",
+                  aspectRatio: "16 / 9",
+                  backgroundImage: "url(/replay/rida-live-2026-09-16-banner.jpg)",
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                  boxShadow: "0 16px 36px rgba(10,26,47,0.18)",
+                }}
+              >
+                <Box sx={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(6,24,42,0) 45%, rgba(6,24,42,0.85) 100%)" }} />
+                <Box sx={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 58, height: 58, borderRadius: "50%", bgcolor: "rgba(217,168,75,0.95)", color: "#0A1A2F", display: "grid", placeItems: "center", boxShadow: "0 8px 24px rgba(0,0,0,0.35)" }}>
+                  <PlayArrowRoundedIcon sx={{ fontSize: 34 }} />
+                </Box>
+                <Box sx={{ position: "absolute", left: 16, right: 16, bottom: 14, color: "#fff" }}>
+                  <Typography sx={{ fontSize: "0.66rem", fontWeight: 800, letterSpacing: "0.14em", textTransform: "uppercase", color: "#F0C16E" }}>
+                    RIDA Live · 16 September 2026 · 2 h 06 m
+                  </Typography>
+                  <Typography sx={{ fontSize: "0.95rem", fontWeight: 700, mt: 0.3 }}>
+                    Two panels, thirty chapters. Kiera Dent, Ben Tuinei, Dr. Ekta Pandya, Maria Jackson, Francesca Ortepi.
+                  </Typography>
+                </Box>
+              </Box>
+            </Link>
+            <Link href="/dashboard/resources/stop-losing-revenue-you-already-earned" style={{ textDecoration: "none" }}>
+              <Box
+                sx={{
+                  height: "100%",
+                  display: "grid",
+                  gridTemplateColumns: "96px 1fr",
+                  gap: 2,
+                  alignItems: "center",
+                  p: 2,
+                  borderRadius: 2.5,
+                  bgcolor: "#F7EFDD",
+                  border: "1px solid rgba(160,120,35,0.25)",
+                }}
+              >
+                <Box sx={{ aspectRatio: "3 / 4", borderRadius: 1.25, backgroundImage: "url(/replay/playbook-stop-losing-revenue-card.jpg)", backgroundSize: "cover", backgroundPosition: "center", boxShadow: "0 8px 20px rgba(10,26,47,0.2)" }} />
+                <Box>
+                  <Typography sx={{ fontSize: "0.64rem", fontWeight: 800, letterSpacing: "0.14em", textTransform: "uppercase", color: "#A07823" }}>
+                    The Practice Playbook from this event
+                  </Typography>
+                  <Typography sx={{ fontFamily: "var(--font-display), 'Fraunces', Georgia, serif", fontWeight: 600, fontSize: "1.1rem", lineHeight: 1.2, color: "#0A1A2F", mt: 0.5 }}>
+                    Stop Losing Revenue You Already Earned
+                  </Typography>
+                  <Typography sx={{ mt: 0.6, fontSize: "0.8rem", color: "#3B4A55", lineHeight: 1.5 }}>
+                    Action guide, checklist, worksheet, wall poster, three SOPs, the clips. Each part credited to its speaker.
+                  </Typography>
+                  <Typography sx={{ mt: 1, fontSize: "0.8rem", fontWeight: 800, color: "#0E2A3D" }}>Open the playbook</Typography>
+                </Box>
+              </Box>
+            </Link>
+          </Box>
+        </EditorialSection>
+      </Reveal>
+
       {/* Spotlight — network-wide news, events & offers on a dark gold
           showcase card with twinkling sparkles and a shimmer sweep. */}
       {spotlights.length > 0 && (

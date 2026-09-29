@@ -68,6 +68,26 @@ export async function GET() {
 
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+
+    // Replay page counters (0069). Best-effort: the dashboard must still
+    // load if the table has not been created yet.
+    const replay = { views: 0, plays: 0, ctaClicks: 0, uniqueViewers: 0, last7Plays: 0 };
+    try {
+      const weekAgo = new Date(now.getTime() - 7 * 86_400_000).toISOString();
+      const { data: ev } = await (supabase as unknown as SupabaseClient)
+        .from("replay_events")
+        .select("kind, ip_hash, created_at")
+        .eq("slug", "rida-live-2026-09-16")
+        .limit(20000);
+      const rows = (ev ?? []) as { kind: string; ip_hash: string | null; created_at: string }[];
+      replay.views = rows.filter((x) => x.kind === "view").length;
+      replay.plays = rows.filter((x) => x.kind === "play").length;
+      replay.ctaClicks = rows.filter((x) => x.kind === "cta_click").length;
+      replay.uniqueViewers = new Set(rows.filter((x) => x.kind === "view" && x.ip_hash).map((x) => x.ip_hash)).size;
+      replay.last7Plays = rows.filter((x) => x.kind === "play" && x.created_at >= weekAgo).length;
+    } catch {
+      /* table missing or unreadable: show zeros */
+    }
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
     const v = vendors.data ?? [];
@@ -168,6 +188,7 @@ export async function GET() {
       recentApplications: recentApplications.data ?? [],
       pendingOffers: pendingOffers.data ?? [],
       foundingCap: 1000,
+      replay,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";

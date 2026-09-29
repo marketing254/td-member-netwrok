@@ -28,6 +28,7 @@ import type { SvgIconComponent } from "@mui/icons-material";
 import { visualForTopic } from "@/components/member/topicVisuals";
 import { InlineTag, editorialText, ink } from "@/components/member/Editorial";
 import { BookCoachingCard } from "@/components/member/BookCoachingCard";
+import { RIDA_PLAYBOOK } from "@/lib/events/ridaReplay";
 import FeedbackDialog from "@/components/member/FeedbackDialog";
 import ResourceInquiries from "@/components/member/ResourceInquiries";
 
@@ -110,6 +111,9 @@ function isVideo(kind: string): boolean {
  * mime_type), kept for resources that the upload pipeline classifies into
  * one of these even when the file extension is missing or weird.
  */
+/** Playbooks built from an event rather than one expert: no coaching card. */
+const EVENT_PLAYBOOK_SLUGS = new Set<string>([RIDA_PLAYBOOK.slug]);
+
 const PDF_KINDS = new Set([
   "action_guide",
   "checklist",
@@ -992,10 +996,12 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
         />
       )}
 
-      {/* 1-on-1 coaching booking — every kit page surfaces this. Rendered
-          only once the kit's expert is RESOLVED (undefined = still
-          loading), so the card never shows a default face and swaps. */}
-      {kitExpert !== undefined && (
+      {/* 1-on-1 coaching booking — every expert kit page surfaces this.
+          Rendered only once the kit's expert is RESOLVED (undefined =
+          still loading), so the card never shows a default face and swaps.
+          Event playbooks (RIDA) have no single expert, so no booking card:
+          the default would be Gary's scheduler, which does not belong there. */}
+      {kitExpert !== undefined && !(kitExpert === null && EVENT_PLAYBOOK_SLUGS.has(slug)) && (
         <Box sx={{ mt: { xs: 4, lg: 5 } }}>
           <BookCoachingCard topicTitle={topicTitle} expert={kitExpert} />
         </Box>

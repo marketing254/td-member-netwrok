@@ -29,7 +29,7 @@ export const founding = {
 // HERO (Section 2 in doc), verbatim
 export const hero = {
   topChip: "FOUNDING MEMBERSHIP, FIRST 100 ONLY",
-  headline: "The only network where every practice problem gets a written action plan in 2–3 business days.",
+  headline: "The only network where every practice problem gets an answer right away, and a person follows up in writing.",
   subtitle:
     "Built for US dental practice owners who want fast answers, measurable vendor savings, and a peer room full of operators who have already solved the problem in front of you.",
   bottomNote:
@@ -115,7 +115,7 @@ export const waitlistByRole = {
       "The waitlist is how we onboard the founding cohort before launch. Get a guaranteed spot, the founding rate, and first access to every feature we ship.",
     benefits: [
       "$49/month founding rate, never increases while your membership stays active",
-      "Expert Hotline — written action plan, by text and email, within 2–3 business days",
+      "Expert Hotline — Beacon answers right away, and a person follows up in writing",
       "Vendor savings averaging $6,000+/year, no per-deal commissions",
       "Cancel anytime, in two clicks, from your account page",
     ],
@@ -152,7 +152,7 @@ export const faqs = [
     q: "What exactly do I get with my membership?",
     a: "Four core things:",
     items: [
-      "An Expert Hotline — leave a voicemail with your question, get a written action plan plus the right experts to contact, by text and email, within 2–3 business days.",
+      "An Expert Hotline — bring any practice problem, get an answer right away from our experts' own sessions, and a person follows up in writing with the right experts to contact.",
       "Exclusive partner discounts averaging $6,000+ per year on supplies, labs, equipment, and services.",
       "An exclusive content library with recorded expert panels, training, and knowledge resources.",
       "A growing library of Practice Playbooks, each built from a real session.",
@@ -196,7 +196,7 @@ export const faqs = [
 // FOOTER (Section 15 in doc)
 export const footer = {
   brandDescription:
-    "The Expert Hotline answers every practice problem with a written action plan in 2–3 business days. Plus exclusive partner discounts, a curated resource library, and a community of Experts and Partners at your fingertips.",
+    "The Expert Hotline answers every practice problem right away, and a person follows up in writing. Plus exclusive partner discounts, a curated resource library, and a community of Experts and Partners at your fingertips.",
   primaryCta: "Claim founding spot",
   secondaryCta: "Email founding team",
   supportLabel: "Support",
@@ -297,7 +297,7 @@ export const pricing = [
     blurb:
       "Full access to every feature in the Dental Member Network. The same membership everyone gets, at a rate that never goes up.",
     features: [
-      "Expert Hotline — written action plan from business coaches and practice advisors within 2–3 business days",
+      "Expert Hotline — an answer right away, then a written follow-up from business coaches and practice advisors",
       "Exclusive partner discounts, negotiated vendor savings averaging $6,000+/year",
       "Exclusive content library, recorded expert panels, training, and knowledge resources",
       "Member directory — practice owners searchable by city, specialty, revenue",

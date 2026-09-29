@@ -16,7 +16,7 @@ const FEATURES = [
   {
     Icon: PhoneCall,
     title: "Expert Hotline",
-    body: "Bring any practice problem — get a written action plan plus the right experts to contact within 2–3 business days.",
+    body: "Bring any practice problem. An answer right away, and a person follows up in writing with the right experts to contact.",
   },
   {
     Icon: Handshake,

@@ -3,8 +3,8 @@
 > A membership network for US dental practice owners that pairs an
 > expert helpline with a partner-discount catalog, a curated kit
 > library of proven playbooks, and a Book Club track. Each member
-> problem gets a written action plan from a real human within 2–3
-> business days.
+> problem gets an answer right away from Beacon, built on the experts'
+> own sessions, and a person follows up in writing.
 
 ## What it is
 
@@ -12,8 +12,8 @@
   $199/month (standard) for ongoing access — no upsell into a coaching
   contract.
 - The helpline is the differentiator: bring any practice problem in
-  plain English, get a written action plan + recommended experts
-  within 2–3 business days.
+  plain English. Beacon answers right away from the experts' own
+  sessions, and a person follows up in writing with recommended experts.
 - Partner discounts average $6,400/year in net savings for active
   members.
 - A growing resource library of expert kits across Practice

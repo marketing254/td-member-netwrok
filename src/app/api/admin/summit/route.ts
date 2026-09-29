@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/guards";
 import { serverError } from "@/lib/api/errorResponse";
-import { SUMMIT, eventsDb, type EventRegistrationRow } from "@/lib/events/summit";
+import { SUMMIT, SUMMIT_EVENTS, eventsDb, type EventRegistrationRow } from "@/lib/events/summit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -63,14 +63,17 @@ function sourceFor(utm: Record<string, string>): string {
   return "Direct link";
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   const guard = await requireAdmin();
   if (!guard.ok) return guard.response;
+  // ?event=<eventId> picks an event; default is the live one (6 November).
+  const wanted = new URL(req.url).searchParams.get("event");
+  const event = SUMMIT_EVENTS.find((e) => e.eventId === wanted) ?? SUMMIT;
   try {
     const { data, error } = await eventsDb()
       .from("event_registrations")
       .select("*")
-      .eq("event_id", SUMMIT.eventId)
+      .eq("event_id", event.eventId)
       .order("created_at", { ascending: false })
       .limit(2000);
     if (error) throw error;
@@ -114,7 +117,12 @@ export async function GET() {
       existing_members: rows.filter((r) => r.entitled_via === "existing_member").length,
     };
 
-    return NextResponse.json({ rows, counts, event: { id: SUMMIT.eventId, title: SUMMIT.title, date: SUMMIT.dateLabel, webinarId: SUMMIT.zoomWebinarId } });
+    return NextResponse.json({
+      rows,
+      counts,
+      event: { id: event.eventId, title: event.title, date: event.dateLabel, webinarId: event.zoomWebinarId },
+      events: SUMMIT_EVENTS.map((e) => ({ id: e.eventId, title: e.title, date: e.dateLabel })),
+    });
   } catch (err) {
     return serverError(err, { route: "GET /api/admin/summit" });
   }

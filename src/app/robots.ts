@@ -37,6 +37,7 @@ export default function robots(): MetadataRoute.Robots {
           "/expert",
           "/expert/",
           "/upgrade",
+          "/replay",
           "/auth/",
           "/member/login",
         ],
