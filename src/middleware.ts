@@ -87,7 +87,7 @@ function buildCsp(): string {
     // the calendar iframe. Spline (my.spline.design + prod.spline.design)
     // hosts the 3D hero scene iframe. Stripe: js.stripe.com hosts the
     // PaymentElement iframe; hooks.stripe.com hosts 3-D Secure challenges.
-    `frame-src 'self' ${supabaseHttps} https://view.officeapps.live.com https://vercel.live https://*.ycb.me https://*.youcanbook.me https://my.spline.design https://*.spline.design https://js.stripe.com https://hooks.stripe.com https://*.js.stripe.com https://checkout.stripe.com https://www.facebook.com`,
+    `frame-src 'self' ${supabaseHttps} https://player.vimeo.com https://view.officeapps.live.com https://vercel.live https://*.ycb.me https://*.youcanbook.me https://my.spline.design https://*.spline.design https://js.stripe.com https://hooks.stripe.com https://*.js.stripe.com https://checkout.stripe.com https://www.facebook.com`,
     "frame-ancestors 'none'",
     "form-action 'self'",
     "base-uri 'self'",

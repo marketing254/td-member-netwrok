@@ -29,7 +29,7 @@ const CARDS: Array<{
   {
     eyebrow: "Members",
     title: "For dental practice owners & teams",
-    body: "Bring any practice problem to the Hotline and get a written action plan plus the right experts to call — within 2–3 business days.",
+    body: "Bring any practice problem to the Hotline. Beacon answers right away from the experts' own sessions, and a person follows up in writing with the right experts to call.",
     perks: [
       "Expert Hotline with written action plans",
       "Growing Practice Playbook library — new content weekly",

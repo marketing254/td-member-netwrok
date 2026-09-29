@@ -129,7 +129,7 @@ export default function MemberInboxPage() {
                 ) : r.status === "pending" ? (
                   <Stack direction="row" spacing={0.6} sx={{ alignItems: "center", color: INK_MUTED }}>
                     <MarkEmailReadRoundedIcon sx={{ fontSize: 15 }} />
-                    <Typography sx={{ fontSize: "0.82rem" }}>The team will reply within 2–3 business days.</Typography>
+                    <Typography sx={{ fontSize: "0.82rem" }}>A person on the team will follow up in writing.</Typography>
                   </Stack>
                 ) : null}
               </Box>

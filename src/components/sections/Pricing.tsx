@@ -18,7 +18,7 @@ const MotionBox = motion.create(Box);
 // days — never "24/7" or "live". Podcasts and AMAs don't exist yet, so
 // their rows are gone and the total is the sum of what's real.
 const VALUE_STACK = [
-  { label: "Expert helpline — written replies in 2–3 business days", value: "$2,400/yr" },
+  { label: "Expert helpline — answers right away, written follow-up", value: "$2,400/yr" },
   { label: "Vendor savings access", value: "$6,000+/yr" },
   { label: "Practice Playbook library", value: "$1,200/yr" },
   { label: "Systems, SOPs & templates", value: "$900/yr" },

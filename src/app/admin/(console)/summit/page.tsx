@@ -89,7 +89,9 @@ function viaLabel(via: Row["entitled_via"]): string {
 export default function SummitAdminPage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [counts, setCounts] = useState<Counts | null>(null);
-  const [eventInfo, setEventInfo] = useState<{ title: string; date: string; webinarId: string } | null>(null);
+  const [eventInfo, setEventInfo] = useState<{ id: string; title: string; date: string; webinarId: string } | null>(null);
+  const [events, setEvents] = useState<{ id: string; title: string; date: string }[]>([]);
+  const [eventId, setEventId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState("");
@@ -100,8 +102,8 @@ export default function SummitAdminPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/summit", { cache: "no-store" });
-      const body = (await res.json()) as { rows?: Row[]; counts?: Counts; event?: { title: string; date: string; webinarId: string }; error?: string };
+      const res = await fetch(eventId ? `/api/admin/summit?event=${encodeURIComponent(eventId)}` : "/api/admin/summit", { cache: "no-store" });
+      const body = (await res.json()) as { rows?: Row[]; counts?: Counts; event?: { id: string; title: string; date: string; webinarId: string }; events?: { id: string; title: string; date: string }[]; error?: string };
       if (!res.ok || body.error) {
         setError(body.error ?? `Failed to load (${res.status})`);
         setRows([]);
@@ -110,13 +112,14 @@ export default function SummitAdminPage() {
       setRows(body.rows ?? []);
       setCounts(body.counts ?? null);
       setEventInfo(body.event ?? null);
+      setEvents(body.events ?? []);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load.");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [eventId]);
 
   useEffect(() => {
     void load();
@@ -187,6 +190,21 @@ export default function SummitAdminPage() {
         </Typography>
       </Box>
 
+      {events.length > 1 && (
+        <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", rowGap: 1 }}>
+          {events.map((e) => (
+            <Chip
+              key={e.id}
+              label={`${e.title} · ${e.date}`}
+              onClick={() => setEventId(e.id)}
+              color={eventInfo?.id === e.id ? "primary" : undefined}
+              variant={eventInfo?.id === e.id ? "filled" : "outlined"}
+              sx={{ fontWeight: 600 }}
+            />
+          ))}
+        </Stack>
+      )}
+
       {error && <Alert severity="error">{error}</Alert>}
 
       {counts && (
@@ -234,6 +252,16 @@ export default function SummitAdminPage() {
           </Button>
           <Button size="small" variant="outlined" onClick={exportCsv} disabled={filtered.length === 0} sx={{ textTransform: "none" }}>
             Export CSV
+          </Button>
+          <Button
+            size="small"
+            variant="contained"
+            component="a"
+            href={`/api/admin/summit/export?event=${encodeURIComponent(eventInfo?.id ?? "")}`}
+            sx={{ textTransform: "none" }}
+            title="Everyone who registered through us and did not finish joining, with a flag for anyone already in the automated abandoned sequence"
+          >
+            Export campaign list
           </Button>
         </Stack>
       </Stack>

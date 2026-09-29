@@ -13,7 +13,7 @@ const STEPS = [
   {
     n: 2,
     title: "A real expert reviews it",
-    body: "Not a bot. A member of the Thriving Dentist team reads it within 3 business days.",
+    body: "Beacon answers right away. Then a member of the team follows up in writing.",
   },
   {
     n: 3,

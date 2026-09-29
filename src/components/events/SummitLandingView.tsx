@@ -16,7 +16,7 @@ import { initMetaPixel, trackMeta } from "@/components/ads/metaPixel";
  *
  * The live form collects exactly the Zoom registration questions plus the
  * recurring-billing agreement, then opens Stripe's EMBEDDED checkout for
- * the campaign offer ($0 today, 30-day trial, then $49/month). Nothing
+ * the campaign offer ($0 today, nothing to pay until 6 January 2027, then $49/month). Nothing
  * here grants access: the server creates the registration as pending,
  * and only the verified Stripe webhook can entitle it and trigger Zoom.
  */
@@ -27,14 +27,17 @@ const SummitCheckout = dynamic(() => import("./SummitCheckout"), {
   loading: () => <p className="stripe-loading">Loading secure checkout…</p>,
 });
 
+/** The nine speakers on the 6 November banner (RIDA Annual Summit 2026, "Built to Stay"). */
 const SPEAKERS = [
-  { img: "/rida/ekta.jpg", name: "Dr. Ekta Pandya", role: "Dentist, DDS · Public Health & AI Advocate" },
-  { img: "/rida/benjamin.jpg", name: "Benjamin Tuinei", role: "Founder & President, Veritas Dental Resources" },
-  { img: "/rida/kiera.jpg", name: "Kiera Dent", role: "CEO & Founder, The Dental A Team" },
-  { img: "/rida/lester.png", name: "Lester De Alwis", role: "Marketing Manager, EKWA Marketing" },
-  { img: "/rida/maria.jpg", name: "Maria Jackson", role: "MS, CRDH · CEO & Founder, Dental AI Solutions" },
-  { img: "/rida/francesca.png", name: "Francesca Ortepi", role: "Founder, Dentech Direct · The Practice Operator™" },
-  { img: "/rida/kevin.png", name: "Kevin Wheeler", role: "Fractional COO & Dental Business Strategist" },
+  { img: "/rida/nov/devon-banks.jpg", name: "DeVon Banks", role: "CEO, D-TECH Billing & Claims" },
+  { img: "/rida/nov/kelly-fox-galvagni.jpg", name: "Kelly Fox Galvagni", role: "Founder, Smile Potential" },
+  { img: "/rida/nov/ken-kaufman.jpg", name: "Ken Kaufman", role: "Founder, Dental Finance Forum and AccruDent" },
+  { img: "/rida/nov/laura-phillips.jpg", name: "Laura Phillips, E.A.", role: "Co-Founder, The Phillips Group" },
+  { img: "/rida/nov/lorne-lavine.jpg", name: "Dr. Lorne Lavine", role: "Owner, The Digital Dentist" },
+  { img: "/rida/nov/naren-arulrajah.jpg", name: "Naren Arulrajah", role: "Founder & CEO, Ekwa Marketing" },
+  { img: "/rida/nov/gary-takacs.jpg", name: "Gary Takacs", role: "Founder, The Thriving Dentist" },
+  { img: "/rida/nov/kristie-kapp.jpg", name: "Kristie Kapp, RDH", role: "CEO & Co-Founder, EBITDent" },
+  { img: "/rida/nov/michael-sonick.jpg", name: "Dr. Michael Sonick", role: "Periodontist and keynote speaker" },
 ];
 
 type Form = {
@@ -163,7 +166,7 @@ export default function SummitLandingView() {
         return;
       }
       trackEvent("sign_up", { method: "summit_trial" });
-      trackEvent("begin_checkout", { currency: "USD", value: 0, items: [{ item_id: "summit_trial", item_name: "DMN 30-day trial" }] });
+      trackEvent("begin_checkout", { currency: "USD", value: 0, items: [{ item_id: "summit_trial", item_name: "DMN two months on us" }] });
       trackMeta("InitiateCheckout", { value: 0, currency: "USD", content_name: "summit_trial" });
       setClientSecret(body.clientSecret);
       setTimeout(() => document.getElementById("pay-head")?.scrollIntoView({ behavior: "smooth", block: "start" }), 250);
@@ -233,30 +236,30 @@ export default function SummitLandingView() {
           <a href="#program">The program</a>
           <a href="#panel">Speakers</a>
           <a href="#membership">DMN membership</a>
-          <a href="#signup" className="small-cta">Start free trial ↗</a>
+          <a href="#signup" className="small-cta">Start my two months ↗</a>
         </nav>
       </header>
 
       <main>
         <section className="c-hero container" id="join">
           <div className="c-overview">
-            <span className="eyebrow">SEPTEMBER 16 · LIVE DENTAL PRACTICE SUMMIT</span>
+            <span className="eyebrow">NOVEMBER 6 · RIDA ANNUAL SUMMIT 2026</span>
             <h1>
-              Stop losing revenue<br />you already <em>earned.</em>
+              Built to stay.<br />The independent practice <em>operating system.</em>
             </h1>
-            <p className="intro">Two focused hours on case acceptance, team performance and patient retention—with seven practice experts.</p>
+            <p className="intro">The playbook for practices feeling the squeeze. Practical strategies from nine experts, six of them in this network, over one afternoon on Zoom.</p>
             <div className="facts">
-              <div><span>WEDNESDAY</span><b>September 16, 2026</b></div>
-              <div><span>LIVE ON ZOOM</span><b>7–9 PM Eastern</b></div>
-              <div><span>CONTINUING EDUCATION</span><b>2 CE credits</b></div>
+              <div><span>FRIDAY</span><b>November 6, 2026</b></div>
+              <div><span>LIVE ON ZOOM</span><b>12:00 to 4:30 PM Eastern</b></div>
+              <div><span>CONTINUING EDUCATION</span><b>4 CE credits</b></div>
             </div>
             <div className="c-checks">
-              <p><span>✓</span> Two live panels and 2 CE credits</p>
-              <p><span>✓</span> DMN Expert Hotline, Practice Playbooks and templates</p>
-              <p><span>✓</span> Expert &amp; company directories and member offers</p>
-              <p><span>✓</span> $0 today. Then $49/month unless cancelled</p>
+              <p><span>✓</span> Your seat on 6 November, booked for you, with 4 CE credits</p>
+              <p><span>✓</span> The Practice Playbook from RIDA Live on your dashboard today</p>
+              <p><span>✓</span> Expert Hotline, Practice Playbooks, directories and member offers</p>
+              <p><span>✓</span> $0 today. Nothing to pay until Wednesday 6 January 2027</p>
             </div>
-            <a className="cta hero-cta" href="#signup">Start my 30-day free trial ↗</a>
+            <a className="cta hero-cta" href="#signup">Start my two months ↗</a>
             <a className="membership-jump" href="#membership">What is included in my DMN membership? ↓</a>
             <span className="speaker-caption" id="panel">YOUR SUMMIT SPEAKERS</span>
             <div className="c-faces">
@@ -279,23 +282,23 @@ export default function SummitLandingView() {
 
           <div className="c-form">
             <div className="signup-card" id="signup">
-              <span className="trial-label">DMN MEMBERSHIP · 30-DAY TRIAL</span>
+              <span className="trial-label">DMN MEMBERSHIP · TWO MONTHS ON US</span>
               <div className="trial-price">$0 <span>today</span></div>
               <p>
-                Then <strong>$49/month</strong>, billed monthly.<br />Cancel before the trial ends to avoid a charge.
+                Nothing to pay until <strong>Wednesday 6 January 2027</strong>.<br />Then $49 a month, yours for life if you join before 6 November. Cancel any time before then and you will not be charged at all.
               </p>
               <div className="signup-includes">
-                <b>Your trial includes</b>
-                <span>September 16 summit access + DMN membership</span>
+                <b>Your membership includes</b>
+                <span>Your seat at the 6 November summit + the RIDA Live playbook + DMN membership</span>
                 <small>Expert Hotline · Practice Playbooks &amp; templates · directories &amp; member offers</small>
               </div>
               <div className="divider" />
 
               {clientSecret ? (
                 <>
-                  <h3 id="pay-head">Complete your free trial</h3>
+                  <h3 id="pay-head">Complete your membership</h3>
                   <p className="pay-head">
-                    {form.email} · $0 today, then $49/month after 30 days.{" "}
+                    {form.email} · $0 today, nothing to pay until 6 January 2027.{" "}
                     <button type="button" onClick={() => setClientSecret(null)}>Edit details</button>
                   </p>
                   <div className="stripe-wrap">
@@ -308,8 +311,8 @@ export default function SummitLandingView() {
                   <h3>You&apos;re registered</h3>
                   <p>
                     {memberDone === "zoom_registered"
-                      ? "Zoom has already emailed your personal join link. See you on September 16."
-                      : "We're registering you for September 16 now. Zoom will email your personal join link within a few minutes."}
+                      ? "Your seat on 6 November is booked. Your Zoom link comes from Zoom, on behalf of RIDA, usually within one business day."
+                      : "We're booking your seat for 6 November now. Your Zoom link will be emailed by the RIDA team, usually within one business day."}
                   </p>
                   <Link className="button primary" href="/dashboard" style={{ width: "100%" }}>Back to my portal ↗</Link>
                 </div>
@@ -318,7 +321,7 @@ export default function SummitLandingView() {
                   <h3>Register for the summit</h3>
                   <div className="member-card">
                     <b>Signed in as {form.email}</b>
-                    Your DMN membership already includes summit access. No checkout needed, just confirm a few details for Zoom.
+                    Your DMN membership already includes your seat at the summit. No checkout needed, just confirm a few details for Zoom.
                   </div>
                   <form
                     onSubmit={(e) => {
@@ -329,7 +332,7 @@ export default function SummitLandingView() {
                     {registrationFields}
                     {error && <div className="form-error">{error}</div>}
                     <button className="button primary" type="submit" disabled={!canSubmit || submitting}>
-                      {submitting ? "Registering…" : "Register me for September 16"} <span aria-hidden="true">↗</span>
+                      {submitting ? "Booking…" : "Book my seat for November 6"} <span aria-hidden="true">↗</span>
                     </button>
                   </form>
                 </>
@@ -361,7 +364,7 @@ export default function SummitLandingView() {
                     <label className="agree">
                       <input type="checkbox" checked={form.agree} onChange={(e) => set("agree", e.target.checked)} />
                       <span>
-                        I agree to the <Link href="/agreement/member" target="_blank" rel="noopener">Member Agreement</Link> and to recurring billing of $49/month after my 30-day trial unless I cancel first.
+                        I agree to the <Link href="/agreement/member" target="_blank" rel="noopener">Member Agreement</Link> and to recurring billing of $49/month from Wednesday 6 January 2027 unless I cancel first.
                       </span>
                     </label>
                     {error && (
@@ -373,15 +376,15 @@ export default function SummitLandingView() {
                       </div>
                     )}
                     <button className="button primary" type="submit" disabled={!canSubmit || submitting}>
-                      {submitting ? "One moment…" : "Continue to free trial"} <span aria-hidden="true">↗</span>
+                      {submitting ? "One moment…" : "Continue, $0 today"} <span aria-hidden="true">↗</span>
                     </button>
                   </form>
-                  <p className="form-note">Card required at checkout. Your billing date and recurring terms will be shown before you confirm.</p>
+                  <p className="form-note">Your card will not be charged today. Billing starts on Wednesday 6 January 2027, at $49 a month. Cancel any time before then and you will not be charged at all. We register you for RIDA, so your name and email are shared with the event organiser. Your Zoom link arrives by email within one business day, not instantly.</p>
                   {!me?.signedIn && (
                     <Link className="text-link existing" href="/member/login?next=%2Fsummit">Already a DMN member? Sign in to register</Link>
                   )}
                   {me?.signedIn && !me.paid && (
-                    <p className="form-note" style={{ textAlign: "center" }}>You&apos;re signed in, but your membership isn&apos;t active yet. Start the trial above to register.</p>
+                    <p className="form-note" style={{ textAlign: "center" }}>You&apos;re signed in, but your membership isn&apos;t active yet. Start above to book your seat.</p>
                   )}
                 </>
               )}
@@ -398,10 +401,10 @@ export default function SummitLandingView() {
                   The summit starts the conversation.<br /><em>DMN helps you keep going.</em>
                 </h2>
               </div>
-              <p>Dental Member Network brings practice support, expert resources and trusted connections together. Use your 30-day trial to explore what helps your practice—starting with this summit.</p>
+              <p>Dental Member Network brings practice support, expert resources and trusted connections together. Your membership is open from today. Use the two months to explore what helps your practice, starting with the playbook from RIDA Live.</p>
             </div>
             <div className="benefit-grid">
-              <article><span className="benefit-label">01 / ASK</span><h3>A real practice question. <br />A human response.</h3><p>Bring a clinical, financial, team or operational question to the Expert Hotline. Get a written response within 2–3 business days.</p></article>
+              <article><span className="benefit-label">01 / ASK</span><h3>A real practice question. <br />A human response.</h3><p>Bring a clinical, financial, team or operational question to the Expert Hotline. Beacon answers right away from the experts&apos; own sessions, and a person follows up in writing.</p></article>
               <article><span className="benefit-label">02 / PUT INTO PRACTICE</span><h3>Expert knowledge you <br />can work with.</h3><p>Explore a growing library of Practice Playbooks, practical tools and templates, with resources such as checklists, worksheets and action guides.</p></article>
               <article><span className="benefit-label">03 / FIND SUPPORT</span><h3>Find the right expertise <br />for your next step.</h3><p>Browse the curated expert directory and vetted company directory when you need to find specialist support for your practice.</p></article>
               <article><span className="benefit-label">04 / EXPLORE</span><h3>Member offers, <br />in one place.</h3><p>Explore confirmed member offers alongside the people, resources and companies in DMN. Individual offer terms apply.</p></article>
@@ -422,10 +425,10 @@ export default function SummitLandingView() {
             </div>
             <div className="membership-close">
               <p>
-                <b>One summit. A full month to explore DMN.</b>
-                <span>After your trial, continue using DMN’s support and resources for $49/month unless cancelled.</span>
+                <b>One summit. Two months to explore DMN.</b>
+                <span>Nothing to pay until Wednesday 6 January 2027. Then $49 a month unless cancelled.</span>
               </p>
-              <a className="cta" href="#signup">Explore DMN with a free trial ↗</a>
+              <a className="cta" href="#signup">Start my two months ↗</a>
             </div>
           </div>
         </section>
@@ -434,36 +437,36 @@ export default function SummitLandingView() {
           <div className="heading-row">
             <div>
               <span className="eyebrow">WHAT YOU’LL EXPLORE</span>
-              <h2>One evening.<br />Two parts of a stronger practice.</h2>
+              <h2>One afternoon.<br />The operating system for an independent practice.</h2>
             </div>
-            <p>The Dental Practice Team Performance<br />&amp; Patient Retention System</p>
+            <p>The playbook for practices<br />feeling the squeeze</p>
           </div>
           <div className="program-grid">
             <article>
-              <span className="chapter">01 / PANEL</span>
-              <h3>The Acceptance<br />Architecture</h3>
-              <p>Help patients move from a treatment plan to a confident decision.</p>
+              <span className="chapter">01 / THE SPEAKERS</span>
+              <h3>Nine experts.<br />Six of them in this network.</h3>
+              <p>Practical strategies from the people who run, finance and grow independent practices.</p>
               <ul>
-                <li>Treatment conversations and case acceptance</li>
-                <li>PPO negotiation and practice margins</li>
-                <li>72-hour follow-up and AI front-desk workflows</li>
+                {SPEAKERS.map((s) => (
+                  <li key={s.name}><b>{s.name}</b>, {s.role}</li>
+                ))}
               </ul>
-              <div className="byline">Dr. Ekta Pandya · Benjamin Tuinei<br />Kiera Dent · Lester De Alwis</div>
             </article>
             <article>
-              <span className="chapter">02 / PANEL</span>
-              <h3>Culture Is<br />Your Moat</h3>
-              <p>Put people and systems together for a more consistent practice.</p>
+              <span className="chapter">02 / WHAT YOU TAKE HOME</span>
+              <h3>Four CE credits,<br />and the work after the day.</h3>
+              <p>The summit is one afternoon. The membership is what you keep.</p>
               <ul>
-                <li>Leadership and everyday accountability</li>
-                <li>Team performance and patient retention</li>
-                <li>Practical operating systems</li>
+                <li>4 CE credits on the day, subject to the provider’s attendance requirements</li>
+                <li>The full replay, in chapters, inside the portal afterwards</li>
+                <li>The Practice Playbook from RIDA Live on your dashboard from day one</li>
+                <li>The Expert Hotline for the questions the day raises</li>
               </ul>
-              <div className="byline">Maria Jackson · Francesca Ortepi<br />Kevin Wheeler</div>
+              <div className="byline">Presented by RIDA, in partnership with Ekwa Marketing</div>
             </article>
           </div>
           <p className="ce-disclosure">
-            <b>CE provider:</b> Thriving Dentist Inc., an AGD PACE-approved program provider. The 2 CE credits are subject to the provider’s attendance and completion requirements.
+            <b>CE provider:</b> Thriving Dentist Inc., an AGD PACE-approved program provider. The 4 CE credits are subject to the provider’s attendance and completion requirements. The seat is free on RIDA’s own site as well; what we add is the booking, the playbook, the library and the two months.
           </p>
         </section>
 
@@ -471,13 +474,13 @@ export default function SummitLandingView() {
           <div className="container">
             <span className="eyebrow">AFTER YOU SIGN UP</span>
             <div className="c-steps">
-              <article><span>01</span><h3>Activate your trial</h3><p>Enter your card securely at checkout. Your trial starts at $0.</p></article>
-              <article><span>02</span><h3>Receive event access</h3><p>Get confirmation and your personal Zoom access details by email.</p></article>
-              <article><span>03</span><h3>Use your 30 days</h3><p>Join the summit and explore DMN’s Practice Playbooks, tools and Expert Hotline.</p></article>
+              <article><span>01</span><h3>Open your membership</h3><p>Enter your card securely at checkout. $0 today, and your membership is open at once.</p></article>
+              <article><span>02</span><h3>Your seat is booked</h3><p>The RIDA team registers you and Zoom emails your personal link, usually within one business day.</p></article>
+              <article><span>03</span><h3>Use your two months</h3><p>Start with the RIDA Live playbook and the Expert Hotline, then join the summit on 6 November.</p></article>
             </div>
-            <a className="cta" href="#signup">Start my free trial ↗</a>
+            <a className="cta" href="#signup">Start my two months ↗</a>
             <p className="offer-terms">
-              <strong>$0 today.</strong> 30-day DMN trial. Then $49/month.<br />Card required. Cancel before the trial ends to avoid a charge.
+              <strong>$0 today.</strong> Nothing to pay until Wednesday 6 January 2027. Then $49 a month.<br />Cancel any time before then and you will not be charged at all.
             </p>
           </div>
         </section>
@@ -488,19 +491,19 @@ export default function SummitLandingView() {
             <h2>Before you join.</h2>
           </div>
           <div>
-            <details><summary>What does DMN membership include?</summary><p>Alongside access to this summit, your trial includes the Expert Hotline, a growing Practice Playbook library, practical tools and templates, curated expert and company directories, and confirmed member offers. These ongoing membership benefits continue while your subscription stays active.</p></details>
-            <details><summary>What happens after the 30 days?</summary><p>Your DMN trial is $0 for 30 days, then $49/month unless cancelled before the trial ends. A card is required at checkout. Your exact first billing date is shown before you confirm, and you can cancel from your member portal at any time.</p></details>
-            <details><summary>How do I get my summit access?</summary><p>Once your trial is active we register you for the live session and Zoom emails your personal join link, usually within a few minutes. The link is unique to you, so please don’t forward it.</p></details>
+            <details><summary>What does DMN membership include?</summary><p>Your seat at the summit, the Practice Playbook built from RIDA Live on your dashboard from day one, the Expert Hotline, a growing Practice Playbook library, practical tools and templates, curated expert and company directories, and confirmed member offers. These continue while your subscription stays active.</p></details>
+            <details><summary>When does billing start?</summary><p>On Wednesday 6 January 2027, two months after the summit, for everyone who joins through this offer, whatever day you join. From then it is $49 a month, locked for life if you join before 6 November. Cancel any time before then and you will not be charged at all. We will remind you by email seven days before the first charge.</p></details>
+            <details><summary>How do I get my Zoom link?</summary><p>Once your membership is open, the RIDA team registers you for the live session and Zoom emails your personal join link, usually within one business day. It comes from Zoom, on behalf of RIDA, so check your spam folder if it has not arrived by the next day. The link is unique to you, so please don’t forward it.</p></details>
             <details><summary>What do I need to do for CE credit?</summary><p>Attend the qualifying session and complete the CE provider’s required attendance verification and evaluation. Registration alone does not earn credit.</p></details>
             <details><summary>I’m already a DMN member. Do I pay again?</summary><p>No. Sign in with your member email and we register you for the summit at no charge. Your existing membership is not changed.</p></details>
-            <details><summary>Is this event exclusive to DMN?</summary><p>No. This campaign offers a DMN trial with summit access. The event is also promoted through the event team’s own channels.</p></details>
+            <details><summary>Is this event exclusive to DMN?</summary><p>No. The summit is free to attend on RIDA’s own site. What we add is the booking, the Practice Playbook from RIDA Live, the library and two months of membership on us. If you cancel before the summit, you keep your seat.</p></details>
           </div>
         </section>
       </main>
 
       <footer className="event-footer container">
         <Image src="/rida/dmn-logo.png" alt="Dental Member Network" width={160} height={52} sizes="160px" />
-        <p>September 16, 2026 · DMN × RIDA</p>
+        <p>November 6, 2026 · DMN × RIDA</p>
         <nav className="site-links" aria-label="Legal and support">
           <Link href="/legal/privacy">Privacy</Link>
           <Link href="/legal/refund">Cancellation</Link>

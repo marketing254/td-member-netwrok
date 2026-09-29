@@ -57,7 +57,7 @@ const WHATS_INSIDE: { icon: SvgIconComponent; title: string; body: string }[] = 
   {
     icon: SupportAgentOutlinedIcon,
     title: "The expert hotline",
-    body: "Bring any practice problem. You get a written answer and the right people to speak to, within 2 to 3 working days.",
+    body: "Bring any practice problem. Beacon answers right away, and a person follows up in writing with the right people to speak to.",
   },
   {
     icon: CalculateOutlinedIcon,
