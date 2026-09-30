@@ -47,6 +47,8 @@ type Overview = {
   foundingCap: number;
   /** Public replay page counters (0069). Zeros until the table exists. */
   replay?: { views: number; plays: number; ctaClicks: number; uniqueViewers: number; last7Plays: number };
+  /** Founding count (spec v2): locked founding members, and of those how many pay. */
+  founding?: { cap: number; locked: number; paying: number; trialing: number; viaRida: number };
 };
 
 export default function AdminOverviewPage() {
@@ -183,6 +185,13 @@ export default function AdminOverviewPage() {
             label="Partner savings · lifetime"
             value={`${data.redemptions.lifetimeSavings.toLocaleString()}`}
             footer={`${data.offers.approved} active offers in market`}
+            accent="secondary"
+          />
+          <Stat
+            icon={PeopleAltOutlinedIcon}
+            label="Founding members"
+            value={`${data.founding?.locked ?? 0} / ${data.founding?.cap ?? 100}`}
+            footer={`${data.founding?.paying ?? 0} paying · ${data.founding?.trialing ?? 0} in free months · ${data.founding?.viaRida ?? 0} through the RIDA offer`}
             accent="secondary"
           />
           <Stat

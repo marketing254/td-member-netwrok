@@ -33,9 +33,15 @@ export async function GET(req: Request) {
     if (!paid) return NextResponse.json({ state: session.status === "expired" ? "invalid" : "processing" });
 
     const regId = session.metadata?.registration_id ?? "";
-    const { data } = await eventsDb().from("event_registrations").select("status, sheet_synced_at").eq("id", regId).maybeSingle();
-    const reg = data as Pick<EventRegistrationRow, "status" | "sheet_synced_at"> | null;
-    return NextResponse.json({ state: "paid", queued: !!reg?.sheet_synced_at });
+    const { data } = await eventsDb().from("event_registrations").select("status, sheet_synced_at, zoom_join_url").eq("id", regId).maybeSingle();
+    const reg = data as Pick<EventRegistrationRow, "status" | "sheet_synced_at" | "zoom_join_url"> | null;
+    // queued: the seat is booked (Zoom API) or handed to the team (sheet).
+    // joinUrl: the member's personal Zoom link when the API booked it.
+    return NextResponse.json({
+      state: "paid",
+      queued: reg?.status === "zoom_registered" || !!reg?.sheet_synced_at,
+      joinUrl: reg?.status === "zoom_registered" ? reg.zoom_join_url : null,
+    });
   } catch {
     return NextResponse.json({ state: "invalid" });
   }

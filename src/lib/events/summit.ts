@@ -2,6 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { RIDA_TRIAL_END_ISO } from "@/lib/events/ridaReplay";
+import { registerWebinarRegistrant, zoomConfigured } from "@/lib/events/zoom";
 
 /**
  * DMN × RIDA events.
@@ -71,7 +72,7 @@ export const SUMMIT: SummitEvent = {
   trialDays: null,
   trialEnd: RIDA_TRIAL_END_ISO,
   /** utm_campaign the ads use for this event. The replay page sends utm_source=replay&utm_campaign=rida. */
-  campaign: "rida_summit_2026_11",
+  campaign: "rida_summit",
   /** Registrations close when the event ends. */
   closesAt: "2026-11-06T16:30:00-05:00",
   ceCredits: 4,
@@ -181,7 +182,51 @@ export async function pushRegistrationToSheet(registrationId: string): Promise<b
   const { data } = await sb.from("event_registrations").select("*").eq("id", registrationId).maybeSingle();
   const reg = data as EventRegistrationRow | null;
   if (!reg || reg.status === "pending_payment") return false;
-  if (reg.sheet_synced_at) return true;
+  if (reg.status === "zoom_registered" || reg.sheet_synced_at) return true;
+
+  // Rushdha, 30 Sep 2026: the November event runs exactly like September.
+  // The site writes ONE Pending row to the registrants sheet and the n8n
+  // workflow "DMN x RIDA Summit" registers the person in Zoom on Naren's
+  // account and writes the join link back; Zoom emails the registrant.
+  // The direct Zoom API path below stays available but only switches on
+  // with ZOOM_DIRECT_REGISTRATION=true plus the Zoom credentials.
+  if (process.env.ZOOM_DIRECT_REGISTRATION === "true" && zoomConfigured() && SUMMIT.zoomWebinarId) {
+    try {
+      const z = await registerWebinarRegistrant({
+        webinarId: SUMMIT.zoomWebinarId,
+        email: reg.email,
+        firstName: reg.first_name,
+        lastName: reg.last_name,
+        phone: reg.phone,
+        org: reg.practice_website_name,
+        customQuestion: reg.speaker_question,
+      });
+      await sb
+        .from("event_registrations")
+        .update({
+          status: "zoom_registered",
+          zoom_webinar_id: SUMMIT.zoomWebinarId,
+          zoom_registrant_id: z.registrantId,
+          zoom_join_url: z.joinUrl,
+          zoom_requested_at: new Date().toISOString(),
+          zoom_registered_at: new Date().toISOString(),
+          zoom_error: null,
+        })
+        .eq("id", registrationId);
+      try {
+        const { sendSummitSeatEmail } = await import("@/lib/email/summitEmails");
+        const sent = await sendSummitSeatEmail({ to: reg.email, firstName: reg.first_name, joinUrl: z.joinUrl });
+        if (sent) await sb.from("event_registrations").update({ confirmation_sent_at: new Date().toISOString() }).eq("id", registrationId);
+      } catch {
+        /* the link is also on the confirmation page and in the portal */
+      }
+      return true;
+    } catch (err) {
+      const why = err instanceof Error ? err.message : "zoom failed";
+      await sb.from("event_registrations").update({ zoom_error: why.slice(0, 900), zoom_attempts: reg.zoom_attempts + 1 }).eq("id", registrationId);
+      // fall through to the sheet so the seat is still booked by a person
+    }
+  }
 
   const url = process.env.SUMMIT_SHEET_WEBHOOK_URL;
   const secret = process.env.SUMMIT_SHEET_SECRET;

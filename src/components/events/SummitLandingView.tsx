@@ -7,6 +7,7 @@ import Image from "next/image";
 import dynamic from "next/dynamic";
 import { trackEvent } from "@/lib/analytics";
 import { initMetaPixel, trackMeta } from "@/components/ads/metaPixel";
+import { useSignOut } from "@/lib/auth/identity";
 
 /**
  * DMN × RIDA summit landing page — Option 3 (compact signup), built from
@@ -76,7 +77,16 @@ function readCookie(name: string): string | null {
   return match ? decodeURIComponent(match[1]!) : null;
 }
 
-export default function SummitLandingView() {
+/**
+ * mode "landing" is /rida: the summit page, every button leads to /rida/join.
+ * mode "join" is /rida/join: the join step only, the offer summary beside
+ * the form, same offer text, same Stripe step. Ad and replay tags are
+ * carried from /rida to /rida/join in the address bar.
+ */
+export default function SummitLandingView({ mode = "landing" }: { mode?: "landing" | "join" }) {
+  const isJoin = mode === "join";
+  const [joinHref, setJoinHref] = useState("/rida/join");
+  const signOut = useSignOut("member");
   const [form, setForm] = useState<Form>(EMPTY);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -96,6 +106,9 @@ export default function SummitLandingView() {
         if (v) utm[k] = v.slice(0, 200);
       }
       tracking.current = { utm, fbclid: sp.get("fbclid"), landingUrl: window.location.href.slice(0, 400) };
+      // Deferred so the state update is not synchronous inside the effect.
+      const nextHref = isJoin ? "#signup" : `/rida/join${window.location.search}`;
+      queueMicrotask(() => setJoinHref(nextHref));
       initMetaPixel();
       trackMeta("PageView");
       trackMeta("ViewContent", { content_name: "summit_trial" });
@@ -236,12 +249,47 @@ export default function SummitLandingView() {
           <a href="#program">The program</a>
           <a href="#panel">Speakers</a>
           <a href="#membership">DMN membership</a>
-          <a href="#signup" className="small-cta">Start my two months ↗</a>
+          <a href={joinHref} className="small-cta">Start my two months ↗</a>
         </nav>
       </header>
 
       <main>
+        {/* The DMN version of the November banner (no cost line, no register button), spec v2. */}
+        {!isJoin && (
+        <div className="container" style={{ paddingTop: 18 }}>
+          <Image
+            src="/replay/rida-annual-2026-11-06-banner.jpg"
+            alt="RIDA Annual Summit 2026, Built to Stay: The Independent Practice Operating System. Nine speakers."
+            width={1600}
+            height={658}
+            sizes="(max-width: 1200px) 100vw, 1160px"
+            priority
+            style={{ width: "100%", height: "auto", borderRadius: 14, display: "block", boxShadow: "0 14px 36px rgba(10,26,47,0.14)" }}
+          />
+        </div>
+        )}
         <section className="c-hero container" id="join">
+          {isJoin ? (
+          <div className="c-overview">
+            <span className="eyebrow">TWO MONTHS ON US · JOIN THE DENTAL MEMBER NETWORK</span>
+            <h1>
+              Join now.<br />Your seat on 6 November <em>is booked for you.</em>
+            </h1>
+            <p className="intro">The Practice Playbook from RIDA Live is on your dashboard the day you join, and there is nothing to pay until Wednesday 6 January 2027. $49 a month for life if you join before 6 November. Cancel any time.</p>
+            <div className="facts">
+              <div><span>TODAY</span><b>$0</b></div>
+              <div><span>FIRST BILLING</span><b>6 January 2027</b></div>
+              <div><span>THEN</span><b>$49 a month</b></div>
+            </div>
+            <div className="c-checks">
+              <p><span>✓</span> Your seat at the RIDA Annual Summit on 6 November, with 4 CE credits through RIDA</p>
+              <p><span>✓</span> The Practice Playbook from RIDA Live on your dashboard today</p>
+              <p><span>✓</span> Expert Hotline, Practice Playbooks, directories and member offers</p>
+              <p><span>✓</span> Thirty-day money-back guarantee. Cancel any time before 6 January and you pay nothing</p>
+            </div>
+            <Link className="membership-jump" href={`/rida${typeof window === "undefined" ? "" : window.location.search}`}>About the summit and the speakers ↗</Link>
+          </div>
+          ) : (
           <div className="c-overview">
             <span className="eyebrow">NOVEMBER 6 · RIDA ANNUAL SUMMIT 2026</span>
             <h1>
@@ -259,7 +307,7 @@ export default function SummitLandingView() {
               <p><span>✓</span> Expert Hotline, Practice Playbooks, directories and member offers</p>
               <p><span>✓</span> $0 today. Nothing to pay until Wednesday 6 January 2027</p>
             </div>
-            <a className="cta hero-cta" href="#signup">Start my two months ↗</a>
+            <a className="cta hero-cta" href={joinHref}>Start my two months ↗</a>
             <a className="membership-jump" href="#membership">What is included in my DMN membership? ↓</a>
             <span className="speaker-caption" id="panel">YOUR SUMMIT SPEAKERS</span>
             <div className="c-faces">
@@ -279,6 +327,7 @@ export default function SummitLandingView() {
               </ul>
             </details>
           </div>
+          )}
 
           <div className="c-form">
             <div className="signup-card" id="signup">
@@ -311,8 +360,8 @@ export default function SummitLandingView() {
                   <h3>You&apos;re registered</h3>
                   <p>
                     {memberDone === "zoom_registered"
-                      ? "Your seat on 6 November is booked. Your Zoom link comes from Zoom, on behalf of RIDA, usually within one business day."
-                      : "We're booking your seat for 6 November now. Your Zoom link will be emailed by the RIDA team, usually within one business day."}
+                      ? "Your seat on 6 November is booked. Zoom is emailing your personal join link now, on behalf of RIDA. Check your spam folder if it is not there in a few minutes."
+                      : "We're booking your seat for 6 November now. Zoom will email your personal join link within a few minutes."}
                   </p>
                   <Link className="button primary" href="/dashboard" style={{ width: "100%" }}>Back to my portal ↗</Link>
                 </div>
@@ -322,6 +371,10 @@ export default function SummitLandingView() {
                   <div className="member-card">
                     <b>Signed in as {form.email}</b>
                     Your DMN membership already includes your seat at the summit. No checkout needed, just confirm a few details for Zoom.
+                    <br />
+                    <button type="button" className="text-link" onClick={() => void signOut()} style={{ background: "none", border: 0, padding: 0, marginTop: 8, cursor: "pointer", font: "inherit" }}>
+                      Not you? Sign out
+                    </button>
                   </div>
                   <form
                     onSubmit={(e) => {
@@ -371,7 +424,7 @@ export default function SummitLandingView() {
                       <div className="form-error">
                         {error}{" "}
                         {alreadyMember && (
-                          <Link href="/member/login?next=%2Fsummit">Sign in to register →</Link>
+                          <Link href="/member/login?next=%2Frida%2Fjoin">Sign in to register →</Link>
                         )}
                       </div>
                     )}
@@ -379,12 +432,17 @@ export default function SummitLandingView() {
                       {submitting ? "One moment…" : "Continue, $0 today"} <span aria-hidden="true">↗</span>
                     </button>
                   </form>
-                  <p className="form-note">Your card will not be charged today. Billing starts on Wednesday 6 January 2027, at $49 a month. Cancel any time before then and you will not be charged at all. We register you for RIDA, so your name and email are shared with the event organiser. Your Zoom link arrives by email within one business day, not instantly.</p>
+                  <p className="form-note">Your card will not be charged today. Billing starts on Wednesday 6 January 2027, at $49 a month. Cancel any time before then and you will not be charged at all. We register you for RIDA, so your name and email are shared with the event organiser. Your Zoom link is emailed to you within a few minutes of joining.</p>
                   {!me?.signedIn && (
-                    <Link className="text-link existing" href="/member/login?next=%2Fsummit">Already a DMN member? Sign in to register</Link>
+                    <Link className="text-link existing" href="/member/login?next=%2Frida%2Fjoin">Already a DMN member? Sign in to register</Link>
                   )}
                   {me?.signedIn && !me.paid && (
-                    <p className="form-note" style={{ textAlign: "center" }}>You&apos;re signed in, but your membership isn&apos;t active yet. Start above to book your seat.</p>
+                    <p className="form-note" style={{ textAlign: "center" }}>
+                      You&apos;re signed in, but your membership isn&apos;t active yet. Start above to book your seat.{" "}
+                      <button type="button" className="text-link" onClick={() => void signOut()} style={{ background: "none", border: 0, padding: 0, cursor: "pointer", font: "inherit" }}>
+                        Not you? Sign out
+                      </button>
+                    </p>
                   )}
                 </>
               )}
@@ -392,6 +450,8 @@ export default function SummitLandingView() {
           </div>
         </section>
 
+        {!isJoin && (
+        <>
         <section className="membership-section" id="membership" aria-labelledby="membership-title">
           <div className="container">
             <div className="membership-heading">
@@ -415,9 +475,10 @@ export default function SummitLandingView() {
                   <span className="eyebrow">A LOOK INSIDE THE RESOURCE LIBRARY</span>
                   <h3>Start with a challenge your practice knows.</h3>
                 </div>
-                <p>A few of the Practice Playbooks to explore.</p>
+                <p>The playbook from RIDA Live, and a few more to explore.</p>
               </div>
               <div className="kit-grid">
+                <article><Image src="/replay/playbook-stop-losing-revenue-square.jpg" width={360} height={360} sizes="(max-width: 760px) 30vw, 120px" alt="Stop Losing Revenue You Already Earned, the Practice Playbook from RIDA Live" /><div><span>FROM RIDA LIVE · ON YOUR DASHBOARD DAY ONE</span><h4>Stop Losing Revenue You Already Earned</h4><p>Kiera Dent, Ben Tuinei, Dr. Ekta Pandya, Maria Jackson, Francesca Ortepi</p></div></article>
                 <article><Image src="/rida/kit-huddle.jpg" width={360} height={360} sizes="(max-width: 760px) 30vw, 120px" alt="Successful Morning Huddle Practice Playbook cover" /><div><span>TEAM ROUTINES</span><h4>Successful Morning Huddle</h4><p>Callie Ward</p></div></article>
                 <article><Image src="/rida/kit-numbers.jpg" width={360} height={360} sizes="(max-width: 760px) 30vw, 120px" alt="Know Your Real Numbers Practice Playbook cover" /><div><span>PRACTICE FINANCES</span><h4>Know Your Real Numbers</h4><p>Laura Phillips, E.A.</p></div></article>
                 <article><Image src="/rida/kit-process.jpg" width={360} height={360} sizes="(max-width: 760px) 30vw, 120px" alt="The Process Comes First Practice Playbook cover" /><div><span>PRACTICE SYSTEMS</span><h4>The Process Comes First</h4><p>DeVon Banks</p></div></article>
@@ -428,7 +489,7 @@ export default function SummitLandingView() {
                 <b>One summit. Two months to explore DMN.</b>
                 <span>Nothing to pay until Wednesday 6 January 2027. Then $49 a month unless cancelled.</span>
               </p>
-              <a className="cta" href="#signup">Start my two months ↗</a>
+              <a className="cta" href={joinHref}>Start my two months ↗</a>
             </div>
           </div>
         </section>
@@ -475,10 +536,10 @@ export default function SummitLandingView() {
             <span className="eyebrow">AFTER YOU SIGN UP</span>
             <div className="c-steps">
               <article><span>01</span><h3>Open your membership</h3><p>Enter your card securely at checkout. $0 today, and your membership is open at once.</p></article>
-              <article><span>02</span><h3>Your seat is booked</h3><p>The RIDA team registers you and Zoom emails your personal link, usually within one business day.</p></article>
+              <article><span>02</span><h3>Your seat is booked</h3><p>You are registered automatically and Zoom emails your personal link within a few minutes.</p></article>
               <article><span>03</span><h3>Use your two months</h3><p>Start with the RIDA Live playbook and the Expert Hotline, then join the summit on 6 November.</p></article>
             </div>
-            <a className="cta" href="#signup">Start my two months ↗</a>
+            <a className="cta" href={joinHref}>Start my two months ↗</a>
             <p className="offer-terms">
               <strong>$0 today.</strong> Nothing to pay until Wednesday 6 January 2027. Then $49 a month.<br />Cancel any time before then and you will not be charged at all.
             </p>
@@ -493,12 +554,14 @@ export default function SummitLandingView() {
           <div>
             <details><summary>What does DMN membership include?</summary><p>Your seat at the summit, the Practice Playbook built from RIDA Live on your dashboard from day one, the Expert Hotline, a growing Practice Playbook library, practical tools and templates, curated expert and company directories, and confirmed member offers. These continue while your subscription stays active.</p></details>
             <details><summary>When does billing start?</summary><p>On Wednesday 6 January 2027, two months after the summit, for everyone who joins through this offer, whatever day you join. From then it is $49 a month, locked for life if you join before 6 November. Cancel any time before then and you will not be charged at all. We will remind you by email seven days before the first charge.</p></details>
-            <details><summary>How do I get my Zoom link?</summary><p>Once your membership is open, the RIDA team registers you for the live session and Zoom emails your personal join link, usually within one business day. It comes from Zoom, on behalf of RIDA, so check your spam folder if it has not arrived by the next day. The link is unique to you, so please don’t forward it.</p></details>
+            <details><summary>How do I get my Zoom link?</summary><p>Once your membership is open you are registered for the live session automatically, and Zoom emails your personal join link within a few minutes. It comes from Zoom, on behalf of RIDA, so check your spam folder if it has not arrived. The link is unique to you, so please don’t forward it.</p></details>
             <details><summary>What do I need to do for CE credit?</summary><p>Attend the qualifying session and complete the CE provider’s required attendance verification and evaluation. Registration alone does not earn credit.</p></details>
             <details><summary>I’m already a DMN member. Do I pay again?</summary><p>No. Sign in with your member email and we register you for the summit at no charge. Your existing membership is not changed.</p></details>
             <details><summary>Is this event exclusive to DMN?</summary><p>No. The summit is free to attend on RIDA’s own site. What we add is the booking, the Practice Playbook from RIDA Live, the library and two months of membership on us. If you cancel before the summit, you keep your seat.</p></details>
           </div>
         </section>
+        </>
+        )}
       </main>
 
       <footer className="event-footer container">

@@ -27,6 +27,41 @@ function transport(): nodemailer.Transporter | null {
   return nodemailer.createTransport({ host, port, secure: port === 465, auth: { user, pass } });
 }
 
+/**
+ * The seat email (spec v2): sent to the member once the Zoom API has
+ * booked their place, with their personal join link. BCC to the team so
+ * there is a record. Fail-soft: the link is also on the confirmation
+ * page and in the portal.
+ */
+export async function sendSummitSeatEmail(input: { to: string; firstName: string; joinUrl: string }): Promise<boolean> {
+  const tx = transport();
+  if (!tx) {
+    console.info(`[summit seat] (no transport) ${input.to}`);
+    return false;
+  }
+  const first = esc(input.firstName || "there");
+  const url = esc(input.joinUrl);
+  const subject = `Your seat at the RIDA Annual Summit on 6 November is booked`;
+  const html = `<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#0A1A2F;max-width:560px;margin:0 auto;padding:24px;line-height:1.6;">
+<p>Hi ${first},</p>
+<p><b>You are registered for RIDA.</b> You came in through the Dental Member Network, so your seat at the RIDA Annual Summit on Friday 6 November 2026, 12:00 to 4:30 PM Eastern, is booked for you. Four CE credits through RIDA.</p>
+<p>This is your personal Zoom link. It is unique to you, so please do not forward it:</p>
+<p><a href="${url}" style="display:inline-block;background:#0E2A3D;color:#fff;text-decoration:none;font-weight:600;padding:12px 22px;border-radius:999px;">Join the summit on 6 November</a></p>
+<p style="font-size:13px;color:#5C6770;">${url}</p>
+<p><b>Your membership is already open.</b> You do not have to wait for the event to start using it. The Practice Playbook from RIDA Live is on your dashboard now: <a href="https://www.dentalmembernetwork.com/dashboard">dentalmembernetwork.com/dashboard</a>.</p>
+<p>Nothing to pay until Wednesday 6 January 2027. Cancel any time before then and you will not be charged at all.</p>
+<p>Warmly,<br>The Dental Member Network team<br><span style="color:#5C6770;">Powered by Thriving Dentist Inc.</span></p>
+</div>`;
+  const text = `Hi ${input.firstName || "there"},\n\nYou are registered for RIDA. You came in through the Dental Member Network, so your seat at the RIDA Annual Summit on Friday 6 November 2026, 12:00 to 4:30 PM Eastern, is booked for you. Four CE credits through RIDA.\n\nYour personal Zoom link (unique to you, please do not forward it):\n${input.joinUrl}\n\nYour membership is already open. The Practice Playbook from RIDA Live is on your dashboard now: https://www.dentalmembernetwork.com/dashboard\n\nNothing to pay until Wednesday 6 January 2027. Cancel any time before then and you will not be charged at all.\n\nThe Dental Member Network team\nPowered by Thriving Dentist Inc.`;
+  try {
+    await tx.sendMail({ from: FROM, to: input.to, bcc: OPS_ALERT_TO, subject, html, text });
+    return true;
+  } catch (err) {
+    console.error("[summit seat] send failed:", err instanceof Error ? err.message : err);
+    return false;
+  }
+}
+
 export async function sendSummitFailureAlert(input: {
   registrationId: string;
   email: string;

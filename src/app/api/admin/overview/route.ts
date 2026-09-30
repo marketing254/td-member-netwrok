@@ -71,6 +71,26 @@ export async function GET() {
 
     // Replay page counters (0069). Best-effort: the dashboard must still
     // load if the table has not been created yet.
+    // The founding count (spec v2, 29 Sep 2026): everyone who joined through
+    // the RIDA offer counts against the founding hundred, free months or
+    // not. Two numbers, never one: founding members, and how many are paying.
+    const founding = { cap: 100, locked: 0, paying: 0, trialing: 0, viaRida: 0 };
+    try {
+      const { data: fm } = await (supabase as unknown as SupabaseClient)
+        .from("members")
+        .select("founding_member_locked, subscription_status, utm_campaign, utm_source")
+        .eq("founding_member_locked", true)
+        .neq("account_type", "job_seeker")
+        .limit(5000);
+      const rows = (fm ?? []) as { subscription_status: string | null; utm_campaign: string | null; utm_source: string | null }[];
+      founding.locked = rows.length;
+      founding.paying = rows.filter((x) => x.subscription_status === "active").length;
+      founding.trialing = rows.filter((x) => x.subscription_status === "trialing").length;
+      founding.viaRida = rows.filter((x) => /rida/i.test(x.utm_campaign ?? "") || x.utm_source === "replay").length;
+    } catch {
+      /* columns missing: show zeros */
+    }
+
     const replay = { views: 0, plays: 0, ctaClicks: 0, uniqueViewers: 0, last7Plays: 0 };
     try {
       const weekAgo = new Date(now.getTime() - 7 * 86_400_000).toISOString();
@@ -189,6 +209,7 @@ export async function GET() {
       pendingOffers: pendingOffers.data ?? [],
       foundingCap: 1000,
       replay,
+      founding,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";

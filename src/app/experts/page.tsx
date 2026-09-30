@@ -70,6 +70,12 @@ const WHAT_YOU_GET = [
     title: "Co-marketing",
     body: "Features across the Thriving Dentist podcast, webinars and social.",
   },
+  // Lester, 30 Sep 2026. Keep "priority" / "first call" (never a guaranteed
+  // slot) and "the ones we run and the ones we run with our partner communities".
+  {
+    title: "First call for our stages",
+    body: "Priority on the speaking places at our exclusive events, the ones we run and the ones we run with our partner communities, starting with the RIDA Annual Summit each November.",
+  },
 ];
 
 // Phase ladder — same shape as the /partners page so both audiences

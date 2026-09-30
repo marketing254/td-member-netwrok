@@ -153,6 +153,7 @@ export default function ReplayPageView({
               />
               <Typography sx={{ mt: 1.75, fontSize: "0.95rem", color: "rgba(255,255,255,0.88)", lineHeight: 1.6 }}>
                 <Box component="strong" sx={{ color: "#fff" }}>Free, and it stays up.</Box> Two hours six minutes, in chapters. Share it with your team.
+                {foundingOpen ? " Then come to the next one: the RIDA Annual Summit on 6 November, your seat booked for you when you join." : ""}
               </Typography>
               <Typography sx={{ mt: 0.6, fontSize: "0.86rem", color: "rgba(255,255,255,0.62)" }}>
                 {RIDA_SPEAKERS.map((s) => s.name).join(", ")}
