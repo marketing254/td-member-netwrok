@@ -27,6 +27,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/partners", priority: 0.8, changeFrequency: "weekly" },
     { path: "/resources", priority: 0.8, changeFrequency: "weekly" },
     { path: "/blog", priority: 0.8, changeFrequency: "weekly" },
+    // Public RIDA Live replay (free, no login), spec v2 29 Sep 2026. Not in the nav.
+    { path: "/replay/rida-summit", priority: 0.8, changeFrequency: "monthly" },
     // Public tool previews — one indexable page per calculator. The tool
     // itself stays member-gated; only the preview image and copy are public.
     { path: "/tools", priority: 0.8, changeFrequency: "weekly" },

@@ -64,6 +64,10 @@ const WHAT_YOU_GET = [
   { title: "Lead flow", body: "Member inquiries with a dashboard and conversion data." },
   { title: "Verified Partner badge", body: "Credibility from a vetted shortlist." },
   { title: "Podcast & events", body: "Guest and speaking slots across the network." },
+  // Lester, 30 Sep 2026. Reads as a pair with the item above. Keep "priority" /
+  // "first call" (never a guaranteed slot) and "the ones we run and the ones we
+  // run with our partner communities".
+  { title: "First call for our stages", body: "Priority on the speaking places at our exclusive events, the ones we run and the ones we run with our partner communities, starting with the RIDA Annual Summit each November." },
   { title: "Co-marketing", body: "Co-branded case studies and newsletter mentions." },
   { title: "A buying audience", body: "Owners reached across the Thriving Dentist ecosystem." },
 ];

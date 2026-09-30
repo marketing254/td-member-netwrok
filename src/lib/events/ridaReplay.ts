@@ -25,7 +25,7 @@ export const RIDA_FOUNDING_CLOSES_LABEL = "6 November";
 
 /** Where every button on the replay page sends people. Carries the UTM so joins can be counted. */
 export const RIDA_JOIN_UTM = "utm_source=replay&utm_campaign=rida";
-export const RIDA_JOIN_HREF = `/summit?${RIDA_JOIN_UTM}`;
+export const RIDA_JOIN_HREF = `/rida/join?${RIDA_JOIN_UTM}`;
 export const RIDA_JOIN_HREF_AFTER_EVENT = `/join/member?${RIDA_JOIN_UTM}`;
 
 export function ridaFoundingOpen(now: Date = new Date()): boolean {

@@ -1,34 +1,19 @@
-import type { Metadata } from "next";
-import { DM_Sans, Libre_Caslon_Display } from "next/font/google";
-import SummitLandingView from "@/components/events/SummitLandingView";
-import "./summit.css";
+import { redirect } from "next/navigation";
 
 /**
- * /summit — the DMN × RIDA September 16 summit landing page (paid-ads).
- *
- * Static and CDN-cacheable like /start: campaign parameters are read in
- * the browser, and nothing touches the database until a visitor submits
- * the form. noindex: a paid-traffic conversion page, per the brief.
+ * /summit — the September ad page's old address. The live offer page is
+ * /rida (spec v2, 29 Sep 2026). Query parameters (utm_*, fbclid) are
+ * carried across so campaign attribution survives old links.
+ * /summit/confirmed stays where it is: it is the Stripe return URL.
  */
-const sans = DM_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--summit-sans", display: "swap" });
-const serif = Libre_Caslon_Display({ subsets: ["latin"], weight: "400", variable: "--summit-serif", display: "swap" });
+export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "September 16 Summit and DMN Membership Trial | DMN × RIDA",
-  description:
-    "September 16 live dental practice summit. Seven speakers, two panels, 2 CE credits and a 30-day DMN trial.",
-  robots: { index: false, follow: false },
-  openGraph: {
-    title: "Stop losing revenue you already earned — live summit, September 16",
-    description: "Two panels, seven practice experts, 2 CE credits. Included with a 30-day DMN membership trial.",
-    type: "website",
-  },
-};
-
-export default function SummitPage() {
-  return (
-    <div className={`summit ${sans.variable} ${serif.variable}`}>
-      <SummitLandingView />
-    </div>
-  );
+export default async function SummitRedirect({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const params = await searchParams;
+  const qs = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (typeof v === "string") qs.set(k, v);
+  }
+  const suffix = qs.toString();
+  redirect(suffix ? `/rida?${suffix}` : "/rida");
 }

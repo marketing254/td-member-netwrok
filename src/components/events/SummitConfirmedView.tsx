@@ -27,6 +27,7 @@ export default function SummitConfirmedView({
   sameBrowser: boolean;
 }) {
   const [queued, setQueued] = useState(false);
+  const [joinUrl, setJoinUrl] = useState<string | null>(null);
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const fired = useRef(false);
 
@@ -77,7 +78,8 @@ export default function SummitConfirmedView({
       attempts += 1;
       try {
         const res = await fetch(`/api/events/summit/status?session_id=${encodeURIComponent(sessionId)}`);
-        const body = (await res.json().catch(() => ({}))) as { state?: string; queued?: boolean };
+        const body = (await res.json().catch(() => ({}))) as { state?: string; queued?: boolean; joinUrl?: string | null };
+        if (body.joinUrl) setJoinUrl(body.joinUrl);
         if (state === "processing" && body.state === "paid") {
           window.location.reload();
           return true;
@@ -101,7 +103,7 @@ export default function SummitConfirmedView({
   return (
     <>
       <header className="event-header container">
-        <Link href="/summit" aria-label="DMN summit">
+        <Link href="/rida" aria-label="DMN summit">
           <Image src="/rida/dmn-logo.png" alt="Dental Member Network" className="dmn-logo" width={194} height={62} priority />
         </Link>
         <span className="brand-partner">
@@ -121,10 +123,19 @@ export default function SummitConfirmedView({
               </p>
               <p>
                 <b>You are registered for RIDA.</b>{" "}
-                {queued
-                  ? "You came in through the Dental Member Network, so your seat on 6 November is booked for you. Your Zoom link will be emailed to this address by the RIDA team, usually within one business day. It comes from Zoom, on behalf of RIDA, so keep an eye out for it and check your spam folder if it has not arrived by tomorrow. Please don't forward it, it's unique to you."
-                  : "Your seat on 6 November is being booked for you now. Your Zoom link will be emailed to this address by the RIDA team, usually within one business day. It comes from Zoom, on behalf of RIDA."}
+                {joinUrl
+                  ? "Your seat on 6 November is booked. This is your personal Zoom link, so please don't forward it. It is also in the email we just sent you."
+                  : queued
+                  ? "You came in through the Dental Member Network, so your seat on 6 November is booked for you. Zoom is emailing your personal join link to this address now, on behalf of RIDA. Check your spam folder if it is not there in a few minutes. Please don't forward it, it's unique to you."
+                  : "Your seat on 6 November is being booked for you now. Zoom will email your personal join link to this address within a few minutes, on behalf of RIDA."}
               </p>
+              {joinUrl && (
+                <p>
+                  <a className="button primary" href={joinUrl} target="_blank" rel="noopener noreferrer" style={{ width: "100%" }}>
+                    Join the summit on 6 November ↗
+                  </a>
+                </p>
+              )}
               <p style={{ fontSize: 13 }}>
                 Friday, November 6, 2026 · 12:00 to 4:30 PM Eastern · 4 CE credits, subject to the provider&apos;s attendance and completion requirements. The Practice Playbook from RIDA Live is on your dashboard now; you do not have to wait for the event to start using your membership.
               </p>
@@ -155,7 +166,7 @@ export default function SummitConfirmedView({
             <div className="success-card">
               <h3>We couldn&apos;t find that registration</h3>
               <p>This link may have expired or been copied incompletely. Start again from the summit page, or email founding@dentalmembernetwork.com and we&apos;ll sort it out.</p>
-              <Link className="button primary" href="/summit" style={{ width: "100%" }}>
+              <Link className="button primary" href="/rida" style={{ width: "100%" }}>
                 Back to the summit page ↗
               </Link>
             </div>
