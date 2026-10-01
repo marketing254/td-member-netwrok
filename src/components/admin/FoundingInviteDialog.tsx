@@ -267,14 +267,7 @@ export default function FoundingInviteDialog({
             <TextField label="Website" value={v.website} onChange={set("website")} fullWidth placeholder="https://acmedental.com" />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField label="Category" value={v.category} onChange={set("category")} fullWidth select>
-              <MenuItem value="">— none —</MenuItem>
-              {vendorCategories.map((c) => (
-                <MenuItem key={c} value={c}>
-                  {c}
-                </MenuItem>
-              ))}
-            </TextField>
+            <CategoryField value={v.category} onChange={(next) => setV((p) => ({ ...p, category: next }))} />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
@@ -326,21 +319,7 @@ export default function FoundingInviteDialog({
                         />
                       </Grid>
                       <Grid size={{ xs: 12, sm: 6 }}>
-                        <TextField
-                          label="Category"
-                          value={c.category}
-                          onChange={(e) => updateCompany(i, "category", e.target.value)}
-                          fullWidth
-                          size="small"
-                          select
-                        >
-                          <MenuItem value="">— none —</MenuItem>
-                          {vendorCategories.map((cat) => (
-                            <MenuItem key={cat} value={cat}>
-                              {cat}
-                            </MenuItem>
-                          ))}
-                        </TextField>
+                        <CategoryField value={c.category} onChange={(next) => updateCompany(i, "category", next)} size="small" />
                       </Grid>
                       <Grid size={{ xs: 12, sm: 6 }}>
                         <TextField
@@ -475,5 +454,65 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
     >
       {children}
     </Typography>
+  );
+}
+
+const OTHER_CATEGORY = "Other";
+
+/**
+ * Category picker with a free-text "Other", the same pattern as the public
+ * signup forms: choose "Other" and a text box appears; what is typed there
+ * is saved as the category itself, never the word "Other".
+ */
+function CategoryField({ value, onChange, size }: { value: string; onChange: (next: string) => void; size?: "small" | "medium" }) {
+  const known = (vendorCategories as readonly string[]).includes(value) && value !== OTHER_CATEGORY;
+  const [other, setOther] = useState(!known && value !== "");
+  // Editing an existing invite whose category was typed by hand opens the box.
+  useEffect(() => {
+    const next = !known && value !== "";
+    queueMicrotask(() => setOther((prev) => (prev === next ? prev : next || prev)));
+  }, [known, value]);
+  const selectValue = other ? OTHER_CATEGORY : known ? value : "";
+  return (
+    <>
+      <TextField
+        label="Category"
+        value={selectValue}
+        onChange={(e) => {
+          if (e.target.value === OTHER_CATEGORY) {
+            setOther(true);
+            onChange("");
+          } else {
+            setOther(false);
+            onChange(e.target.value);
+          }
+        }}
+        fullWidth
+        size={size}
+        select
+      >
+        <MenuItem value="">— none —</MenuItem>
+        {vendorCategories
+          .filter((c) => c !== OTHER_CATEGORY)
+          .map((c) => (
+            <MenuItem key={c} value={c}>
+              {c}
+            </MenuItem>
+          ))}
+        <MenuItem value={OTHER_CATEGORY}>Other (type it in)</MenuItem>
+      </TextField>
+      {other && (
+        <TextField
+          label="Type the category"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          fullWidth
+          size={size}
+          autoFocus
+          placeholder="e.g. Sleep apnea devices"
+          sx={{ mt: 1 }}
+        />
+      )}
+    </>
   );
 }
