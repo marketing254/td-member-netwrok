@@ -40,6 +40,12 @@ const nextConfig: NextConfig = {
     // serving function's bundle.
     "/api/member/tools/\\[id\\]": ["./tools-html/**"],
     "/api/tools/public/\\[id\\]": ["./tools-html/**"],
+    // pdfjs-dist loads its worker by path at runtime
+    // (legacy/build/pdf.worker.mjs). The tracer drops it, so the document
+    // readers (Found Money audit, Second Opinion) fail on Vercel with
+    // "Setting up fake worker failed" unless it is included here.
+    "/api/audit/found-money": ["./node_modules/pdfjs-dist/legacy/build/**"],
+    "/api/member/tools/second-opinion": ["./node_modules/pdfjs-dist/legacy/build/**"],
   },
   compiler: {
     removeConsole:
