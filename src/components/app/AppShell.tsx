@@ -288,7 +288,7 @@ function SidebarContent({
           </Typography>
           <Stack spacing={0.25}>
             {[
-              { label: "Chairside", sub: "Podcast", icon: PodcastsIcon },
+              { label: "Chairside", sub: "First episode 7 October", icon: PodcastsIcon },
               { label: "Office Hours", sub: "Live events", icon: EventAvailableOutlinedIcon },
             ].map((item) => {
               const Icon = item.icon;
@@ -359,7 +359,7 @@ function SidebarContent({
         </Typography>
         {[
           { href: "tel:+18556334707", Icon: PhoneRoundedIcon, label: "(855) 633-4707" },
-          { href: "mailto:hello@joindmn.com", Icon: EmailOutlinedIcon, label: "hello@joindmn.com" },
+          { href: "mailto:support@dentalmembernetwork.com", Icon: EmailOutlinedIcon, label: "support@dentalmembernetwork.com" },
         ].map(({ href, Icon, label }) => (
           <Box
             key={href}

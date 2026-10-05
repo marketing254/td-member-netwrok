@@ -159,6 +159,18 @@ export async function POST(req: Request) {
           /* columns not present yet */
         }
       }
+      // Sign-ups that came through the Found Money audit are tagged so the
+      // team can count how many members the audit brings in (Lester, 5 Oct).
+      if (inserted?.id && utm?.utm_source === "audit") {
+        try {
+          await (sb as unknown as { from: (t: string) => { update: (v: Record<string, unknown>) => { eq: (c: string, v: string) => Promise<unknown> } } })
+            .from("members")
+            .update({ signup_channel: "audit", utm_source: "audit", utm_campaign: utm?.utm_campaign ?? "found_money" })
+            .eq("id", inserted.id);
+        } catch {
+          /* columns from migration 0058 not present yet */
+        }
+      }
       if (insErr) {
         return serverError(insErr, { route, extra: { stage: "members_insert" } });
       }

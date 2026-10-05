@@ -165,6 +165,8 @@ export default function MemberSignupFlow({
             ref: params.get("ref") ?? null,
             promo: params.get("promo") ?? null,
             source: "landing-join",
+            utm_source: params.get("utm_source") ?? null,
+            utm_campaign: params.get("utm_campaign") ?? null,
           },
         }),
       });
@@ -216,6 +218,9 @@ export default function MemberSignupFlow({
             agreement_type: "member",
             agreement_version: "1.0",
             agreement_accepted_at: new Date().toISOString(),
+            // Where the visitor came from, e.g. the Found Money audit unlock button.
+            utm_source: params.get("utm_source") ?? null,
+            utm_campaign: params.get("utm_campaign") ?? null,
           },
         }),
       });
@@ -556,7 +561,7 @@ export default function MemberSignupFlow({
   const inviteLine =
     refCtx.kind === "team"
       ? `A gift from the Dental Member Network team.${offerN > 0 ? ` ${monthsPhrase(offerN)} free, already applied.` : ""}`
-      : `Invited by ${refCtx.name}.${offerN > 0 ? ` ${monthsPhrase(offerN)} free, already applied.` : ""}`;
+      : `Invited by ${refCtx.name.replace(/[.]+$/, "")}.${offerN > 0 ? ` ${monthsPhrase(offerN)} free, already applied.` : ""}`;
   // Two steps, per Lester (24 September): never narrate the payment step
   // in marketing copy. The dates stay exact; only the mechanism is unnamed.
   const howItWorks = [
@@ -590,7 +595,7 @@ export default function MemberSignupFlow({
             <Image src="/dmn-wordmark.png" alt="Dental Member Network" width={720} height={243} priority style={{ width: "100%", height: "auto" }} />
           </Box>
           <Stack direction="row" spacing={1.25} sx={{ alignItems: "center", minWidth: 0 }}>
-            <RefAvatar ctx={refCtx} size={32} />
+            <RefAvatar ctx={refCtx} size={refCtx.kind === "partner" ? 44 : 32} />
             <Typography sx={{ fontSize: { xs: "0.76rem", sm: "0.85rem" }, color: MUTED, fontWeight: 600, lineHeight: 1.35 }}>
               {inviteLine}
             </Typography>
@@ -983,11 +988,16 @@ function RefAvatar({ ctx, size }: { ctx: RefContext; size: number }) {
         src={ctx.imageUrl}
         alt={ctx.name}
         sx={{
-          width: size,
+          // Headshots are round. Partner logos are usually wide wordmarks
+          // (Thriving Dentist, Ekwa), so they get a rounded square with
+          // padding and the whole mark kept inside; a circle clipped them.
+          width: ctx.kind === "expert" ? size : Math.round(size * 4),
           height: size,
-          borderRadius: "50%",
+          borderRadius: ctx.kind === "expert" ? "50%" : `${Math.max(10, Math.round(size * 0.16))}px`,
           objectFit: ctx.kind === "expert" ? "cover" : "contain",
-          objectPosition: "center top",
+          objectPosition: ctx.kind === "expert" ? "center top" : "center",
+          p: ctx.kind === "expert" ? 0 : `${Math.max(6, Math.round(size * 0.14))}px ${Math.max(8, Math.round(size * 0.22))}px`,
+          boxSizing: "border-box",
           bgcolor: "#FFFFFF",
           border: `1px solid ${LINE}`,
           flexShrink: 0,

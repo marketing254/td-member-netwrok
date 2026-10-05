@@ -27,6 +27,7 @@ function sourceLabel(r: Record<string, unknown>): string {
   // keep it distinguishable from the /start membership ads.
   if (campaign === SUMMIT_CAMPAIGN && (channel === "meta_ads" || utm === "meta")) return "Summit ad";
   if (channel === "meta_ads" || utm === "meta") return "Meta ad";
+  if (channel === "audit" || utm === "audit") return "Found Money audit";
   if (r.referral_code_id) return "Referral";
   if (utm) return utm;
   return "Direct / organic";
