@@ -43,6 +43,7 @@ import AutoAwesomeOutlinedIcon from "@mui/icons-material/AutoAwesomeOutlined";
 import LinkRoundedIcon from "@mui/icons-material/LinkRounded";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import EventAvailableOutlinedIcon from "@mui/icons-material/EventAvailableOutlined";
+import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import KeyboardArrowDownOutlinedIcon from "@mui/icons-material/KeyboardArrowDownOutlined";
@@ -166,6 +167,7 @@ const navSections: { label: string; items: NavItem[] }[] = [
       { href: "/admin/promo-codes", label: "Promo codes", icon: ConfirmationNumberOutlinedIcon },
       { href: "/admin/lead-magnets", label: "Lead magnets", icon: DownloadOutlinedIcon },
       { href: "/admin/summit", label: "Summit registrations", icon: EventAvailableOutlinedIcon },
+      { href: "/admin/audits", label: "Found Money audits", icon: ReceiptLongOutlinedIcon },
       { href: "/admin/waitlist", label: "Launch waitlist", icon: MarkEmailReadOutlinedIcon },
     ],
   },

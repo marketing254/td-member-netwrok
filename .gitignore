@@ -65,3 +65,6 @@ run-output.log
 landing/public/dmn-explainer-video-script.html
 landing/public/dmn-explainer-video-script.pdf
 D:\TD - Member Network\landing\scripts\DEMO-course-selling-steps.md
+
+# Local draft output (sample PDFs, never committed)
+scripts/.out/

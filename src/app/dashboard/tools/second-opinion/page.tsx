@@ -35,7 +35,8 @@ const MAX_MB = 15;
 export default function SecondOpinionPage() {
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
-  const [pool, setPool] = useState(true);
+  // Unticked by default (Lester, 30 Sep 2026): members choose to share their prices.
+  const [pool, setPool] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [runs, setRuns] = useState<RunRow[] | null>(null);
