@@ -5,6 +5,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { requireVendor } from "@/lib/auth/guards";
 import { renderAgreementPdf } from "@/lib/pdf/agreementPdf";
 import { sendJoinConfirmationEmail } from "@/lib/email/joinConfirmation";
+import { cadenceOf, hasStep, normalizePlan } from "@/lib/billing/partnerPlan";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -46,10 +47,8 @@ export async function POST(req: Request) {
   }
 
   let stripe;
-  let priceGrowth: string;
   try {
     stripe = getStripe();
-    priceGrowth = partnerPriceIdFor("partner_growth_monthly");
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Stripe is not configured." },
@@ -104,12 +103,21 @@ export async function POST(req: Request) {
   // Price plan (0068). "ladder" partners accepted the original v1.0 wording
   // ($49 months 7-12, $199 from month 13) and get a phased subscription
   // schedule; everyone else gets the flat $49 subscription.
-  const pricing: "ladder" | "flat_49" =
-    (vendor as { pricing_plan?: string | null }).pricing_plan === "ladder" ? "ladder" : "flat_49";
+  const pricing = normalizePlan((vendor as { pricing_plan?: string | null }).pricing_plan);
+  const quarterly = cadenceOf(pricing) === "quarterly";
+  let priceGrowth: string;
   let priceStandard: string | null = null;
-  if (pricing === "ladder") {
+  try {
+    priceGrowth = partnerPriceIdFor(quarterly ? "partner_growth_quarterly" : "partner_growth_monthly");
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Stripe price missing." },
+      { status: 503 },
+    );
+  }
+  if (hasStep(pricing)) {
     try {
-      priceStandard = partnerPriceIdFor("partner_standard_monthly");
+      priceStandard = partnerPriceIdFor(quarterly ? "partner_standard_quarterly" : "partner_standard_monthly");
     } catch (err) {
       return NextResponse.json(
         { error: err instanceof Error ? err.message : "Stripe standard price missing." },
@@ -123,7 +131,7 @@ export async function POST(req: Request) {
   // when the trial converts.
   let subscription;
   try {
-    if (pricing === "ladder" && priceStandard) {
+    if (hasStep(pricing) && priceStandard) {
       // Three phases: $0 for 180 days (card on file), $49 for six monthly
       // cycles, then $199 open-ended. The schedule releases the
       // subscription at the end so it keeps renewing on $199.
@@ -138,11 +146,11 @@ export async function POST(req: Request) {
           collection_method: "charge_automatically",
         },
         phases: [
-          { items: [{ price: priceGrowth }], trial: true, end_date: trialEndSec, metadata: { audience: "vendor", vendor_id: vendor.id, plan: "partner_growth_monthly", pricing_plan: "ladder" } },
-          { items: [{ price: priceGrowth }], duration: { interval: "month", interval_count: 6 }, metadata: { audience: "vendor", vendor_id: vendor.id, plan: "partner_growth_monthly", pricing_plan: "ladder" } },
-          { items: [{ price: priceStandard }], metadata: { audience: "vendor", vendor_id: vendor.id, plan: "partner_standard_monthly", pricing_plan: "ladder" } },
+          { items: [{ price: priceGrowth }], trial: true, end_date: trialEndSec, metadata: { audience: "vendor", vendor_id: vendor.id, pricing_plan: pricing } },
+          { items: [{ price: priceGrowth }], duration: { interval: "month", interval_count: 6 }, metadata: { audience: "vendor", vendor_id: vendor.id, pricing_plan: pricing } },
+          { items: [{ price: priceStandard }], metadata: { audience: "vendor", vendor_id: vendor.id, pricing_plan: pricing } },
         ],
-        metadata: { audience: "vendor", vendor_id: vendor.id, pricing_plan: "ladder" },
+        metadata: { audience: "vendor", vendor_id: vendor.id, pricing_plan: pricing },
       });
       const subId =
         typeof schedule.subscription === "string" ? schedule.subscription : schedule.subscription?.id;
@@ -158,8 +166,7 @@ export async function POST(req: Request) {
         metadata: {
           audience: "vendor",
           vendor_id: vendor.id,
-          plan: "partner_growth_monthly",
-          pricing_plan: "flat_49",
+          pricing_plan: pricing,
         },
         expand: ["latest_invoice"],
       });
@@ -202,7 +209,7 @@ export async function POST(req: Request) {
       stripe_subscription_id: subscription.id,
       stripe_price_id: priceGrowth,
       subscription_status: subscription.status, // "trialing"
-      subscription_interval: "month",
+      subscription_interval: quarterly ? "quarter" : "month",
       current_period_end:
         typeof subscription.items.data[0]?.current_period_end === "number"
           ? new Date(subscription.items.data[0].current_period_end * 1000).toISOString()

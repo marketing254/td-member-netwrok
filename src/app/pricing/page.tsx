@@ -81,7 +81,7 @@ const PRICING_JSONLD = {
       "@type": "Product",
       name: "Dental Member Network — Vendor Partner",
       description:
-        "Featured vendor placement for companies serving dental practices. Same Featured Partner benefits across all phases + refer-and-earn $50 per converted member.",
+        "Featured vendor placement for companies serving dental practices. Same Featured Partner benefits across all phases. Every paying member you refer takes one month off your fee.",
       brand: { "@type": "Brand", name: "Dental Member Network" },
       url: "https://www.dentalmembernetwork.com/pricing",
       offers: [
@@ -507,7 +507,7 @@ export default function PricingPage() {
                 title="Become a Partner"
                 who="For companies with a product or service for dental practices."
                 body="Your company gets a featured listing with a member-only offer, lead routing, and a Verified Partner badge."
-                callout="★ Refer & earn — $50 per converted member"
+                callout="★ Refer a practice, take a month off your fee"
                 ctaLabel="Apply as a Partner"
                 ctaHref="/partners#apply"
               />

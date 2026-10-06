@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/guards";
 import { renderFoundingAgreementPdf } from "@/lib/pdf/foundingAgreementPdf";
@@ -6,6 +6,7 @@ import { sendFoundingInviteEmail } from "@/lib/email/foundingInvite";
 import { notifyTeamEvent } from "@/lib/email/teamNotify";
 import { appOrigin } from "@/lib/stripe";
 import type { FoundingInviteRole } from "@/lib/supabase/types";
+import { isPartnerPlan, normalizePlan } from "@/lib/billing/partnerPlan";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -83,7 +84,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
   }
   {
     const plan = (body as { pricing_plan?: unknown }).pricing_plan;
-    if (plan === "ladder" || plan === "flat_49") patch.pricing_plan = plan;
+    if (isPartnerPlan(plan)) patch.pricing_plan = plan;
   }
   if (typeof body.full_name === "string") {
     const v = body.full_name.trim();
@@ -287,7 +288,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     try {
       pdfBuffer = await renderFoundingAgreementPdf({
         role: invite.role,
-        pricing: invite.pricing_plan,
+        pricing: normalizePlan(invite.pricing_plan),
         signer: { name: signerName, email: invite.email, companyName: invite.company_name },
         companies: invite.companies ?? undefined,
         memberOffer: invite.member_offer,
@@ -316,6 +317,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       to: invite.email,
       fullName: signerName,
       role: invite.role,
+      pricing: normalizePlan(invite.pricing_plan),
       inviteUrl,
       pdfBuffer,
       pdfFilename: `DMN-Founding-Agreement-${invite.agreement_version}.pdf`,
@@ -348,8 +350,10 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       metadata: { invite_id: invite.id, role: invite.role },
     });
 
-    // Email the whole team that the invite went out.
-    void notifyTeamEvent({
+    // Email the whole team that the invite went out. after() keeps the
+    // function alive on Vercel until the send completes; a plain void
+    // promise was dropped once the response had gone out.
+    after(() => notifyTeamEvent({
       kind: "invite_sent",
       role: invite.role,
       name: invite.full_name,
@@ -364,7 +368,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
         { label: "Member offer", value: invite.member_offer },
         { label: "Invite link", value: inviteUrl },
       ],
-    });
+    }));
 
     if (!sent) {
       // Row is updated so the admin can copy the link manually, but be

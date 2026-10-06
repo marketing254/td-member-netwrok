@@ -191,7 +191,7 @@ export type VendorsRow = {
   // Added in 0068_vendor_pricing_plan.sql. "ladder" = $49 months 7-12 then
   // $199 from month 13 (partners who accepted that wording); "flat_49" =
   // $49 from month 7 with no increase (everyone else).
-  pricing_plan: "flat_49" | "ladder";
+  pricing_plan: "flat_49" | "ladder" | "quarterly_49" | "quarterly_149";
   // Added in 0039_vendor_billing_parent.sql — when set, this company's
   // billing + access inherit the referenced (paying) partner vendor.
   billing_parent_id: string | null;
@@ -1059,7 +1059,7 @@ export type LeadMagnetLeadsRow = {
 export type FoundingInviteStatus = "draft" | "sent" | "viewed" | "accepted" | "revoked";
 export type FoundingInviteRole = "expert" | "partner" | "both";
 /** Partner price plan chosen per invite (0066). ladder = $49 then $199 from month 13; flat_49 = $49 for good. */
-export type FoundingInvitePricing = "ladder" | "flat_49";
+export type FoundingInvitePricing = "ladder" | "flat_49" | "quarterly_49" | "quarterly_149";
 
 // Added in 0041_founding_invite_companies.sql. One entry per company on a
 // founding invite; [0] is the principal (paying) company, the rest become

@@ -2,6 +2,7 @@ import "server-only";
 import { AGREEMENT_BCC } from "./foundingInvite";
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { cadenceOf, hasStep, normalizePlan, planAmounts, priceProse, type PartnerPlan } from "@/lib/billing/partnerPlan";
 
 /**
  * Confirmation email for a new founding partner / expert. Attaches the
@@ -81,8 +82,8 @@ function addMonths(date: Date, months: number): Date {
 
 export type JoinConfirmationInput = {
   role: "partner" | "expert" | "both";
-  /** Partner price plan (founding invites, 0066). "ladder" adds the $199 line. */
-  pricing?: "ladder" | "flat_49" | null;
+  /** Partner price plan (lib/billing/partnerPlan). */
+  pricing?: PartnerPlan | null;
   to: string;
   contactName: string;
   companyName?: string | null;
@@ -126,9 +127,14 @@ function companiesWithOffers(opts: {
 export async function sendJoinConfirmationEmail(
   input: JoinConfirmationInput,
 ): Promise<boolean> {
+  // A quarterly Expert + Partner agreement is not a founding one (Lester,
+  // 6 Oct 2026): no "Founding" in the label and no free expert listing.
+  const quarterlyBoth = input.role === "both" && cadenceOf(normalizePlan(input.pricing)) === "quarterly";
   const roleLabel =
     input.role === "both"
-      ? "Founding Expert + Partner"
+      ? quarterlyBoth
+        ? "Expert + Partner"
+        : "Founding Expert + Partner"
       : input.role === "partner"
         ? "Founding Partner"
         : "Founding Expert";
@@ -136,7 +142,7 @@ export async function sendJoinConfirmationEmail(
   const subject = `You're in, ${firstName}. Welcome to the Dental Member Network.`;
   const preheader = `Your ${roleLabel} agreement is confirmed. A copy is attached for your records.`;
 
-  const opts = { ...input, roleLabel, firstName, preheader };
+  const opts = { ...input, roleLabel, firstName, preheader, quarterlyBoth };
   const html = buildHtml(opts);
   const text = buildText(opts);
   const logoBuffer = getLogoBuffer();
@@ -248,6 +254,7 @@ export async function sendJoinConfirmationEmail(
 
 type BuiltOpts = JoinConfirmationInput & {
   roleLabel: string;
+  quarterlyBoth?: boolean;
   firstName: string;
   preheader: string;
 };
@@ -265,9 +272,17 @@ function billingDates(opts: BuiltOpts): { freeThrough: string; firstCharge: stri
 
 /** The "from then on" billing line, per plan. */
 function ongoingBillingLine(opts: BuiltOpts, dates: { standardStart: string }): string {
-  return opts.pricing === "ladder"
-    ? `From ${dates.standardStart}: $199/month standard rate`
-    : `$49/month from then on, with no increase`;
+  const plan = normalizePlan(opts.pricing);
+  const a = planAmounts(plan);
+  return hasStep(plan)
+    ? `From ${dates.standardStart}: ${priceProse(plan, a.standard)}, your standard rate`
+    : `${priceProse(plan, a.growth)} from then on, with no increase`;
+}
+
+/** "$49/month" or "$49 every three months", for the first-billing line. */
+function firstBillingAmount(opts: BuiltOpts): string {
+  const plan = normalizePlan(opts.pricing);
+  return cadenceOf(plan) === "monthly" ? "$49/month" : "$49 every three months";
 }
 
 function agreementSection(opts: BuiltOpts): string {
@@ -291,7 +306,14 @@ function buildHtml(opts: BuiltOpts): string {
   const companyDisplay = opts.companyName?.trim() || opts.contactName;
 
   const welcomeLines: string[] = [];
-  if (opts.role === "both") {
+  if (opts.role === "both" && opts.quarterlyBoth) {
+    welcomeLines.push(
+      `Welcome to the Dental Member Network as an Expert and Partner.`,
+      billingActive
+        ? `One fee covers both roles. Your card is safely saved with Stripe. Nothing was charged today.`
+        : `One fee covers both roles, and no payment details were taken today.`,
+    );
+  } else if (opts.role === "both") {
     welcomeLines.push(
       `Welcome to the Dental Member Network as a Founding Expert and Partner.`,
       billingActive
@@ -324,7 +346,7 @@ function buildHtml(opts: BuiltOpts): string {
   </h2>
   <ul style="padding-left:18px;line-height:1.6;color:#3B4A55;font-size:14px;margin:0 0 4px 0;">
     <li>Today through ${dates.freeThrough}: $0 (your 6 founding months)</li>
-    <li>First billing on ${dates.firstCharge}: $49/month</li>
+    <li>First billing on ${dates.firstCharge}: ${firstBillingAmount(opts)}</li>
     <li>${ongoingBillingLine(opts, dates)}</li>
     <li>Cancel anytime with 30 days&#39; written notice. We&#39;ll remind you 7 days before your free period ends.</li>
   </ul>`;
@@ -426,7 +448,14 @@ function buildText(opts: BuiltOpts): string {
   const companyDisplay = opts.companyName?.trim() || opts.contactName;
 
   const welcomeLines: string[] = [];
-  if (opts.role === "both") {
+  if (opts.role === "both" && opts.quarterlyBoth) {
+    welcomeLines.push(
+      `Welcome to the Dental Member Network as an Expert and Partner.`,
+      billingActive
+        ? `One fee covers both roles. Your card is safely saved with Stripe. Nothing was charged today.`
+        : `One fee covers both roles, and no payment details were taken today.`,
+    );
+  } else if (opts.role === "both") {
     welcomeLines.push(
       `Welcome to the Dental Member Network as a Founding Expert and Partner.`,
       billingActive
@@ -451,7 +480,7 @@ function buildText(opts: BuiltOpts): string {
     billingText = `
 Your billing, in plain dates:
   - Today through ${dates.freeThrough}: $0 (your 6 founding months)
-  - First billing on ${dates.firstCharge}: $49/month
+  - First billing on ${dates.firstCharge}: ${firstBillingAmount(opts)}
   - ${ongoingBillingLine(opts, dates)}
   - Cancel anytime with 30 days' written notice. We'll remind you 7 days before your free period ends.
 `;

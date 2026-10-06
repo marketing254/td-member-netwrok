@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { normalizePlan, rampSteps, type PartnerPlan } from "@/lib/billing/partnerPlan";
 import {
   Alert,
   Box,
@@ -56,8 +57,8 @@ export default function TrialStartCard({
   startEndpoint: string;
   audience: "gold" | "green";
   onSuccess?: () => void;
-  /** Partner price plan (0068). "ladder" shows the $199 month-13 line. */
-  pricing?: "ladder" | "flat_49" | null;
+  /** Partner price plan (lib/billing/partnerPlan). */
+  pricing?: PartnerPlan | null;
 }) {
   const accentColor = audience === "gold" ? "#A07823" : "#2C7A52";
   const accentDeep = audience === "gold" ? "#7A5B17" : "#1F5238";
@@ -147,15 +148,9 @@ export default function TrialStartCard({
 
         {/* Ramp summary */}
         <Box sx={{ bgcolor: accentTint, borderRadius: 1.5, px: 2, py: 1.5, mb: 2.5 }}>
-          <RampLine label="Now to month 6" price="$0/mo" bold />
-          {pricing === "ladder" ? (
-            <>
-              <RampLine label="Months 7 to 12" price="$49/mo" />
-              <RampLine label="Month 13 onward" price="$199/mo" />
-            </>
-          ) : (
-            <RampLine label="Month 7 onward" price="$49/mo" />
-          )}
+          {rampSteps(normalizePlan(pricing)).map((s, i) => (
+            <RampLine key={s.label} label={s.label} price={s.price} bold={i === 0} />
+          ))}
         </Box>
 
         {/* Payment element — skeleton while it boots, no status text */}

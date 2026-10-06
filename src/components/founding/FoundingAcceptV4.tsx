@@ -22,6 +22,7 @@ import {
   useElements,
   useStripe,
 } from "@stripe/react-stripe-js";
+import { normalizePlan, rampSteps, type PartnerPlan } from "@/lib/billing/partnerPlan";
 
 const STRIPE_PK = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 let stripePromise: Promise<Stripe | null> | null = null;
@@ -39,8 +40,8 @@ export type FoundingAcceptProps = {
   fullName: string;
   signerName: string | null;
   role: "expert" | "partner" | "both";
-  /** Partner price plan: "ladder" shows the $199 step from month 13; "flat_49" never does. */
-  pricing?: "ladder" | "flat_49" | null;
+  /** Partner price plan (lib/billing/partnerPlan): monthly or quarterly, with or without a month-13 step. */
+  pricing?: PartnerPlan | null;
   companyName: string | null;
   memberOffer: string | null;
   agreementUrl: string | null;
@@ -144,15 +145,9 @@ export default function FoundingAcceptV4(props: FoundingAcceptProps) {
                 </Typography>
               </Stack>
               <Box sx={{ bgcolor: "rgba(217,168,75,0.08)", borderRadius: 1.5, px: 2, py: 1.5, mb: 2.5 }}>
-                <RampLine label="Now to month 6" price="$0/mo" bold />
-                {props.pricing === "ladder" ? (
-                  <>
-                    <RampLine label="Months 7 to 12" price="$49/mo" />
-                    <RampLine label="Month 13 onward" price="$199/mo" />
-                  </>
-                ) : (
-                  <RampLine label="Month 7 onward" price="$49/mo" />
-                )}
+                {rampSteps(normalizePlan(props.pricing)).map((s, i) => (
+                  <RampLine key={s.label} label={s.label} price={s.price} bold={i === 0} />
+                ))}
               </Box>
             </>
           ) : (

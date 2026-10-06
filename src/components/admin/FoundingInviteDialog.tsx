@@ -15,6 +15,7 @@ import {
   Typography,
 } from "@mui/material";
 import { vendorCategories } from "@/lib/vendorData";
+import { cadenceOf, planAmounts, planFrom, rampSteps, type BillingCadence, type PartnerPlan } from "@/lib/billing/partnerPlan";
 
 export type FoundingInviteRoleValue = "partner" | "expert" | "both";
 
@@ -26,12 +27,12 @@ export type AdditionalCompany = {
   contact_email: string;
 };
 
-export type FoundingInvitePricingValue = "ladder" | "flat_49";
+export type FoundingInvitePricingValue = PartnerPlan;
 
 export type FoundingInviteFormValues = {
   id?: string;
   role: FoundingInviteRoleValue;
-  /** Partner price plan. flat_49 = $49 from month 7 for good; ladder = $49 then $199 from month 13. */
+  /** Partner price plan: monthly or quarterly, and the fee from month 13. See lib/billing/partnerPlan. */
   pricing_plan: FoundingInvitePricingValue;
   full_name: string;
   email: string;
@@ -231,23 +232,34 @@ export default function FoundingInviteDialog({
           </Grid>
 
           {needsCompany && (
-            <Grid size={{ xs: 12 }}>
-              <TextField
-                label="Partner pricing"
-                value={v.pricing_plan}
-                onChange={set("pricing_plan")}
-                fullWidth
-                select
-                helperText={
-                  v.pricing_plan === "ladder"
-                    ? "Agreement, acceptance page, email and Stripe schedule all show $49 for months 7-12 and $199 from month 13."
-                    : "One rate only: $0 for months 1-6, then $49 a month with no increase. Nothing they see mentions $199."
-                }
-              >
-                <MenuItem value="flat_49">$49 flat — $0 months 1-6, then $49/mo for good</MenuItem>
-                <MenuItem value="ladder">Standard ladder — $49 months 7-12, then $199/mo from month 13</MenuItem>
-              </TextField>
-            </Grid>
+            <>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  label="Billing"
+                  value={cadenceOf(v.pricing_plan)}
+                  onChange={(e) => setV((p) => ({ ...p, pricing_plan: planFrom(e.target.value as BillingCadence, planAmounts(p.pricing_plan).standard === 49 ? 49 : e.target.value === "quarterly" ? 149 : 199) }))}
+                  fullWidth
+                  select
+                  helperText="Six months free first, on every plan."
+                >
+                  <MenuItem value="monthly">Monthly · $49 a month from month 7</MenuItem>
+                  <MenuItem value="quarterly">Quarterly · $49 every three months from month 7</MenuItem>
+                </TextField>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  label="Fee from month 13"
+                  value={String(planAmounts(v.pricing_plan).standard)}
+                  onChange={(e) => setV((p) => ({ ...p, pricing_plan: planFrom(cadenceOf(p.pricing_plan), Number(e.target.value)) }))}
+                  fullWidth
+                  select
+                  helperText={`Agreement, sign-up page, email and Stripe schedule all show: ${rampSteps(v.pricing_plan).map((s) => `${s.label} ${s.price}`).join(" · ")}.`}
+                >
+                  <MenuItem value="49">{cadenceOf(v.pricing_plan) === "monthly" ? "$49 a month, no increase" : "$49 every three months, no increase"}</MenuItem>
+                  <MenuItem value={cadenceOf(v.pricing_plan) === "monthly" ? "199" : "149"}>{cadenceOf(v.pricing_plan) === "monthly" ? "$199 a month from month 13" : "$149 every three months from month 13"}</MenuItem>
+                </TextField>
+              </Grid>
+            </>
           )}
 
           <Grid size={{ xs: 12 }}>

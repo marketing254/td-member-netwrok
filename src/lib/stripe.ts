@@ -222,10 +222,12 @@ export const EXPERT_PLAN_DISPLAY: Record<
   expert_standard_annual:  { amount: 1990, per: "yr", phase: "standard", label: "Expert Standard Annual" },
 };
 
-export function partnerPriceIdFor(plan: PartnerPlanKey): string {
+export function partnerPriceIdFor(plan: PartnerPlanKey | "partner_growth_quarterly" | "partner_standard_quarterly"): string {
   const envKey =
     plan === "partner_growth_monthly"   ? "STRIPE_PRICE_PARTNER_GROWTH_MONTHLY"
       : plan === "partner_standard_monthly" ? "STRIPE_PRICE_PARTNER_STANDARD_MONTHLY"
+      : plan === "partner_growth_quarterly" ? "STRIPE_PRICE_PARTNER_GROWTH_QUARTERLY"
+      : plan === "partner_standard_quarterly" ? "STRIPE_PRICE_PARTNER_STANDARD_QUARTERLY"
       : "STRIPE_PRICE_PARTNER_STANDARD_ANNUAL";
   const value = process.env[envKey];
   if (!value) {

@@ -22,6 +22,7 @@ import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { fetchCurrentVendor } from "@/lib/supabase/vendorQueries";
 import type { VendorsRow } from "@/lib/supabase/types";
 import TrialStartCard from "@/components/shared/TrialStartCard";
+import { hasStep, normalizePlan, planAmounts, rampSteps } from "@/lib/billing/partnerPlan";
 
 type Invoice = {
   id: string;
@@ -39,6 +40,7 @@ type Invoice = {
 const PLAN_LABELS: Record<string, { name: string; cadenceLabel: string }> = {
   founding: { name: "Founding Partner", cadenceLabel: "12-month founding cohort · waived months 1-6" },
   standard: { name: "Standard Partner", cadenceLabel: "$49/month, month-to-month" },
+  standard_quarterly: { name: "Standard Partner", cadenceLabel: "$49 every three months" },
 };
 
 export default function VendorAccountPage() {
@@ -124,12 +126,14 @@ export default function VendorAccountPage() {
     );
   }
 
-  const plan = PLAN_LABELS[vendor.plan_id ?? "founding"] ?? PLAN_LABELS.founding;
+  const planMeta = PLAN_LABELS[vendor.plan_id ?? "founding"] ?? PLAN_LABELS.founding;
   const monthsLeftInWaiver = Math.max(0, 6 - vendor.months_in_program);
   const waiverProgress = Math.min(100, (vendor.months_in_program / 6) * 100);
-  const ladder = vendor.pricing_plan === "ladder";
+  const plan = normalizePlan(vendor.pricing_plan);
+  const amounts = planAmounts(plan);
   const nextBill =
-    monthsLeftInWaiver > 0 ? "$0.00" : ladder && vendor.months_in_program > 12 ? "$199.00" : "$49.00";
+    monthsLeftInWaiver > 0 ? "$0.00" : hasStep(plan) && vendor.months_in_program > 12 ? `${amounts.standard}.00` : `${amounts.growth}.00`;
+  const steps = rampSteps(plan);
 
   return (
     <Stack spacing={2.5}>
@@ -144,8 +148,8 @@ export default function VendorAccountPage() {
         <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
           <StatCard
             label="Current plan"
-            value={plan.name}
-            footer={<Box>{plan.cadenceLabel}</Box>}
+            value={planMeta.name}
+            footer={<Box>{planMeta.cadenceLabel}</Box>}
             accent="gold"
           />
         </Grid>
@@ -220,35 +224,23 @@ export default function VendorAccountPage() {
                 <Typography sx={{ fontSize: "0.82rem", fontWeight: 600, color: "#0A1A2F" }}>
                   Pricing ladder
                 </Typography>
-                <LadderRow
-                  period="Months 1-6"
-                  price="$0/mo"
-                  note="Founding waiver, applies automatically"
-                  current={vendor.months_in_program <= 6}
-                />
-                {ladder ? (
-                  <>
-                    <LadderRow
-                      period="Months 7-12"
-                      price="$49/mo"
-                      note="Locked launch rate"
-                      current={vendor.months_in_program > 6 && vendor.months_in_program <= 12}
-                    />
-                    <LadderRow
-                      period="Month 13 onward"
-                      price="$199/mo"
-                      note="Standard partner rate"
-                      current={vendor.months_in_program > 12}
-                    />
-                  </>
-                ) : (
+                {steps.map((s, i) => (
                   <LadderRow
-                    period="Month 7 onward"
-                    price="$49/mo"
-                    note="Locked launch rate"
-                    current={vendor.months_in_program > 6}
+                    key={s.label}
+                    period={s.label}
+                    price={s.price}
+                    note={s.note ?? ""}
+                    current={
+                      i === 0
+                        ? vendor.months_in_program <= 6
+                        : steps.length === 3
+                          ? i === 1
+                            ? vendor.months_in_program > 6 && vendor.months_in_program <= 12
+                            : vendor.months_in_program > 12
+                          : vendor.months_in_program > 6
+                    }
                   />
-                )}
+                ))}
               </Stack>
             </Stack>
           </SectionCard>
