@@ -11,7 +11,7 @@ export const brand = {
   // untracked direct number; we lose attribution if we do.
   phoneDisplay: "(855) 633-4707",
   phoneTel: "+18556334707",
-  email: "hello@joindmn.com",
+  email: "support@dentalmembernetwork.com",
   domain: "dentalmembernetwork.com",
   joinUrl: "/join",
   signInUrl: "/member/login",

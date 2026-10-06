@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Box, Button, Dialog, Grow, IconButton, Stack, Typography } from "@mui/material";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
@@ -160,10 +161,16 @@ const PERKS = [
   { icon: VerifiedOutlinedIcon, label: <>30-day<br />money-back guarantee</> },
 ];
 
+/** Pages where the offer must not appear (Lester, 7 Oct 2026: nothing distracting from the audit upload). */
+const SUPPRESSED_PREFIXES = ["/audit/found-money"];
+
 export default function ExitIntentOffer() {
+  const pathname = usePathname() ?? "";
+  const suppressed = SUPPRESSED_PREFIXES.some((p) => pathname.startsWith(p));
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
+    if (suppressed) return;
     try {
       if (sessionStorage.getItem(SESSION_KEY)) return;
     } catch {
@@ -227,7 +234,7 @@ export default function ExitIntentOffer() {
       clearTimeout(armTimer);
       teardown();
     };
-  }, []);
+  }, [suppressed]);
 
   return (
     <Dialog

@@ -38,7 +38,7 @@ const SO_MAX_BYTES = 15 * 1024 * 1024;
 
 const WHAT_WE_READ = [
   { icon: CreditCardOutlinedIcon, title: "Card fees", body: "Your real processing rate, and the words to use to get it cut." },
-  { icon: Inventory2OutlinedIcon, title: "Supplies", body: "Your prices, item by item, against what other members pay." },
+  { icon: Inventory2OutlinedIcon, title: "Supplies", body: "Your prices, item by item. As more members join, we compare them with what other members pay." },
   { icon: ReceiptLongOutlinedIcon, title: "Subscriptions", body: "Software and services you pay for twice, or no longer use." },
 ];
 
