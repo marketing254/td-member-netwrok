@@ -1,4 +1,5 @@
 import "server-only";
+import { cadenceOf, normalizePlan, type PartnerPlan } from "@/lib/billing/partnerPlan";
 
 /**
  * Founding invite email — sends the private /founding/<code> link to a
@@ -25,6 +26,8 @@ function hasPartnerRole(role: FoundingInviteEmailInput["role"]): boolean {
 }
 
 export type FoundingInviteEmailInput = {
+  /** Partner price plan (lib/billing/partnerPlan). Quarterly Expert + Partner drops the "Founding" label. */
+  pricing?: PartnerPlan | null;
   to: string;
   fullName: string;
   role: "expert" | "partner" | "both";
@@ -37,9 +40,12 @@ export type FoundingInviteEmailInput = {
 export async function sendFoundingInviteEmail(
   input: FoundingInviteEmailInput,
 ): Promise<boolean> {
+  const quarterlyBoth = input.role === "both" && cadenceOf(normalizePlan(input.pricing)) === "quarterly";
   const roleLabel =
     input.role === "both"
-      ? "Founding Expert + Partner"
+      ? quarterlyBoth
+        ? "Expert + Partner"
+        : "Founding Expert + Partner"
       : input.role === "partner"
         ? "Founding Partner"
         : "Founding Expert";

@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import crypto from "node:crypto";
 import {
   getStripe,
@@ -9,6 +9,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { renderFoundingAgreementPdf } from "@/lib/pdf/foundingAgreementPdf";
 import { sendJoinConfirmationEmail } from "@/lib/email/joinConfirmation";
 import { notifyTeamEvent } from "@/lib/email/teamNotify";
+import { cadenceOf, normalizePlan, planLabel } from "@/lib/billing/partnerPlan";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -146,12 +147,15 @@ export async function POST(req: Request, ctx: { params: Promise<{ code: string }
     // partner ramp. Expert-only founding invites do not enter Stripe.
     // The ramp is a phased subscription schedule: $0 (trial) → $49 growth,
     // and for "ladder" invites a third $199 phase from month 13.
-    const ladder = invite.pricing_plan === "ladder";
+    const plan = normalizePlan(invite.pricing_plan);
+    const quarterly = cadenceOf(plan) === "quarterly";
+    const ladder = plan === "ladder";
     let growthPrice: string;
     let standardPrice: string | null = null;
     try {
-      growthPrice = partnerPriceIdFor("partner_growth_monthly");
+      growthPrice = partnerPriceIdFor(quarterly ? "partner_growth_quarterly" : "partner_growth_monthly");
       if (ladder) standardPrice = partnerPriceIdFor("partner_standard_monthly");
+      if (plan === "quarterly_149") standardPrice = partnerPriceIdFor("partner_standard_quarterly");
     } catch (err) {
       return NextResponse.json(
         { error: err instanceof Error ? err.message : "Stripe price missing." },
@@ -167,7 +171,34 @@ export async function POST(req: Request, ctx: { params: Promise<{ code: string }
 
     let subscription;
     try {
-      if (canSchedule) {
+      if (quarterly) {
+        // Quarterly plans (Lester, 5 Oct 2026): six months free counted
+        // from the day they accept, then $49 every three months; for
+        // quarterly_149 two quarters at $49 and $149 from month 13.
+        const schedule = await stripe.subscriptionSchedules.create({
+          customer: customerId,
+          start_date: nowSec,
+          end_behavior: "release",
+          default_settings: {
+            default_payment_method: paymentMethodId,
+            collection_method: "charge_automatically",
+          },
+          phases: standardPrice
+            ? [
+                { items: [{ price: growthPrice }], trial: true, end_date: nowSec + TRIAL_DAYS * 24 * 60 * 60 },
+                { items: [{ price: growthPrice }], duration: { interval: "month", interval_count: 6 } },
+                { items: [{ price: standardPrice }] },
+              ]
+            : [
+                { items: [{ price: growthPrice }], trial: true, end_date: nowSec + TRIAL_DAYS * 24 * 60 * 60 },
+                { items: [{ price: growthPrice }] },
+              ],
+          metadata: { founding_invite: code, role: invite.role, pricing_plan: plan },
+        });
+        const subId = typeof schedule.subscription === "string" ? schedule.subscription : schedule.subscription?.id;
+        if (!subId) throw new Error("Schedule did not create a subscription.");
+        subscription = await stripe.subscriptions.retrieve(subId);
+      } else if (canSchedule) {
         // Fixed-date founding ramp.
         const schedule = await stripe.subscriptionSchedules.create({
           customer: customerId,
@@ -262,7 +293,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ code: string }
         stripe_subscription_id: subscriptionId,
         stripe_price_id: priceId,
         subscription_status: subscriptionStatus,
-        subscription_interval: "month",
+        subscription_interval: cadenceOf(normalizePlan(invite.pricing_plan)) === "quarterly" ? "quarter" : "month",
         current_period_end: periodEnd,
         card_brand: cardBrand,
         card_last4: cardLast4,
@@ -443,7 +474,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ code: string }
   try {
     signedPdf = await renderFoundingAgreementPdf({
       role: invite.role,
-      pricing: invite.pricing_plan,
+      pricing: normalizePlan(invite.pricing_plan),
       signer: { name: signerName, email, companyName: invite.company_name },
       companies: invite.companies ?? undefined,
       memberOffer: invite.member_offer,
@@ -484,13 +515,14 @@ export async function POST(req: Request, ctx: { params: Promise<{ code: string }
   // them to check their inbox and sign in; the portal login screen is what
   // sends the 6-digit code, only once they submit their email there.
   if (signedPdf) {
-    void sendJoinConfirmationEmail({
+    const pdfForEmail = signedPdf;
+    after(() => sendJoinConfirmationEmail({
       role: invite.role,
-      pricing: invite.pricing_plan,
+      pricing: normalizePlan(invite.pricing_plan),
       to: email,
       contactName: signerName,
       companyName: invite.company_name,
-      pdfBuffer: signedPdf,
+      pdfBuffer: pdfForEmail,
       pdfFilename: `DMN-Founding-Agreement-${invite.agreement_version}.pdf`,
       portalUrl: `${appOrigin()}${wantsExpert ? "/expert/login" : "/vendor/login"}`,
       agreementVersion: invite.agreement_version,
@@ -499,7 +531,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ code: string }
       companies: invite.companies ?? undefined,
       trialEndsAt: periodEnd,
       cardCaptured: invite.role === "partner" || invite.role === "both",
-    });
+    }));
   }
 
   // Alert the whole team that the invitee accepted + saved their card so
@@ -508,7 +540,10 @@ export async function POST(req: Request, ctx: { params: Promise<{ code: string }
   const trialEndsNice = periodEnd
     ? new Date(periodEnd).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
     : null;
-  void notifyTeamEvent({
+  // after() keeps the function alive on Vercel until the send completes.
+  // A plain void promise here was dropped once the response went out,
+  // which is why partner acceptances never reached the team.
+  after(() => notifyTeamEvent({
     kind: "invite_accepted",
     role: invite.role,
     name: signerName,
@@ -523,9 +558,10 @@ export async function POST(req: Request, ctx: { params: Promise<{ code: string }
       { label: "Payment method", value: cardCaptured ? "On file" : null },
       { label: "Subscription", value: subscriptionStatus },
       { label: "Free trial ends", value: trialEndsNice },
+      { label: "Plan", value: planLabel(normalizePlan(invite.pricing_plan)) },
       { label: "Member offer", value: invite.member_offer },
     ],
-  });
+  }));
 
   const loginPath = wantsExpert ? "/expert/login" : "/vendor/login";
   const next = `${loginPath}?welcome=1&prefill=${encodeURIComponent(email)}`;

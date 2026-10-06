@@ -34,7 +34,7 @@ export const vendorPlans: VendorPlan[] = [
       "Founding Partner badge in launch announcement",
       "Featured Partner benefits (Schedule A)",
       "Verified Partner badge",
-      "Refer & earn — $50 per converted member",
+      "Every paying member you bring in takes one month off your fee",
     ],
     highlight: true,
     ctaLabel: "Apply to the cohort",
@@ -613,7 +613,7 @@ export const vendorCommitments: VendorCommitment[] = [
     number: "05",
     title: "Pay the fee, waived for your first six months.",
     body:
-      "The partner fee is $49 per month. Founding partners pay $0 for months 1-6 and $49 per month from month seven onward. You're free to cancel with 30 days' written notice at any time, but you remain responsible for fees accrued during notice.",
+      "Your first six months are free, counted from the day you accept. After that, the fee is $49 a month. From month 13, the fee is the amount shown on your sign-up page, either $49 or $199 a month. One fee covers every role on this agreement, and your rate is locked while you stay. You're free to cancel with 30 days' written notice at any time, but you remain responsible for fees accrued during notice.",
   },
 ];
 
@@ -645,14 +645,14 @@ export const vendorAgreementKeyTerms = [
 // pick their wording from these helpers so one row can stay on the terms
 // it signed while nobody else ever sees $199.
 // ---------------------------------------------------------------------
-export type PartnerPricingPlan = "flat_49" | "ladder";
+export type PartnerPricingPlan = "flat_49" | "ladder" | "quarterly_49" | "quarterly_149";
 
 const vendorCommitmentsLadder: VendorCommitment[] = vendorCommitments.map((c) =>
   c.number === "05"
     ? {
         ...c,
         body:
-          "The standard fee is $199 per month. Founding partners pay $0 for months 1-6, $49 for months 7-12, and the standard $199 from month thirteen onward. You're free to cancel with 30 days' written notice at any time, but you remain responsible for fees accrued during notice.",
+          "Your first six months are free, counted from the day you accept. After that, the fee is $49 a month for months 7-12. From month 13, the fee is the amount shown on your sign-up page, either $49 or $199 a month; yours is $199. One fee covers every role on this agreement, and your rate is locked while you stay. You're free to cancel with 30 days' written notice at any time, but you remain responsible for fees accrued during notice.",
       }
     : c,
 );
@@ -671,14 +671,56 @@ const vendorAgreementKeyTermsLadder = [
   { label: "Cancel", value: "30 d", sub: "Written notice" },
 ];
 
+const quarterlyCommitment = (standard: number): VendorCommitment[] =>
+  vendorCommitments.map((c) =>
+    c.number === "05"
+      ? {
+          ...c,
+          body: `Your first six months are free, counted from the day you accept. After that, the fee is $49 every three months. From month 13, the fee is the amount shown on your sign-up page, either $49 or $149 every three months; yours is ${standard}. One fee covers every role on this agreement, and your rate is locked while you stay. You're free to cancel with 30 days' written notice at any time, but you remain responsible for fees accrued during notice.`,
+        }
+      : c,
+  );
+
+const vendorFeeScheduleQuarterly49: FeeScheduleRow[] = [
+  { period: "Months 1-6", fee: "$0", note: "Founding partner waiver, applies automatically" },
+  { period: "Month 7 onward", fee: "$49 every three months", note: "Locked rate" },
+];
+const vendorFeeScheduleQuarterly149: FeeScheduleRow[] = [
+  { period: "Months 1-6", fee: "$0", note: "Founding partner waiver, applies automatically" },
+  { period: "Months 7-12", fee: "$49 every three months", note: "Locked launch rate" },
+  { period: "Month 13 onward", fee: "$149 every three months", note: "Standard partner rate" },
+];
+const vendorAgreementKeyTermsQuarterly49 = [
+  { label: "Months 1-6", value: "$0", sub: "Waived" },
+  { label: "Month 7 onward", value: "$49", sub: "every 3 months" },
+  { label: "Commitment", value: "12 mo", sub: "Initial term" },
+  { label: "Cancel", value: "30 d", sub: "Written notice" },
+];
+const vendorAgreementKeyTermsQuarterly149 = [
+  { label: "Months 1-6", value: "$0", sub: "Waived" },
+  { label: "Months 7-12", value: "$49", sub: "every 3 months" },
+  { label: "Month 13+", value: "$149", sub: "every 3 months" },
+  { label: "Commitment", value: "12 mo", sub: "Initial term" },
+  { label: "Cancel", value: "30 d", sub: "Written notice" },
+];
+
 export function vendorCommitmentsFor(plan: PartnerPricingPlan | null | undefined): VendorCommitment[] {
-  return plan === "ladder" ? vendorCommitmentsLadder : vendorCommitments;
+  if (plan === "ladder") return vendorCommitmentsLadder;
+  if (plan === "quarterly_49") return quarterlyCommitment(49);
+  if (plan === "quarterly_149") return quarterlyCommitment(149);
+  return vendorCommitments;
 }
 export function vendorFeeScheduleFor(plan: PartnerPricingPlan | null | undefined): FeeScheduleRow[] {
-  return plan === "ladder" ? vendorFeeScheduleLadder : vendorFeeSchedule;
+  if (plan === "ladder") return vendorFeeScheduleLadder;
+  if (plan === "quarterly_49") return vendorFeeScheduleQuarterly49;
+  if (plan === "quarterly_149") return vendorFeeScheduleQuarterly149;
+  return vendorFeeSchedule;
 }
 export function vendorAgreementKeyTermsFor(plan: PartnerPricingPlan | null | undefined) {
-  return plan === "ladder" ? vendorAgreementKeyTermsLadder : vendorAgreementKeyTerms;
+  if (plan === "ladder") return vendorAgreementKeyTermsLadder;
+  if (plan === "quarterly_49") return vendorAgreementKeyTermsQuarterly49;
+  if (plan === "quarterly_149") return vendorAgreementKeyTermsQuarterly149;
+  return vendorAgreementKeyTerms;
 }
 
 // The 9 operational/legal sections that follow the five commitments.

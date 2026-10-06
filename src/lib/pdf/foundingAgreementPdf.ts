@@ -2,6 +2,7 @@ import "server-only";
 import { readFile } from "node:fs/promises";
 import puppeteer from "puppeteer-core";
 import type { Browser } from "puppeteer-core";
+import { cadenceOf, costsParagraph, hasStep, normalizePlan, planAmounts, planLabel, referralLine, type PartnerPlan } from "@/lib/billing/partnerPlan";
 
 /**
  * Personalized founding agreement renderer.
@@ -69,7 +70,7 @@ export type FoundingAgreementPdfInput = {
    * ramp with the annual pre-pay line; anything else prints the flat $49
    * plan. Expert-only agreements have no ramp block at all.
    */
-  pricing?: "ladder" | "flat_49" | null;
+  pricing?: PartnerPlan | null;
   signer: {
     name: string;
     email: string;
@@ -90,19 +91,47 @@ export type FoundingAgreementPdfInput = {
  * no user input, so it is injected raw like {{COMPANIES_LIST}}.
  */
 function rampBlockHtml(pricing: FoundingAgreementPdfInput["pricing"]): string {
+  const plan = normalizePlan(pricing);
+  const a = planAmounts(plan);
+  const unit = cadenceOf(plan) === "monthly" ? "/mo" : "/3 mo";
   const step = (amount: string, label: string) =>
     `<div class="rstep"><div class="n">${amount}</div><div class="l">${label}</div></div>`;
-  const mo = `<span style="font-size:9pt;color:#5C6B7A;">/mo</span>`;
-  if (pricing === "ladder") {
-    return (
-      `<div class="ramp">${step("$0", "Months 1&ndash;6")}${step(`$49${mo}`, "Months 7&ndash;12")}${step(`$199${mo}`, "Month 13+ &middot; standard")}</div>` +
-      `<p style="font-size:9pt;color:#5C6B7A;">Annual pre-pay = 2 months free. You&#39;ll see this on the sign-up page before you pay.</p>`
-    );
+  const per = `<span style="font-size:9pt;color:#5C6B7A;">${unit}</span>`;
+  const steps = hasStep(plan)
+    ? `${step("$0", "Months 1&ndash;6")}${step(`$${a.growth}${per}`, "Months 7&ndash;12")}${step(`$${a.standard}${per}`, "Month 13+ &middot; standard")}`
+    : `${step("$0", "Months 1&ndash;6")}${step(`$${a.growth}${per}`, "Month 7 onward")}`;
+  return `<p style="margin:0 0 4px;">${escapeHtml(costsParagraph(plan))}</p><div class="ramp">${steps}</div><p style="font-size:9pt;color:#5C6B7A;">Your plan: ${escapeHtml(planLabel(plan))}. You&#39;ll see this on the sign-up page before you pay.</p>`;
+}
+
+/** Section 3 intro and the Schedule B referral line, per plan. */
+function billingIntroHtml(pricing: FoundingAgreementPdfInput["pricing"], role: FoundingAgreementPdfInput["role"]): string {
+  const plan = normalizePlan(pricing);
+  const cadence = cadenceOf(plan) === "monthly" ? "monthly" : "every three months";
+  if (role === "both") {
+    return isFoundingBoth(pricing)
+      ? `Your company&#39;s partner listing, billed ${cadence} through Stripe:`
+      : `Your expert and partner listing (one fee covers both), billed ${cadence} through Stripe:`;
   }
-  return (
-    `<div class="ramp">${step("$0", "Months 1&ndash;6")}${step(`$49${mo}`, "Month 7 onward")}</div>` +
-    `<p style="font-size:9pt;color:#5C6B7A;">Your rate stays at $49 a month for as long as your membership stays continuously active. You&#39;ll see this on the sign-up page before you pay.</p>`
-  );
+  return `Your partner listing, billed ${cadence} through Stripe:`;
+}
+function refundLineHtml(pricing: FoundingAgreementPdfInput["pricing"]): string {
+  return cadenceOf(normalizePlan(pricing)) === "monthly" ? "No pro-rated refunds for partial months." : "No pro-rated refunds for part of a quarter.";
+}
+/**
+ * The quarterly Expert + Partner agreement is not a founding one (Lester,
+ * 6 Oct 2026): no free expert listing, no "founding", one fee covers both
+ * roles. The monthly one keeps the founding wording.
+ */
+function isFoundingBoth(pricing: FoundingAgreementPdfInput["pricing"]): boolean {
+  return cadenceOf(normalizePlan(pricing)) === "monthly";
+}
+function expertListingBoxHtml(pricing: FoundingAgreementPdfInput["pricing"]): string {
+  return isFoundingBoth(pricing)
+    ? `<div class="free"><b>Your expert listing</b> (your content and profile): <b>free, for as long as your membership stays continuously active</b>, our founding-expert offer. If you cancel and re-join, this no longer applies.</div>`
+    : "";
+}
+function termLineHtml(pricing: FoundingAgreementPdfInput["pricing"]): string {
+  return cadenceOf(normalizePlan(pricing)) === "monthly" ? "Month-to-month, with no long-term contract." : "Billed every three months, with no long-term contract.";
 }
 
 /** Join names for prose: ["A","B","C"] → "A, B and C". */
@@ -173,7 +202,7 @@ async function renderAgreementHtml(input: FoundingAgreementPdfInput): Promise<st
   const tokens: Record<string, string> = {
     SIGNER_NAME: input.signer.name,
     SIGNER_EMAIL: input.signer.email,
-    COMPANY: companyJoined,
+    COMPANY: companyJoined.replace(/[.]+$/, ""),
     MEMBER_OFFER: memberOfferFor(input, companyList.length),
     EFFECTIVE_DATETIME: formatEffectiveDate(input.signedAt),
     STATUS: accepted
@@ -186,7 +215,7 @@ async function renderAgreementHtml(input: FoundingAgreementPdfInput): Promise<st
   // escaped-token pass) with every value individually escaped.
   const listSource = companyList.length
     ? companyList
-    : names.map((n) => ({ name: n, category: null as string | null, member_offer: null as string | null }));
+    : names.map((n) => ({ name: n, category: null as string | null, member_offer: input.memberOffer?.trim() || null }));
   const companiesListHtml = listSource
     .map((c) => {
       const offer =
@@ -210,7 +239,15 @@ async function renderAgreementHtml(input: FoundingAgreementPdfInput): Promise<st
   );
   return withTokens
     .replaceAll("{{COMPANIES_LIST}}", companiesListHtml)
-    .replaceAll("{{RAMP_BLOCK}}", rampBlockHtml(input.pricing));
+    .replaceAll("{{RAMP_BLOCK}}", rampBlockHtml(input.pricing))
+    .replaceAll("{{BILLING_INTRO}}", billingIntroHtml(input.pricing, input.role))
+    .replaceAll("{{TERM_LINE}}", termLineHtml(input.pricing))
+    .replaceAll("{{REFUND_LINE}}", refundLineHtml(input.pricing))
+    .replaceAll("{{EXPERT_LISTING_BOX}}", expertListingBoxHtml(input.pricing))
+    .replaceAll("{{FOUNDING_}}", isFoundingBoth(input.pricing) ? "Founding " : "")
+    .replaceAll("{{RATE_WORD}}", isFoundingBoth(input.pricing) ? "founding" : "special")
+    .replaceAll("{{AN_FOUNDING}}", isFoundingBoth(input.pricing) ? "a founding " : "an ")
+    .replaceAll("{{REFERRAL_LINE}}", escapeHtml(referralLine(normalizePlan(input.pricing))));
 }
 
 async function launchBrowser(): Promise<Browser> {

@@ -412,9 +412,9 @@ export default function PartnersPage() {
             <Typography sx={{ fontSize: "0.94rem", color: COLORS.inkSoft, lineHeight: 1.55 }}>
               ★{" "}
               <Box component="strong" sx={{ color: COLORS.ink }}>
-                Refer a practice, earn $50.
+                Bring a practice, pay less.
               </Box>{" "}
-              Every partner gets a referral link. Bring a practice owner who becomes a paying DMN member — earn $50 credit on your next invoice. Annual pre-pay = 2 months free. Founding partners get priority placement in the directory launch.
+              Every partner gets a referral link. Every practice you bring in as a paying member takes one month off your fee. Five paying members = six months off. Founding partners get priority placement in the directory launch.
             </Typography>
           </Box>
 
