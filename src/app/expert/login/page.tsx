@@ -2,6 +2,7 @@
 
 import { Suspense } from "react";
 import OtpLoginForm from "@/components/auth/OtpLoginForm";
+import { PORTAL_TOUR, TOUR_COPY } from "@/lib/portalTour";
 
 /**
  * Expert sign-in. OTP-based: enter email → receive 6-digit code → enter
@@ -24,6 +25,12 @@ export default function ExpertLoginPage() {
             "Check your inbox for a 6-digit code from noreply@dentalmembernetwork.com.",
           accentColor: "#2C7A52",
           accentTint: "rgba(44,122,82,0.12)",
+          portalName: "Expert portal",
+          panel: { from: "#1F5238", to: "#0C2619", accent: "#9BDDB7", glow: "rgba(155,221,183,0.22)", pattern: "stripes" },
+          tagline: "Your profile, your resources and the members who reach out, in one place.",
+          highlights: ["Upload resources and we brand and publish them", "See which members engage with your work", "Route member questions straight to you"],
+          tourHref: PORTAL_TOUR.expert.quickGuide.watchUrl,
+          tourLabel: TOUR_COPY.loginLink,
           unknownEmailMessage:
             "We couldn't find an expert account for that email. Apply at /experts first; we'll email you once the team reviews your application.",
         }}

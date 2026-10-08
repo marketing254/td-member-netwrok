@@ -2,6 +2,7 @@
 
 import { Suspense } from "react";
 import OtpLoginForm from "@/components/auth/OtpLoginForm";
+import { PORTAL_TOUR, TOUR_COPY } from "@/lib/portalTour";
 
 /**
  * Partner (vendor) sign-in. OTP-based: enter email → receive 6-digit
@@ -25,6 +26,12 @@ export default function VendorLoginPage() {
             "Check your inbox for a 6-digit code from noreply@dentalmembernetwork.com.",
           accentColor: "#6E3346",
           accentTint: "rgba(110,51,70,0.12)",
+          portalName: "Partner portal",
+          panel: { from: "#5A2238", to: "#2A0F1A", accent: "#F0C16E", glow: "rgba(240,193,110,0.22)", pattern: "grid" },
+          tagline: "Your listing, your member offers and the practices that find you.",
+          highlights: ["Publish services, products and courses", "Attach member-only offers to each one", "Member inquiries routed to your inbox"],
+          tourHref: PORTAL_TOUR.partner.quickGuide.watchUrl,
+          tourLabel: TOUR_COPY.loginLink,
           signupHref: "/partners#apply",
           signupLabel: "Want to become a partner?",
           unknownEmailMessage:

@@ -36,6 +36,10 @@ import InsightsRoundedIcon from "@mui/icons-material/InsightsRounded";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
 import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
 import PhoneRoundedIcon from "@mui/icons-material/PhoneRounded";
+import PlayCircleOutlinedIcon from "@mui/icons-material/PlayCircleOutlined";
+import PortalTourDialog from "@/components/portal/PortalTourDialog";
+import { usePortalTour } from "@/components/portal/usePortalTour";
+import { TOUR_COPY } from "@/lib/portalTour";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import KeyboardArrowDownOutlinedIcon from "@mui/icons-material/KeyboardArrowDownOutlined";
 import VerifiedUserOutlinedIcon from "@mui/icons-material/VerifiedUserOutlined";
@@ -107,6 +111,7 @@ function SidebarContent({
   showCollapseToggle,
   onEditProfile,
   avatarUrl,
+  onTour,
 }: {
   pathname: string;
   collapsed: boolean;
@@ -114,6 +119,8 @@ function SidebarContent({
   onClose?: () => void;
   onEditProfile: () => void;
   avatarUrl?: string | null;
+  /** Opens the portal tour pop-up (Lester, 8 Oct 2026). */
+  onTour?: () => void;
   onToggleCollapse?: () => void;
   showCollapseToggle?: boolean;
 }) {
@@ -348,6 +355,41 @@ function SidebarContent({
             Support
           </Typography>
           <Box
+            component="button"
+            type="button"
+            onClick={() => {
+              onClose?.();
+              onTour?.();
+            }}
+            sx={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              gap: 1.25,
+              px: 1.25,
+              py: 0.85,
+              borderRadius: 1.25,
+              color: "rgba(255,255,255,0.65)",
+              border: 0,
+              bgcolor: "transparent",
+              cursor: "pointer",
+              textAlign: "left",
+              fontFamily: "inherit",
+              transition: "background-color 160ms ease, color 160ms ease",
+              "&:hover": { bgcolor: "rgba(255,255,255,0.04)", color: "common.white" },
+            }}
+          >
+            <PlayCircleOutlinedIcon sx={{ fontSize: 16, color: "rgba(255,255,255,0.55)" }} />
+            <Box sx={{ minWidth: 0, flex: 1 }}>
+              <Typography sx={{ fontSize: "0.66rem", color: "rgba(255,255,255,0.45)", lineHeight: 1 }}>
+                New here?
+              </Typography>
+              <Typography sx={{ fontSize: "0.78rem", fontWeight: 600, color: "inherit", lineHeight: 1.2, mt: 0.2 }}>
+                {TOUR_COPY.sidebarLabel}
+              </Typography>
+            </Box>
+          </Box>
+          <Box
             component="a"
             href="tel:+18556334707"
             sx={{
@@ -482,6 +524,7 @@ export default function VendorAppShell({ children }: { children: React.ReactNode
   // identity card and the top-right user menu so they always agree.
   const { vendor: currentVendor } = useCurrentVendorRow();
   const alsoExpert = useAlsoHasRole("expert");
+  const tour = usePortalTour("partner", currentVendor?.id);
 
   // Multi-company family for the "Your companies" switcher. Switching is a
   // fresh sign-in with THAT company's email (access = control of its inbox),
@@ -545,6 +588,7 @@ export default function VendorAppShell({ children }: { children: React.ReactNode
             vendor={currentVendor}
             onToggleCollapse={toggleCollapse}
             showCollapseToggle
+            onTour={tour.show}
             onEditProfile={() => setProfileOpen(true)}
             avatarUrl={
               avatarPreview ??
@@ -564,6 +608,7 @@ export default function VendorAppShell({ children }: { children: React.ReactNode
             collapsed={false}
             vendor={currentVendor}
             onClose={() => setDrawerOpen(false)}
+            onTour={tour.show}
             onEditProfile={() => {
               setDrawerOpen(false);
               setProfileOpen(true);
@@ -575,6 +620,8 @@ export default function VendorAppShell({ children }: { children: React.ReactNode
           />
         </Drawer>
       )}
+
+      <PortalTourDialog portal="partner" open={tour.open} onClose={tour.close} />
 
       <ProfileEditDialog
         open={profileOpen}

@@ -3,6 +3,7 @@ import { AGREEMENT_BCC } from "./foundingInvite";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { cadenceOf, hasStep, normalizePlan, planAmounts, priceProse, type PartnerPlan } from "@/lib/billing/partnerPlan";
+import { PORTAL_TOUR } from "@/lib/portalTour";
 
 /**
  * Confirmation email for a new founding partner / expert. Attaches the
@@ -285,6 +286,11 @@ function firstBillingAmount(opts: BuiltOpts): string {
   return cadenceOf(plan) === "monthly" ? "$49/month" : "$49 every three months";
 }
 
+/** The portal they sign into first: experts (and expert + partner) land on the expert portal. */
+function tourUrlFor(role: BuiltOpts["role"]): string {
+  return hasExpertRole(role) ? PORTAL_TOUR.expert.quickGuide.watchUrl : PORTAL_TOUR.partner.quickGuide.watchUrl;
+}
+
 function agreementSection(opts: BuiltOpts): string {
   const acceptedOn = formatDateTime(opts.signedAt ?? new Date());
   return `A copy of the DMN ${opts.roleLabel} Agreement (${opts.agreementVersion}) is attached to this email, and you can download it anytime from your portal. Accepted by ${escapeHtml(opts.contactName)} on ${acceptedOn}.`;
@@ -429,6 +435,9 @@ function buildHtml(opts: BuiltOpts): string {
   <p style="color:#3B4A55;line-height:1.55;margin:0 0 8px 0;font-size:14px;">
     Sign in at your portal with this email: <strong>${escapeHtml(opts.to)}</strong>. Enter it there and we&#39;ll send you a 6-digit sign-in code.
   </p>
+  <p style="font-size:14px;line-height:1.7;color:#3B4A55;margin:0 0 16px 0;">
+    New to the portal? This five-minute video shows you around: <a href="${tourUrlFor(opts.role)}" style="color:#A07823;font-weight:600;">${tourUrlFor(opts.role)}</a>
+  </p>
   <div style="text-align:center;margin:20px 0 8px 0;">
     <a href="${opts.portalUrl}" style="display:inline-block;background:#0E2A3D;color:#FFFFFF;padding:12px 24px;border-radius:999px;text-decoration:none;font-weight:600;font-size:14px;">
       Open your portal
@@ -527,6 +536,8 @@ What's next:
 ${whatsNextText}
 
 Sign in at your portal with this email: ${opts.to}. Enter it there and we'll send you a 6-digit sign-in code.
+
+New to the portal? This five-minute video shows you around: ${tourUrlFor(opts.role)}
 
 Open your portal: ${opts.portalUrl}
 
