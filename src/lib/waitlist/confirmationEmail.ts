@@ -1,3 +1,4 @@
+import { PORTAL_TOUR, TOUR_COPY } from "@/lib/portalTour";
 import type { WaitlistPayload, WaitlistRole } from "@/lib/waitlist/validate";
 import type { ExpertApplicationPayload } from "@/lib/expert/validate";
 
@@ -623,6 +624,9 @@ function buildVendorApprovalEmail({
   <p style="font-size:16px;line-height:1.7;color:${BRAND.inkSoft};margin:0 0 28px;">
     Your verified badge is live, and you can now publish services, products, courses, and member offers in the directory. Submissions still go through team review, but the publish gate is open.
   </p>
+  <p style="font-size:15px;line-height:1.7;color:${BRAND.inkSoft};margin:0 0 18px;">
+    New to the portal? This five-minute video shows you around: <a href="${PORTAL_TOUR.partner.quickGuide.watchUrl}" style="color:#A07823;font-weight:600;">${PORTAL_TOUR.partner.quickGuide.watchUrl}</a>
+  </p>
   <a href="${safePortal}" style="display:inline-block;background:${BRAND.ink};color:#FFFFFF;text-decoration:none;padding:14px 28px;border-radius:999px;font-weight:600;font-size:15px;">Open your portal →</a>
   <hr style="border:0;border-top:1px solid ${BRAND.line};margin:36px 0 24px;" />
   <h2 style="font-family:${FONT_UI};font-size:14px;font-weight:700;color:${BRAND.ink};letter-spacing:.005em;margin:0 0 10px;text-transform:uppercase;">What's next</h2>
@@ -642,6 +646,8 @@ function buildVendorApprovalEmail({
 Our team reviewed ${companyName} and your partner account is now approved and verified.
 
 You can now publish services, products, courses, and member offers in the directory.
+
+${TOUR_COPY.emailLine("partner")}
 
 Open your portal: ${portalUrl}
 
@@ -899,6 +905,7 @@ function expertApprovalDraft(input: ExpertApprovalInput): EmailDraft {
       `Hi ${escapeHtmlSafe(input.firstName)},`,
       "Great to have you on the bench. Now that we've finished the onboarding conversation, your expert portal is live and ready for you.",
       "Use the sign-in link below to set up your profile, upload your first resources, and see members and partners engaging with your work.",
+      TOUR_COPY.emailLine("expert"),
     ],
     sections: [
       {

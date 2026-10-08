@@ -2,6 +2,7 @@
 
 import { Suspense } from "react";
 import Link from "next/link";
+import { PORTAL_TOUR } from "@/lib/portalTour";
 import Image from "next/image";
 import {
   Box,
@@ -169,8 +170,10 @@ export default function PartnersPage() {
               </Button>
               <Button
                 variant="outlined"
-                component={Link}
-                href="#how"
+                component="a"
+                href={PORTAL_TOUR.partner.walkthrough.watchUrl}
+                target="_blank"
+                rel="noopener noreferrer"
                 sx={{
                   borderRadius: 999,
                   px: 3,

@@ -22,6 +22,10 @@ import {
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
+import PlayCircleOutlinedIcon from "@mui/icons-material/PlayCircleOutlined";
+import PortalTourDialog from "@/components/portal/PortalTourDialog";
+import { usePortalTour } from "@/components/portal/usePortalTour";
+import { TOUR_COPY } from "@/lib/portalTour";
 import UploadFileOutlinedIcon from "@mui/icons-material/UploadFileOutlined";
 import InsightsOutlinedIcon from "@mui/icons-material/InsightsOutlined";
 import ChatBubbleOutlineOutlinedIcon from "@mui/icons-material/ChatBubbleOutlineOutlined";
@@ -283,6 +287,7 @@ export default function ExpertAppShell({ children }: { children: React.ReactNode
   const router = useRouter();
   const { expert } = useCurrentExpert();
   const alsoVendor = useAlsoHasRole("vendor");
+  const tour = usePortalTour("expert", expert?.id);
 
   const handleSignOut = async () => {
     setUserMenuOpen(false);
@@ -531,6 +536,18 @@ export default function ExpertAppShell({ children }: { children: React.ReactNode
             onNavigate={() => setDrawerOpen(false)}
             hideBilling={!!expert?.billing_exempt}
           />
+          <Box
+            component="button"
+            type="button"
+            onClick={() => {
+              setDrawerOpen(false);
+              tour.show();
+            }}
+            sx={{ mt: 0.5, width: "100%", display: "flex", alignItems: "center", gap: 1, px: 2, py: 1.5, borderRadius: 2, border: 0, bgcolor: "transparent", cursor: "pointer", fontSize: "0.92rem", fontWeight: 500, color: INK_SOFT, fontFamily: "inherit", "&:hover": { color: INK, bgcolor: EXPERT_GREEN_TINT } }}
+          >
+            <PlayCircleOutlinedIcon sx={{ fontSize: 20 }} />
+            {TOUR_COPY.sidebarLabel}
+          </Box>
           <Divider sx={{ my: 2.5 }} />
           <Stack spacing={0.5}>
             <Chip
@@ -617,6 +634,28 @@ export default function ExpertAppShell({ children }: { children: React.ReactNode
             </Stack>
             <Stack direction="row" spacing={2.5} sx={{ alignItems: "center", flexWrap: "wrap", rowGap: 1 }}>
               <Box
+                component="button"
+                type="button"
+                onClick={tour.show}
+                sx={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 0.5,
+                  fontSize: "0.74rem",
+                  color: EXPERT_GREEN_DARK,
+                  fontWeight: 600,
+                  border: 0,
+                  bgcolor: "transparent",
+                  cursor: "pointer",
+                  p: 0,
+                  fontFamily: "inherit",
+                  "&:hover": { textDecoration: "underline" },
+                }}
+              >
+                <PlayCircleOutlinedIcon sx={{ fontSize: 15 }} />
+                {TOUR_COPY.sidebarLabel}
+              </Box>
+              <Box
                 component="a"
                 href="tel:+18556334707"
                 sx={{
@@ -649,6 +688,7 @@ export default function ExpertAppShell({ children }: { children: React.ReactNode
           </Stack>
         </Container>
       </Box>
+      <PortalTourDialog portal="expert" open={tour.open} onClose={tour.close} />
     </Box>
   );
 }

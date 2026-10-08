@@ -27,6 +27,9 @@ export default function SeekerLoginPage() {
             "Check your inbox for a 6-digit code from noreply@dentalmembernetwork.com.",
           accentColor: "#A07823",
           accentTint: "rgba(217,168,75,0.16)",
+          portalName: "Job board",
+          panel: { from: "#6B4A14", to: "#2E1F08", accent: "#F0C16E", glow: "rgba(240,193,110,0.3)", pattern: "circles" },
+          tagline: "Apply to dental practice roles. Free, no membership needed.",
           signupHref: "/seeker/join",
           signupLabel: "No account yet?",
           unknownEmailMessage:

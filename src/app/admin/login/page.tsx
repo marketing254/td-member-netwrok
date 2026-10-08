@@ -24,6 +24,9 @@ export default function AdminLoginPage() {
             "Check your inbox for a 6-digit code from noreply@dentalmembernetwork.com.",
           accentColor: "#0A1A2F",
           accentTint: "rgba(14,42,61,0.10)",
+          portalName: "Admin console",
+          panel: { from: "#1C2430", to: "#0B0F15", accent: "#C7CFD8", glow: "rgba(199,207,216,0.14)", pattern: "none" },
+          tagline: "Members, experts, partners, invites and audits.",
           unknownEmailMessage:
             "That email isn't on the admin allow-list. Ask an owner-role admin to add you.",
         }}
