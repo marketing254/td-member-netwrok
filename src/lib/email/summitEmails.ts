@@ -11,7 +11,7 @@ import { SUMMIT } from "@/lib/events/summit";
  *
  * Alerts go to Rushdha and Lester. Nothing here ever goes to a member.
  */
-const OPS_ALERT_TO = ["rushdhaakbar82@gmail.com", "lester@ekwa.com"];
+const OPS_ALERT_TO = ["rushdhaakbar82@gmail.com", "lester@ekwa.com", "lester@dentalmembernetwork.com"];
 const FROM = "Dental Member Network <noreply@dentalmembernetwork.com>";
 
 function esc(s: string): string {

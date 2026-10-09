@@ -69,4 +69,18 @@ export const SOPS: Sop[] = [
     pdfUrl: `${PDF_BASE}/front-desk-room-to-breathe.pdf`,
     approved: "2026-08-30",
   },
+  // STAGED, NOT LIVE (Lester, 9 Oct 2026): Laura Webber's SOP is a draft
+  // until she approves the wording. The PDF is already in storage at
+  // member-resources/sops/ten-minute-huddle-DRAFT.pdf. When Lester confirms:
+  // rename the PDF to ten-minute-huddle.pdf, add the card image, and move
+  // this entry into the array with the approval date.
+  // {
+  //   slug: "ten-minute-huddle",
+  //   title: "The ten minute huddle that stops the finger pointing",
+  //   category: "Team & Culture",
+  //   expert: { name: "Laura Webber", id: "4d0ddc82-1593-48aa-81d8-a3094c7bfac1" },
+  //   cardUrl: `${CARD_BASE}/ten-minute-huddle-card.jpg`,
+  //   pdfUrl: `${PDF_BASE}/ten-minute-huddle.pdf`,
+  //   approved: "",
+  // },
 ];

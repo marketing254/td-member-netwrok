@@ -29,7 +29,7 @@ const FROM = 'Lester De Alwis <lester@dentalmembernetwork.com>';
 const REPLY_TO = "lester@dentalmembernetwork.com";
 // Monitoring copies. From IS lester@dentalmembernetwork.com, so his
 // monitoring copy goes to lester@ekwa.com (2026-09-04 instruction).
-const BCC = ["rushdhaakbar82@gmail.com", "lester@ekwa.com"];
+const BCC = ["rushdhaakbar82@gmail.com", "lester@ekwa.com", "lester@dentalmembernetwork.com"];
 
 const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;

@@ -32,7 +32,7 @@ const SUPPORT_EMAIL = "support@dentalmembernetwork.com";
  * Rushdha is on CC (visible) so the alert can be verified after launch.
  */
 const QUEUE_ALERT_TO = "lester@ekwa.com";
-const QUEUE_ALERT_CC = ["rushdhaakbar82@gmail.com"];
+const QUEUE_ALERT_CC = ["lester@dentalmembernetwork.com", "rushdhaakbar82@gmail.com"];
 
 /**
  * Every OTHER job-board email (to a member, a practice or an applicant)
@@ -40,7 +40,7 @@ const QUEUE_ALERT_CC = ["rushdhaakbar82@gmail.com"];
  * out without the recipient seeing them. Same rule as the rest of the
  * member-facing mail.
  */
-const AUDIT_BCC = ["lester@ekwa.com", "rushdhaakbar82@gmail.com"];
+const AUDIT_BCC = ["lester@ekwa.com", "lester@dentalmembernetwork.com", "rushdhaakbar82@gmail.com"];
 
 /**
  * PRODUCTION IS THE DEFAULT: real recipients, clean subjects, Lester and

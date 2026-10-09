@@ -13,6 +13,7 @@ import { existsSync } from "node:fs";
 
 export const TEAM_DISTRIBUTION_LIST = [
   "lester@ekwa.com",
+  "lester@dentalmembernetwork.com",
   "chamika.p@ekwa.com",
   "rushdha@ekwa.com",
   "rushdhaakbar82@gmail.com",
