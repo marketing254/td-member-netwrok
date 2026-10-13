@@ -1,4 +1,5 @@
 import "server-only";
+import { MEMBER_VIDEO } from "@/lib/memberVideo";
 import { randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -327,6 +328,15 @@ ${bodyHtml}
 </body></html>`;
 }
 
+/** Thumbnail linked to the member video (video cannot play inside an email). */
+function videoBlock(): string {
+  return `<p style="margin:0 0 6px;">${MEMBER_VIDEO.emailLine}:</p>
+<p style="margin:0 0 18px;"><a href="${MEMBER_VIDEO.watchUrl}"><img src="${origin()}${MEMBER_VIDEO.thumbnailPath}" alt="${MEMBER_VIDEO.title}, ${MEMBER_VIDEO.minutes} minutes" width="520" style="display:block;max-width:100%;border-radius:10px;border:1px solid #E6DDCF;"></a></p>`;
+}
+function videoText(): string {
+  return `${MEMBER_VIDEO.emailLine}: ${MEMBER_VIDEO.watchUrl}\n\n`;
+}
+
 function button(href: string, label: string): string {
   // Centered gold pill — matches the site's founding-offer styling.
   return `<table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:26px auto;"><tr><td style="background:#C89A3F;border-radius:10px;box-shadow:0 8px 18px -8px rgba(160,120,35,0.6);">
@@ -370,12 +380,13 @@ function renderEmail1(row: SequenceRow) {
     html: shell(
       `<p style="margin:0 0 16px;">Hi ${first},</p>
 <p style="margin:0 0 16px;">You started joining the Dental Member Network and stopped just before the payment step. That is usually a patient walking in, so here is the door, held open.</p>
+${videoBlock()}
 ${button(resume, "Pick up where you left off")}
 <p style="margin:0;">Your details are still there. It takes about a minute.</p>
 ${SIGNOFF}`,
       unsub,
     ),
-    text: `Hi ${first},\n\nYou started joining the Dental Member Network and stopped just before the payment step. That is usually a patient walking in, so here is the door, held open.\n\nPick up where you left off: ${resume}\n\nYour details are still there. It takes about a minute.\n\nWarmly,\nLester De Alwis\nCo-Founder\nDental Member Network\nPowered by Thriving Dentist Inc.\n\nUnsubscribe: ${unsub}`,
+    text: `Hi ${first},\n\nYou started joining the Dental Member Network and stopped just before the payment step. That is usually a patient walking in, so here is the door, held open.\n\n${videoText()}Pick up where you left off: ${resume}\n\nYour details are still there. It takes about a minute.\n\nWarmly,\nLester De Alwis\nCo-Founder\nDental Member Network\nPowered by Thriving Dentist Inc.\n\nUnsubscribe: ${unsub}`,
   };
 }
 
@@ -392,11 +403,12 @@ function renderEmail2(row: SequenceRow) {
 <p style="margin:0 0 16px;">Member-only offers from companies that serve dental practices.</p>
 <p style="margin:0 0 16px;">It is ${rateWords(row.plan)}, locked for as long as you stay, for the first hundred founding members.</p>
 <p style="margin:0 0 16px;">Two things people ask before they join. Can I cancel? Yes, anytime, from your account. What if it is not for me? The first thirty days carry a full money-back guarantee, so trying it costs one email to me.</p>
+${videoBlock()}
 ${button(resume, "Finish joining")}
 ${SIGNOFF}`,
       unsub,
     ),
-    text: `Hi ${first},\n\nHere is what is inside, on the day you join.\n\nAn expert hotline. Ask any practice problem in plain English. Beacon answers right away from our experts’ own sessions, and when you need a person, our team comes back in writing with the right experts to talk to. Not a search box. A person.\n\nA growing library of done-for-you Practice Playbooks from working experts. Each one is a session turned into something your team can use: training video, action guide, checklist, worksheet, a wall poster for the operatory.\n\nTemplates and SOPs, written from an expert's own process, so a team can run them on a Monday morning.\n\nMember-only offers from companies that serve dental practices.\n\nIt is ${rateWords(row.plan)}, locked for as long as you stay, for the first hundred founding members.\n\nTwo things people ask before they join. Can I cancel? Yes, anytime, from your account. What if it is not for me? The first thirty days carry a full money-back guarantee, so trying it costs one email to me.\n\nFinish joining: ${resume}\n\nWarmly,\nLester De Alwis\nCo-Founder\nDental Member Network\nPowered by Thriving Dentist Inc.\n\nUnsubscribe: ${unsub}`,
+    text: `Hi ${first},\n\nHere is what is inside, on the day you join.\n\nAn expert hotline. Ask any practice problem in plain English. Beacon answers right away from our experts’ own sessions, and when you need a person, our team comes back in writing with the right experts to talk to. Not a search box. A person.\n\nA growing library of done-for-you Practice Playbooks from working experts. Each one is a session turned into something your team can use: training video, action guide, checklist, worksheet, a wall poster for the operatory.\n\nTemplates and SOPs, written from an expert's own process, so a team can run them on a Monday morning.\n\nMember-only offers from companies that serve dental practices.\n\nIt is ${rateWords(row.plan)}, locked for as long as you stay, for the first hundred founding members.\n\nTwo things people ask before they join. Can I cancel? Yes, anytime, from your account. What if it is not for me? The first thirty days carry a full money-back guarantee, so trying it costs one email to me.\n\n${videoText()}Finish joining: ${resume}\n\nWarmly,\nLester De Alwis\nCo-Founder\nDental Member Network\nPowered by Thriving Dentist Inc.\n\nUnsubscribe: ${unsub}`,
   };
 }
 
@@ -423,12 +435,13 @@ ${
 <p style="margin:0 0 16px;">Your code: <strong style="letter-spacing:0.08em;">${code}</strong><br>It works until ${expiresWords}, and it is yours alone.</p>`
     : ""
 }
+${videoBlock()}
 ${button(joinLink, withCode ? "Join with a month free" : "Finish joining")}
 <p style="margin:0;">The first thing I would do once you are in is send the hotline the problem that has been sitting on your desk longest. That is what it is for.</p>
 ${SIGNOFF}`,
       unsub,
     ),
-    text: `Hi ${first},\n\nThis is the last email about this, and I would rather end with something useful than another reminder.\n\n${withCode ? `Join in the next two days and your first month is free. After that it is ${rateWords(row.plan)}, locked for as long as you stay, same as everyone in the founding hundred.\n\nYour code: ${code}\nIt works until ${expiresWords}, and it is yours alone.\n\n` : ""}${withCode ? "Join with a month free" : "Finish joining"}: ${joinLink}\n\nThe first thing I would do once you are in is send the hotline the problem that has been sitting on your desk longest. That is what it is for.\n\nWarmly,\nLester De Alwis\nCo-Founder\nDental Member Network\nPowered by Thriving Dentist Inc.\n\nUnsubscribe: ${unsub}`,
+    text: `Hi ${first},\n\nThis is the last email about this, and I would rather end with something useful than another reminder.\n\n${withCode ? `Join in the next two days and your first month is free. After that it is ${rateWords(row.plan)}, locked for as long as you stay, same as everyone in the founding hundred.\n\nYour code: ${code}\nIt works until ${expiresWords}, and it is yours alone.\n\n` : ""}${videoText()}${withCode ? "Join with a month free" : "Finish joining"}: ${joinLink}\n\nThe first thing I would do once you are in is send the hotline the problem that has been sitting on your desk longest. That is what it is for.\n\nWarmly,\nLester De Alwis\nCo-Founder\nDental Member Network\nPowered by Thriving Dentist Inc.\n\nUnsubscribe: ${unsub}`,
   };
 }
 

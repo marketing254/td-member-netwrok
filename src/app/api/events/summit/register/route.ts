@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { apiError, serverError } from "@/lib/api/errorResponse";
 import { checkRateLimit } from "@/lib/waitlist/rateLimit";
 import { SUMMIT, markEntitled, pushRegistrationToSheet, eventsDb, summitOpen, type EventRegistrationRow } from "@/lib/events/summit";
+import { countryFromGeo, isCountryCode, isJobTitle } from "@/lib/events/summitForm";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -40,9 +41,15 @@ async function memberEntitlement(memberId: string) {
   return { member: data, paid };
 }
 
-export async function GET() {
+/** Visitor's country from Vercel's edge geo header; "" when unknown (localhost). */
+function geoCountry(req: Request): string {
+  const c = (req.headers.get("x-vercel-ip-country") ?? "").toUpperCase();
+  return c ? countryFromGeo(c) : "";
+}
+
+export async function GET(req: Request) {
   const guard = await requireMember();
-  if (!guard.ok) return NextResponse.json({ ok: true, signedIn: false });
+  if (!guard.ok) return NextResponse.json({ ok: true, signedIn: false, geoCountry: geoCountry(req) });
 
   try {
     const { member, paid } = await memberEntitlement(guard.memberId);
@@ -62,6 +69,7 @@ export async function GET() {
       email: guard.email,
       phone: member?.phone ?? "",
       practiceName: member?.practice_name ?? "",
+      geoCountry: geoCountry(req),
       registration: reg ? { status: reg.status } : null,
     });
   } catch (err) {
@@ -90,6 +98,8 @@ export async function POST(req: Request) {
 
   const phone = str(body.phone, 40);
   const practiceWebsiteName = str(body.practiceWebsiteName, 200);
+  const jobTitle = isJobTitle(body.jobTitle) ? body.jobTitle : null;
+  const country = isCountryCode(body.country) ? (body.country as string).toUpperCase() : null;
   const speakerQuestion = str(body.speakerQuestion, 1000) || null;
   if (!PHONE_RE.test(phone)) return apiError.validation("Please enter a valid mobile phone number.", route);
   if (practiceWebsiteName.length < 2) return apiError.validation("Please enter your practice website and name.", route);
@@ -119,6 +129,8 @@ export async function POST(req: Request) {
           phone,
           practice_website_name: practiceWebsiteName,
           speaker_question: speakerQuestion,
+          job_title: jobTitle,
+          country,
           utm: { source: "member_portal", campaign: SUMMIT.campaign },
         },
         { onConflict: "event_id,email" },

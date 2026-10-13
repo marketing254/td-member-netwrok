@@ -42,7 +42,15 @@ export async function notifyTeam(opts: {
 }): Promise<boolean> {
   try {
     const from = fromAddress();
-    const to = TEAM_DISTRIBUTION_LIST.join(", ");
+    // Local testing: TEAM_NOTIFY_TO_OVERRIDE in .env.local (comma list)
+    // replaces the team list so a test run only alerts the people named.
+    // Never set in Vercel; production always uses the full list.
+    const recipients = (process.env.TEAM_NOTIFY_TO_OVERRIDE ?? "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const list = recipients.length ? recipients : TEAM_DISTRIBUTION_LIST;
+    const to = list.join(", ");
 
     const smtpHost = process.env.SMTP_HOST;
     const smtpUser = process.env.SMTP_USER;
@@ -63,7 +71,7 @@ export async function notifyTeam(opts: {
         html: opts.html,
         text: opts.text,
       });
-      console.info(`[team-notify:${opts.tag}] sent via SMTP`, { recipients: TEAM_DISTRIBUTION_LIST.length });
+      console.info(`[team-notify:${opts.tag}] sent via SMTP`, { recipients: list.length, override: recipients.length > 0 });
       return true;
     }
 
@@ -75,7 +83,7 @@ export async function notifyTeam(opts: {
         headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({
           from,
-          to: TEAM_DISTRIBUTION_LIST,
+          to: list,
           subject: opts.subject,
           html: opts.html,
           text: opts.text,

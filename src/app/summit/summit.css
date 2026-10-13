@@ -91,6 +91,15 @@
 .summit .divider{height:1px;background:var(--line);margin:24px 0}
 .summit .signup-card h3{font-size:20px;margin:0 0 17px}
 .summit .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.summit .quick-questions{margin:4px 0 14px;padding:16px 16px 4px;border:1px solid #e6dccb;border-radius:8px;background:#fbf8f1}
+.summit .qq-title{font-size:12px;letter-spacing:.09em;text-transform:uppercase;font-weight:700;color:#8b6b20;margin:0 0 12px}
+.summit .qq-field{border:0;padding:0;margin:0 0 14px;min-width:0}
+.summit .qq-field legend{font-size:13px;font-weight:600;padding:0;margin-bottom:8px}
+.summit .qq-choices{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.summit .qq-choice{font:inherit;font-size:14px;font-weight:600;min-height:44px;padding:8px 10px;border:1.5px solid #c3ccd2;border-radius:6px;background:#fff;color:var(--ink);cursor:pointer;text-align:center;transition:border-color .15s,background .15s}
+.summit .qq-choice:hover{border-color:#b68b2a}
+.summit .qq-choice.selected{border-color:#b68b2a;background:#fdf1d2;box-shadow:inset 0 0 0 1px #b68b2a}
+.summit .qq-choice:focus-visible{outline:2px solid #b68b2a;outline-offset:1px}
 .summit label{font-size:13px;font-weight:600;display:block;margin-bottom:14px}
 .summit input{display:block;width:100%;min-width:0;font-size:16px;margin-top:6px;min-height:48px;padding:10px 12px;color:var(--ink);border:1px solid #c3ccd2;border-radius:4px;background:#fff}
 .summit input:focus{outline:2px solid #b68b2a;outline-offset:1px}
@@ -219,6 +228,7 @@
 .summit .container{padding-left:18px;padding-right:18px}
 .summit .c-overview h1{font-size:37px}
 .summit .form-row{grid-template-columns:1fr;gap:0}
+.summit .qq-choices{grid-template-columns:1fr}
 }
 @media(prefers-reduced-motion:reduce){
 .summit *{transition:none!important}

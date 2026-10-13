@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { JOB_TITLES, countryOptions, type JobTitle } from "@/lib/events/summitForm";
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import { trackEvent } from "@/lib/analytics";
@@ -45,6 +46,8 @@ type Form = {
   firstName: string;
   lastName: string;
   email: string;
+  jobTitle: JobTitle | "";
+  country: string;
   phone: string;
   practiceWebsiteName: string;
   speakerQuestion: string;
@@ -55,11 +58,15 @@ const EMPTY: Form = {
   firstName: "",
   lastName: "",
   email: "",
+  jobTitle: "",
+  country: "US",
   phone: "",
   practiceWebsiteName: "",
   speakerQuestion: "",
   agree: false,
 };
+
+const COUNTRIES = countryOptions();
 
 type MemberMe = {
   signedIn: boolean;
@@ -69,6 +76,8 @@ type MemberMe = {
   email?: string;
   phone?: string;
   practiceName?: string;
+  /** ISO country from the visitor's IP (Vercel geo header); "" when unknown. */
+  geoCountry?: string;
   registration?: { status: string } | null;
 };
 
@@ -93,6 +102,11 @@ export default function SummitLandingView({ mode = "landing" }: { mode?: "landin
   const [alreadyMember, setAlreadyMember] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [me, setMe] = useState<MemberMe | null>(null);
+  // Non-member form: step 1 is name + email (saved the moment they continue),
+  // step 2 is the two quick questions plus the Zoom details and the card.
+  const [step, setStep] = useState<1 | 2>(1);
+  const [savingLead, setSavingLead] = useState(false);
+  const leadSavedFor = useRef<string>("");
   const [memberDone, setMemberDone] = useState<string | null>(null);
   const tracking = useRef<{ utm: Record<string, string>; fbclid: string | null; landingUrl: string | null }>({ utm: {}, fbclid: null, landingUrl: null });
 
@@ -121,6 +135,7 @@ export default function SummitLandingView({ mode = "landing" }: { mode?: "landin
         const res = await fetch("/api/events/summit/register", { cache: "no-store" });
         const body = (await res.json().catch(() => ({}))) as MemberMe;
         setMe(body);
+        if (body.geoCountry) setForm((f) => (f.country === "US" ? { ...f, country: body.geoCountry! } : f));
         if (body.signedIn) {
           setForm((f) => ({
             ...f,
@@ -142,11 +157,60 @@ export default function SummitLandingView({ mode = "landing" }: { mode?: "landin
 
   const memberPath = !!me?.signedIn && !!me.paid;
 
+  const step1Valid = useMemo(
+    () => form.firstName.trim() !== "" && form.lastName.trim() !== "" && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(form.email.trim()),
+    [form.firstName, form.lastName, form.email],
+  );
+
   const canSubmit = useMemo(() => {
-    const base = form.phone.trim().length >= 6 && form.practiceWebsiteName.trim().length >= 2;
+    const base = form.phone.trim().length >= 6 && form.practiceWebsiteName.trim().length >= 2 && form.jobTitle !== "" && form.country !== "";
     if (memberPath) return base;
-    return base && form.firstName.trim() !== "" && form.lastName.trim() !== "" && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(form.email.trim()) && form.agree;
-  }, [form, memberPath]);
+    return base && step1Valid && form.agree;
+  }, [form, memberPath, step1Valid]);
+
+  /**
+   * Step 1 → step 2. Saves the lead (name + email, with the source) right
+   * away so it is kept even if they stop at the questions. Best-effort: a
+   * failure never blocks the form.
+   */
+  const continueToQuestions = useCallback(async () => {
+    if (!step1Valid || savingLead) return;
+    setError(null);
+    setSavingLead(true);
+    const key = form.email.trim().toLowerCase();
+    try {
+      if (leadSavedFor.current !== key) {
+        await fetch("/api/events/summit/lead", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ firstName: form.firstName, lastName: form.lastName, email: form.email, utm: tracking.current.utm, landingUrl: tracking.current.landingUrl }),
+        });
+        leadSavedFor.current = key;
+      }
+      trackEvent("summit_lead", { step: 1 });
+    } catch {
+      /* the checkout call saves everything again */
+    } finally {
+      setSavingLead(false);
+      setStep(2);
+      setTimeout(() => document.getElementById("quick-questions")?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+    }
+  }, [step1Valid, savingLead, form.firstName, form.lastName, form.email]);
+
+  /** Keep the saved lead current as the two answers are picked. Best-effort. */
+  const saveAnswers = useCallback(
+    (next: Partial<Pick<Form, "jobTitle" | "country">>) => {
+      if (memberPath) return;
+      const key = form.email.trim().toLowerCase();
+      if (leadSavedFor.current !== key) return;
+      void fetch("/api/events/summit/lead", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ firstName: form.firstName, lastName: form.lastName, email: form.email, jobTitle: next.jobTitle ?? form.jobTitle, country: next.country ?? form.country, utm: tracking.current.utm, landingUrl: tracking.current.landingUrl }),
+      }).catch(() => undefined);
+    },
+    [memberPath, form.email, form.firstName, form.lastName, form.jobTitle, form.country],
+  );
 
   const startTrial = useCallback(async () => {
     if (!canSubmit || submitting) return;
@@ -161,6 +225,8 @@ export default function SummitLandingView({ mode = "landing" }: { mode?: "landin
           firstName: form.firstName,
           lastName: form.lastName,
           email: form.email,
+          jobTitle: form.jobTitle,
+          country: form.country,
           phone: form.phone,
           practiceWebsiteName: form.practiceWebsiteName,
           speakerQuestion: form.speakerQuestion || null,
@@ -199,6 +265,8 @@ export default function SummitLandingView({ mode = "landing" }: { mode?: "landin
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          jobTitle: form.jobTitle,
+          country: form.country,
           phone: form.phone,
           practiceWebsiteName: form.practiceWebsiteName,
           speakerQuestion: form.speakerQuestion || null,
@@ -218,8 +286,54 @@ export default function SummitLandingView({ mode = "landing" }: { mode?: "landin
     }
   }, [canSubmit, submitting, form]);
 
+  const quickQuestions = (
+    <div className="quick-questions" id="quick-questions">
+      <p className="qq-title">Two quick questions</p>
+      <fieldset className="qq-field">
+        <legend>Which best describes you?</legend>
+        <div className="qq-choices" role="radiogroup" aria-label="Job title">
+          {JOB_TITLES.map((j) => (
+            <button
+              key={j.value}
+              type="button"
+              role="radio"
+              aria-checked={form.jobTitle === j.value}
+              className={`qq-choice${form.jobTitle === j.value ? " selected" : ""}`}
+              onClick={() => {
+                set("jobTitle", j.value);
+                saveAnswers({ jobTitle: j.value });
+              }}
+            >
+              {j.label}
+            </button>
+          ))}
+        </div>
+      </fieldset>
+      <label>
+        Country
+        <select
+          name="country"
+          autoComplete="country-name"
+          required
+          value={form.country}
+          onChange={(e) => {
+            set("country", e.target.value);
+            saveAnswers({ country: e.target.value });
+          }}
+        >
+          {COUNTRIES.map((c) => (
+            <option key={c.code} value={c.code}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+      </label>
+    </div>
+  );
+
   const registrationFields = (
     <>
+      {quickQuestions}
       <label>
         Mobile phone
         <input name="phone" type="tel" inputMode="tel" autoComplete="tel" required placeholder="+1 555 123 4567" value={form.phone} onChange={(e) => set("phone", e.target.value)} />
@@ -394,9 +508,11 @@ export default function SummitLandingView({ mode = "landing" }: { mode?: "landin
                   <h3>Create your membership</h3>
                   <form
                     id="trial-form"
+                    autoComplete="on"
                     onSubmit={(e) => {
                       e.preventDefault();
-                      void startTrial();
+                      if (step === 1) void continueToQuestions();
+                      else void startTrial();
                     }}
                   >
                     <div className="form-row">
@@ -413,6 +529,16 @@ export default function SummitLandingView({ mode = "landing" }: { mode?: "landin
                       Email address
                       <input name="email" type="email" autoComplete="email" required placeholder="you@yourpractice.com" value={form.email} onChange={(e) => set("email", e.target.value)} />
                     </label>
+                    {step === 1 && (
+                      <>
+                        {error && <div className="form-error">{error}</div>}
+                        <button className="button primary" type="submit" disabled={!step1Valid || savingLead}>
+                          {savingLead ? "One moment…" : "Continue"} <span aria-hidden="true">↗</span>
+                        </button>
+                      </>
+                    )}
+                    {step === 2 && (
+                    <>
                     {registrationFields}
                     <label className="agree">
                       <input type="checkbox" checked={form.agree} onChange={(e) => set("agree", e.target.checked)} />
@@ -431,6 +557,8 @@ export default function SummitLandingView({ mode = "landing" }: { mode?: "landin
                     <button className="button primary" type="submit" disabled={!canSubmit || submitting}>
                       {submitting ? "One moment…" : "Continue, $0 today"} <span aria-hidden="true">↗</span>
                     </button>
+                    </>
+                    )}
                   </form>
                   <p className="form-note">Your card will not be charged today. Billing starts on Wednesday 6 January 2027, at $49 a month. Cancel any time before then and you will not be charged at all. We register you for RIDA, so your name and email are shared with the event organiser. Your Zoom link is emailed to you within a few minutes of joining.</p>
                   {!me?.signedIn && (

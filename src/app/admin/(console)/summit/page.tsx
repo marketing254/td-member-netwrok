@@ -40,6 +40,8 @@ type Row = {
   email: string;
   phone: string | null;
   practice: string | null;
+  job_title: string | null;
+  country: string | null;
   speaker_question: string | null;
   created_at: string;
   entitled_at: string | null;
@@ -152,10 +154,10 @@ export default function SummitAdminPage() {
   };
 
   const exportCsv = () => {
-    const head = ["Submitted", "First name", "Last name", "Email", "Phone", "Practice", "Stage", "Entitled via", "Source", "utm_source", "utm_medium", "utm_campaign", "utm_content", "Speaker question"];
+    const head = ["Submitted", "First name", "Last name", "Email", "Job title", "Country", "Phone", "Practice", "Stage", "Entitled via", "Source", "utm_source", "utm_medium", "utm_campaign", "utm_content", "Speaker question"];
     const esc = (v: string | null | undefined) => `"${(v ?? "").replace(/"/g, '""')}"`;
     const lines = filtered.map((r) =>
-      [r.created_at, r.first_name, r.last_name, r.email, r.phone, r.practice, r.stage_label, viaLabel(r.entitled_via), r.source, r.utm_source, r.utm_medium, r.utm_campaign, r.utm_content, r.speaker_question]
+      [r.created_at, r.first_name, r.last_name, r.email, r.job_title, r.country, r.phone, r.practice, r.stage_label, viaLabel(r.entitled_via), r.source, r.utm_source, r.utm_medium, r.utm_campaign, r.utm_content, r.speaker_question]
         .map(esc)
         .join(","),
     );
