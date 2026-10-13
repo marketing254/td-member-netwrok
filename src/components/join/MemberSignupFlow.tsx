@@ -1,4 +1,5 @@
 "use client";
+import MemberIntroVideo from "@/components/sections/MemberIntroVideo";
 import { trackEvent } from "@/lib/analytics";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -541,14 +542,87 @@ export default function MemberSignupFlow({
     </Typography>
   );
 
-  // ── Organic visit: the single-column form, unchanged ────────────────
+  // ── Organic visit: the form in a card, with the member video and what
+  // you get beside it (Oct 2026 redesign). Phones stack: form first.
   if (!refCtx) {
+    const sidePoints = [
+      { title: "Expert hotline", text: "Ask any practice problem in plain English. A real answer, and the right expert to talk to." },
+      { title: "Practice Playbooks", text: "Done-for-you kits from working experts: training video, action guide, checklist, wall poster." },
+      { title: "Member-only offers", text: "Vetted partners with offers you can only get through the network." },
+    ];
     return (
       <Box sx={{ minHeight: "100dvh", bgcolor: PAPER, display: "flex", flexDirection: "column" }}>
         {progressBar}
-        <Container maxWidth="sm" sx={{ flex: 1, display: "flex", flexDirection: "column", py: { xs: 4, md: 7 } }}>
-          <Box sx={{ maxWidth: 460, width: "100%", mx: "auto", flex: 1 }}>{formSteps}</Box>
-          {fullFormLink}
+        <Container maxWidth="lg" sx={{ flex: 1, px: { xs: 2, sm: 3, md: 4 }, pb: { xs: 5, md: 8 } }}>
+          <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between", pt: { xs: 1.5, md: 2.5 } }}>
+            <Box component={Link} href="/" aria-label="Dental Member Network" sx={{ display: "block", width: { xs: 120, md: 160 }, lineHeight: 0 }}>
+              <Image src="/dmn-wordmark.png" alt="Dental Member Network" width={720} height={243} priority style={{ width: "100%", height: "auto" }} />
+            </Box>
+            <Typography sx={{ fontSize: { xs: "0.74rem", sm: "0.82rem" }, color: MUTED, fontWeight: 600 }}>
+              Already a member?{" "}
+              <Box component={Link} href="/member/login" sx={{ color: GOLD_DARK, fontWeight: 700 }}>
+                Sign in
+              </Box>
+            </Typography>
+          </Stack>
+
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "minmax(0, 1fr)", md: "minmax(0, 1.05fr) minmax(0, 0.95fr)" },
+              gap: { xs: 4, md: 6 },
+              alignItems: "start",
+              pt: { xs: 3, md: 5 },
+            }}
+          >
+            {/* Form card */}
+            <Box
+              sx={{
+                bgcolor: "#FFFFFF",
+                border: "1px solid #E6DDCF",
+                borderRadius: "22px",
+                p: { xs: 3, sm: 4, md: 5 },
+                boxShadow: "0 1px 2px rgba(10,26,47,0.04), 0 28px 70px -36px rgba(10,26,47,0.35)",
+              }}
+            >
+              {formSteps}
+              {fullFormLink}
+            </Box>
+
+            {/* Side panel: the video and what you get */}
+            <Box sx={{ position: { md: "sticky" }, top: { md: 28 } }}>
+              <MemberIntroVideo variant="inline" />
+              <Typography sx={{ mt: 1.5, fontSize: "0.82rem", color: SOFT, textAlign: "center" }}>
+                Three minutes on what the network is and what members get.
+              </Typography>
+
+              <Box sx={{ mt: 3.5, bgcolor: "#FFFFFF", border: "1px solid #E6DDCF", borderRadius: "18px", p: { xs: 2.5, md: 3 } }}>
+                <Typography sx={{ fontSize: "0.68rem", fontWeight: 800, letterSpacing: "0.18em", textTransform: "uppercase", color: GOLD_DARK }}>
+                  What you get
+                </Typography>
+                <Stack spacing={2} sx={{ mt: 1.75 }}>
+                  {sidePoints.map((p) => (
+                    <Stack key={p.title} direction="row" spacing={1.5} sx={{ alignItems: "flex-start" }}>
+                      <Box sx={{ width: 24, height: 24, borderRadius: "50%", bgcolor: "rgba(217,168,75,0.18)", display: "grid", placeItems: "center", flexShrink: 0, mt: "1px" }}>
+                        <Check size={14} color={GOLD_DARK} />
+                      </Box>
+                      <Box>
+                        <Typography sx={{ fontSize: "0.95rem", fontWeight: 700, color: INK, lineHeight: 1.3 }}>{p.title}</Typography>
+                        <Typography sx={{ fontSize: "0.86rem", color: "#3B4A55", lineHeight: 1.5, mt: 0.3 }}>{p.text}</Typography>
+                      </Box>
+                    </Stack>
+                  ))}
+                </Stack>
+                <Box sx={{ mt: 2.5, pt: 2, borderTop: "1px solid #EFE8DA", display: "flex", flexWrap: "wrap", gap: "6px 14px" }}>
+                  {["Founding 100", "$49 a month, locked for life", "Cancel anytime", "30-day money-back"].map((x) => (
+                    <Typography key={x} sx={{ fontSize: "0.76rem", color: SOFT, fontWeight: 600 }}>
+                      {x}
+                    </Typography>
+                  ))}
+                </Box>
+              </Box>
+            </Box>
+          </Box>
         </Container>
       </Box>
     );

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { countryName, jobTitleLabel } from "@/lib/events/summitForm";
 import { requireAdmin } from "@/lib/auth/guards";
 import { serverError } from "@/lib/api/errorResponse";
 import { eventsDb, SUMMIT_EVENTS, SUMMIT_SEPT, type EventRegistrationRow } from "@/lib/events/summit";
@@ -72,6 +73,8 @@ export async function GET(req: Request) {
           r.first_name,
           r.last_name,
           r.email,
+          jobTitleLabel(r.job_title),
+          countryName(r.country),
           utm.campaign ?? event.campaign,
           utm.source ?? "",
           utm.content ?? "",
@@ -83,7 +86,7 @@ export async function GET(req: Request) {
           .join(","),
       );
     }
-    const head = ["First name", "Last name", "Email", "Campaign", "utm_source", "utm_content", "Practice", "Registered at", "In automated abandoned sequence"].join(",");
+    const head = ["First name", "Last name", "Email", "Job title", "Country", "Campaign", "utm_source", "utm_content", "Practice", "Registered at", "In automated abandoned sequence"].join(",");
     const csv = [head, ...lines].join("\n");
     return new NextResponse(csv, {
       status: 200,

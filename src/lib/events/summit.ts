@@ -1,4 +1,5 @@
 import "server-only";
+import { countryName, jobTitleLabel } from "./summitForm";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { RIDA_TRIAL_END_ISO } from "@/lib/events/ridaReplay";
@@ -97,6 +98,7 @@ export type EventRegistrationRow = {
   phone: string | null;
   practice_website_name: string | null;
   country: string | null;
+  job_title: string | null;
   speaker_question: string | null;
   rida_member_interest: string | null;
   utm: Record<string, string>;
@@ -154,7 +156,8 @@ export function sheetRowFor(reg: EventRegistrationRow): Record<string, string> {
     "Email address": reg.email,
     Phone: reg.phone ?? "",
     "Practice Website and Name": reg.practice_website_name ?? "",
-    Country: reg.country ?? "",
+    Country: countryName(reg.country),
+    "Job Title": jobTitleLabel(reg.job_title),
     "Speaker Question": reg.speaker_question ?? "",
     "RIDA Member": reg.rida_member_interest ?? "",
     Member_ID: reg.member_id ?? "",

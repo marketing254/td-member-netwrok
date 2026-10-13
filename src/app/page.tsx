@@ -2,7 +2,7 @@ import Header from "@/components/sections/Header";
 import WaitlistHero from "@/components/sections/WaitlistHero";
 import JustDropped from "@/components/sections/JustDropped";
 import HelplineDemo from "@/components/sections/HelplineDemo";
-import TourVideo from "@/components/sections/TourVideo";
+import MemberIntroVideo from "@/components/sections/MemberIntroVideo";
 import SocialProof from "@/components/sections/SocialProof";
 import Pricing from "@/components/sections/Pricing";
 import FAQ from "@/components/sections/FAQ";
@@ -46,12 +46,12 @@ export default function HomePage() {
       <main>
         {/* Hero — ONE ask: email + Start your membership (2026-08 restructure) */}
         <WaitlistHero />
+        {/* "One Place for Dental Offices", the three-minute member video, first thing a visitor can play (Lester, 13 Oct 2026) */}
+        <MemberIntroVideo />
         {/* "Just dropped." — auto-scrolling shelf of real kit cards, newest first */}
         <JustDropped />
         {/* The differentiator — Helpline demo */}
         <HelplineDemo />
-        {/* "See inside the member area." — click-to-play 2-minute tour */}
-        <TourVideo />
         {/* Trust — testimonials + podcast credits */}
         <SocialProof />
         {/* Pricing + value stack */}

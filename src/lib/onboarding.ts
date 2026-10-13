@@ -1,4 +1,5 @@
 import "server-only";
+import { MEMBER_VIDEO } from "@/lib/memberVideo";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import nodemailer from "nodemailer";
@@ -37,9 +38,7 @@ const MEMBER_SEND_BCC = ["rushdhaakbar82@gmail.com", "lester@dentalmembernetwork
 // members get honest numbers (#1, #2, …).
 const TEST_MEMBER_EMAILS = new Set(["irhamirfan435@gmail.com"]);
 
-const TOUR_URL = "https://www.dentalmembernetwork.com/#tour";
-const TOUR_POSTER_URL =
-  "https://jbntnrtnaqigsyzgvuyv.supabase.co/storage/v1/object/public/kit-thumbnails/site/tour-poster.jpg";
+const SITE_ORIGIN = (process.env.NEXT_PUBLIC_APP_URL ?? "https://www.dentalmembernetwork.com").replace(/[/]+$/, "");
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 export const SEQUENCE_DAYS = { kit_recommendation: 3, day7_hotline: 7, day14_feedback: 14 } as const;
@@ -143,12 +142,12 @@ function renderWelcome(
 
 ${badge}
 
-<p style="margin:0 0 14px;"><b>Before anything else, watch this. It takes two minutes</b> and shows
-you exactly what's inside and where to find it, which is quicker than us writing it all out.</p>
+<p style="margin:0 0 14px;"><b>${MEMBER_VIDEO.emailLine}.</b> It shows what's inside and where to find it,
+which is quicker than us writing it all out.</p>
 
 <p style="text-align:center;margin:18px 0;">
-<a href="${TOUR_URL}"><img src="${TOUR_POSTER_URL}" alt="Watch the 2 minute portal tour" width="540" style="max-width:100%;border-radius:10px;border:1px solid #E6DDCF;"></a></p>
-${emailCtaButton(TOUR_URL, "Watch the 2 minute tour →")}
+<a href="${MEMBER_VIDEO.watchUrl}"><img src="${SITE_ORIGIN}${MEMBER_VIDEO.thumbnailPath}" alt="${MEMBER_VIDEO.title}, ${MEMBER_VIDEO.minutes} minutes" width="540" style="max-width:100%;border-radius:10px;border:1px solid #E6DDCF;"></a></p>
+${emailCtaButton(MEMBER_VIDEO.watchUrl, "Watch the three-minute video →")}
 
 <p style="margin:0 0 14px;">That's the only thing to do today. There's a growing library in there
 and it's tempting to try to see it all at once. Don't. We'll point you at a great place to start in
@@ -163,7 +162,7 @@ missing, or just plain annoying, reply to this email or write to
 A real person reads every message.</p>
 
 ${SIGNATURE}`;
-  return { subject: "You're in! Start here (2 minutes)", html: memberEmailLayout(body) };
+  return { subject: "You're in! Start here (3 minutes)", html: memberEmailLayout(body) };
 }
 
 function renderKit(opts: {

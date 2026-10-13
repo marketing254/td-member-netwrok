@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { countryName, jobTitleLabel } from "@/lib/events/summitForm";
 import { requireAdmin } from "@/lib/auth/guards";
 import { serverError } from "@/lib/api/errorResponse";
 import { SUMMIT, SUMMIT_EVENTS, eventsDb, type EventRegistrationRow } from "@/lib/events/summit";
@@ -27,6 +28,8 @@ export type SummitAdminRow = {
   email: string;
   phone: string | null;
   practice: string | null;
+  job_title: string | null;
+  country: string | null;
   speaker_question: string | null;
   created_at: string;
   entitled_at: string | null;
@@ -88,6 +91,8 @@ export async function GET(req: Request) {
         email: r.email,
         phone: r.phone,
         practice: r.practice_website_name,
+        job_title: jobTitleLabel(r.job_title) || null,
+        country: countryName(r.country) || null,
         speaker_question: r.speaker_question,
         created_at: r.created_at,
         entitled_at: r.entitled_at,

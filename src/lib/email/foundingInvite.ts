@@ -15,7 +15,7 @@ const DEFAULT_FROM = "Dental Member Network <hello@joindmn.com>";
  * the signed copy after acceptance) is BCC'd to the team so there is a
  * record of exactly what each person received. Rushdha, 28 Sep 2026.
  */
-export const AGREEMENT_BCC = ["lester@ekwa.com", "rushdhaakbar82@gmail.com"];
+export const AGREEMENT_BCC = ["lester@ekwa.com", "lester@dentalmembernetwork.com", "rushdhaakbar82@gmail.com"];
 
 function fromAddress(): string {
   return process.env.WAITLIST_EMAIL_FROM ?? DEFAULT_FROM;

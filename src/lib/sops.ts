@@ -69,4 +69,40 @@ export const SOPS: Sop[] = [
     pdfUrl: `${PDF_BASE}/front-desk-room-to-breathe.pdf`,
     approved: "2026-08-30",
   },
+  // STAGED, NOT LIVE (Lester, 9 Oct 2026): Laura Webber's SOP is a draft
+  // until she approves the wording. The PDF is already in storage at
+  // member-resources/sops/ten-minute-huddle-DRAFT.pdf. When Lester confirms:
+  // rename the PDF to ten-minute-huddle.pdf, add the card image, and move
+  // this entry into the array with the approval date.
+  // {
+  //   slug: "ten-minute-huddle",
+  //   title: "The ten minute huddle that stops the finger pointing",
+  //   category: "Team & Culture",
+  //   expert: { name: "Laura Webber", id: "4d0ddc82-1593-48aa-81d8-a3094c7bfac1" },
+  //   cardUrl: `${CARD_BASE}/ten-minute-huddle-card.jpg`,
+  //   pdfUrl: `${PDF_BASE}/ten-minute-huddle.pdf`,
+  //   approved: "",
+  // },
+  // STAGED, NOT LIVE (Lester, 9 Oct 2026): Danielle Kramer's SOP, draft until
+  // she approves. PDF at member-resources/sops/first-ninety-seconds-DRAFT.pdf.
+  // {
+  //   slug: "first-ninety-seconds",
+  //   title: "The first ninety seconds when a caller asks, do you take my insurance",
+  //   category: "Insurance & PPOs",
+  //   expert: { name: "Danielle Kramer", id: "66a1b63f-cff6-4fb1-95fc-19abd0bdff38" },
+  //   cardUrl: `${CARD_BASE}/first-ninety-seconds-card.jpg`,
+  //   pdfUrl: `${PDF_BASE}/first-ninety-seconds.pdf`,
+  //   approved: "",
+  // },
+  // STAGED, NOT LIVE (Lester, 9 Oct 2026): David Bolden's SOP, draft until he
+  // approves. PDF at member-resources/sops/before-you-buy-any-ai-DRAFT.pdf.
+  // {
+  //   slug: "before-you-buy-any-ai",
+  //   title: "Before you buy any AI",
+  //   category: "Dental AI",
+  //   expert: { name: "David Bolden", id: "caa52e4d-e583-44c2-be32-594071b55800" },
+  //   cardUrl: `${CARD_BASE}/before-you-buy-any-ai-card.jpg`,
+  //   pdfUrl: `${PDF_BASE}/before-you-buy-any-ai.pdf`,
+  //   approved: "",
+  // },
 ];

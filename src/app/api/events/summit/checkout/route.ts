@@ -6,6 +6,7 @@ import { apiError, serverError } from "@/lib/api/errorResponse";
 import { SIGNUP_CHECKOUT_COOKIE, signCheckoutToken } from "@/lib/auth/guards";
 import { appOrigin, getStripe, priceIdFor } from "@/lib/stripe";
 import { SUMMIT, eventsDb, summitOpen, summitTrialEndUnix } from "@/lib/events/summit";
+import { isCountryCode, isJobTitle, type JobTitle } from "@/lib/events/summitForm";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -37,6 +38,8 @@ type Payload = {
   firstName: string;
   lastName: string;
   email: string;
+  jobTitle: JobTitle | null;
+  country: string | null;
   phone: string;
   practiceWebsiteName: string;
   speakerQuestion: string | null;
@@ -58,6 +61,8 @@ function parse(json: unknown): { ok: true; data: Payload } | { ok: false; error:
   const firstName = str(b.firstName, 80);
   const lastName = str(b.lastName, 80);
   const email = str(b.email, 254).toLowerCase();
+  const jobTitle = isJobTitle(b.jobTitle) ? b.jobTitle : null;
+  const country = isCountryCode(b.country) ? (b.country as string).toUpperCase() : null;
   const phone = str(b.phone, 40);
   const practiceWebsiteName = str(b.practiceWebsiteName, 200);
   const speakerQuestion = str(b.speakerQuestion, 1000) || null;
@@ -84,6 +89,8 @@ function parse(json: unknown): { ok: true; data: Payload } | { ok: false; error:
       firstName,
       lastName,
       email,
+      jobTitle,
+      country,
       phone,
       practiceWebsiteName,
       speakerQuestion,
@@ -261,6 +268,8 @@ export async function POST(req: Request) {
           email: p.email,
           first_name: p.firstName,
           last_name: p.lastName,
+          job_title: p.jobTitle,
+          country: p.country,
           phone: p.phone,
           practice_website_name: p.practiceWebsiteName,
           speaker_question: p.speakerQuestion,
@@ -270,6 +279,22 @@ export async function POST(req: Request) {
         { onConflict: "event_id,email", ignoreDuplicates: true },
       );
       if (insErr) return { data: null, error: insErr };
+      // The lead row was created at step 1 with name + email only; fill in
+      // the rest now. Only a pending row is touched, never a registered one.
+      await ev
+        .from("event_registrations")
+        .update({
+          first_name: p.firstName,
+          last_name: p.lastName,
+          job_title: p.jobTitle,
+          country: p.country,
+          phone: p.phone,
+          practice_website_name: p.practiceWebsiteName,
+          speaker_question: p.speakerQuestion,
+        })
+        .eq("event_id", SUMMIT.eventId)
+        .eq("email", p.email)
+        .eq("status", "pending_payment");
       return ev
         .from("event_registrations")
         .select("id, status")
