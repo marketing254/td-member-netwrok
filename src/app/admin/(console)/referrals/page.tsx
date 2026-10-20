@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Box, Chip, CircularProgress, Collapse, Stack, Typography } from "@mui/material";
+import { Box, Button, Chip, CircularProgress, Collapse, IconButton, InputAdornment, Stack, TextField, Tooltip, Typography } from "@mui/material";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import ContentCopyRoundedIcon from "@mui/icons-material/ContentCopyRounded";
 import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
 import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 
@@ -19,6 +21,7 @@ type Row = {
   id: string;
   code: string;
   slug: string | null;
+  aliases?: string[];
   active: boolean;
   created_at: string;
   owner: { kind: "expert" | "vendor"; id: string; name: string };
@@ -50,6 +53,47 @@ export default function AdminReferralsPage() {
   const [totals, setTotals] = useState<Totals>({ signups: 0, conversions: 0, revenue_cents: 0 });
   const [loading, setLoading] = useState(true);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [copied, setCopied] = useState<string | null>(null);
+
+  const startEdit = (r: Row) => {
+    setEditId(r.id);
+    setDraft(r.slug ?? "");
+    setEditError(null);
+  };
+  const saveEdit = async (r: Row) => {
+    setSaving(true);
+    setEditError(null);
+    try {
+      const res = await fetch("/api/admin/referrals", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: r.id, slug: draft }),
+      });
+      const body = (await res.json().catch(() => ({}))) as { ok?: boolean; slug?: string; aliases?: string[]; error?: string };
+      if (!res.ok || !body.ok) {
+        setEditError(body.error ?? "Could not save the link.");
+        return;
+      }
+      setRows((prev) => prev.map((x) => (x.id === r.id ? { ...x, slug: body.slug ?? x.slug, aliases: body.aliases ?? x.aliases } : x)));
+      setEditId(null);
+    } finally {
+      setSaving(false);
+    }
+  };
+  const copyLink = async (r: Row) => {
+    const url = `https://www.dentalmembernetwork.com/${r.slug ?? ""}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(r.id);
+      setTimeout(() => setCopied(null), 1500);
+    } catch {
+      /* clipboard blocked */
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -124,9 +168,57 @@ export default function AdminReferralsPage() {
                           sx={{ bgcolor: r.owner.kind === "expert" ? "rgba(34,108,78,0.12)" : "rgba(110,51,70,0.12)", color: r.owner.kind === "expert" ? "#1F5C40" : "#6E3346", height: 18, fontSize: "0.6rem", fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase" }}
                         />
                       </Stack>
-                      <Typography sx={{ fontFamily: "var(--font-mono, ui-monospace, Menlo, monospace)", fontSize: "0.82rem", fontWeight: 600, color: GOLD, ml: 3.4 }}>
-                        {r.slug ? `dentalmembernetwork.com/${r.slug}` : r.code}
-                      </Typography>
+                      {editId === r.id ? (
+                        <Box onClick={(e) => e.stopPropagation()} sx={{ ml: 3.4, mt: 0.75, maxWidth: 520 }}>
+                          <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ alignItems: { sm: "flex-start" } }}>
+                            <TextField
+                              size="small"
+                              value={draft}
+                              autoFocus
+                              onChange={(e) => setDraft(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") void saveEdit(r);
+                                if (e.key === "Escape") setEditId(null);
+                              }}
+                              error={!!editError}
+                              helperText={editError ?? "The old link keeps working, and sign-ups through either are credited the same."}
+                              slotProps={{ input: { startAdornment: <InputAdornment position="start">dentalmembernetwork.com/</InputAdornment> } }}
+                              sx={{ flex: 1, "& input": { fontFamily: "var(--font-mono, ui-monospace, Menlo, monospace)", fontSize: "0.85rem" } }}
+                            />
+                            <Stack direction="row" spacing={1}>
+                              <Button size="small" variant="contained" disableElevation disabled={saving || draft.length < 3} onClick={() => void saveEdit(r)} sx={{ textTransform: "none", fontWeight: 700, bgcolor: INK, color: "#fff !important", "&:hover": { bgcolor: "#06182A" } }}>
+                                {saving ? "Saving…" : "Save"}
+                              </Button>
+                              <Button size="small" onClick={() => setEditId(null)} sx={{ textTransform: "none", color: `${INK_MUTED} !important` }}>
+                                Cancel
+                              </Button>
+                            </Stack>
+                          </Stack>
+                        </Box>
+                      ) : (
+                        <Stack direction="row" spacing={0.5} sx={{ alignItems: "center", ml: 3.4 }} onClick={(e) => e.stopPropagation()}>
+                          <Typography sx={{ fontFamily: "var(--font-mono, ui-monospace, Menlo, monospace)", fontSize: "0.82rem", fontWeight: 600, color: GOLD }}>
+                            {r.slug ? `dentalmembernetwork.com/${r.slug}` : r.code}
+                          </Typography>
+                          {r.slug && (
+                            <Tooltip title={copied === r.id ? "Copied" : "Copy link"}>
+                              <IconButton size="small" onClick={() => void copyLink(r)} aria-label="Copy link">
+                                <ContentCopyRoundedIcon sx={{ fontSize: 15, color: INK_MUTED }} />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                          <Tooltip title="Edit link">
+                            <IconButton size="small" onClick={() => startEdit(r)} aria-label="Edit link">
+                              <EditOutlinedIcon sx={{ fontSize: 16, color: INK_MUTED }} />
+                            </IconButton>
+                          </Tooltip>
+                        </Stack>
+                      )}
+                      {(r.aliases?.length ?? 0) > 0 && editId !== r.id && (
+                        <Typography sx={{ fontSize: "0.72rem", color: INK_MUTED, ml: 3.4, mt: 0.25 }}>
+                          Also works: {r.aliases!.map((a) => `/${a}`).join(", ")}
+                        </Typography>
+                      )}
                     </Box>
                     <Stack direction="row" spacing={2.5} sx={{ alignItems: "center" }}>
                       <Stat label="Signups" value={String(r.signups)} />

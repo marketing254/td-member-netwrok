@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/guards";
 import { serverError } from "@/lib/api/errorResponse";
-import { getOrCreateExpertReferral, getOrCreateVendorReferral } from "@/lib/referral";
+import { getOrCreateExpertReferral, getOrCreateVendorReferral, renameReferralHandle } from "@/lib/referral";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -59,7 +59,7 @@ export async function GET() {
 
     const { data: codes, error } = await admin
       .from("referral_codes")
-      .select("id, code, slug, expert_id, vendor_id, active, created_at")
+      .select("id, code, slug, slug_aliases, expert_id, vendor_id, active, created_at")
       .order("created_at", { ascending: false });
     if (error) throw error;
 
@@ -136,6 +136,7 @@ export async function GET() {
         id: c.id,
         code: c.code,
         slug: c.slug ?? null,
+        aliases: ((c as { slug_aliases?: string[] | null }).slug_aliases ?? []) as string[],
         active: c.active,
         created_at: c.created_at,
         owner,
@@ -159,5 +160,31 @@ export async function GET() {
     return NextResponse.json({ codes: enriched, totals });
   } catch (err) {
     return serverError(err, { route: "GET /api/admin/referrals" });
+  }
+}
+
+/**
+ * PATCH { id, slug } — rename a referral link. The old link keeps working
+ * (kept as an alias) and the referral code is unchanged, so attribution of
+ * sign-ups through either link is unaffected.
+ */
+export async function PATCH(req: Request) {
+  const guard = await requireAdmin();
+  if (!guard.ok) return guard.response;
+  let body: { id?: unknown; slug?: unknown };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+  }
+  if (typeof body.id !== "string" || typeof body.slug !== "string") {
+    return NextResponse.json({ error: "Missing id or link." }, { status: 400 });
+  }
+  try {
+    const res = await renameReferralHandle(body.id, body.slug);
+    if (!res.ok) return NextResponse.json({ error: res.error }, { status: 400 });
+    return NextResponse.json({ ok: true, slug: res.slug, aliases: res.aliases });
+  } catch (err) {
+    return serverError(err, { route: "PATCH /api/admin/referrals" });
   }
 }

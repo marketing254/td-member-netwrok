@@ -1022,6 +1022,8 @@ export type ReferralCodesRow = {
   code: string;
   // Added in 0046 — vanity handle for dentalmembernetwork.com/<slug>.
   slug: string | null;
+  // Added in 0074_referral_slug_aliases.sql — previous handles that still redirect.
+  slug_aliases: string[];
   active: boolean;
   created_at: string;
 };

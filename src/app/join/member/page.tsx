@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import MemberSignupFlow, { type LatestJob, type SignupPrefill } from "@/components/join/MemberSignupFlow";
+import MemberSignupFlow, { type LatestJob, type PlaybookCard, type SignupPrefill } from "@/components/join/MemberSignupFlow";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { quoteFor } from "@/lib/referrerQuotes";
 import { employmentLabel, roleLabel } from "@/lib/jobs/constants";
@@ -41,6 +41,42 @@ async function loadLatestJob(): Promise<LatestJob | null> {
     };
   } catch {
     return null;
+  }
+}
+
+/**
+ * Playbook cards for the referral page: the referrer's own playbooks lead,
+ * then the newest from everyone else, six at most. Reads the same
+ * published kits and portal cards the member library shows. On any error
+ * the page falls back to its built-in six, so it never fails on this.
+ */
+async function loadPlaybookCards(expertIds: string[]): Promise<PlaybookCard[]> {
+  try {
+    const { data } = await getSupabaseAdmin()
+      .from("resources")
+      .select("topic_slug, topic_title, portal_card_url, originating_expert_id, created_at")
+      .eq("is_published", true)
+      .eq("submission_status", "approved")
+      .not("portal_card_url", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(400);
+    const seen = new Set<string>();
+    const kits: { slug: string; title: string; src: string; mine: boolean; at: string }[] = [];
+    for (const r of data ?? []) {
+      if (!r.topic_slug || !r.portal_card_url || seen.has(r.topic_slug)) continue;
+      seen.add(r.topic_slug);
+      kits.push({
+        slug: r.topic_slug,
+        title: r.topic_title ?? r.topic_slug,
+        src: r.portal_card_url,
+        mine: !!r.originating_expert_id && expertIds.includes(r.originating_expert_id),
+        at: r.created_at,
+      });
+    }
+    kits.sort((a, b) => Number(b.mine) - Number(a.mine) || b.at.localeCompare(a.at));
+    return kits.slice(0, 6).map((k) => ({ src: k.src, alt: `${k.title} playbook`, mine: k.mine }));
+  } catch {
+    return [];
   }
 }
 
@@ -92,6 +128,7 @@ export default async function JoinMemberPage({
           tagline: "Welcome back — we saved your spot",
           imageUrl: "/faviconicon.png",
           pairedName: null,
+          expertIds: [],
           offerActive: true,
           offerMonths: 1,
         };
@@ -102,12 +139,13 @@ export default async function JoinMemberPage({
   }
 
   const latestJob = refCtx ? await loadLatestJob() : null;
+  const playbooks = refCtx ? await loadPlaybookCards(refCtx.expertIds) : [];
   const quote = refCtx && refCtx.kind !== "team" ? quoteFor(refCtx.name) : null;
 
   return (
     // Suspense boundary required: the flow reads useSearchParams().
     <Suspense fallback={null}>
-      <MemberSignupFlow refCtx={refCtx} prefill={prefill} latestJob={latestJob} quote={quote} />
+      <MemberSignupFlow refCtx={refCtx} prefill={prefill} latestJob={latestJob} quote={quote} playbooks={playbooks} />
     </Suspense>
   );
 }

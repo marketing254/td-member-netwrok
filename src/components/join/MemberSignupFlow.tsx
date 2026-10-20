@@ -74,6 +74,8 @@ const STEPS = [
  * (/upgrade → Stripe checkout).
  */
 export type LatestJob = { title: string; where: string; pay: string };
+/** A playbook card for the referral page; "mine" marks the referrer's own. */
+export type PlaybookCard = { src: string; alt: string; mine?: boolean };
 export type ReferrerQuoteProp = { quote: string; role: string };
 
 export type SignupPrefill = {
@@ -88,12 +90,16 @@ export default function MemberSignupFlow({
   prefill = null,
   latestJob = null,
   quote = null,
+  playbooks = null,
 }: {
   refCtx?: RefContext | null;
   prefill?: SignupPrefill | null;
   latestJob?: LatestJob | null;
   quote?: ReferrerQuoteProp | null;
+  /** Live playbook cards, the referrer's own first. Null or empty = the built-in six. */
+  playbooks?: PlaybookCard[] | null;
 }) {
+  const playbookCards: PlaybookCard[] = playbooks && playbooks.length > 0 ? playbooks : PLAYBOOK_CARDS;
   const router = useRouter();
   const params = useSearchParams();
   const reduced = useReducedMotion();
@@ -823,7 +829,7 @@ export default function MemberSignupFlow({
               gap: { xs: 1.5, md: 2.25 },
             }}
           >
-            {PLAYBOOK_CARDS.map((c) => (
+            {playbookCards.map((c) => (
               <Box
                 key={c.src}
                 sx={{
@@ -832,10 +838,15 @@ export default function MemberSignupFlow({
                   borderRadius: "14px",
                   overflow: "hidden",
                   bgcolor: "#15263a",
-                  boxShadow: "0 10px 24px -12px rgba(10,26,47,0.35)",
+                  boxShadow: c.mine ? "0 0 0 2px #D9A84B, 0 10px 24px -12px rgba(10,26,47,0.35)" : "0 10px 24px -12px rgba(10,26,47,0.35)",
                 }}
               >
                 <Image src={c.src} alt={c.alt} fill sizes="(max-width: 600px) 50vw, (max-width: 900px) 33vw, 200px" style={{ objectFit: "cover" }} />
+                {c.mine && (
+                  <Box sx={{ position: "absolute", top: 8, left: 8, px: 0.9, py: 0.3, borderRadius: "999px", bgcolor: "#D9A84B", color: INK, fontSize: "0.6rem", fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                    Theirs
+                  </Box>
+                )}
               </Box>
             ))}
           </Box>
