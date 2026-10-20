@@ -1,4 +1,61 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
+
+/** Untyped client for slug_aliases (migration 0074, not in the generated types yet). */
+function db(): SupabaseClient {
+  return getSupabaseAdmin() as unknown as SupabaseClient;
+}
+
+/**
+ * Handles an admin may not choose: every top-level page and public folder
+ * on the site (a real page always wins over a referral handle, so the link
+ * would never work), plus a few system names.
+ */
+const RESERVED_HANDLES = new Set([
+  "admin", "agreement", "api", "audit", "auth", "blog", "dashboard", "expert", "experts", "founding",
+  "invite", "jobs", "join", "legal", "member", "partners", "pricing", "replay", "reshani", "resources",
+  "reviews", "rida", "seeker", "start", "summit", "tools", "upgrade", "vendor", "waitlist", "welcome",
+  "ads", "agreements", "free-kit", "team", "video", "index", "login", "signup", "support", "about",
+  "contact", "privacy", "terms", "well-known", "sw", "static", "_next", "favicon",
+]);
+
+export const HANDLE_RE = /^[a-z0-9](?:[a-z0-9-]{1,38}[a-z0-9])$/;
+
+/** True when another referral row already uses this handle, as its link or a previous one. */
+async function handleTaken(handle: string, exceptId?: string): Promise<boolean> {
+  let q = db().from("referral_codes").select("id").or(`slug.ilike.${handle},slug_aliases.cs.{${handle}}`);
+  if (exceptId) q = q.neq("id", exceptId);
+  const { data } = await q.limit(1);
+  return (data ?? []).length > 0;
+}
+
+/**
+ * Admin rename of a referral link (Oct 2026). The old handle moves into
+ * slug_aliases so printed links keep working; the referral CODE never
+ * changes, so attribution of past and future sign-ups is unaffected.
+ */
+export async function renameReferralHandle(
+  id: string,
+  rawHandle: string,
+): Promise<{ ok: true; slug: string; aliases: string[] } | { ok: false; error: string }> {
+  const handle = (rawHandle || "").trim().toLowerCase().replace(/^\/+|\/+$/g, "");
+  if (!HANDLE_RE.test(handle) || handle.includes("--")) {
+    return { ok: false, error: "Use 3 to 40 lowercase letters, numbers or single hyphens, starting and ending with a letter or number." };
+  }
+  if (RESERVED_HANDLES.has(handle)) return { ok: false, error: `"${handle}" is a page on the site already. Pick another.` };
+
+  const { data: row, error } = await db().from("referral_codes").select("id, slug, slug_aliases").eq("id", id).maybeSingle();
+  if (error || !row) return { ok: false, error: "Referral link not found." };
+  const current = ((row as { slug: string | null }).slug ?? "").toLowerCase();
+  const aliases: string[] = ((row as { slug_aliases: string[] | null }).slug_aliases ?? []).map((a) => a.toLowerCase());
+  if (handle === current) return { ok: true, slug: current, aliases };
+  if (await handleTaken(handle, id)) return { ok: false, error: "That link is already used by someone else." };
+
+  const nextAliases = Array.from(new Set([...aliases, ...(current ? [current] : [])])).filter((a) => a !== handle);
+  const { error: upErr } = await db().from("referral_codes").update({ slug: handle, slug_aliases: nextAliases }).eq("id", id);
+  if (upErr) return { ok: false, error: /duplicate|unique/i.test(upErr.message) ? "That link is already used by someone else." : "Could not save the link." };
+  return { ok: true, slug: handle, aliases: nextAliases };
+}
 
 /**
  * Generate a short, human-readable referral code (e.g. "GARY7K3"). Avoids
@@ -55,14 +112,8 @@ function randomHandleSuffix(len = 3): string {
 async function allocateHandle(name: string, fallbackCode: string): Promise<string> {
   const admin = getSupabaseAdmin();
   const base = slugifyHandle(name) || fallbackCode.toLowerCase();
-  const taken = async (h: string) => {
-    const { data } = await admin
-      .from("referral_codes")
-      .select("id")
-      .ilike("slug", h) // ilike = case-insensitive exact (no wildcards in h)
-      .maybeSingle();
-    return !!data;
-  };
+  void admin;
+  const taken = async (h: string) => RESERVED_HANDLES.has(h) || (await handleTaken(h));
   if (!(await taken(base))) return base;
   for (let i = 0; i < 8; i += 1) {
     const candidate = `${base}-${randomHandleSuffix(i < 4 ? 2 : 3)}`;
@@ -150,12 +201,15 @@ export async function resolveReferralSlug(slug: string | null | undefined): Prom
   if (!slug) return null;
   const trimmed = slug.trim();
   if (!trimmed || !/^[a-zA-Z0-9-]{2,40}$/.test(trimmed)) return null;
-  const admin = getSupabaseAdmin();
-  const { data } = await admin
+  const handle = trimmed.toLowerCase();
+  const { data: rows } = await db()
     .from("referral_codes")
-    .select("code, active")
-    .ilike("slug", trimmed)
-    .maybeSingle();
+    .select("code, active, slug")
+    .or(`slug.ilike.${handle},slug_aliases.cs.{${handle}}`)
+    .limit(2);
+  // Current handle wins over an old one if both somehow exist.
+  const list = (rows ?? []) as { code: string; active: boolean; slug: string | null }[];
+  const data = list.find((r) => (r.slug ?? "").toLowerCase() === handle) ?? list[0];
   if (!data || !data.active) return null;
   return { code: data.code };
 }

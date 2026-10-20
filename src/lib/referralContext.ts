@@ -23,6 +23,9 @@ export type RefContext = {
   pairedName: string | null;
   offerActive: boolean;
   offerMonths: number;
+  /** Expert ids whose playbooks lead the referral page: the expert, or a
+   *  partner's founder when the same person is also an expert. */
+  expertIds: string[];
 };
 
 export async function getReferralContext(ref: string | undefined | null): Promise<RefContext | null> {
@@ -43,8 +46,10 @@ export async function getReferralContext(ref: string | undefined | null): Promis
     let tagline: string | null = null;
     let imageUrl: string | null = null;
     let pairedName: string | null = null;
+    const expertIds: string[] = [];
 
     if (rc.expert_id) {
+      expertIds.push(rc.expert_id);
       const { data: e } = await sb
         .from("experts")
         .select("display_name, full_name, email, specialty, headshot_url, status")
@@ -78,11 +83,12 @@ export async function getReferralContext(ref: string | undefined | null): Promis
       if (v.contact_email) {
         const { data: pe } = await sb
           .from("experts")
-          .select("display_name, full_name, status")
+          .select("id, display_name, full_name, status")
           .ilike("email", v.contact_email)
           .maybeSingle();
         if (pe && pe.status !== "archived" && pe.status !== "suspended") {
           pairedName = pe.display_name || pe.full_name;
+          expertIds.push(pe.id);
         }
       }
     }
@@ -105,7 +111,7 @@ export async function getReferralContext(ref: string | undefined | null): Promis
       /* promo tables absent — invitation renders without the offer */
     }
 
-    return { name, kind, tagline, imageUrl, pairedName, offerActive, offerMonths };
+    return { name, kind, tagline, imageUrl, pairedName, offerActive, offerMonths, expertIds };
   } catch {
     return null;
   }
@@ -142,6 +148,7 @@ export async function getPromoContext(promo: string | undefined | null): Promise
       pairedName: null,
       offerActive: true,
       offerMonths: Math.max(1, Math.round((row.trial_days ?? 90) / 30)),
+      expertIds: [],
     };
   } catch {
     return null;

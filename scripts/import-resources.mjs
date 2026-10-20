@@ -112,13 +112,12 @@ const PUBLISH = !!args["publish"];
 // MEMBER-PORTAL ONLY — the public /api/resources endpoint excludes them.
 const EXPERT_EMAIL = (args["expert-email"] || "").trim().toLowerCase() || null;
 const VENDOR_EMAIL = (args["vendor-email"] || "").trim().toLowerCase() || null;
-// Force the square social cover ("Cover - Square (social).png") as the kit
-// thumbnail instead of the default "Card - Portal Grid".
-// The square social cover is now the DEFAULT portal card (it matches the
-// 1:1 grid tile). `--portrait-cover` opts back into the 3:4 "Card - Portal
-// Grid" image. `--square-cover` is accepted as a no-op so older documented
-// commands keep working.
-const PORTRAIT_COVER = !!args["portrait-cover"];
+// Portal card image. Default (Oct 2026): the 3:4 "Card - Portal Grid
+// (topic-led).png", which is what the Practice Playbooks grid now shows
+// for every kit. Three kits imported with the square cover on 9 Oct showed
+// letterboxed and had to be fixed by hand. `--square-cover` opts into the
+// square social cover; `--portrait-cover` is accepted as a no-op.
+const PORTRAIT_COVER = !args["square-cover"];
 
 // Resolved once at startup from the emails above.
 let ORIGINATING_EXPERT_ID = null;
@@ -329,8 +328,8 @@ async function kitSlugExists(slug) {
   }
   console.log(
     PORTRAIT_COVER
-      ? "Thumbnail: 'Card - Portal Grid' (3:4 portrait — opted in via --portrait-cover)."
-      : "Thumbnail: 'Cover - Square (social)' 2160x2160 (default, matches the 1:1 grid tile).",
+      ? "Thumbnail: 'Card - Portal Grid' (3:4 portrait, default, matches the Playbooks grid)."
+      : "Thumbnail: 'Cover - Square (social)' 2160x2160 (opted in via --square-cover).",
   );
   if (ORIGINATING_EXPERT_ID || ORIGINATING_VENDOR_ID) {
     console.log("→ These kits are MEMBER-PORTAL ONLY (excluded from the public resources page).\n");
@@ -411,12 +410,8 @@ async function runOneKit(folderName, parentDir) {
 
   // Portal card = the SQUARE social cover (2160x2160).
   //
-  // The portal grid renders a 1:1 tile, so a square source lands exactly.
-  // "Card - Portal Grid (topic-led).png" is 3:4 portrait — cropping that
-  // into the square tile zooms in and cuts the kit title off, which is
-  // what happened to the Jul 2026 expert kits before this was flipped.
-  // Every kit in the library uses the square cover; --portrait-cover is
-  // kept only as an escape hatch if a future design needs the tall one.
+  // The Practice Playbooks grid renders a 3:4 tile, so the portrait
+  // "Card - Portal Grid" lands exactly; the square cover is the fallback.
   const portalCardName = PORTRAIT_COVER
     ? (filenames.find((n) => COVER_PORTAL_RE.test(n)) || filenames.find((n) => COVER_SQUARE_RE.test(n)))
     : (filenames.find((n) => COVER_SQUARE_RE.test(n)) || filenames.find((n) => COVER_PORTAL_RE.test(n)));
