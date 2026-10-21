@@ -29,6 +29,8 @@ export type FoundingInviteEmailInput = {
   /** Partner price plan (lib/billing/partnerPlan). Quarterly Expert + Partner drops the "Founding" label. */
   pricing?: PartnerPlan | null;
   to: string;
+  /** Secondary email from the invite (optional). Gets the same email, as a cc. */
+  cc?: string | null;
   fullName: string;
   role: "expert" | "partner" | "both";
   inviteUrl: string;
@@ -82,6 +84,7 @@ export async function sendFoundingInviteEmail(
       await transporter.sendMail({
         from,
         to: input.to,
+        ...(input.cc ? { cc: input.cc } : {}),
         bcc: AGREEMENT_BCC,
         subject,
         html,
@@ -105,7 +108,7 @@ export async function sendFoundingInviteEmail(
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ from, to: [input.to], bcc: AGREEMENT_BCC, subject, html, text, attachments }),
+        body: JSON.stringify({ from, to: [input.to], ...(input.cc ? { cc: [input.cc] } : {}), bcc: AGREEMENT_BCC, subject, html, text, attachments }),
       });
       if (!res.ok) {
         console.error(`[founding-invite:${input.role}] Resend failed`, await res.text().catch(() => ""));

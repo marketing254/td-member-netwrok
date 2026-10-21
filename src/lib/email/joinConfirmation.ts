@@ -86,6 +86,8 @@ export type JoinConfirmationInput = {
   /** Partner price plan (lib/billing/partnerPlan). */
   pricing?: PartnerPlan | null;
   to: string;
+  /** Secondary email from the invite (optional). Gets the same email, as a cc. */
+  cc?: string | null;
   contactName: string;
   companyName?: string | null;
   pdfBuffer: Buffer;
@@ -185,6 +187,7 @@ export async function sendJoinConfirmationEmail(
       await transporter.sendMail({
         from,
         to: input.to,
+        ...(input.cc ? { cc: input.cc } : {}),
         bcc: AGREEMENT_BCC,
         replyTo: SUPPORT_EMAIL,
         subject,
@@ -224,6 +227,7 @@ export async function sendJoinConfirmationEmail(
         body: JSON.stringify({
           from,
           to: [input.to],
+          ...(input.cc ? { cc: [input.cc] } : {}),
           bcc: AGREEMENT_BCC,
           reply_to: SUPPORT_EMAIL,
           subject,

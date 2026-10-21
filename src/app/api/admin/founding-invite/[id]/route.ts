@@ -313,8 +313,10 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     }
 
     const inviteUrl = `${appOrigin()}/founding/${invite.code}`;
+    const secondary = (invite.secondary_email ?? "").trim().toLowerCase();
     const sent = await sendFoundingInviteEmail({
       to: invite.email,
+      cc: secondary && secondary !== invite.email.toLowerCase() ? secondary : null,
       fullName: signerName,
       role: invite.role,
       pricing: normalizePlan(invite.pricing_plan),
