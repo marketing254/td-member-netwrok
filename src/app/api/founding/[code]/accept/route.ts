@@ -375,7 +375,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ code: string }
       vendorId = existing.id;
       await sb
         .from("vendors")
-        .update({ ...subFields, status: "approved", verified: true, founding_partner_locked: true } as never)
+        .update({ ...subFields, pricing_plan: normalizePlan(invite.pricing_plan), status: "approved", verified: true, founding_partner_locked: true } as never)
         .eq("id", vendorId);
     } else {
       const { data: ins } = await sb
@@ -393,6 +393,9 @@ export async function POST(req: Request, ctx: { params: Promise<{ code: string }
           calendar_link: invite.calendar_link ?? null,
           hotline_email: email,
           plan_id: "founding",
+          // The plan they accepted (monthly or quarterly). The portal billing
+          // page, the agreement page and the PDF read this from the vendor row.
+          pricing_plan: normalizePlan(invite.pricing_plan),
           status: "approved",
           verified: true,
           months_in_program: 0,
@@ -516,8 +519,10 @@ export async function POST(req: Request, ctx: { params: Promise<{ code: string }
   // sends the 6-digit code, only once they submit their email there.
   if (signedPdf) {
     const pdfForEmail = signedPdf;
+    const secondary = ((invite as { secondary_email?: string | null }).secondary_email ?? "").trim().toLowerCase();
     after(() => sendJoinConfirmationEmail({
       role: invite.role,
+      cc: secondary && secondary !== email ? secondary : null,
       pricing: normalizePlan(invite.pricing_plan),
       to: email,
       contactName: signerName,

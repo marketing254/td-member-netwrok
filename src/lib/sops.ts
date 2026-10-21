@@ -105,4 +105,25 @@ export const SOPS: Sop[] = [
   //   pdfUrl: `${PDF_BASE}/before-you-buy-any-ai.pdf`,
   //   approved: "",
   // },
+  // STAGED, NOT LIVE (Lester, 20 Oct 2026): Perrin DesPortes' two SOPs, drafts
+  // until he approves. PDFs at member-resources/sops/recruiting-your-next-associate-DRAFT.pdf
+  // and member-resources/sops/growth-readiness-review-DRAFT.pdf.
+  // {
+  //   slug: "recruiting-your-next-associate",
+  //   title: "Recruiting your next associate",
+  //   category: "Practice Transitions",
+  //   expert: { name: "Perrin DesPortes", id: "06a8a085-d8f4-4b89-8a37-4c60b2c92c97" },
+  //   cardUrl: `${CARD_BASE}/recruiting-your-next-associate-card.jpg`,
+  //   pdfUrl: `${PDF_BASE}/recruiting-your-next-associate.pdf`,
+  //   approved: "",
+  // },
+  // {
+  //   slug: "growth-readiness-review",
+  //   title: "The growth readiness review",
+  //   category: "Practice Transitions",
+  //   expert: { name: "Perrin DesPortes", id: "06a8a085-d8f4-4b89-8a37-4c60b2c92c97" },
+  //   cardUrl: `${CARD_BASE}/growth-readiness-review-card.jpg`,
+  //   pdfUrl: `${PDF_BASE}/growth-readiness-review.pdf`,
+  //   approved: "",
+  // },
 ];
