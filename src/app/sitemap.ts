@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
-import { PUBLISHED_BLOG_ARTICLES } from "@/lib/blog";
+import { getReleasedArticles } from "@/lib/blog";
+import { CHAIRSIDE_ENABLED, getLiveEpisodes } from "@/lib/chairside";
 import { MEMBER_TOOLS } from "@/lib/toolsData";
 
 const SITE = "https://www.dentalmembernetwork.com";
@@ -14,6 +15,9 @@ const SITE = "https://www.dentalmembernetwork.com";
  * which is the right signal for marketing pages that get small copy
  * tweaks but no full rewrites.
  */
+// Scheduled blog posts enter the sitemap on their day without a redeploy.
+export const revalidate = 3600;
+
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
 
@@ -38,8 +42,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly" as const,
     })),
     // One entry per published article — the registry is the source of truth.
-    ...PUBLISHED_BLOG_ARTICLES.map((a) => ({
+    ...getReleasedArticles().map((a) => ({
       path: `/blog/${a.slug}`,
+      priority: 0.7,
+      changeFrequency: "monthly" as const,
+    })),
+    // Chairside, the podcast: the show home plus one page per episode.
+    ...(CHAIRSIDE_ENABLED ? [{ path: "/chairside", priority: 0.8, changeFrequency: "weekly" as const }] : []),
+    ...getLiveEpisodes().map((e) => ({
+      path: `/chairside/${e.slug}`,
       priority: 0.7,
       changeFrequency: "monthly" as const,
     })),

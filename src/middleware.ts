@@ -74,7 +74,7 @@ function buildCsp(): string {
     "child-src 'self' blob:",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://vercel.live https://*.ycb.me https://*.youcanbook.me",
     "font-src 'self' https://fonts.gstatic.com https://vercel.live https://assets.vercel.com https://*.ycb.me https://*.youcanbook.me data:",
-    `img-src 'self' data: blob: ${supabaseHttps} https://www.google-analytics.com https://www.googletagmanager.com https://vercel.live https://vercel.com https://*.ycb.me https://*.youcanbook.me https://*.stripe.com https://www.facebook.com`,
+    `img-src 'self' data: blob: ${supabaseHttps} https://www.google-analytics.com https://www.googletagmanager.com https://vercel.live https://vercel.com https://*.ycb.me https://*.youcanbook.me https://*.stripe.com https://www.facebook.com https://i.ytimg.com`,
     // media-src controls <video> and <audio> sources. Without this, videos
     // from Supabase Storage are blocked because default-src 'self' falls back.
     `media-src 'self' blob: ${supabaseHttps}`,
@@ -87,7 +87,7 @@ function buildCsp(): string {
     // the calendar iframe. Spline (my.spline.design + prod.spline.design)
     // hosts the 3D hero scene iframe. Stripe: js.stripe.com hosts the
     // PaymentElement iframe; hooks.stripe.com hosts 3-D Secure challenges.
-    `frame-src 'self' ${supabaseHttps} https://player.vimeo.com https://www.youtube.com https://www.youtube-nocookie.com https://view.officeapps.live.com https://vercel.live https://*.ycb.me https://*.youcanbook.me https://my.spline.design https://*.spline.design https://js.stripe.com https://hooks.stripe.com https://*.js.stripe.com https://checkout.stripe.com https://www.facebook.com`,
+    `frame-src 'self' ${supabaseHttps} https://player.vimeo.com https://www.youtube.com https://www.youtube-nocookie.com https://view.officeapps.live.com https://vercel.live https://*.ycb.me https://*.youcanbook.me https://my.spline.design https://*.spline.design https://js.stripe.com https://hooks.stripe.com https://*.js.stripe.com https://checkout.stripe.com https://www.facebook.com https://i.ytimg.com`,
     "frame-ancestors 'none'",
     "form-action 'self'",
     "base-uri 'self'",

@@ -25,6 +25,10 @@ export type CurrentMember = {
   card_brand: string | null;
   card_last4: string | null;
   founding_member_locked: boolean;
+  // 0076 — "introduce me to experts" (see src/lib/expertIntros.ts).
+  expert_intro_opt_in?: boolean;
+  expert_intro_opt_in_at?: string | null;
+  expert_intro_help_area?: string | null;
 };
 
 export type MemberMeResponse = {

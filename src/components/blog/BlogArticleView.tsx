@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { Fragment, useState, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Box, Button, Collapse, Container, IconButton, Stack, Typography } from "@mui/material";
@@ -53,6 +53,34 @@ export default function BlogArticleView({
     ...(article.faqs && article.faqs.length > 0 ? [{ id: "faq", label: "FAQs" }] : []),
   ];
   const [tocOpen, setTocOpen] = useState(false);
+
+  // Blog relaunch (Oct 2026): the expert's own site, bare host in the
+  // registry, linked as https://. Shown in the byline and the About box.
+  const site = (article.expert.website ?? "").replace(/^https?:\/\//, "").replace(/\/$/, "");
+  const siteHref = site ? `https://${site}` : null;
+
+  // The byline carries the "where the guidance comes from" line, so a body
+  // that still opens with the italic "*Expert guidance from…*" paragraph
+  // is not shown twice.
+  const body = article.expert.sourceLine
+    ? article.body.filter((b, i) => !(i === 0 && b.kind === "p" && b.text.startsWith("*Expert guidance from")))
+    : article.body;
+
+  // Where the spotlight quote goes: an explicit { kind: "spotlight" } block
+  // wins; otherwise after the second non-lead paragraph.
+  const hasSpotlightBlock = body.some((b) => b.kind === "spotlight");
+  let autoSpotlightAfter = -1;
+  if (article.spotlightQuote && !hasSpotlightBlock) {
+    let seen = 0;
+    for (let i = 0; i < body.length; i++) {
+      const b = body[i]!;
+      if (b.kind === "p" && !b.lead) {
+        seen += 1;
+        if (seen === 2) { autoSpotlightAfter = i; break; }
+      }
+    }
+    if (autoSpotlightAfter < 0) autoSpotlightAfter = Math.min(1, body.length - 1);
+  }
 
   const expertName = article.expert.profileHref ? (
     <Box
@@ -230,11 +258,31 @@ export default function BlogArticleView({
                   Expert guidance from {expertName}
                 </Typography>
                 <Typography sx={{ fontSize: "0.78rem", color: INK_MUTED }}>
-                  {article.expert.role} ·{" "}
+                  {article.expert.role}
+                  {siteHref && (
+                    <>
+                      {" · "}
+                      <Box
+                        component="a"
+                        href={siteHref}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        sx={{ color: GOLD, fontWeight: 700, textDecoration: "none", "&:hover": { textDecoration: "underline" } }}
+                      >
+                        {site}
+                      </Box>
+                    </>
+                  )}
+                  {" · "}
                   {article.dateModified !== article.datePublished
                     ? `Updated ${formatDate(article.dateModified)}`
                     : `Published ${formatDate(article.datePublished)}`}
                 </Typography>
+                {article.expert.sourceLine && (
+                  <Typography sx={{ fontSize: "0.8rem", color: GOLD, fontWeight: 600, fontStyle: "italic", mt: 0.5, lineHeight: 1.45 }}>
+                    {inline(article.expert.sourceLine.replace(/^\*|\*$/g, ""))}
+                  </Typography>
+                )}
               </Box>
               <Box
                 sx={{
@@ -383,8 +431,15 @@ export default function BlogArticleView({
               </Box>
             )}
 
-            {article.body.map((block, i) => (
-              <Block key={i} block={block} />
+            {body.map((block, i) => (
+              <Fragment key={i}>
+                {block.kind === "spotlight" ? (
+                  article.spotlightQuote && <SpotlightQuote article={article} />
+                ) : (
+                  <Block block={block} />
+                )}
+                {i === autoSpotlightAfter && article.spotlightQuote && <SpotlightQuote article={article} />}
+              </Fragment>
             ))}
 
             {/* FAQ — approved Q&A, also emitted as FAQPage JSON-LD */}
@@ -428,6 +483,79 @@ export default function BlogArticleView({
                     </Typography>
                   </Box>
                 ))}
+              </Box>
+            )}
+
+            {/* About the expert — photo, bio, DMN page + own site */}
+            {article.expert.bio && (
+              <Box
+                sx={{
+                  mt: 5,
+                  p: { xs: 2.5, md: 3.5 },
+                  borderRadius: 4,
+                  bgcolor: "#FFFFFF",
+                  border: `1px solid ${LINE}`,
+                  boxShadow: "0 18px 40px -30px rgba(10,26,47,0.25)",
+                  display: "grid",
+                  gridTemplateColumns: { xs: "1fr", sm: "96px minmax(0, 1fr)" },
+                  gap: { xs: 2, sm: 3 },
+                  alignItems: "start",
+                }}
+              >
+                <Box
+                  sx={{
+                    position: "relative",
+                    width: 96,
+                    height: 96,
+                    borderRadius: "50%",
+                    overflow: "hidden",
+                    border: "3px solid rgba(217,168,75,0.55)",
+                    flexShrink: 0,
+                  }}
+                >
+                  <Image
+                    src={article.expert.headshotUrl}
+                    alt={article.expert.name}
+                    fill
+                    sizes="96px"
+                    style={{ objectFit: "cover", objectPosition: "center top" }}
+                  />
+                </Box>
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography sx={{ fontSize: "0.68rem", fontWeight: 800, letterSpacing: "0.18em", textTransform: "uppercase", color: GOLD, mb: 0.75 }}>
+                    About the expert
+                  </Typography>
+                  <Typography
+                    component="h2"
+                    sx={{ fontFamily: "var(--font-display)", fontSize: { xs: "1.25rem", md: "1.4rem" }, fontWeight: 600, color: INK, lineHeight: 1.2, mb: 0.4 }}
+                  >
+                    {article.expert.name}
+                  </Typography>
+                  <Typography sx={{ fontSize: "0.88rem", color: INK_MUTED, mb: 1.5 }}>{article.expert.role}</Typography>
+                  <Typography sx={{ ...bodyText, fontSize: "0.98rem", mb: 1.75 }}>{inline(article.expert.bio)}</Typography>
+                  <Stack direction="row" spacing={3} sx={{ flexWrap: "wrap", rowGap: 0.75 }}>
+                    {article.expert.profileHref && (
+                      <Box
+                        component={Link}
+                        href={article.expert.profileHref}
+                        sx={{ color: GOLD, fontWeight: 700, fontSize: "0.95rem", textDecoration: "none", "&:hover": { textDecoration: "underline" } }}
+                      >
+                        See {article.expert.name}&rsquo;s profile &rarr;
+                      </Box>
+                    )}
+                    {siteHref && (
+                      <Box
+                        component="a"
+                        href={siteHref}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        sx={{ color: GOLD, fontWeight: 700, fontSize: "0.95rem", textDecoration: "none", "&:hover": { textDecoration: "underline" } }}
+                      >
+                        Visit {site} &rarr;
+                      </Box>
+                    )}
+                  </Stack>
+                </Box>
               </Box>
             )}
 
@@ -512,7 +640,7 @@ export default function BlogArticleView({
                       mb: 1.75,
                     }}
                   >
-                    Practice Playbook · Action guide
+                    {article.kitCta.eyebrowOverride ?? "Practice Playbook · Action guide"}
                   </Box>
                   <Typography sx={{ fontSize: "0.64rem", fontWeight: 800, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(246,241,231,0.55)", mb: 0.75 }}>
                     {article.category}
@@ -574,7 +702,7 @@ export default function BlogArticleView({
                     mb: 1.25,
                   }}
                 >
-                  Get the complete {article.kitCta.kitName} Practice Playbook.
+                  {article.kitCta.titleOverride ?? `Get the complete ${article.kitCta.kitName} Practice Playbook.`}
                 </Typography>
                 <Typography sx={{ fontSize: "0.92rem", color: "rgba(246,241,231,0.82)", lineHeight: 1.65, mb: 2.5 }}>
                   {article.kitCta.description}
@@ -616,6 +744,73 @@ export default function BlogArticleView({
       </Container>
 
       <Footer />
+    </Box>
+  );
+}
+
+/**
+ * Spotlight quote — the expert's best line in a navy box with their photo
+ * (blog relaunch, Oct 2026). Sits under the opening paragraphs.
+ */
+function SpotlightQuote({ article }: { article: BlogArticle }) {
+  const q = article.spotlightQuote;
+  if (!q) return null;
+  const text = q.text.replace(/^[“"]|[”"]$/g, "");
+  return (
+    <Box
+      component="aside"
+      aria-label={`Quote from ${article.expert.name}`}
+      sx={{
+        my: 4,
+        p: { xs: 2.5, md: 3.5 },
+        borderRadius: 4,
+        background: "linear-gradient(135deg, #0A1A2F 0%, #12325A 100%)",
+        display: "grid",
+        gridTemplateColumns: { xs: "1fr", sm: "104px minmax(0, 1fr)" },
+        gap: { xs: 2, sm: 3 },
+        alignItems: "center",
+        boxShadow: "0 28px 56px -30px rgba(10,26,47,0.5)",
+      }}
+    >
+      <Box
+        sx={{
+          position: "relative",
+          width: { xs: 84, sm: 104 },
+          height: { xs: 84, sm: 104 },
+          borderRadius: "50%",
+          overflow: "hidden",
+          border: `3px solid ${GOLD_BRIGHT}`,
+          flexShrink: 0,
+        }}
+      >
+        <Image
+          src={article.expert.headshotUrl}
+          alt={article.expert.name}
+          fill
+          sizes="104px"
+          style={{ objectFit: "cover", objectPosition: "center top" }}
+        />
+      </Box>
+      <Box sx={{ minWidth: 0 }}>
+        <Typography
+          component="blockquote"
+          sx={{
+            m: 0,
+            fontFamily: "var(--font-display)",
+            fontSize: { xs: "1.25rem", md: "1.5rem" },
+            fontWeight: 600,
+            color: "#F6F1E7",
+            lineHeight: 1.3,
+            letterSpacing: "-0.01em",
+            mb: 1.25,
+          }}
+        >
+          &ldquo;{text}&rdquo;
+        </Typography>
+        <Typography sx={{ fontSize: "0.74rem", fontWeight: 800, letterSpacing: "0.16em", textTransform: "uppercase", color: GOLD_BRIGHT }}>
+          {q.cite ?? article.expert.name}
+        </Typography>
+      </Box>
     </Box>
   );
 }

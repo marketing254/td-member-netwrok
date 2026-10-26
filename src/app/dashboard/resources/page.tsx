@@ -32,7 +32,8 @@ type ResourceItem = {
   title: string;
   kind: string;
   is_free: boolean;
-  kit_type?: "standard" | "book_club" | null;
+  kit_type?: "standard" | "book_club" | "chairside" | null;
+  episode_payload?: { episode?: number } | null;
   originating_expert_id?: string | null;
   created_at?: string | null;
   progress: { last_viewed_at: string | null; completed_at: string | null } | null;
@@ -50,7 +51,9 @@ type TopicCard = {
   viewedCount: number;
   completedCount: number;
   isFree: boolean;
-  kitType: "standard" | "book_club";
+  kitType: "standard" | "book_club" | "chairside";
+  /** Chairside only: the episode number for the gold tag. */
+  episode: number | null;
   originatingExpertId: string | null;
   // Newest member-facing publish date — used by the "Latest" sort.
   newestAt: string | null;
@@ -60,6 +63,9 @@ type SortKey = "latest" | "oldest" | "alpha" | "most-resources";
 
 // Filter key — either a special slot or a literal category name from the DB.
 type FilterKey = "all" | "free" | string;
+
+// Type filter: playbooks and Chairside episodes share the grid.
+type TypeKey = "all" | "playbooks" | "chairside";
 
 const PAGE_SIZE = 12;
 
@@ -72,6 +78,13 @@ export default function ResourceLibraryPage() {
   const [expertFilter, setExpertFilter] = useState<string>("all");
   const [expertOptions, setExpertOptions] = useState<{ id: string; name: string }[]>([]);
   const [page, setPage] = useState(1);
+  // Honour ?type=chairside from the sidebar "Chairside" link (same
+  // window-guarded read as the ?expert= deep-link below).
+  const [typeFilter, setTypeFilterState] = useState<TypeKey>(() => {
+    if (typeof window === "undefined") return "all";
+    const t = new URLSearchParams(window.location.search).get("type");
+    return t === "chairside" || t === "playbooks" ? t : "all";
+  });
 
   // Load the expert option list once so the filter dropdown is populated.
   useEffect(() => {
@@ -132,6 +145,10 @@ export default function ResourceLibraryPage() {
     setQ(next);
     setPage(1);
   };
+  const setTypeFilter = (k: TypeKey) => {
+    setTypeFilterState(k);
+    setPage(1);
+  };
 
   const topics: TopicCard[] = useMemo(() => {
     const map = new Map<string, TopicCard>();
@@ -163,7 +180,8 @@ export default function ResourceLibraryPage() {
           viewedCount: viewed ? 1 : 0,
           completedCount: completed ? 1 : 0,
           isFree: r.is_free,
-          kitType: r.kit_type === "book_club" ? "book_club" : "standard",
+          kitType: r.kit_type === "book_club" || r.kit_type === "chairside" ? r.kit_type : "standard",
+          episode: typeof r.episode_payload?.episode === "number" ? r.episode_payload.episode : null,
           originatingExpertId: r.originating_expert_id ?? null,
           newestAt: r.created_at ?? null,
         });
@@ -181,6 +199,8 @@ export default function ResourceLibraryPage() {
 
   const filtered = useMemo(() => {
     let out = topics;
+    if (typeFilter === "chairside") out = out.filter((t) => t.kitType === "chairside");
+    else if (typeFilter === "playbooks") out = out.filter((t) => t.kitType !== "chairside");
     if (filter === "free") {
       out = out.filter((t) => t.isFree);
     } else if (filter !== "all") {
@@ -230,7 +250,7 @@ export default function ResourceLibraryPage() {
         break;
     }
     return sorted;
-  }, [topics, q, filter, expertFilter, expertNameById, sort]);
+  }, [topics, q, filter, typeFilter, expertFilter, expertNameById, sort]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -247,13 +267,21 @@ export default function ResourceLibraryPage() {
   }, [topics]);
 
   const freeCount = topics.filter((t) => t.isFree).length;
+  // Chairside stays invisible (filter, copy, sidebar) until the master switch is on.
+  const chairsideCount = process.env.NEXT_PUBLIC_CHAIRSIDE_ENABLED === "true" ? topics.filter((t) => t.kitType === "chairside").length : 0;
 
   return (
     <Box sx={{ color: ink.primary }}>
       <EditorialHeader
-        eyebrow="Practice Playbooks"
-        title="Built from real experts. Ready for you & your team."
-        standfirst="Each Playbook is a topic pack — training video, action guide, worksheets, checklist, and ready-to-use templates. Stream the video, download the rest."
+        eyebrow={typeFilter === "chairside" ? "Chairside" : "Practice Playbooks"}
+        title={typeFilter === "chairside" ? "The full episodes, members only." : "Built from real experts. Ready for you & your team."}
+        standfirst={
+          typeFilter === "chairside"
+            ? "Chairside is the DMN podcast. Each episode here is the full hour with the guest, with captions, chapters, the audio and the Monday page to run with your team."
+            : chairsideCount > 0
+              ? "Each Playbook is a topic pack — training video, action guide, worksheets, checklist, and ready-to-use templates. Chairside episodes are the full podcast hour, with the page to run on Monday."
+              : "Each Playbook is a topic pack — training video, action guide, worksheets, checklist, and ready-to-use templates. Stream the video, download the rest."
+        }
       />
 
       {/* Toolbar — dropdown filters + sort + search. Scales as we add more
@@ -290,6 +318,28 @@ export default function ResourceLibraryPage() {
             },
           }}
         />
+        {chairsideCount > 0 && (
+          <TextField
+            select
+            size="small"
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value as TypeKey)}
+            label="Type"
+            slotProps={{ inputLabel: { sx: { fontSize: "0.82rem" } } }}
+            sx={{
+              minWidth: 150,
+              "& .MuiOutlinedInput-root": {
+                borderRadius: 999,
+                fontSize: "0.86rem",
+                bgcolor: "#FFFFFF",
+              },
+            }}
+          >
+            <MenuItem value="all" sx={{ fontSize: "0.86rem" }}>Everything</MenuItem>
+            <MenuItem value="playbooks" sx={{ fontSize: "0.86rem" }}>Playbooks ({topics.length - chairsideCount})</MenuItem>
+            <MenuItem value="chairside" sx={{ fontSize: "0.86rem" }}>Chairside ({chairsideCount})</MenuItem>
+          </TextField>
+        )}
         <TextField
           select
           size="small"
@@ -479,9 +529,30 @@ function KitTile({ topic }: { topic: TopicCard }) {
             Book Club
           </Box>
         )}
+        {/* Chairside: gold episode tag in place of the category colour,
+            then "CHAIRSIDE · <category>" as the footer line. */}
+        {topic.kitType === "chairside" && (
+          <Box
+            sx={{
+              display: "inline-flex",
+              alignItems: "center",
+              height: 16,
+              px: 0.75,
+              borderRadius: 0.5,
+              bgcolor: "#D9A84B",
+              color: "#0A1A2F",
+              fontSize: "0.58rem",
+              fontWeight: 800,
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+            }}
+          >
+            Chairside{topic.episode ? ` · Ep ${topic.episode}` : ""}
+          </Box>
+        )}
         {topic.category && (
           <Typography sx={{ ...editorialText.eyebrow, color: ink.fade }}>
-            {topic.category}
+            {topic.kitType === "chairside" ? `Chairside · ${topic.category}` : topic.category}
           </Typography>
         )}
       </Stack>

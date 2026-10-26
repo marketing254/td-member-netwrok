@@ -294,6 +294,11 @@ export type MembersRow = {
   biggest_challenge: string | null;
   // Added in 0057 — acquisition source from the signup form.
   heard_about: string | null;
+  // Added in 0076 — "introduce me to experts" opt-in (see src/lib/expertIntros.ts).
+  expert_intro_opt_in: boolean;
+  expert_intro_opt_in_at: string | null;
+  expert_intro_help_area: string | null;
+  expert_intro_notified_at: string | null;
   status: MemberStatus;
   tier: string | null;
   joined_at: string | null;
@@ -456,6 +461,9 @@ export type ResourceKind =
   // extras from the newer expert kits (NOT the 9x16 shorts rail).
   | "video_spotlight"
   | "video_highlight"
+  // Added in 0075_chairside_episodes.sql — the .vtt caption track for a
+  // Chairside episode video. Never listed as an item on its own.
+  | "captions"
   | "other";
 
 export type ResourceSubmissionStatus =
@@ -498,10 +506,24 @@ export type ResourcesRow = {
   originating_vendor_id: string | null;
   // Added in 0027_book_club_and_analytics.sql. Distinguishes a standard
   // kit from a Book Club kit (which has its own quotes/chapters payload).
-  kit_type: "standard" | "book_club";
+  // 'chairside' added in 0075_chairside_episodes.sql (podcast episodes in
+  // the member library).
+  kit_type: "standard" | "book_club" | "chairside";
   book_club_payload: Record<string, unknown> | null;
+  // Added in 0075_chairside_episodes.sql. Chairside only.
+  episode_payload: EpisodePayload | null;
   created_at: string;
   updated_at: string;
+};
+
+/** resources.episode_payload for kit_type 'chairside'. */
+export type EpisodePayload = {
+  episode: number;
+  guest: { name: string; role: string | null };
+  host: string | null;
+  minutes: number | null;
+  chapters: { time: string; label: string }[];
+  captions_url: string | null;
 };
 
 // Added in 0027_book_club_and_analytics.sql. One row per member-view of a

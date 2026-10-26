@@ -238,6 +238,9 @@ export const navLinks = [
   { label: "Experts", href: "/experts" },
   { label: "Partners", href: "/partners" },
   { label: "Blog", href: "/blog" },
+  // Chairside, the podcast (Lester, Oct 2026). The badge is dropped once
+  // the show has a few episodes out.
+  ...(process.env.NEXT_PUBLIC_CHAIRSIDE_ENABLED === "true" ? [{ label: "Chairside", href: "/chairside", badge: "NEW" }] : []),
   { label: "Reviews", href: "/reviews" },
   { label: "Pricing", href: "/pricing" },
   { label: "FAQ", href: "#faq" },
