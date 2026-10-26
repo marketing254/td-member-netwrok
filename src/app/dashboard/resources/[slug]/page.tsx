@@ -57,10 +57,19 @@ type ResourceItem = {
   duration_label: string | null;
   position: number;
   is_free: boolean;
-  kit_type?: "standard" | "book_club" | null;
+  kit_type?: "standard" | "book_club" | "chairside" | null;
   book_club_payload?: {
     shorts?: { index: number; principle: string; public_url: string | null }[];
     has_infographic?: boolean;
+  } | null;
+  // Chairside only (0075): episode number, guest, chapters, captions.
+  episode_payload?: {
+    episode?: number;
+    guest?: { name?: string; role?: string | null } | null;
+    host?: string | null;
+    minutes?: number | null;
+    chapters?: { time: string; label: string }[];
+    captions_url?: string | null;
   } | null;
   originating_expert_id?: string | null;
   progress: Progress | null;
@@ -82,6 +91,9 @@ const KIND_META: Record<
   video_explainer: { icon: OndemandVideoOutlinedIcon, defaultMeta: "Explainer video", actionLabel: "Watch", badge: "Explainer" },
   video_trailer: { icon: OndemandVideoOutlinedIcon, defaultMeta: "Trailer", actionLabel: "Watch", badge: "Trailer" },
   audio: { icon: HeadphonesOutlinedIcon, defaultMeta: "Audio episode", actionLabel: "Listen", badge: "Audio" },
+  // Chairside: the caption track rides on the episode video and is never
+  // listed on its own (filtered out below).
+  captions: { icon: InsertDriveFileOutlinedIcon, defaultMeta: "Captions", actionLabel: "Open", badge: "Captions" },
   action_guide: { icon: ListAltOutlinedIcon, defaultMeta: "PDF · the full reference", actionLabel: "Download", badge: "PDF" },
   checklist: { icon: ChecklistOutlinedIcon, defaultMeta: "PDF · set up → track → review", actionLabel: "Download", badge: "PDF" },
   key_takeaways: { icon: StickyNote2OutlinedIcon, defaultMeta: "PDF · the gist in 2 minutes", actionLabel: "Download", badge: "PDF" },
@@ -348,9 +360,12 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
     () => orderedResources.filter((r) => isVideo(r.kind) && r.kind !== "video_short"),
     [orderedResources],
   );
-  const downloads = useMemo(() => orderedResources.filter((r) => !isVideo(r.kind)), [orderedResources]);
+  const downloads = useMemo(
+    () => orderedResources.filter((r) => !isVideo(r.kind) && r.kind !== "captions"),
+    [orderedResources],
+  );
   const curriculumResources = useMemo(
-    () => orderedResources.filter((r) => r.kind !== "video_short"),
+    () => orderedResources.filter((r) => r.kind !== "video_short" && r.kind !== "captions"),
     [orderedResources],
   );
 
@@ -374,9 +389,19 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
   const progressPct = resources.length > 0 ? Math.round((viewedCount / resources.length) * 100) : 0;
   const kitType = resources[0]?.kit_type ?? "standard";
   const isBookClub = kitType === "book_club";
+  // Chairside episode: same page shape as a playbook, with the episode
+  // eyebrow, a chapters card under the player, the Monday page box, and
+  // no coaching card or shorts rail.
+  const isChairside = kitType === "chairside";
+  const episode = resources.find((r) => r.episode_payload)?.episode_payload ?? null;
+  const captionsUrl =
+    episode?.captions_url ?? resources.find((r) => r.kind === "captions")?.external_url ?? null;
+  const mondayPage = isChairside
+    ? resources.find((r) => r.kind === "action_guide") ?? resources.find((r) => isPdf(r) && r.kind !== "captions") ?? null
+    : null;
   // Pull the named principle shorts out of the resource list for the
   // dedicated reel render. They still show in the curriculum below.
-  const shortResources = resources.filter((r) => r.kind === "video_short");
+  const shortResources = isChairside ? [] : resources.filter((r) => r.kind === "video_short");
 
   // Mid-kit feedback prompt — fires once when the member crosses 50%
   // and we haven't already shown / submitted in this session.
@@ -449,6 +474,29 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
     });
   };
 
+  // Chairside chapters: "1:00:10" / "5:11" → seconds, then jump the
+  // episode video there (switching to it first if the audio is active).
+  const seekTo = (time: string) => {
+    const parts = time.split(":").map((n) => Number(n));
+    if (parts.some((n) => Number.isNaN(n))) return;
+    const seconds = parts.reduce((acc, n) => acc * 60 + n, 0);
+    const main = videos.find((v) => v.kind === "video_full") ?? videos[0];
+    if (main && effectiveActiveId !== main.id) {
+      setActiveId(main.id);
+      void markProgress(main.id, "view");
+    }
+    requestAnimationFrame(() => {
+      const el = videoRef.current;
+      if (!el) return;
+      const jump = () => {
+        el.currentTime = seconds;
+        void el.play().catch(() => {});
+      };
+      if (el.readyState >= 1) jump();
+      else el.addEventListener("loadedmetadata", jump, { once: true });
+    });
+  };
+
   return (
     <Box sx={{ color: ink.primary }}>
       <BackLink />
@@ -462,8 +510,12 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
         >
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", mb: 1, flexWrap: "wrap", rowGap: 0.5 }}>
-              <Typography sx={editorialText.eyebrow}>
-                {isBookClub ? "Book club Playbook" : "Practice Playbook"}
+              <Typography sx={{ ...editorialText.eyebrow, ...(isChairside ? { color: "var(--gold-deep, #A07823)" } : {}) }}>
+                {isChairside
+                  ? `Chairside · Episode ${episode?.episode ?? ""}`.trim()
+                  : isBookClub
+                    ? "Book club Playbook"
+                    : "Practice Playbook"}
               </Typography>
               {isBookClub && (
                 <Box
@@ -557,8 +609,13 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
                   playsInline
                   onPlay={() => void markProgress(activeResource.id, "view")}
                   onEnded={() => void markProgress(activeResource.id, "complete")}
+                  crossOrigin={isChairside && captionsUrl ? "anonymous" : undefined}
                   style={{ width: "100%", height: "100%", display: "block", background: "#000" }}
-                />
+                >
+                  {isChairside && captionsUrl && activeResource.kind === "video_full" && (
+                    <track kind="captions" src={captionsUrl} srcLang="en" label="English" default />
+                  )}
+                </video>
               ) : activeResource && isImage(activeResource) && activeResource.external_url ? (
                 <Box
                   component="img"
@@ -650,6 +707,59 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
                 </Stack>
               )}
             </Box>
+
+            {/* Chairside: chapters under the player (two columns on desktop) */}
+            {isChairside && episode?.chapters && episode.chapters.length > 0 && (
+              <Box
+                sx={{
+                  mt: 2,
+                  p: { xs: 2, md: 2.5 },
+                  borderRadius: 1.5,
+                  bgcolor: "#FFFFFF",
+                  border: "1px solid var(--paper-rule)",
+                }}
+              >
+                <Typography sx={{ ...editorialText.eyebrow, mb: 1 }}>Chapters</Typography>
+                <Box
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+                    columnGap: 3,
+                  }}
+                >
+                  {episode.chapters.map((c) => (
+                    <Box
+                      key={`${c.time}-${c.label}`}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => seekTo(c.time)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          seekTo(c.time);
+                        }
+                      }}
+                      sx={{
+                        display: "flex",
+                        gap: 1.5,
+                        py: 0.9,
+                        borderBottom: "1px solid var(--paper-rule)",
+                        cursor: "pointer",
+                        "&:hover .chapter-label": { color: "var(--gold-deep, #A07823)" },
+                        "&:focus-visible": { outline: "2px solid var(--gold)", outlineOffset: -2 },
+                      }}
+                    >
+                      <Typography sx={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--gold-deep, #A07823)", minWidth: 52, fontVariantNumeric: "tabular-nums" }}>
+                        {c.time}
+                      </Typography>
+                      <Typography className="chapter-label" sx={{ fontSize: "0.86rem", color: ink.primary, transition: "color var(--dur-fast) var(--ease-out)" }}>
+                        {c.label}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            )}
 
             {/* Active lesson meta + actions */}
             {activeResource && (
@@ -766,7 +876,7 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
         <Grid size={{ xs: 12, lg: 4 }}>
           <Box>
             <Stack direction="row" spacing={1} sx={{ alignItems: "baseline", mb: 0.5 }}>
-              <Typography sx={editorialText.eyebrow}>Curriculum</Typography>
+              <Typography sx={editorialText.eyebrow}>{isChairside ? "Episode" : "Curriculum"}</Typography>
               <Box
                 aria-hidden
                 sx={{ flex: 1, height: "1px", bgcolor: "var(--paper-rule)" }}
@@ -808,6 +918,52 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
                 />
               ))}
             </Box>
+
+            {/* Chairside: the Monday page, highlighted with its own download */}
+            {isChairside && mondayPage?.external_url && (
+              <Box
+                sx={{
+                  mt: 2.5,
+                  p: { xs: 2, md: 2.5 },
+                  borderRadius: 1.5,
+                  bgcolor: "rgba(217,168,75,0.10)",
+                  border: "1px solid rgba(217,168,75,0.45)",
+                }}
+              >
+                <Typography sx={{ ...editorialText.eyebrow, color: "var(--gold-deep, #A07823)", mb: 0.5 }}>
+                  The Monday page
+                </Typography>
+                <Typography sx={{ ...editorialText.body, mb: 1.5 }}>
+                  {mondayPage.description ?? "The page to run with your team on Monday: the steps from this episode, with a huddle checklist."}
+                </Typography>
+                <Button
+                  component="a"
+                  href={mondayPage.external_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  download
+                  onClick={() => void markProgress(mondayPage.id, "view")}
+                  variant="contained"
+                  size="small"
+                  disableElevation
+                  startIcon={<DownloadOutlinedIcon sx={{ fontSize: 15 }} />}
+                  sx={{
+                    bgcolor: "#D9A84B",
+                    color: "#0A1A2F",
+                    textTransform: "none",
+                    fontSize: "0.8rem",
+                    fontWeight: 800,
+                    borderRadius: 999,
+                    px: 2,
+                    py: 0.7,
+                    "&:hover": { bgcolor: "#E4B95F" },
+                    "&:focus-visible": { outline: "2px solid var(--gold)", outlineOffset: 2 },
+                  }}
+                >
+                  Download the PDF
+                </Button>
+              </Box>
+            )}
           </Box>
         </Grid>
       </Grid>
@@ -1001,9 +1157,69 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
           still loading), so the card never shows a default face and swaps.
           Event playbooks (RIDA) have no single expert, so no booking card:
           the default would be Gary's scheduler, which does not belong there. */}
-      {kitExpert !== undefined && !(kitExpert === null && EVENT_PLAYBOOK_SLUGS.has(slug)) && (
+      {!isChairside && kitExpert !== undefined && !(kitExpert === null && EVENT_PLAYBOOK_SLUGS.has(slug)) && (
         <Box sx={{ mt: { xs: 4, lg: 5 } }}>
           <BookCoachingCard topicTitle={topicTitle} expert={kitExpert} />
+        </Box>
+      )}
+
+      {/* Chairside: "Go deeper" with the guest's own playbooks instead of
+          the coaching card. Only when the episode is attributed to an expert. */}
+      {isChairside && resources[0]?.originating_expert_id && kitExpert && (
+        <Box
+          sx={{
+            mt: { xs: 4, lg: 5 },
+            p: { xs: 2, md: 2.5 },
+            borderRadius: 1.5,
+            bgcolor: "#FFFFFF",
+            border: "1px solid var(--paper-rule)",
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            alignItems: { sm: "center" },
+            gap: 2,
+          }}
+        >
+          <Box
+            sx={{
+              width: 56,
+              height: 56,
+              borderRadius: "50%",
+              overflow: "hidden",
+              flexShrink: 0,
+              bgcolor: "var(--ink)",
+              backgroundImage: kitExpert.headshot_url ? `url(${kitExpert.headshot_url})` : "none",
+              backgroundSize: "cover",
+              backgroundPosition: "center top",
+            }}
+          />
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography sx={{ ...editorialText.eyebrow, color: "var(--gold-deep, #A07823)", mb: 0.25 }}>Meet your expert</Typography>
+            <Typography sx={editorialText.heading}>Go deeper with {kitExpert.name}</Typography>
+            <Typography sx={{ ...editorialText.meta, mt: 0.25 }}>
+              {[kitExpert.specialty, kitExpert.company_name].filter(Boolean).join(" · ")}
+            </Typography>
+          </Box>
+          <Button
+            component={Link}
+            href={`/dashboard/resources?expert=${encodeURIComponent(resources[0].originating_expert_id)}`}
+            variant="contained"
+            size="small"
+            disableElevation
+            sx={{
+              flexShrink: 0,
+              bgcolor: "var(--ink)",
+              color: "var(--paper)",
+              textTransform: "none",
+              fontSize: "0.8rem",
+              fontWeight: 700,
+              borderRadius: 999,
+              px: 2,
+              "&:hover": { bgcolor: "color-mix(in oklch, var(--ink) 90%, white)" },
+              "&:focus-visible": { outline: "2px solid var(--gold)", outlineOffset: 2 },
+            }}
+          >
+            View the playbooks
+          </Button>
         </Box>
       )}
 

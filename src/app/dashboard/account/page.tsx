@@ -12,6 +12,7 @@ import {
   MenuItem,
   Snackbar,
   Stack,
+  Switch,
   TextField,
   Typography,
 } from "@mui/material";
@@ -22,6 +23,7 @@ import RuleFolderOutlinedIcon from "@mui/icons-material/RuleFolderOutlined";
 import PolicyOutlinedIcon from "@mui/icons-material/PolicyOutlined";
 import OpenInNewOutlinedIcon from "@mui/icons-material/OpenInNewOutlined";
 import { useCurrentMember, type CurrentMember } from "@/lib/hooks/useCurrentMember";
+import { EXPERT_INTROS_ENABLED, EXPERT_INTROS_SETTING_HELP, EXPERT_INTROS_SETTING_LABEL } from "@/lib/expertIntros";
 import { BillingSection } from "@/components/member/BillingSection";
 import {
   EditorialHeader,
@@ -91,6 +93,9 @@ export default function MemberProfilePage() {
           practice_name: (form.practice_name ?? "").trim(),
           practice_role: (form.practice_role ?? "").trim(),
           city: (form.city ?? "").trim(),
+          ...(EXPERT_INTROS_ENABLED && typeof draft.expert_intro_opt_in === "boolean"
+            ? { expert_intro_opt_in: draft.expert_intro_opt_in }
+            : {}),
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -407,6 +412,32 @@ export default function MemberProfilePage() {
                 </Grid>
               </Grid>
             </EditorialSection>
+
+            {EXPERT_INTROS_ENABLED && (
+              <EditorialSection
+                eyebrow="Introductions"
+                standfirst="Saved with the rest of your profile."
+                rule={false}
+              >
+                <Stack direction="row" spacing={2} sx={{ alignItems: "flex-start", justifyContent: "space-between" }}>
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography sx={{ fontSize: "0.9rem", fontWeight: 600, color: ink.primary, lineHeight: 1.3 }}>
+                      {EXPERT_INTROS_SETTING_LABEL}: {form.expert_intro_opt_in ? "on" : "off"}
+                    </Typography>
+                    <Typography sx={{ ...editorialText.meta, mt: 0.5 }}>{EXPERT_INTROS_SETTING_HELP}</Typography>
+                    {form.expert_intro_help_area && (
+                      <Typography sx={{ ...editorialText.meta, mt: 0.5 }}>Help area: {form.expert_intro_help_area}</Typography>
+                    )}
+                  </Box>
+                  <Switch
+                    checked={!!form.expert_intro_opt_in}
+                    onChange={(e) => set("expert_intro_opt_in", e.target.checked)}
+                    slotProps={{ input: { "aria-label": EXPERT_INTROS_SETTING_LABEL } }}
+                    sx={{ "& .MuiSwitch-switchBase.Mui-checked": { color: "var(--gold)" }, "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { bgcolor: "var(--gold)" } }}
+                  />
+                </Stack>
+              </EditorialSection>
+            )}
 
             <Typography
               sx={{

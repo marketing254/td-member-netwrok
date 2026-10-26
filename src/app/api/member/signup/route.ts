@@ -7,6 +7,7 @@ import { notifySignup } from "@/lib/email/teamNotify";
 import { apiError, serverError } from "@/lib/api/errorResponse";
 import { resolveReferralCode } from "@/lib/referral";
 import { SIGNUP_CHECKOUT_COOKIE, signCheckoutToken } from "@/lib/auth/guards";
+import { EXPERT_INTROS_ENABLED } from "@/lib/expertIntros";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -108,6 +109,10 @@ export async function POST(req: Request) {
         payload.utm && typeof payload.utm === "object"
           ? (payload.utm as Record<string, string>)
           : null;
+      // "Introduce me to experts" tick box (0076). Only honoured while the
+      // feature flag is on, and only an explicit true counts.
+      const expertIntroOptIn =
+        EXPERT_INTROS_ENABLED && (payload.utm as Record<string, unknown> | undefined)?.expert_intro_opt_in === true;
 
       // Capture the referral. Priority:
       //   1. payload.ref     — the form read ?ref straight off the URL
@@ -157,6 +162,20 @@ export async function POST(req: Request) {
             .eq("id", inserted.id);
         } catch {
           /* columns not present yet */
+        }
+      }
+      if (inserted?.id && expertIntroOptIn) {
+        try {
+          await sb
+            .from("members")
+            .update({
+              expert_intro_opt_in: true,
+              expert_intro_opt_in_at: new Date().toISOString(),
+              expert_intro_help_area: utm?.biggest_challenge ?? null,
+            })
+            .eq("id", inserted.id);
+        } catch {
+          /* columns from migration 0076 not present yet */
         }
       }
       // Sign-ups that came through the Found Money audit are tagged so the
@@ -250,6 +269,9 @@ export async function POST(req: Request) {
           { label: "Biggest challenge", value: utm?.biggest_challenge },
           { label: "How they heard about us", value: utm?.heard_about },
           { label: "SMS consent", value: payload.smsConsent ? "Yes" : "No" },
+          ...(EXPERT_INTROS_ENABLED && (payload.utm as Record<string, unknown> | undefined)?.expert_intro_opt_in === true
+            ? [{ label: "Expert introductions", value: "yes" }]
+            : []),
           { label: "Source", value: payload.source ?? null },
         ],
       });

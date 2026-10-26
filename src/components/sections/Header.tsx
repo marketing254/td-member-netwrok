@@ -34,6 +34,32 @@ import { jobBoardEnabled } from "@/lib/jobs/flag";
 // NEXT_PUBLIC_JOB_BOARD_ENABLED=true is set (build time, same as the routes).
 const navLinks = allNavLinks.filter((l) => l.href !== "/jobs" || jobBoardEnabled());
 
+/** Optional "NEW" pill after a nav label (Chairside, Oct 2026). */
+function NavBadge({ link }: { link: (typeof navLinks)[number] }) {
+  const badge = "badge" in link ? link.badge : undefined;
+  if (!badge) return null;
+  return (
+    <Box
+      component="span"
+      sx={{
+        ml: 0.75,
+        px: 0.7,
+        py: 0.1,
+        borderRadius: 999,
+        bgcolor: "#D9A84B",
+        color: "#0A1A2F",
+        fontSize: "0.56rem",
+        fontWeight: 800,
+        letterSpacing: "0.12em",
+        lineHeight: 1.6,
+        textTransform: "uppercase",
+      }}
+    >
+      {badge}
+    </Box>
+  );
+}
+
 const LOGIN_LINKS = [
   {
     label: "Members",
@@ -152,6 +178,7 @@ export default function Header() {
                   }}
                 >
                   {l.label}
+                  <NavBadge link={l} />
                 </Button>
               ))}
             </Box>
@@ -360,7 +387,10 @@ export default function Header() {
                   "&:hover": { bgcolor: "rgba(14,42,61,0.04)" },
                 }}
               >
-                {l.label}
+                <Box component="span" sx={{ display: "inline-flex", alignItems: "center" }}>
+                  {l.label}
+                  <NavBadge link={l} />
+                </Box>
               </Button>
             ))}
           </Stack>

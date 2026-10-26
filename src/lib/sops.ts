@@ -69,6 +69,43 @@ export const SOPS: Sop[] = [
     pdfUrl: `${PDF_BASE}/front-desk-room-to-breathe.pdf`,
     approved: "2026-08-30",
   },
+  // Lisa Grogan approved all three in writing (Lester, 26 Oct 2026).
+  {
+    slug: "bife-conversation",
+    title: "The B-I-F-E conversation",
+    category: "Team & Culture",
+    expert: { name: "Lisa Grogan", id: "2e69f0a0-4e40-4ba7-a0a1-573f6eeebe24" },
+    cardUrl: `${CARD_BASE}/bife-conversation-card.jpg`,
+    pdfUrl: `${PDF_BASE}/bife-conversation.pdf`,
+    approved: "2026-10-26",
+  },
+  {
+    slug: "how-we-come-across-audit",
+    title: "The how-we-come-across audit",
+    category: "Marketing & SEO",
+    expert: { name: "Lisa Grogan", id: "2e69f0a0-4e40-4ba7-a0a1-573f6eeebe24" },
+    cardUrl: `${CARD_BASE}/how-we-come-across-audit-card.jpg`,
+    pdfUrl: `${PDF_BASE}/how-we-come-across-audit.pdf`,
+    approved: "2026-10-26",
+  },
+  {
+    slug: "regular-feedback-one-to-one",
+    title: "The regular feedback one-to-one",
+    category: "Team & Culture",
+    expert: { name: "Lisa Grogan", id: "2e69f0a0-4e40-4ba7-a0a1-573f6eeebe24" },
+    cardUrl: `${CARD_BASE}/regular-feedback-one-to-one-card.jpg`,
+    pdfUrl: `${PDF_BASE}/regular-feedback-one-to-one.pdf`,
+    approved: "2026-10-26",
+  },
+  {
+    slug: "three-question-performance-check",
+    title: "The three-question performance check",
+    category: "Team & Culture",
+    expert: { name: "Denise Ciardello", id: "4d394d39-f04a-4cf2-b22f-c3c0b6b515df" },
+    cardUrl: `${CARD_BASE}/three-question-performance-check-card.jpg`,
+    pdfUrl: `${PDF_BASE}/three-question-performance-check.pdf`,
+    approved: "2026-10-22",
+  },
   // STAGED, NOT LIVE (Lester, 9 Oct 2026): Laura Webber's SOP is a draft
   // until she approves the wording. The PDF is already in storage at
   // member-resources/sops/ten-minute-huddle-DRAFT.pdf. When Lester confirms:
@@ -124,6 +161,59 @@ export const SOPS: Sop[] = [
   //   expert: { name: "Perrin DesPortes", id: "06a8a085-d8f4-4b89-8a37-4c60b2c92c97" },
   //   cardUrl: `${CARD_BASE}/growth-readiness-review-card.jpg`,
   //   pdfUrl: `${PDF_BASE}/growth-readiness-review.pdf`,
+  //   approved: "",
+  // },
+  // STAGED, NOT LIVE (Lester, 21 Oct 2026): Perrin DesPortes' three Leadership
+  // Series SOPs, drafts until he approves. PDFs at member-resources/sops/
+  // screening-a-practice-before-you-offer-DRAFT.pdf, partnership-conversation-DRAFT.pdf
+  // and monthly-executive-scorecard-DRAFT.pdf.
+  // {
+  //   slug: "screening-a-practice-before-you-offer",
+  //   title: "Screening a practice before you offer",
+  //   category: "Practice Transitions",
+  //   expert: { name: "Perrin DesPortes", id: "06a8a085-d8f4-4b89-8a37-4c60b2c92c97" },
+  //   cardUrl: `${CARD_BASE}/screening-a-practice-before-you-offer-card.jpg`,
+  //   pdfUrl: `${PDF_BASE}/screening-a-practice-before-you-offer.pdf`,
+  //   approved: "",
+  // },
+  // {
+  //   slug: "partnership-conversation",
+  //   title: "The partnership conversation",
+  //   category: "Practice Transitions",
+  //   expert: { name: "Perrin DesPortes", id: "06a8a085-d8f4-4b89-8a37-4c60b2c92c97" },
+  //   cardUrl: `${CARD_BASE}/partnership-conversation-card.jpg`,
+  //   pdfUrl: `${PDF_BASE}/partnership-conversation.pdf`,
+  //   approved: "",
+  // },
+  // {
+  //   slug: "monthly-executive-scorecard",
+  //   title: "The monthly executive scorecard",
+  //   category: "Practice Management",
+  //   expert: { name: "Perrin DesPortes", id: "06a8a085-d8f4-4b89-8a37-4c60b2c92c97" },
+  //   cardUrl: `${CARD_BASE}/monthly-executive-scorecard-card.jpg`,
+  //   pdfUrl: `${PDF_BASE}/monthly-executive-scorecard.pdf`,
+  //   approved: "",
+  // },
+  // STAGED, NOT LIVE (Lester, 21 Oct 2026): Greg Essenmacher's SOP, draft until
+  // he approves. PDF at member-resources/sops/turn-the-mirror-on-yourself-DRAFT.pdf.
+  // {
+  //   slug: "turn-the-mirror-on-yourself",
+  //   title: "Turn the mirror on yourself",
+  //   category: "Team & Culture",
+  //   expert: { name: "Greg Essenmacher", id: "e1e71c2f-17c0-45a5-ab0f-f18449a6d620" },
+  //   cardUrl: `${CARD_BASE}/turn-the-mirror-on-yourself-card.jpg`,
+  //   pdfUrl: `${PDF_BASE}/turn-the-mirror-on-yourself.pdf`,
+  //   approved: "",
+  // },
+  // STAGED, NOT LIVE (Lester, 21 Oct 2026): Thomas Passalacqua's SOP, draft until
+  // he approves. PDF at member-resources/sops/rolling-out-a-change-DRAFT.pdf.
+  // {
+  //   slug: "rolling-out-a-change",
+  //   title: "Rolling out a change without exhausting the team",
+  //   category: "Team & Culture",
+  //   expert: { name: "Thomas Passalacqua", id: "5535355e-8f77-4e80-b48a-93ecb12eadb7" },
+  //   cardUrl: `${CARD_BASE}/rolling-out-a-change-card.jpg`,
+  //   pdfUrl: `${PDF_BASE}/rolling-out-a-change.pdf`,
   //   approved: "",
   // },
 ];

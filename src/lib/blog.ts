@@ -18,7 +18,17 @@ export type BlogBlock =
   | { kind: "ul"; items: string[] }
   | { kind: "ol"; items: { strong?: string; text: string }[] }
   | { kind: "quote"; text: string; cite?: string }
-  | { kind: "formula"; parts: string[] };
+  | { kind: "formula"; parts: string[] }
+  /**
+   * 16:9 YouTube embed (rel=0). youtubeUrl null = render NOTHING, so a post
+   * can go live before Lester sends the link; fill it in later.
+   */
+  | { kind: "video"; youtubeUrl: string | null; title: string; caption?: string }
+  /**
+   * Explicit position for the article's spotlightQuote. Without this block
+   * the template places the quote after the second body paragraph.
+   */
+  | { kind: "spotlight" };
 
 export type BlogArticle = {
   slug: string;
@@ -37,7 +47,26 @@ export type BlogArticle = {
     headshotUrl: string;
     /** Public expert profile (/experts/[id]) when one exists. */
     profileHref: string | null;
+    /** The expert's own site, bare host ("michaelsonick.com"); linked as https://. */
+    website?: string;
+    /**
+     * Where the guidance comes from, shown in the byline (blog relaunch,
+     * Oct 2026). When set, a leading body paragraph that starts with
+     * "*Expert guidance from" is skipped so the line is not shown twice.
+     */
+    sourceLine?: string;
+    /** Bio for the "About the expert" box before the takeaway. */
+    bio?: string;
   };
+  /** The expert's best line, shown in a navy spotlight box under the opening. */
+  spotlightQuote?: { text: string; cite?: string };
+  /** 1200x630 share card for og:image / twitter:image (falls back to hero). */
+  shareImage?: { src: string; alt?: string };
+  /**
+   * Scheduled release (ISO date, America/New_York). Not released before
+   * that day: excluded from the index, sitemap, rails; the page 404s.
+   */
+  publishAt?: string;
   /** The kit this article teases — member-portal pages link straight to it. */
   kitSlug: string;
   hero: { src: string; alt: string };
@@ -59,6 +88,14 @@ export type BlogArticle = {
     label?: string;
     /** Approved sentence rendered above the button (supports **bold**). */
     support?: string;
+    /**
+     * Blog relaunch (Oct 2026): per-post wording for the membership panel,
+     * from the post folder's membership_box. eyebrow replaces the small
+     * "Practice Playbook · Action guide" pill; title replaces the
+     * "Get the complete … Practice Playbook." heading. Both LOCKED by Lester.
+     */
+    eyebrowOverride?: string;
+    titleOverride?: string;
   };
   /**
    * false = approved for staging but NOT released (e.g. CTA destination
@@ -77,6 +114,457 @@ export const BLOG_INDEX_STANDFIRST =
 
 /** Launch order per the build brief: Gary → Ashley → James. */
 export const BLOG_ARTICLES: BlogArticle[] = [
+  // ── Blog relaunch, week 1 (Lester, build list 2026-10-26). Addresses are
+  // LOCKED (each expert gets an email that checks the exact address). Copy
+  // verbatim from the post folders in "2026-10-27 - Week 1 (blog relaunch)".
+  // Each is date-gated by publishAt and appears on its day without a deploy.
+  // ── Week 1 · post 1 · Tue 27 Oct 2026 · with Chairside Episode 1 ──────
+  {
+    slug: "new-dental-patient-experience",
+    title: "The New Dental Patient Experience: What Happens in Dr. Michael Sonick's First Hour",
+    metaTitle: "New Dental Patient Experience: Dr. Sonick's First Hour",
+    metaDescription:
+      "How periodontist Dr. Michael Sonick runs a new patient's first hour: two rings, a greeting by name, the honest truth, and a letter within 48 hours.",
+    excerpt:
+      "Periodontist Dr. Michael Sonick on the new dental patient experience in his own practice: the phone, the welcome, the honesty, the letter, and why he says being present costs nothing.",
+    category: "Patient Experience",
+    dek: "Periodontist Dr. Michael Sonick on the new dental patient experience in his own practice: the phone, the welcome, the honesty, the letter, and why he says being present costs nothing.",
+    expert: {
+      name: "Dr. Michael Sonick, DMD",
+      role: "Periodontist, Fairfield, Connecticut",
+      headshotUrl: "/blog/new-dental-patient-experience-headshot.jpg",
+      profileHref: "/experts/7461d5a0-55b6-4060-b662-b25e64a270e9",
+      website: "michaelsonick.com",
+      sourceLine:
+        "*Expert guidance from Dr. Michael Sonick, DMD. Source: Chairside Episode 1, Treating People, Not Patients. Watch the 20-minute episode above.*",
+      bio: "Dr. Michael Sonick is a periodontist who has run his own practice in Fairfield, Connecticut since 1985. He has taught at NYU since 1984 and has written seven books, including one on hospitality, *Treating People, Not Patients*. He was the first guest on Chairside, the podcast from the Dental Member Network.",
+    },
+    spotlightQuote: { text: "When you're present for the patient, the cost is actually nothing." },
+    shareImage: { src: "/blog/new-dental-patient-experience-share.png", alt: "Dr. Michael Sonick, DMD" },
+    publishAt: "2026-10-27",
+    kitSlug: "treating-people-not-patients",
+    hero: { src: "/blog/new-dental-patient-experience-hero.png", alt: "Dr. Michael Sonick, DMD" },
+    readTime: "4 minute read",
+    datePublished: "2026-10-27",
+    dateModified: "2026-10-27",
+    quickAnswer:
+      "A good new dental patient experience is built around the person, not the procedure. In Dr. Michael Sonick's practice, the phone is answered within two rings, every new patient is greeted by name, the doctor tells them the truth about their options, and each patient gets a personal letter within 48 hours. His view is that being present with the patient costs a practice nothing.",
+    body: [
+      // [[VIDEO]]: the public 20-minute episode (Lester, 26 Oct 2026). The
+      // video is private on YouTube until Tue 27 Oct, 6:00 am New York.
+      { kind: "video", youtubeUrl: "https://youtu.be/vrKvFyofed0", title: "Chairside Episode 1: Treating people, not patients" },
+      {
+        kind: "p",
+        text: "A new patient sits down in an unfamiliar chair. They do not know whether the doctor is the best in town. They do know how the visit makes them feel.",
+      },
+      {
+        kind: "p",
+        text: "[Dr. Sonick](/experts/7461d5a0-55b6-4060-b662-b25e64a270e9) has run his own practice since 1985, and he builds the new dental patient experience around that feeling. In his words: \"Our mission statement is very simple, to improve the quality of our patients' lives.\"",
+      },
+      { kind: "spotlight" },
+      { kind: "h2", id: "not-a-sales-visit", text: "Why the first visit is not a sales visit", toc: "Not a sales visit" },
+      {
+        kind: "p",
+        text: "\"The big difference is my practice is not transactional,\" Dr. Sonick says. He describes a starting point he sees in many offices: \"Most doctors walk in, they go, what can I do? What procedure can I do?\"",
+      },
+      { kind: "p", text: "His own job description is simpler: \"My job is to get my patients healthy and keep them healthy.\"" },
+      {
+        kind: "p",
+        text: "That means every patient gets the same exam and the same honest diagnosis, whatever they can afford. As he puts it: \"Whether you come in on a bus or a limousine, I'm gonna give you an exam and give you a diagnosis.\"",
+      },
+      {
+        kind: "p",
+        text: "Sometimes it means advising against treatment. He tells the story of a man in his fifties who asked to have all his teeth taken out. Dr. Sonick said no, and explained why. \"Sometimes I have to save the patient from themself.\"",
+      },
+      { kind: "h2", id: "step-1-phone", text: "Step 1: A person answers the phone", toc: "Step 1: The phone" },
+      {
+        kind: "p",
+        text: "The new patient experience starts before anyone walks in. \"The phone is answered within 2 rings,\" Dr. Sonick says, and it is answered by a person.",
+      },
+      {
+        kind: "p",
+        text: "There is no phone script. As he puts it, \"we just hire nice people.\" New patients also cannot book themselves online: \"We don't let them make it on their website, because we want to have that relationship with them.\"",
+      },
+      {
+        kind: "p",
+        text: "For more on turning that first call into a booked visit, see our article on [new patient calls that become appointments](/blog/new-patient-calls-to-appointments), and Danielle Kramer's approach to the hardest question on that call, [what to say when a caller asks \"do you take my insurance?\"](/blog/do-you-take-my-insurance-what-to-say).",
+      },
+      { kind: "h2", id: "step-2-name", text: "Step 2: Greet them by name", toc: "Step 2: By name" },
+      {
+        kind: "p",
+        text: "\"They're greeted by name when they walk in.\" It sounds small. For a nervous patient walking into a new office, it tells them they were expected.",
+      },
+      { kind: "h2", id: "step-3-truth", text: "Step 3: Tell them the truth", toc: "Step 3: The truth" },
+      {
+        kind: "p",
+        text: "Patients often expect the doctor to be an all-knowing wizard. Dr. Sonick describes himself as \"just the guy behind the curtain\", and he is plain about what honesty does for a practice:",
+      },
+      { kind: "quote", text: "If you're honest and open with patients, it's actually a sales strategy. Tell them the truth." },
+      { kind: "h2", id: "step-4-letter", text: "Step 4: Follow up with a letter", toc: "Step 4: The letter" },
+      {
+        kind: "p",
+        text: "\"I write every patient in my practice a letter.\" It goes out within 48 hours and sets out the pros and cons of each option, so the patient can think it through at home with the facts in front of them.",
+      },
+      { kind: "p", text: "He knows how rare that is: \"Nobody else is getting a letter from their doctor.\"" },
+      {
+        kind: "p",
+        text: "The full first hour in his practice has six steps, including what happens in the first 90 seconds in the room and what he hands every new patient before they leave. Members get all six on one page, with a checklist for the Monday team huddle.",
+      },
+      { kind: "h2", id: "slowing-down", text: "What slowing down really costs", toc: "What slowing down costs" },
+      {
+        kind: "p",
+        text: "Years ago, a consultant told him he needed to slow down and be present with his patients. He took it to heart, and he now sees that time as an investment, not a loss:",
+      },
+      { kind: "quote", text: "When you're present for the patient, the cost is actually nothing." },
+      { kind: "h2", id: "the-team", text: "The team behind the experience", toc: "The team" },
+      {
+        kind: "p",
+        text: "The first hour depends on the people delivering it. Dr. Sonick holds himself to a simple standard with his own team:",
+      },
+      { kind: "quote", text: "Every day I go to the office, I act like I gotta rehire everybody again." },
+    ],
+    faqs: [
+      {
+        q: "What makes a good new dental patient experience?",
+        a: "In Dr. Sonick's practice it is a set of small, consistent steps: a person answers within two rings, the patient is greeted by name, the doctor gives an honest diagnosis, and a personal letter follows within 48 hours. The common thread is that the visit is about the patient, not the procedure.",
+      },
+      {
+        q: "Should new dental patients be able to book online?",
+        a: "Not in Dr. Sonick's practice. New patients speak to a person, \"because we want to have that relationship with them.\" Each practice has to decide what fits its own patients, but his reasoning is that the first relationship starts on that call.",
+      },
+      {
+        q: "Does slowing down with patients cost the practice money?",
+        a: "Dr. Sonick's answer is no: \"When you're present for the patient, the cost is actually nothing.\" He also sees honesty as good business: \"If you're honest and open with patients, it's actually a sales strategy.\"",
+      },
+      {
+        q: "Where should a practice start?",
+        a: "Pick one day. If changing everything at once is too much, Dr. Sonick's advice is to be present on one day of the week to begin with: \"just do it on Wednesdays.\"",
+      },
+    ],
+    takeaway: {
+      eyebrow: "The takeaway",
+      title: "Be present. Just be present.",
+      body: "Build the new patient's first hour around the person in the chair: answer quickly, greet them by name, tell them the truth, follow up in writing, and keep a team you would hire again. Start with one day a week.",
+    },
+    kitCta: {
+      kitName: "Treating people, not patients",
+      eyebrowOverride: "Chairside · Episode 1 · Patient Experience",
+      titleOverride: "Treating people, not patients",
+      description:
+        "Members get the full one-hour episode with Dr. Michael Sonick, the Monday page with all six steps of his first hour and a team huddle checklist, and his Practice Playbooks.",
+      support: "Watch the 20-minute episode free. Members get the full hour, the Monday page with all six steps of the first hour, and Dr. Sonick's Practice Playbooks.",
+      href: "/join/member",
+      label: "Join Dental Member Network",
+    },
+  },
+  // ── Week 1 · post 2 · Wed 28 Oct 2026 ─────────────────────────────────
+  {
+    slug: "do-you-take-my-insurance-what-to-say",
+    title: "\"Do You Take My Insurance?\" Danielle Kramer's First 90 Seconds at the Dental Front Desk",
+    metaTitle: "\"Do You Take My Insurance?\" What Your Front Desk Says",
+    metaDescription:
+      "Danielle Kramer's first ninety seconds for the question every dental front desk hears: answer honestly, redirect the call, and make insurance secondary.",
+    excerpt:
+      "Danielle Kramer's first ninety seconds for the question every front desk hears: answer it honestly, then redirect the call to why the patient is really ringing, and make insurance secondary.",
+    category: "Front Desk",
+    dek: "Danielle Kramer's first ninety seconds for the question every front desk hears: answer it honestly, then redirect the call to why the patient is really ringing, and make insurance secondary.",
+    expert: {
+      name: "Danielle Kramer",
+      role: "Founder and CEO, EZ Dental Solutions",
+      headshotUrl: "/blog/do-you-take-my-insurance-what-to-say-headshot.jpg",
+      profileHref: "/experts/66a1b63f-cff6-4fb1-95fc-19abd0bdff38",
+      website: "ezdentalsolution.com",
+      sourceLine:
+        "*Expert guidance from Danielle Kramer. Source: a live panel on reducing insurance dependence, and her DMN Practice Playbook, Make Insurance Secondary.*",
+      bio: "Danielle Kramer has spent more than twenty years in dentistry and has sat in almost every seat in the office, then served as Director of Revenue Cycle Management for a DSO. Her education is in behavioural health, which is why she works on the people in a practice rather than only its systems. Through EZ Dental Solutions she supports practices nationwide with remote billing and revenue cycle management, dental virtual assistants, recruiting, and team coaching.",
+    },
+    spotlightQuote: { text: "Now we've made insurance secondary." },
+    shareImage: { src: "/blog/do-you-take-my-insurance-what-to-say-share.png", alt: "Danielle Kramer" },
+    publishAt: "2026-10-28",
+    kitSlug: "make-insurance-secondary",
+    hero: { src: "/blog/do-you-take-my-insurance-what-to-say-hero.png", alt: "Danielle Kramer" },
+    readTime: "5 minute read",
+    datePublished: "2026-10-28",
+    dateModified: "2026-10-28",
+    quickAnswer:
+      "When a new dental patient asks \"do you take my insurance?\", answer the question honestly and briefly, then redirect the call to why they are ringing and how you can help. Danielle Kramer calls this the first ninety seconds: acknowledge the worry, give a truthful answer about your network status, ask what brought them to you, and tell them about your team. The insurance question gets answered, but it no longer runs the call.",
+    body: [
+      {
+        kind: "p",
+        text: "A new patient rings with a toothache, a referral, or a question about their smile. Before they say any of that, they ask the one question every front desk hears: do you take my insurance?",
+      },
+      {
+        kind: "p",
+        text: "[Danielle](/experts/66a1b63f-cff6-4fb1-95fc-19abd0bdff38) has spent twenty years in dentistry and now works with practices across the country. She listens to a lot of those calls. \"I listen in on a lot of phone calls and I travel into a lot of offices weekly, and those conversations are so transactional.\"",
+      },
+      { kind: "spotlight" },
+      { kind: "h2", id: "why-insurance-takes-over", text: "Why the insurance question takes over the call", toc: "Why it takes over the call" },
+      {
+        kind: "p",
+        text: "Danielle's explanation is simple. The patient is not really calling about insurance. \"The patient is calling with an initial concern, and they've put 'do you accept my insurance plan' on top of that initial concern, because they know something could cost money and they don't know how much.\"",
+      },
+      {
+        kind: "p",
+        text: "The usual response is to teach the patient their benefits on the phone. Danielle thinks the industry has gone too far that way: \"In the dental industry we've gone the extreme opposite, of trying to teach everyone their insurance, versus teaching our team members not to be transactional.\"",
+      },
+      { kind: "h2", id: "first-ninety-seconds", text: "The first ninety seconds, step by step", toc: "The first ninety seconds" },
+      { kind: "p", text: "\"Within that first ninety seconds we have really got to earn the trust of the patient.\" Here is how she breaks it down." },
+      { kind: "h3", text: "1. Acknowledge the worry" },
+      {
+        kind: "p",
+        text: "\"We're going to acknowledge the fact that that was a major concern.\" The patient is worried about cost. Saying so out loud tells them they have been heard.",
+      },
+      { kind: "h3", text: "2. Answer the question truthfully" },
+      {
+        kind: "p",
+        text: "\"We're certainly going to answer the question.\" In her example, the practice accepts all major PPO plans but is not in network with all of them, so the team explains that it will be a non-preferred provider for that plan, will still bill the insurance, and how that will work.",
+      },
+      {
+        kind: "p",
+        text: "Your answer has to match your own network status. The point is not a clever line. It is a short, honest answer, given with confidence.",
+      },
+      { kind: "h3", text: "3. Redirect to why they called" },
+      {
+        kind: "p",
+        text: "\"Now we're going to redirect the phone call. Why are they calling us? Were they referred? Are they in pain?\" Then the question that changes the call: \"What can I do to support what you're calling me for? How can I help you?\"",
+      },
+      { kind: "h3", text: "4. Tell them about your team" },
+      {
+        kind: "p",
+        text: "\"Start to edify our team, teach this caller how wonderful our providers are and our team members.\" This is where the patient starts to choose the practice, not the plan.",
+      },
+      {
+        kind: "p",
+        text: "In her words: \"Now we've made insurance secondary. They've asked us the question, we've answered it, but we've made the insurance question really secondary to everything else.\"",
+      },
+      { kind: "h2", id: "what-this-sounds-like", text: "What this can sound like", toc: "What it can sound like" },
+      { kind: "p", text: "Illustrative wording adapted from Danielle's four steps, not a quotation:" },
+      {
+        kind: "ul",
+        items: [
+          "That is a really good question, and I am glad you asked it.",
+          "Here is how it works with your plan in our office: [your honest answer].",
+          "Can I ask what made you call us today? Were you referred to us, or is something bothering you?",
+          "Let me tell you a little about Dr. [name] and the team, because I think you are going to feel well looked after here.",
+        ],
+      },
+      {
+        kind: "p",
+        text: "For the rest of that first call, from greeting to booked appointment, see [why new patient calls fail to become appointments](/blog/new-patient-calls-to-appointments).",
+      },
+      { kind: "h2", id: "trust-before-treatment-plan", text: "Trust comes before the treatment plan", toc: "Trust before the plan" },
+      {
+        kind: "p",
+        text: "The phone call is where trust starts, and Danielle sees it carry all the way to the treatment conversation. \"I've already built trust with them before I even sit in that seat as a TC. My team has built trust on that initial phone call.\"",
+      },
+      {
+        kind: "p",
+        text: "When that trust is there, the conversation about money changes: \"They're committed to the yes because they understand and they trust the team that they're with.\"",
+      },
+      {
+        kind: "p",
+        text: "Her view of value is about the patient, not the price: \"It's not just the dollar value, but it's also the worth of what it is to that patient. And those things are conveyed from the very first encounter with that patient.\"",
+      },
+      { kind: "h2", id: "leaving-a-network", text: "If you are leaving a network, say so face to face", toc: "Leaving a network" },
+      {
+        kind: "p",
+        text: "For practices going out of network with a plan, Danielle prefers a personal conversation to a mass message. \"I'm a firm believer that this conversation is at the appointment, knee to knee with your patients, really talking them through this process.\"",
+      },
+      {
+        kind: "p",
+        text: "She has seen what transparency does: \"The patients respond well when we're transparent.\" And she starts early: \"In most cases, I started this process a year in advance.\"",
+      },
+      {
+        kind: "p",
+        text: "She also asks practices to be clear with themselves about what out of network means for them: \"There'd have to be a real clear line: are you wanting to be full fee for service, or are you still going to function as an insurance provider with this plan, just out of network?\"",
+      },
+      {
+        kind: "p",
+        text: "If you are still billing insurance as a non-participating provider, clean claims matter even more. See [how to prevent dental insurance claim denials](/blog/prevent-dental-insurance-claim-denials).",
+      },
+      { kind: "h2", id: "every-huddle", text: "Make it part of every huddle", toc: "Every huddle" },
+      {
+        kind: "p",
+        text: "None of this sticks after one training session. \"Consistency is key with this. And learning communication skills is huge. If it's not consistent, it's not going to happen.\"",
+      },
+    ],
+    faqs: [
+      {
+        q: "How should a dental front desk answer \"do you take my insurance?\"",
+        a: "Answer it honestly and briefly, then redirect. Danielle Kramer's first ninety seconds: acknowledge the worry, give a truthful answer about your network status, ask why the patient is calling and how you can help, then tell them about your team.",
+      },
+      {
+        q: "Should the front desk explain a patient's insurance benefits on the first call?",
+        a: "Danielle's view is that teaching patients their insurance on the phone keeps the call transactional. Answer the question that was asked, then focus on why they are calling. Benefit details can follow once there is a patient and a plan to discuss.",
+      },
+      {
+        q: "What if we are not in network with the patient's plan?",
+        a: "Say so plainly and explain how it will work in your office, for example whether you bill the plan for them as a non-participating provider. Then move the call on to what the patient needs. A truthful answer given with confidence does more than a long explanation.",
+      },
+      {
+        q: "How should a practice tell existing patients it is leaving a network?",
+        a: "Danielle recommends a face-to-face conversation at the patient's appointment, started well ahead of time, rather than a mass text, email or letter. She often begins a year in advance.",
+      },
+    ],
+    takeaway: {
+      eyebrow: "The takeaway",
+      title: "Make insurance secondary.",
+      body: "Answer the insurance question honestly, then put the call back where it belongs: on why the patient is ringing, how you can help, and the team who will look after them. Practise it in every huddle until it is how your front desk always sounds.",
+    },
+    kitCta: {
+      kitName: "Make Insurance Secondary",
+      eyebrowOverride: "Practice Playbook · Action guide · Insurance & PPOs",
+      titleOverride: "Make Insurance Secondary",
+      description:
+        "Danielle Kramer's complete Practice Playbook inside the Dental Member Network: the training video, action guide, checklist and worksheet for handling the insurance question without letting it run the practice.",
+      support: "Get Danielle Kramer's complete Make Insurance Secondary Practice Playbook inside the Dental Member Network.",
+      href: "/join/member",
+      label: "Join Dental Member Network",
+    },
+  },
+  // ── Week 1 · post 3 · Fri 30 Oct 2026 ─────────────────────────────────
+  {
+    slug: "dental-practice-second-location",
+    title: "Is Your Dental Practice Ready for a Second Location? Perrin DesPortes's Four Questions",
+    metaTitle: "Ready for a Second Dental Practice Location? 4 Questions",
+    metaDescription:
+      "Before you buy or open a second dental office, Perrin DesPortes asks four questions: your changing role, your cash, the practice's fit, and your family.",
+    excerpt:
+      "Before you buy or open a second dental office, Perrin DesPortes asks four questions: is your role ready to change, is the cash there, does the practice fit, and does it fit your life?",
+    category: "Practice Transitions",
+    dek: "Before you buy or open a second dental office, Perrin DesPortes asks four questions: is your role ready to change, is the cash there, does the practice fit, and does it fit your life?",
+    expert: {
+      name: "Perrin DesPortes",
+      role: "Founder, The Next Level Executive",
+      headshotUrl: "/blog/dental-practice-second-location-headshot.jpg",
+      profileHref: "/experts/06a8a085-d8f4-4b89-8a37-4c60b2c92c97",
+      website: "thenextlevelexecutive.com",
+      sourceLine:
+        "*Expert guidance from Perrin DesPortes. Source: a live panel for practice owners and his own leadership series, and his DMN Practice Playbook, Before You Add a Location.*",
+      bio: "Perrin DesPortes is an executive coach and the founder of The Next Level Executive, working with dentists who are looking to build group practices, lead their business to greater heights and become more effective executives. He brings 15 years of corporate leadership experience to the emerging group practice space, and hosts the Next Level Executive podcast for owners growing from clinician to CEO.",
+    },
+    spotlightQuote: { text: "It's far better to pass on a good practice than to make a bad acquisition." },
+    shareImage: { src: "/blog/dental-practice-second-location-share.png", alt: "Perrin DesPortes" },
+    publishAt: "2026-10-30",
+    kitSlug: "before-you-add-a-location",
+    hero: { src: "/blog/dental-practice-second-location-hero.png", alt: "Perrin DesPortes" },
+    readTime: "5 minute read",
+    datePublished: "2026-10-30",
+    dateModified: "2026-10-30",
+    quickAnswer:
+      "Your dental practice may be ready for a second location if four things are true: the first practice succeeds without you outworking every problem, you have cash set aside for the change in your role and income, the new practice fits the one you have, and the decision fits your family's next decade. Perrin DesPortes, who coaches owners growing from one to five locations, puts the rule plainly: \"It's far better to pass on a good practice than to make a bad acquisition.\"",
+    body: [
+      {
+        kind: "p",
+        text: "[Perrin](/experts/06a8a085-d8f4-4b89-8a37-4c60b2c92c97) is optimistic about growth. He calls this \"probably the most compelling time in the history of dentistry\" to build a group of practices, whether that is two locations or a handful more. He is also honest about how it goes wrong: \"I'm not here to talk you into doing it. I've seen a lot of people make a mess out of it.\"",
+      },
+      { kind: "p", text: "Here are the four questions he wants answered before anyone signs." },
+      { kind: "spotlight" },
+      { kind: "h2", id: "q1-first-practice", text: "1. Can your first practice run without you outworking its problems?", toc: "1. Your first practice" },
+      {
+        kind: "p",
+        text: "Growth starts from a practice that already works. \"You're probably not going to be growing into a multi-location group if you don't have a successful practice to begin with.\"",
+      },
+      {
+        kind: "p",
+        text: "The trap is how that first practice succeeds. In most single-location practices the owner is the lead clinician, and when something goes wrong, the owner works harder: an extra Friday, a few late days, a few more cases. Perrin's warning: \"You cannot do that in a multi-location business, and you have to get out of that mentality.\"",
+      },
+      {
+        kind: "p",
+        text: "The reason is that the owner's job changes. \"Your role goes from being the lead clinician to more of an executive or a clinical mentor, and somebody that has to be focused on creating results through other people.\" And it changes \"whether you realize it or not, and whether you're intentional about it or not.\"",
+      },
+      {
+        kind: "p",
+        text: "He does not see a second location as a way to step back, either: \"I am not big on being an absentee owner when you add an additional location.\"",
+      },
+      { kind: "h2", id: "q2-cash", text: "2. Have you set aside the cash for your role to change?", toc: "2. Your cash" },
+      {
+        kind: "p",
+        text: "This is the problem owners do not see coming. The patients you stop treating still need treating, so someone else is paid to treat them. \"If you drop from 4 days a week clinically down to 2\", in Perrin's example, \"You're gonna pay somebody those 2 days that you dropped\", and your own income falls.",
+      },
+      {
+        kind: "p",
+        text: "His advice: \"So bankroll cash far in advance of adding additional locations or your role changing.\" In his opinion, an owner \"should have between six and 12 months worth of cash on the sidelines to facilitate this type of a growth strategy and a personal transition.\"",
+      },
+      {
+        kind: "p",
+        text: "Cash and profit are not the same thing, which matters here. Laura Phillips explains the difference in [is your dental practice profitable, or is there just money in the bank?](/blog/dental-practice-cash-vs-profit)",
+      },
+      { kind: "h2", id: "q3-fit", text: "3. Does this practice actually fit the one you have?", toc: "3. The fit" },
+      {
+        kind: "p",
+        text: "\"Just because it's a dental practice doesn't mean you should buy it.\" Perrin wants a second practice to match the first: \"You should only buy practices that complement the one that you have from a payer mix standpoint, from a clinical services standpoint, from a geographic standpoint.\"",
+      },
+      {
+        kind: "p",
+        text: "He calls this a target acquisition profile, and its job is to tell you what to say no to: \"it helps people simply define the pitches not to swing at.\" He has seen owners buy a business that was nothing like their own, and the way they ran the first practice did not carry over.",
+      },
+      { kind: "p", text: "Two more of his tests:" },
+      {
+        kind: "ul",
+        items: [
+          "**Buy it to improve it.** \"Not buy and maintain, buy and improve.\" Before buying, be able to name how you will grow the practice's revenue and cut its costs.",
+          "**Pressure test the numbers.** Ask \"how much of a revenue downturn would this business have to encounter before I went free cash flow negative?\"",
+        ],
+      },
+      {
+        kind: "p",
+        text: "If you do buy, our article on [changing systems after buying a dental practice](/blog/change-systems-after-buying-dental-practice) covers what comes next.",
+      },
+      { kind: "h2", id: "q4-your-life", text: "4. Does it fit your life for the next decade?", toc: "4. Your life" },
+      {
+        kind: "p",
+        text: "\"Nobody builds a group practice to spend more time with their kids.\" Before he talks about any practice an owner has found, he asks about their life: \"do you have kids, are you married, how old are your children, how many days a week are you working now, what is the next decade look like?\"",
+      },
+      {
+        kind: "p",
+        text: "The reason is the loan. In his words, \"you're going to be guaranteeing the loan for 7 to 10 years in term\", and a family can change a lot in that time.",
+      },
+      {
+        kind: "p",
+        text: "He believes balance is possible, but only if it is planned first: \"You can't go into it with more unknowns than you have knowns, and you can't go into it spur of the moment when a practice comes on the market for sale.\"",
+      },
+      { kind: "h2", id: "dont-decide-alone", text: "Don't decide alone", toc: "Don't decide alone" },
+      {
+        kind: "p",
+        text: "Perrin's last piece of advice is about who you talk to. \"Successful people get there through what I call a personal board of advisors.\" He suggests finding four to six people you trust who will tell you the truth.",
+      },
+      { kind: "quote", text: "If you find that you're the smartest person in the room, you need to find a new room." },
+    ],
+    faqs: [
+      {
+        q: "How do I know if my dental practice is ready for a second location?",
+        a: "Perrin DesPortes looks for four things: the first practice succeeds without the owner outworking every problem, there is cash set aside for the owner's change in role and income, the new practice fits the first one in payer mix, services and geography, and the owner's family plans fit a loan that runs for years.",
+      },
+      {
+        q: "How much cash should I have before adding a second dental office?",
+        a: "In Perrin's opinion, between six and 12 months' worth of cash on the sidelines, because your personal income usually falls while you pay an associate to treat the patients you no longer see.",
+      },
+      {
+        q: "What changes for the owner with a second location?",
+        a: "The owner's role moves from lead clinician toward executive and clinical mentor, focused on getting results through other people. Perrin's point is that this happens whether or not you plan for it, so it is better to plan for it.",
+      },
+      {
+        q: "Should every successful practice open a second location?",
+        a: "No. In Perrin's words, \"Just because everybody else is building a group doesn't mean that you ought to do it.\" One successful location can be the right business.",
+      },
+    ],
+    takeaway: {
+      eyebrow: "The takeaway",
+      title: "Pass on a good practice before you make a bad acquisition.",
+      body: "Answer the four questions first: your role, your cash, the fit, and your life. If any answer is unclear, wait. The right practice will still be there when you are ready.",
+    },
+    kitCta: {
+      kitName: "Before You Add a Location",
+      eyebrowOverride: "Practice Playbook · Action guide · Practice Transitions",
+      titleOverride: "Before You Add a Location",
+      description:
+        "Perrin DesPortes's complete Practice Playbook inside the Dental Member Network, plus four more of his playbooks on buying, partnerships and leading a group.",
+      support: "Get Perrin DesPortes's complete Before You Add a Location Practice Playbook inside the Dental Member Network.",
+      href: "/join/member",
+      label: "Join Dental Member Network",
+    },
+  },
   // ── Week 5 · article 3 (approved 2026-09-23; published 2026-09-25) ─────
   {
     slug: "dental-practice-cash-vs-profit",
@@ -2501,8 +2989,38 @@ export const BLOG_ARTICLES: BlogArticle[] = [
   },
 ];
 
-/** Only the articles cleared for release — what the public surfaces use. */
-export const PUBLISHED_BLOG_ARTICLES = BLOG_ARTICLES.filter((a) => a.published !== false);
+/** Today's date (YYYY-MM-DD) in America/New_York, the blog's publishing clock. */
+function todayNY(now: Date): string {
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(now);
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "";
+  return `${get("year")}-${get("month")}-${get("day")}`;
+}
+
+/**
+ * Cleared for release AND past its scheduled day (publishAt, if any).
+ * Pages that call this at request time (revalidate: 3600) release a
+ * scheduled post on its day without a redeploy.
+ */
+export function isReleased(article: BlogArticle, now: Date = new Date()): boolean {
+  if (article.published === false) return false;
+  if (!article.publishAt) return true;
+  // Local preview: on `npm run dev` a scheduled post shows straight away so
+  // the team can check the page before its day. Production keeps the gate.
+  if (process.env.NODE_ENV === "development") return true;
+  return article.publishAt <= todayNY(now);
+}
+
+/** Released articles, newest first by registry order, evaluated now. */
+export function getReleasedArticles(now: Date = new Date()): BlogArticle[] {
+  return BLOG_ARTICLES.filter((a) => isReleased(a, now));
+}
+
+/**
+ * Only the articles cleared for release — evaluated when this module loads.
+ * Prefer getReleasedArticles() in server code so scheduled posts appear on
+ * their day; this constant is kept for build-time consumers (sitemap).
+ */
+export const PUBLISHED_BLOG_ARTICLES = getReleasedArticles();
 
 export function getBlogArticle(slug: string): BlogArticle | undefined {
   return BLOG_ARTICLES.find((a) => a.slug === slug);

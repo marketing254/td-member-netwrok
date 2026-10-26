@@ -20,6 +20,7 @@ import {
 import { ArrowLeft, ArrowRight, Check, ExternalLink } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { challengeOptions, heardAboutOptions, locationOptions, memberRoles } from "@/lib/content";
+import { EXPERT_INTROS_ENABLED, EXPERT_INTROS_LABEL } from "@/lib/expertIntros";
 
 const MotionBox = motion.create(Box);
 
@@ -122,6 +123,9 @@ export default function MemberSignupFlow({
   // Step 3
   const [challenge, setChallenge] = useState("");
   const [challengeOther, setChallengeOther] = useState("");
+  // "Introduce me to experts" (Lester, Oct 2026): unticked by default and
+  // only rendered once NEXT_PUBLIC_EXPERT_INTROS_ENABLED is on.
+  const [expertIntro, setExpertIntro] = useState(false);
   const [heardAbout, setHeardAbout] = useState("");
   const [heardAboutOther, setHeardAboutOther] = useState("");
   const [agreed, setAgreed] = useState(false);
@@ -221,6 +225,7 @@ export default function MemberSignupFlow({
             role_label: resolveOther(roleLabel, roleLabelOther),
             locations: locations || null,
             biggest_challenge: resolveOther(challenge, challengeOther),
+            expert_intro_opt_in: EXPERT_INTROS_ENABLED && expertIntro,
             heard_about: resolveOther(heardAbout, heardAboutOther),
             agreement_type: "member",
             agreement_version: "1.0",
@@ -385,6 +390,24 @@ export default function MemberSignupFlow({
             </TextField>
             {challenge === OTHER && (
               <TextField label="Describe your biggest challenge" value={challengeOther} onChange={(e) => setChallengeOther(e.target.value)} placeholder="e.g. Hiring & retaining hygienists" multiline minRows={2} fullWidth required sx={fieldSx} />
+            )}
+            {EXPERT_INTROS_ENABLED && (
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={expertIntro}
+                    onChange={(e) => setExpertIntro(e.target.checked)}
+                    size="small"
+                    sx={{ color: "#A8A29E", "&.Mui-checked": { color: GOLD_DARK }, p: 0.5, mr: 0.5 }}
+                  />
+                }
+                label={
+                  <Typography sx={{ fontSize: "0.82rem", color: "#52525B", lineHeight: 1.5 }}>
+                    {EXPERT_INTROS_LABEL}
+                  </Typography>
+                }
+                sx={{ alignItems: "flex-start", m: 0 }}
+              />
             )}
             <TextField select label="How did you hear about us?" value={heardAbout} onChange={(e) => setHeardAbout(e.target.value)} fullWidth sx={fieldSx}>
               {heardAboutOptions.map((o) => (

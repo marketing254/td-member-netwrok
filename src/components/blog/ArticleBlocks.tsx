@@ -48,6 +48,12 @@ export function inline(text: string): React.ReactNode {
   return nodes.length === 1 ? nodes[0] : nodes;
 }
 
+/** youtu.be/ID, youtube.com/watch?v=ID, /embed/ID, /shorts/ID, or a bare 11-char id. */
+function youtubeId(url: string): string | null {
+  const m = url.match(/(?:youtu\.be\/|v=|\/embed\/|\/shorts\/)([A-Za-z0-9_-]{11})/) ?? url.match(/^([A-Za-z0-9_-]{11})$/);
+  return m ? m[1]! : null;
+}
+
 export const bodyText = {
   fontSize: "1.02rem",
   lineHeight: 1.75,
@@ -210,6 +216,42 @@ export function Block({ block }: { block: BlogBlock }) {
           )}
         </Box>
       );
+    case "spotlight":
+      // Positioned by BlogArticleView (it owns the expert data); nothing here.
+      return null;
+    case "video": {
+      if (!block.youtubeUrl) return null;
+      const id = youtubeId(block.youtubeUrl);
+      if (!id) return null;
+      return (
+        <Box component="figure" sx={{ m: 0, my: 3.5 }}>
+          <Box
+            sx={{
+              position: "relative",
+              aspectRatio: "16 / 9",
+              borderRadius: 3,
+              overflow: "hidden",
+              bgcolor: INK,
+              boxShadow: "0 24px 48px -24px rgba(10,26,47,0.45)",
+            }}
+          >
+            <Box
+              component="iframe"
+              src={`https://www.youtube.com/embed/${id}?rel=0`}
+              title={block.title}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+              allowFullScreen
+              sx={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: 0 }}
+            />
+          </Box>
+          {block.caption && (
+            <Typography component="figcaption" sx={{ mt: 1.25, fontSize: "0.82rem", color: GOLD, fontWeight: 700 }}>
+              {block.caption}
+            </Typography>
+          )}
+        </Box>
+      );
+    }
     case "formula":
       return (
         <Box

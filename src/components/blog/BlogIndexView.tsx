@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Box, Chip, Container, Pagination, Stack, Typography } from "@mui/material";
 import Header from "@/components/sections/Header";
 import Footer from "@/components/sections/Footer";
-import { PUBLISHED_BLOG_ARTICLES, BLOG_INDEX_HEADING, BLOG_INDEX_STANDFIRST } from "@/lib/blog";
+import { BLOG_INDEX_HEADING, BLOG_INDEX_STANDFIRST, type BlogArticle } from "@/lib/blog";
 import { BlogCard } from "@/components/blog/BlogCard";
 
 const INK = "#0A1A2F";
@@ -19,7 +19,8 @@ const LINE = "#E6DDCF";
  */
 const PAGE_SIZE = 6;
 
-export default function BlogIndexView() {
+/** `articles`: the released list, computed by the server page at request time. */
+export default function BlogIndexView({ articles: PUBLISHED_BLOG_ARTICLES }: { articles: BlogArticle[] }) {
   const [category, setCategory] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const gridTop = useRef<HTMLDivElement | null>(null);
@@ -28,7 +29,7 @@ export default function BlogIndexView() {
   // automatically the moment its first article ships.
   const categories = useMemo(
     () => [...new Set(PUBLISHED_BLOG_ARTICLES.map((a) => a.category))],
-    [],
+    [PUBLISHED_BLOG_ARTICLES],
   );
   const filtered = category ? PUBLISHED_BLOG_ARTICLES.filter((a) => a.category === category) : PUBLISHED_BLOG_ARTICLES;
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));

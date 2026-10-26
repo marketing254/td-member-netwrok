@@ -24,6 +24,7 @@ import {
 } from "@mui/material";
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
+import { EXPERT_INTROS_ENABLED } from "@/lib/expertIntros";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import PauseCircleOutlineRoundedIcon from "@mui/icons-material/PauseCircleOutlineRounded";
 import PlayArrowRoundedIcon from "@mui/icons-material/PlayArrowRounded";
@@ -188,9 +189,16 @@ function MembersPanel() {
           }}
           sx={{ maxWidth: 420, flex: 1 }}
         />
-        <Button variant="outlined" color="primary" startIcon={<DownloadOutlinedIcon />} disabled={rows.length === 0}>
-          Export CSV
-        </Button>
+        <Stack direction="row" spacing={1}>
+          {EXPERT_INTROS_ENABLED && (
+            <Button component="a" href="/api/admin/expert-intros" variant="text" color="primary" startIcon={<DownloadOutlinedIcon />} sx={{ textTransform: "none" }}>
+              Export expert introductions (CSV)
+            </Button>
+          )}
+          <Button variant="outlined" color="primary" startIcon={<DownloadOutlinedIcon />} disabled={rows.length === 0}>
+            Export CSV
+          </Button>
+        </Stack>
       </Stack>
 
       <Box

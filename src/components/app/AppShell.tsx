@@ -38,6 +38,7 @@ import KeyboardArrowDownOutlinedIcon from "@mui/icons-material/KeyboardArrowDown
 import PhoneRoundedIcon from "@mui/icons-material/PhoneRounded";
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
 import WorkOutlineRoundedIcon from "@mui/icons-material/WorkOutlineRounded";
+import PodcastsOutlinedIcon from "@mui/icons-material/PodcastsOutlined";
 import { jobBoardEnabled } from "@/lib/jobs/flag";
 import Logo from "@/components/brand/Logo";
 import { useSignOut } from "@/lib/auth/identity";
@@ -50,6 +51,12 @@ const SIDEBAR_W = 240;
 const navItems = [
   { href: "/dashboard", label: "Overview", icon: DashboardOutlinedIcon },
   { href: "/dashboard/resources", label: "Practice Playbooks", icon: LibraryBooksOutlinedIcon },
+  // Chairside, the DMN podcast (episode 1, 27 Oct 2026). Episodes live in
+  // the library grid; this link opens it pre-filtered. NEW pill for the
+  // first month, then the item stays without it.
+  ...(process.env.NEXT_PUBLIC_CHAIRSIDE_ENABLED === "true"
+    ? [{ href: "/dashboard/resources?type=chairside", label: "Chairside", icon: PodcastsOutlinedIcon, badge: new Date() < new Date("2026-12-01T00:00:00Z") ? "NEW" : undefined }]
+    : []),
   { href: "/dashboard/systems", label: "Systems", icon: FactCheckOutlinedIcon },
   { href: "/dashboard/experts", label: "Experts", icon: SchoolOutlinedIcon },
   { href: "/dashboard/partners", label: "Partners", icon: StorefrontOutlinedIcon },
@@ -199,10 +206,13 @@ function SidebarContent({
         <Stack spacing={0.25}>
           {navItems.map((item) => {
             const Icon = item.icon;
+            // Query-string links (Chairside → the library pre-filtered)
+            // match on their path only.
+            const hrefPath = item.href.split("?")[0];
             const active =
               item.href === "/dashboard"
                 ? pathname === "/dashboard"
-                : pathname.startsWith(item.href);
+                : pathname.startsWith(hrefPath);
             return (
               <Box
                 key={item.href}

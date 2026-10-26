@@ -386,7 +386,9 @@ async function kitSlugExists(slug) {
 async function runOneKit(folderName, parentDir) {
   // Folders may be named "Kit - Transition Without Turbulence"; strip the
   // leading "Kit -" so the displayed title + slug are clean.
-  const displayName = folderName.replace(/^Kit\s*[-–—]\s*/i, "").trim() || folderName;
+  // Drive exports apostrophes as underscores ("Kit - Don_t Swing at Bad
+  // Pitches"); restore them so the title reads right and the slug is clean.
+  const displayName = (folderName.replace(/^Kit\s*[-–—]\s*/i, "").trim() || folderName).replace(/_/g, "'");
   const slug = slugify(displayName);
   if (!slug) return { skipped: true, reason: "empty slug" };
 

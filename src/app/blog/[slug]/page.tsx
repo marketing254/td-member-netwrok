@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import BlogArticleView from "@/components/blog/BlogArticleView";
-import { PUBLISHED_BLOG_ARTICLES, getBlogArticle } from "@/lib/blog";
+import { getBlogArticle, getReleasedArticles, isReleased } from "@/lib/blog";
 
 const SITE = "https://www.dentalmembernetwork.com";
 
@@ -12,12 +12,14 @@ const SITE = "https://www.dentalmembernetwork.com";
  * (generateStaticParams) so crawlers get complete HTML.
  */
 export function generateStaticParams() {
-  // Only released articles get a page; unreleased ones (published: false)
-  // 404 via dynamicParams=false until Lester clears them.
-  return PUBLISHED_BLOG_ARTICLES.map((a) => ({ slug: a.slug }));
+  // Released articles are prerendered. Scheduled ones (publishAt in the
+  // future) are not; dynamicParams + revalidate let them appear on their
+  // day without a redeploy, and isReleased() 404s them until then.
+  return getReleasedArticles().map((a) => ({ slug: a.slug }));
 }
 
-export const dynamicParams = false;
+export const dynamicParams = true;
+export const revalidate = 3600;
 
 export async function generateMetadata({
   params,
@@ -26,7 +28,8 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const article = getBlogArticle(slug);
-  if (!article) return {};
+  if (!article || !isReleased(article)) return {};
+  const share = article.shareImage ?? article.hero;
   return {
     // Approved meta titles are used exactly — absolute, no template suffix.
     title: { absolute: article.metaTitle },
@@ -41,13 +44,13 @@ export async function generateMetadata({
       publishedTime: article.datePublished,
       modifiedTime: article.dateModified,
       authors: [article.expert.name],
-      images: [{ url: article.hero.src, alt: article.hero.alt }],
+      images: [{ url: share.src, alt: share.alt ?? article.hero.alt, width: 1200, height: 630 }],
     },
     twitter: {
       card: "summary_large_image",
       title: article.metaTitle,
       description: article.metaDescription,
-      images: [article.hero.src],
+      images: [share.src],
     },
   };
 }
@@ -59,9 +62,9 @@ export default async function BlogArticlePage({
 }) {
   const { slug } = await params;
   const article = getBlogArticle(slug);
-  if (!article || article.published === false) notFound();
+  if (!article || !isReleased(article)) notFound();
 
-  const related = PUBLISHED_BLOG_ARTICLES.filter((a) => a.slug !== article.slug);
+  const related = getReleasedArticles().filter((a) => a.slug !== article.slug);
 
   const jsonld = {
     "@context": "https://schema.org",
@@ -71,7 +74,7 @@ export default async function BlogArticlePage({
         "@id": `${SITE}/blog/${article.slug}#article`,
         headline: article.title,
         description: article.metaDescription,
-        image: `${SITE}${article.hero.src}`,
+        image: [`${SITE}${article.hero.src}`, ...(article.shareImage ? [`${SITE}${article.shareImage.src}`] : [])],
         datePublished: article.datePublished,
         dateModified: article.dateModified,
         inLanguage: "en-US",
@@ -81,6 +84,16 @@ export default async function BlogArticlePage({
           "@type": "Organization",
           name: "Dental Member Network editorial team",
           url: SITE,
+        },
+        // The expert whose experience the post is built on (SEO brief,
+        // Oct 2026): a Person in "about" with name, jobTitle, image, url.
+        about: {
+          "@type": "Person",
+          name: article.expert.name,
+          jobTitle: article.expert.role,
+          image: article.expert.headshotUrl.startsWith("http") ? article.expert.headshotUrl : `${SITE}${article.expert.headshotUrl}`,
+          ...(article.expert.profileHref ? { url: `${SITE}${article.expert.profileHref}` } : {}),
+          ...(article.expert.website ? { sameAs: [`https://${article.expert.website.replace(/^https?:\/\//, "")}`] } : {}),
         },
         mentions: {
           "@type": "Person",
