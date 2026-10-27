@@ -62,6 +62,7 @@ type ResourceItem = {
   resource_card_url: string | null;
   title: string;
   kind: string;
+  kit_type?: "standard" | "book_club" | "chairside" | null;
   is_free: boolean;
   progress: { last_viewed_at: string | null; completed_at: string | null } | null;
 };
@@ -161,6 +162,9 @@ export default function DashboardHome() {
   const topics: TopicCard[] = useMemo(() => {
     const map = new Map<string, TopicCard>();
     for (const r of resources) {
+      // Chairside episodes live under the Chairside page only; they never
+      // mix into the playbook hero, Top 5 or continue-watching rails.
+      if (r.kit_type === "chairside") continue;
       const isVideo = r.kind.startsWith("video_") || r.kind === "audio";
       const existing = map.get(r.topic_slug);
       const viewed = !!r.progress?.last_viewed_at;

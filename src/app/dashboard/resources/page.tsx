@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   Box,
@@ -64,12 +65,32 @@ type SortKey = "latest" | "oldest" | "alpha" | "most-resources";
 // Filter key — either a special slot or a literal category name from the DB.
 type FilterKey = "all" | "free" | string;
 
-// Type filter: playbooks and Chairside episodes share the grid.
-type TypeKey = "all" | "playbooks" | "chairside";
+// The grid is either the Practice Playbooks or (via the sidebar's
+// ?type=chairside link) the Chairside episodes. They never mix.
+type TypeKey = "playbooks" | "chairside";
 
 const PAGE_SIZE = 12;
 
 export default function ResourceLibraryPage() {
+  // useSearchParams needs a Suspense boundary for the static shell.
+  return (
+    <Suspense fallback={null}>
+      <ResourceLibrarySwitch />
+    </Suspense>
+  );
+}
+
+function ResourceLibrarySwitch() {
+  // The sidebar's "Chairside" link is this same route with ?type=chairside.
+  // Keying on the type remounts the grid, so search, filters and the page
+  // number start fresh when switching between Playbooks and Chairside.
+  const search = useSearchParams();
+  const typeFilter: TypeKey =
+    search?.get("type") === "chairside" && process.env.NEXT_PUBLIC_CHAIRSIDE_ENABLED === "true" ? "chairside" : "playbooks";
+  return <ResourceLibrary key={typeFilter} typeFilter={typeFilter} />;
+}
+
+function ResourceLibrary({ typeFilter }: { typeFilter: TypeKey }) {
   const [resources, setResources] = useState<ResourceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
@@ -78,13 +99,6 @@ export default function ResourceLibraryPage() {
   const [expertFilter, setExpertFilter] = useState<string>("all");
   const [expertOptions, setExpertOptions] = useState<{ id: string; name: string }[]>([]);
   const [page, setPage] = useState(1);
-  // Honour ?type=chairside from the sidebar "Chairside" link (same
-  // window-guarded read as the ?expert= deep-link below).
-  const [typeFilter, setTypeFilterState] = useState<TypeKey>(() => {
-    if (typeof window === "undefined") return "all";
-    const t = new URLSearchParams(window.location.search).get("type");
-    return t === "chairside" || t === "playbooks" ? t : "all";
-  });
 
   // Load the expert option list once so the filter dropdown is populated.
   useEffect(() => {
@@ -145,10 +159,6 @@ export default function ResourceLibraryPage() {
     setQ(next);
     setPage(1);
   };
-  const setTypeFilter = (k: TypeKey) => {
-    setTypeFilterState(k);
-    setPage(1);
-  };
 
   const topics: TopicCard[] = useMemo(() => {
     const map = new Map<string, TopicCard>();
@@ -199,8 +209,7 @@ export default function ResourceLibraryPage() {
 
   const filtered = useMemo(() => {
     let out = topics;
-    if (typeFilter === "chairside") out = out.filter((t) => t.kitType === "chairside");
-    else if (typeFilter === "playbooks") out = out.filter((t) => t.kitType !== "chairside");
+    out = typeFilter === "chairside" ? out.filter((t) => t.kitType === "chairside") : out.filter((t) => t.kitType !== "chairside");
     if (filter === "free") {
       out = out.filter((t) => t.isFree);
     } else if (filter !== "all") {
@@ -267,8 +276,6 @@ export default function ResourceLibraryPage() {
   }, [topics]);
 
   const freeCount = topics.filter((t) => t.isFree).length;
-  // Chairside stays invisible (filter, copy, sidebar) until the master switch is on.
-  const chairsideCount = process.env.NEXT_PUBLIC_CHAIRSIDE_ENABLED === "true" ? topics.filter((t) => t.kitType === "chairside").length : 0;
 
   return (
     <Box sx={{ color: ink.primary }}>
@@ -278,9 +285,7 @@ export default function ResourceLibraryPage() {
         standfirst={
           typeFilter === "chairside"
             ? "Chairside is the DMN podcast. Each episode here is the full hour with the guest, with captions, chapters, the audio and the Monday page to run with your team."
-            : chairsideCount > 0
-              ? "Each Playbook is a topic pack — training video, action guide, worksheets, checklist, and ready-to-use templates. Chairside episodes are the full podcast hour, with the page to run on Monday."
-              : "Each Playbook is a topic pack — training video, action guide, worksheets, checklist, and ready-to-use templates. Stream the video, download the rest."
+            : "Each Playbook is a topic pack — training video, action guide, worksheets, checklist, and ready-to-use templates. Stream the video, download the rest."
         }
       />
 
@@ -318,28 +323,6 @@ export default function ResourceLibraryPage() {
             },
           }}
         />
-        {chairsideCount > 0 && (
-          <TextField
-            select
-            size="small"
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value as TypeKey)}
-            label="Type"
-            slotProps={{ inputLabel: { sx: { fontSize: "0.82rem" } } }}
-            sx={{
-              minWidth: 150,
-              "& .MuiOutlinedInput-root": {
-                borderRadius: 999,
-                fontSize: "0.86rem",
-                bgcolor: "#FFFFFF",
-              },
-            }}
-          >
-            <MenuItem value="all" sx={{ fontSize: "0.86rem" }}>Everything</MenuItem>
-            <MenuItem value="playbooks" sx={{ fontSize: "0.86rem" }}>Playbooks ({topics.length - chairsideCount})</MenuItem>
-            <MenuItem value="chairside" sx={{ fontSize: "0.86rem" }}>Chairside ({chairsideCount})</MenuItem>
-          </TextField>
-        )}
         <TextField
           select
           size="small"
@@ -479,7 +462,7 @@ function KitTile({ topic }: { topic: TopicCard }) {
   return (
     <Box
       component={Link}
-      href={`/dashboard/resources/${topic.slug}`}
+      href={topic.kitType === "chairside" ? `/dashboard/chairside/${topic.slug}` : `/dashboard/resources/${topic.slug}`}
       sx={{
         display: "flex",
         flexDirection: "column",

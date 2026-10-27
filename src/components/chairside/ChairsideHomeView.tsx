@@ -4,7 +4,7 @@ import Image from "next/image";
 import { Box, Container, Stack, Typography } from "@mui/material";
 import Header from "@/components/sections/Header";
 import Footer from "@/components/sections/Footer";
-import { CHAIRSIDE_SHOW, CHAIRSIDE_SHOW_COVER, CHAIRSIDE_STANDFIRST, CHAIRSIDE_TAGLINE, coverSrc, youtubeId, type ChairsideEpisode } from "@/lib/chairside";
+import { CHAIRSIDE_MEMBERS_BOX, CHAIRSIDE_SHOW, CHAIRSIDE_SHOW_COVER, CHAIRSIDE_STANDFIRST, CHAIRSIDE_TAGLINE, coverSrc, youtubeId, type ChairsideEpisode } from "@/lib/chairside";
 
 const INK = "#0A1A2F";
 const INK_SOFT = "#3B4A55";
@@ -19,10 +19,12 @@ export default function ChairsideHomeView({ episodes }: { episodes: ChairsideEpi
         <Header />
         <Container maxWidth="lg" sx={{ flex: 1 }}>
           <Box sx={{ maxWidth: 1040, mx: "auto", pt: { xs: 5, md: 8 }, pb: { xs: 6, md: 9 } }}>
-            {/* Show cover beside the title on wide screens */}
-            <Box sx={{ float: { md: "right" }, width: { xs: 140, md: 220 }, ml: { md: 4 }, mb: 2, borderRadius: 4, overflow: "hidden", boxShadow: "0 24px 48px -24px rgba(10,26,47,0.45)" }}>
-              <Image src={CHAIRSIDE_SHOW_COVER} alt="Chairside, the podcast from the Dental Member Network" width={220} height={220} style={{ width: "100%", height: "auto", display: "block" }} />
-            </Box>
+            {/* Hero: show cover on the left, the words on the right */}
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "320px minmax(0, 1fr)" }, gap: { xs: 3, md: 5 }, alignItems: "center", mb: { xs: 5, md: 7 } }}>
+              <Box sx={{ width: { xs: 220, md: 320 }, borderRadius: 4, overflow: "hidden", boxShadow: "0 28px 56px -26px rgba(10,26,47,0.5)" }}>
+                <Image src={CHAIRSIDE_SHOW_COVER} alt="Chairside, the podcast from the Dental Member Network" width={320} height={320} priority style={{ width: "100%", height: "auto", display: "block" }} />
+              </Box>
+              <Box>
             <Typography sx={{ fontSize: "0.7rem", fontWeight: 800, letterSpacing: "0.2em", textTransform: "uppercase", color: GOLD, mb: 1.5 }}>
               {CHAIRSIDE_TAGLINE}
             </Typography>
@@ -34,10 +36,11 @@ export default function ChairsideHomeView({ episodes }: { episodes: ChairsideEpi
             </Typography>
 
             {/* Follow the show: only the links that exist */}
-            <Stack direction="row" spacing={1.25} sx={{ flexWrap: "wrap", rowGap: 1.25, mb: { xs: 4, md: 5 } }}>
+            <Stack direction="row" spacing={1.25} sx={{ flexWrap: "wrap", rowGap: 1.25 }}>
               {[
                 { label: "Spotify", href: CHAIRSIDE_SHOW.spotify, dot: "#1DB954" },
                 { label: "Apple Podcasts", href: CHAIRSIDE_SHOW.apple, dot: "#B150E2" },
+                { label: "YouTube", href: CHAIRSIDE_SHOW.youtube, dot: "#FF0000" },
               ]
                 .filter((l) => !!l.href)
                 .map((l) => (
@@ -47,6 +50,8 @@ export default function ChairsideHomeView({ episodes }: { episodes: ChairsideEpi
                   </Box>
                 ))}
             </Stack>
+              </Box>
+            </Box>
 
             {/* Trailer */}
             {youtubeId(CHAIRSIDE_SHOW.trailerYoutubeUrl) && (
@@ -58,7 +63,6 @@ export default function ChairsideHomeView({ episodes }: { episodes: ChairsideEpi
               </Box>
             )}
 
-            <Box sx={{ clear: "both" }} />
             <Typography sx={{ fontSize: "0.7rem", fontWeight: 800, letterSpacing: "0.2em", textTransform: "uppercase", color: GOLD, mb: 2 }}>Episodes</Typography>
 
             <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))", md: "repeat(3, minmax(0, 1fr))" }, gap: { xs: 2.5, md: 3 } }}>
@@ -78,8 +82,8 @@ export default function ChairsideHomeView({ episodes }: { episodes: ChairsideEpi
                     "&:hover": { transform: "translateY(-3px)", boxShadow: "0 24px 48px -24px rgba(10,26,47,0.35)", borderColor: GOLD_BRIGHT },
                   }}
                 >
-                  <Box sx={{ position: "relative", aspectRatio: "16 / 9", bgcolor: INK }}>
-                    <Image src={coverSrc(ep).src} alt={ep.cover.alt} fill unoptimized={coverSrc(ep).external} sizes="(max-width: 600px) 100vw, 340px" style={{ objectFit: "cover" }} />
+                  <Box sx={{ position: "relative", aspectRatio: "1 / 1", bgcolor: INK }}>
+                    <Image src={ep.cardImage?.src ?? coverSrc(ep).src} alt={ep.cardImage?.alt ?? ep.cover.alt} fill unoptimized={!ep.cardImage && coverSrc(ep).external} sizes="(max-width: 600px) 100vw, 340px" style={{ objectFit: "cover" }} />
                   </Box>
                   <Box sx={{ p: 2.5 }}>
                     <Typography sx={{ fontSize: "0.66rem", fontWeight: 800, letterSpacing: "0.18em", textTransform: "uppercase", color: GOLD, mb: 0.75 }}>
@@ -88,17 +92,21 @@ export default function ChairsideHomeView({ episodes }: { episodes: ChairsideEpi
                     <Typography component="h2" sx={{ fontFamily: "var(--font-display)", fontSize: "1.3rem", fontWeight: 600, color: INK, lineHeight: 1.25, mb: 0.75 }}>
                       {ep.title}
                     </Typography>
-                    <Stack direction="row" spacing={1.25} sx={{ alignItems: "center" }}>
-                      <Box sx={{ position: "relative", width: 32, height: 32, borderRadius: "50%", overflow: "hidden", border: `2px solid rgba(217,168,75,0.55)`, flexShrink: 0 }}>
-                        <Image src={ep.guest.headshotUrl} alt={ep.guest.name} fill sizes="32px" style={{ objectFit: "cover", objectPosition: "center top" }} />
-                      </Box>
-                      <Typography sx={{ fontSize: "0.86rem", color: INK_SOFT, lineHeight: 1.3 }}>
-                        {ep.guest.name} · {ep.guest.role}
-                      </Typography>
-                    </Stack>
+                    <Typography sx={{ fontSize: "0.9rem", color: INK_SOFT, lineHeight: 1.55, mb: 1.25 }}>{ep.cardSummary}</Typography>
+                    <Typography sx={{ fontSize: "0.88rem", fontWeight: 700, color: GOLD }}>Watch the episode →</Typography>
                   </Box>
                 </Box>
               ))}
+            </Box>
+
+            {/* Members box */}
+            <Box sx={{ mt: { xs: 5, md: 7 }, p: { xs: 3, md: 4.5 }, borderRadius: 4, background: "linear-gradient(135deg, #0A1A2F 0%, #12325A 100%)" }}>
+              <Typography sx={{ fontSize: "0.68rem", fontWeight: 800, letterSpacing: "0.2em", textTransform: "uppercase", color: GOLD_BRIGHT, mb: 1.25 }}>{CHAIRSIDE_MEMBERS_BOX.eyebrow}</Typography>
+              <Typography component="h2" sx={{ fontFamily: "var(--font-display)", fontSize: { xs: "1.4rem", md: "1.7rem" }, fontWeight: 600, color: "#F6F1E7", lineHeight: 1.25, mb: 1.25 }}>{CHAIRSIDE_MEMBERS_BOX.title}</Typography>
+              <Typography sx={{ fontSize: "0.98rem", color: "rgba(246,241,231,0.85)", lineHeight: 1.65, mb: 2.5, maxWidth: 860 }}>{CHAIRSIDE_MEMBERS_BOX.body}</Typography>
+              <Box component={Link} href={CHAIRSIDE_MEMBERS_BOX.href} sx={{ display: "inline-block", px: 3, py: 1.25, borderRadius: 999, bgcolor: GOLD_BRIGHT, color: INK, fontWeight: 800, fontSize: "0.92rem", textDecoration: "none", "&:hover": { bgcolor: "#E4B95F" } }}>
+                {CHAIRSIDE_MEMBERS_BOX.button} →
+              </Box>
             </Box>
           </Box>
         </Container>

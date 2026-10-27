@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Box, Button, Container, Stack, Typography } from "@mui/material";
@@ -9,7 +9,7 @@ import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
 import Header from "@/components/sections/Header";
 import Footer from "@/components/sections/Footer";
-import { chapterLink, coverSrc, type ChairsideEpisode } from "@/lib/chairside";
+import { chapterSeconds, coverSrc, type ChairsideEpisode } from "@/lib/chairside";
 
 const INK = "#0A1A2F";
 const INK_SOFT = "#3B4A55";
@@ -27,12 +27,13 @@ const eyebrow = {
   color: GOLD,
 };
 
-/** YouTube watch/short URL to an embed URL. */
-function youtubeEmbed(url: string): string {
+/** YouTube watch/short URL to an embed URL, optionally starting at a second. */
+function youtubeEmbed(url: string, startAt = 0): string {
   try {
     const u = new URL(url);
     const id = u.hostname.includes("youtu.be") ? u.pathname.slice(1) : u.searchParams.get("v") ?? u.pathname.split("/").pop() ?? "";
-    return `https://www.youtube.com/embed/${id}?rel=0&autoplay=1`;
+    // enablejsapi lets the chapter list seek the running player via postMessage.
+    return `https://www.youtube.com/embed/${id}?rel=0&autoplay=1&enablejsapi=1${startAt > 0 ? `&start=${startAt}` : ""}`;
   } catch {
     return url;
   }
@@ -46,7 +47,28 @@ function youtubeEmbed(url: string): string {
  */
 export default function EpisodeView({ episode }: { episode: ChairsideEpisode }) {
   const [playing, setPlaying] = useState(false);
+  // Chapter clicks: once the player is up, seek it in place through the
+  // YouTube IFrame messaging API (no reload); the first click starts the
+  // player at that second.
+  const [startAt, setStartAt] = useState(0);
+  const playerRef = useRef<HTMLDivElement | null>(null);
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const canPlay = !!episode.publicVideo.youtubeUrl;
+  const jumpTo = (time: string) => {
+    if (!canPlay) return;
+    const seconds = chapterSeconds(time);
+    const win = iframeRef.current?.contentWindow;
+    if (playing && win) {
+      const send = (func: string, args: unknown[] = []) =>
+        win.postMessage(JSON.stringify({ event: "command", func, args }), "https://www.youtube.com");
+      send("seekTo", [seconds, true]);
+      send("playVideo");
+    } else {
+      setStartAt(seconds);
+      setPlaying(true);
+    }
+    playerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
   const cover = coverSrc(episode);
   const listen = [
     { label: "Spotify", href: episode.listen.spotify, dot: "#1DB954" },
@@ -116,6 +138,7 @@ export default function EpisodeView({ episode }: { episode: ChairsideEpisode }) 
 
           {/* Cover / player */}
           <Box
+            ref={playerRef}
             sx={{
               position: "relative",
               width: "100%",
@@ -129,7 +152,8 @@ export default function EpisodeView({ episode }: { episode: ChairsideEpisode }) 
             {playing && canPlay ? (
               <Box
                 component="iframe"
-                src={youtubeEmbed(episode.publicVideo.youtubeUrl!)}
+                ref={iframeRef}
+                src={youtubeEmbed(episode.publicVideo.youtubeUrl!, startAt)}
                 title={`${episode.title}, Chairside episode ${episode.number}`}
                 allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
                 allowFullScreen
@@ -228,7 +252,6 @@ export default function EpisodeView({ episode }: { episode: ChairsideEpisode }) 
               <Typography sx={{ ...eyebrow, color: INK_MUTED, mb: 1.5 }}>In this episode</Typography>
               <Box component="ol" sx={{ listStyle: "none", m: 0, p: 0, mb: 4.5 }}>
                 {episode.chapters.map((c) => {
-                  const href = chapterLink(episode.publicVideo.youtubeUrl, c.time);
                   const row = (
                     <>
                       <Typography component="span" sx={{ fontSize: "0.92rem", fontWeight: 700, color: GOLD, minWidth: 48, fontVariantNumeric: "tabular-nums" }}>{c.time}</Typography>
@@ -237,8 +260,8 @@ export default function EpisodeView({ episode }: { episode: ChairsideEpisode }) 
                   );
                   return (
                     <Box key={`${c.time}-${c.label}`} component="li" sx={{ borderBottom: `1px solid ${LINE}` }}>
-                      {href ? (
-                        <Box component="a" href={href} target="_blank" rel="noopener" sx={{ display: "flex", gap: 2, py: 1.25, textDecoration: "none", "&:hover span:last-of-type": { color: INK } }}>
+                      {canPlay ? (
+                        <Box component="button" type="button" onClick={() => jumpTo(c.time)} aria-label={`Play from ${c.time}, ${c.label}`} sx={{ all: "unset", cursor: "pointer", width: "100%", boxSizing: "border-box", display: "flex", gap: 2, py: 1.25, "&:hover span:last-of-type": { color: INK }, "&:focus-visible": { outline: `2px solid ${GOLD_BRIGHT}`, outlineOffset: 2 } }}>
                           {row}
                         </Box>
                       ) : (

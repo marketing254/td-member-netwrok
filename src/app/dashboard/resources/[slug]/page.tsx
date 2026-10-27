@@ -2,6 +2,7 @@
 
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Box,
   Button,
@@ -206,6 +207,7 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
     company_name: string | null;
   } | null | undefined>(undefined);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   /**
    * Marks a resource as viewed (or completed) AND updates local state so
@@ -393,6 +395,13 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
   // eyebrow, a chapters card under the player, the Monday page box, and
   // no coaching card or shorts rail.
   const isChairside = kitType === "chairside";
+  // An episode opened at the playbook address moves to its own address,
+  // so the sidebar, back link and URL all say Chairside.
+  const pathname = usePathname();
+  const router = useRouter();
+  useEffect(() => {
+    if (isChairside && pathname?.startsWith("/dashboard/resources/")) router.replace(`/dashboard/chairside/${slug}`);
+  }, [isChairside, pathname, router, slug]);
   const episode = resources.find((r) => r.episode_payload)?.episode_payload ?? null;
   const captionsUrl =
     episode?.captions_url ?? resources.find((r) => r.kind === "captions")?.external_url ?? null;
@@ -445,7 +454,7 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
   if (resources.length === 0) {
     return (
       <Stack spacing={2.5}>
-        <BackLink />
+        <BackLink chairside={isChairside} />
         <Box
           sx={{
             py: 6,
@@ -467,9 +476,10 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
     setActiveId(r.id);
     void markProgress(r.id, "view");
     requestAnimationFrame(() => {
-      if (videoRef.current) {
-        videoRef.current.load();
-        void videoRef.current.play().catch(() => {});
+      const el = videoRef.current ?? audioRef.current;
+      if (el) {
+        el.load();
+        void el.play().catch(() => {});
       }
     });
   };
@@ -588,7 +598,9 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
                 isPreviewable(activeResource) &&
                 activeResource.external_url
                   ? { height: { xs: 520, md: 720 } }
-                  : { aspectRatio: "16 / 9" }),
+                  : activeResource?.kind === "audio"
+                    ? { minHeight: { xs: 220, md: 260 } }
+                    : { aspectRatio: "16 / 9" }),
                 bgcolor: "var(--ink)",
                 backgroundImage:
                   activeResource &&
@@ -601,7 +613,90 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
                 borderRadius: 1,
               }}
             >
-              {activeResource && isVideo(activeResource.kind) && activeResource.external_url ? (
+              {activeResource && activeResource.kind === "audio" && activeResource.external_url ? (
+                // Audio episode: no black video frame. A navy card with the
+                // episode name and the native audio controls, so it reads as
+                // "listen", not a broken video.
+                <Box
+                  sx={{
+                    width: "100%",
+                    alignSelf: "stretch",
+                    p: { xs: 2.5, md: 4 },
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "center",
+                    gap: { xs: 2, md: 2.5 },
+                    backgroundImage: "linear-gradient(135deg, #14334A 0%, #0A1A2F 60%, #0A1A2F 100%)",
+                  }}
+                >
+                  <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
+                    <Box
+                      sx={{
+                        width: { xs: 56, md: 72 },
+                        height: { xs: 56, md: 72 },
+                        borderRadius: "50%",
+                        flex: "none",
+                        display: "grid",
+                        placeItems: "center",
+                        bgcolor: "rgba(217,168,75,0.16)",
+                        border: "1px solid rgba(217,168,75,0.45)",
+                      }}
+                    >
+                      <HeadphonesOutlinedIcon sx={{ fontSize: { xs: 28, md: 34 }, color: "var(--gold, #D9A84B)" }} />
+                    </Box>
+                    <Box sx={{ minWidth: 0 }}>
+                      <Typography
+                        sx={{
+                          fontSize: "0.7rem",
+                          fontWeight: 800,
+                          letterSpacing: "0.16em",
+                          textTransform: "uppercase",
+                          color: "var(--gold, #D9A84B)",
+                        }}
+                      >
+                        {isChairside ? `Audio · Episode ${episode?.episode ?? ""}`.trim() : "Audio episode"}
+                      </Typography>
+                      <Typography
+                        sx={{
+                          fontFamily: "var(--font-display)",
+                          fontSize: { xs: "1.1rem", md: "1.35rem" },
+                          lineHeight: 1.2,
+                          color: "#FFFFFF",
+                          mt: 0.25,
+                        }}
+                      >
+                        {topicTitle}
+                      </Typography>
+                      {(episode?.guest?.name || activeResource.duration_label) && (
+                        <Typography sx={{ fontSize: "0.82rem", color: "rgba(255,255,255,0.72)", mt: 0.5 }}>
+                          {[episode?.guest?.name ? `with ${episode.guest.name}` : null, activeResource.duration_label]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </Typography>
+                      )}
+                    </Box>
+                  </Stack>
+                  <Box
+                    component="audio"
+                    ref={audioRef}
+                    src={activeResource.external_url}
+                    controls
+                    preload="metadata"
+                    onPlay={() => void markProgress(activeResource.id, "view")}
+                    onEnded={() => void markProgress(activeResource.id, "complete")}
+                    sx={{
+                      width: "100%",
+                      display: "block",
+                      height: 44,
+                      borderRadius: 999,
+                      // Chrome/Edge paint the native controls on a light pill;
+                      // keep it so the controls stay legible on the navy card.
+                      bgcolor: "#F1F1F1",
+                      colorScheme: "light",
+                    }}
+                  />
+                </Box>
+              ) : activeResource && isVideo(activeResource.kind) && activeResource.external_url ? (
                 <video
                   ref={videoRef}
                   src={activeResource.external_url}
@@ -938,10 +1033,9 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
                 </Typography>
                 <Button
                   component="a"
-                  href={mondayPage.external_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  download
+                  // Supabase Storage honours ?download=<name>: the browser
+                  // saves the file instead of opening it in a new tab.
+                  href={`${mondayPage.external_url}?download=${encodeURIComponent("The Monday page - the first hour (Dr. Michael Sonick).pdf")}`}
                   onClick={() => void markProgress(mondayPage.id, "view")}
                   variant="contained"
                   size="small"
@@ -1235,11 +1329,11 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
   );
 }
 
-function BackLink() {
+function BackLink({ chairside = false }: { chairside?: boolean }) {
   return (
     <Box
       component={Link}
-      href="/dashboard/resources"
+      href={chairside ? "/dashboard/resources?type=chairside" : "/dashboard/resources"}
       sx={{
         display: "inline-flex",
         alignItems: "center",
@@ -1254,7 +1348,7 @@ function BackLink() {
         "&:focus-visible": { outline: "2px solid var(--gold)", outlineOffset: 2 },
       }}
     >
-      <ArrowBackIcon sx={{ fontSize: 13 }} /> All Playbooks
+      <ArrowBackIcon sx={{ fontSize: 13 }} /> {chairside ? "All episodes" : "All Playbooks"}
     </Box>
   );
 }
