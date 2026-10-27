@@ -1,8 +1,8 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { Suspense, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   AppBar,
   Avatar,
@@ -93,6 +93,9 @@ function SidebarContent({
   onEditProfile: () => void;
   avatarUrl?: string | null;
 }) {
+  // Query string for highlighting (Chairside is the library pre-filtered).
+  // Rendered inside <Suspense>, as useSearchParams requires on static pages.
+  const search = useSearchParams()?.toString() ?? "";
   const displayName = member
     ? `${member.first_name}${member.last_name ? " " + member.last_name : ""}`
     : "—";
@@ -208,11 +211,18 @@ function SidebarContent({
             const Icon = item.icon;
             // Query-string links (Chairside → the library pre-filtered)
             // match on their path only.
-            const hrefPath = item.href.split("?")[0];
+            const [hrefPath, hrefQuery] = item.href.split("?");
+            // A query-string link (Chairside) is active only when that query
+            // is present; the plain library link only when it is absent, so
+            // the two never light up together.
             const active =
               item.href === "/dashboard"
                 ? pathname === "/dashboard"
-                : pathname.startsWith(hrefPath);
+                : hrefQuery
+                  ? (pathname === hrefPath && search.includes(hrefQuery)) || pathname.startsWith("/dashboard/chairside")
+                  : hrefPath === "/dashboard/resources"
+                    ? pathname.startsWith(hrefPath) && !search.includes("type=chairside")
+                    : pathname.startsWith(hrefPath);
             return (
               <Box
                 key={item.href}
@@ -445,12 +455,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             zIndex: theme.zIndex.appBar - 1,
           }}
         >
+          <Suspense fallback={null}>
           <SidebarContent
             pathname={pathname}
             member={member}
             onEditProfile={() => setProfileOpen(true)}
             avatarUrl={effectiveAvatar}
           />
+          </Suspense>
         </Box>
       )}
       {!isMd && (
@@ -459,6 +471,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           onClose={() => setDrawerOpen(false)}
           slotProps={{ paper: { sx: { width: SIDEBAR_W, border: "none" } } }}
         >
+          <Suspense fallback={null}>
           <SidebarContent
             pathname={pathname}
             member={member}
@@ -469,6 +482,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             }}
             avatarUrl={effectiveAvatar}
           />
+          </Suspense>
         </Drawer>
       )}
 

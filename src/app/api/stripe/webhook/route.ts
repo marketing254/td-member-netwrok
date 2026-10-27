@@ -253,6 +253,32 @@ async function handleEvent(event: Stripe.Event, stripe: Stripe): Promise<string 
     // Apps Script web-app URL (SALES_TRACKER_WEBHOOK_URL). Best-effort and
     // env-gated: a missing URL or a failed append never affects the sale.
     // Idempotent like everything here — the webhook dedupes per event.
+    // "Owner name (/handle)" for the referral link that brought a member in;
+    // shared by the sales-tracker row and the team alert below.
+    const lookupReferrer = async (referralCodeId: string | null | undefined): Promise<string | null> => {
+      try {
+        if (!referralCodeId) return null;
+        const { data: rc } = await sb
+          .from("referral_codes")
+          .select("code, slug, expert_id, vendor_id")
+          .eq("id", referralCodeId)
+          .maybeSingle();
+        if (!rc) return null;
+        let owner: string | null = null;
+        if (rc.expert_id) {
+          const { data: e } = await sb.from("experts").select("display_name, full_name").eq("id", rc.expert_id).maybeSingle();
+          owner = e?.display_name || e?.full_name || null;
+        } else if (rc.vendor_id) {
+          const { data: v } = await sb.from("vendors").select("display_name, company_name").eq("id", rc.vendor_id).maybeSingle();
+          owner = v?.display_name || v?.company_name || null;
+        }
+        const link = rc.slug ? `/${rc.slug}` : rc.code;
+        return owner ? `${owner} (${link})` : link;
+      } catch {
+        return null;
+      }
+    };
+
     if (process.env.SALES_TRACKER_WEBHOOK_URL) {
       try {
         // signup_channel/heard_about come from migration 0058 — not in the
@@ -274,6 +300,9 @@ async function handleEvent(event: Stripe.Event, stripe: Stripe): Promise<string 
         const planPrice = (item?.price?.unit_amount ?? 0) / 100;
         const channel = buyer?.signup_channel ?? (buyer?.referral_code_id ? "referral" : "organic");
         const customerId = typeof session.customer === "string" ? session.customer : "";
+        const trackerReferredBy = await lookupReferrer(buyer?.referral_code_id);
+        const periodEnd = item?.current_period_end;
+        const nextBilling = periodEnd ? new Date(periodEnd * 1000).toISOString() : "";
         // Masterclass-tracker style "Order Details" blob — the sheet cell a
         // reader clicks to see the whole order in one place. NO card data:
         // we never receive card numbers (Stripe holds those), and even the
@@ -292,6 +321,8 @@ async function handleEvent(event: Stripe.Event, stripe: Stripe): Promise<string 
           ...(session.metadata?.promo_code ? [`Promo code: ${session.metadata.promo_code}`] : []),
           `Channel: ${channel}`,
           ...(buyer?.heard_about ? [`How they heard: ${buyer.heard_about}`] : []),
+          ...(trackerReferredBy ? [`Referred by: ${trackerReferredBy}`] : []),
+          ...(nextBilling ? [`Next billing: ${nextBilling.slice(0, 10)}`] : []),
           "",
           `Stripe customer: ${customerId || "-"}`,
         ].join("\n");
@@ -314,6 +345,10 @@ async function handleEvent(event: Stripe.Event, stripe: Stripe): Promise<string 
             promoCode: session.metadata?.promo_code ?? "",
             channel,
             heardAbout: buyer?.heard_about ?? "",
+            // Extra columns the tracker sheet has (written by header name).
+            orderId: sub.id,
+            referredBy: trackerReferredBy ?? "",
+            nextBilling,
             orderDetails,
           }),
           signal: AbortSignal.timeout(8000),
@@ -332,30 +367,7 @@ async function handleEvent(event: Stripe.Event, stripe: Stripe): Promise<string 
         .maybeSingle();
 
       // Referral attribution — which expert/partner link brought them in.
-      let referredBy: string | null = null;
-      try {
-        if (member?.referral_code_id) {
-          const { data: rc } = await sb
-            .from("referral_codes")
-            .select("code, slug, expert_id, vendor_id")
-            .eq("id", member.referral_code_id)
-            .maybeSingle();
-          if (rc) {
-            let owner: string | null = null;
-            if (rc.expert_id) {
-              const { data: e } = await sb.from("experts").select("display_name, full_name").eq("id", rc.expert_id).maybeSingle();
-              owner = e?.display_name || e?.full_name || null;
-            } else if (rc.vendor_id) {
-              const { data: v } = await sb.from("vendors").select("display_name, company_name").eq("id", rc.vendor_id).maybeSingle();
-              owner = v?.display_name || v?.company_name || null;
-            }
-            const link = rc.slug ? `/${rc.slug}` : rc.code;
-            referredBy = owner ? `${owner} (${link})` : link;
-          }
-        }
-      } catch {
-        /* best-effort — the alert still goes out without it */
-      }
+      const referredBy = await lookupReferrer(member?.referral_code_id);
       const firstItem = sub.items.data[0];
       const amountCents = firstItem?.price?.unit_amount ?? 0;
       const currency = (firstItem?.price?.currency ?? "usd").toUpperCase();

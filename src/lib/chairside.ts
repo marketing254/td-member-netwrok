@@ -36,6 +36,10 @@ export type ChairsideEpisode = {
   /** 16:9 episode artwork, also the og:image. */
   /** ready=false until the art file is in /public; the YouTube thumbnail shows meanwhile. */
   cover: { src: string; alt: string; ready?: boolean };
+  /** Square episode cover for the card on /chairside. */
+  cardImage: { src: string; alt: string };
+  /** Two lines under the title on the /chairside card. */
+  cardSummary: string;
   description: string;
   pullQuote: { text: string; cite: string };
   /** Chapters of the public cut. */
@@ -68,7 +72,17 @@ export const CHAIRSIDE_SHOW_COVER = "/chairside/show-cover.jpg";
 export const CHAIRSIDE_SHOW = {
   spotify: "https://open.spotify.com/show/516IE8CAHEPsjAXGHle8wN",
   apple: "https://podcasts.apple.com/us/podcast/chairside/id6826901944",
+  youtube: "https://www.youtube.com/playlist?list=PLCf87RQppfqQ",
   trailerYoutubeUrl: "https://youtu.be/XWUaGKazPe8",
+};
+
+/** The navy members box at the bottom of /chairside (Lester, 27 Oct 2026). */
+export const CHAIRSIDE_MEMBERS_BOX = {
+  eyebrow: "For members",
+  title: "Every full episode, and the playbook that comes with it",
+  body: "The public episodes run about 20 minutes. Members get the full hour, the Monday page and the expert\u2019s Practice Playbook in the member library.",
+  button: "Join the Dental Member Network",
+  href: "/join/member",
 };
 
 /** "1:00:10" or "4:49" to seconds. */
@@ -119,13 +133,14 @@ export const CHAIRSIDE_EPISODES: ChairsideEpisode[] = [
     host: "Hosted by Don Adeesha",
     // Lester, 26 Oct 2026. The YouTube video is private until Tue 27 Oct,
     // 6:00 am New York; publish the page after that.
-    publicVideo: { youtubeUrl: "https://youtu.be/vrKvFyofed0", minutes: 20 },
+    publicVideo: { youtubeUrl: "https://youtu.be/vrKvFyofed0", minutes: 21 },
     listen: {
       spotify: "https://open.spotify.com/episode/5OYsSnf04KaqWDdsQ0eMgG",
       apple: "https://podcasts.apple.com/us/podcast/chairside/id6826901944",
       youtube: "https://youtu.be/vrKvFyofed0",
     },
-    // File not yet synced; see public/chairside/ep1/README.txt.
+    cardImage: { src: "/chairside/ep1/episode-cover.jpg", alt: "Chairside episode 1, Treating people, not patients, with Dr. Michael Sonick" },
+    cardSummary: "With Dr. Michael Sonick, DMD. Why he tells patients the truth, what slowing down costs, and the first hour every new patient gets in his office.",
     cover: {
       src: "/chairside/ep1/cover.jpg",
       ready: true,

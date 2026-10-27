@@ -18,7 +18,7 @@ export async function GET() {
     const admin = getSupabaseAdmin();
     const { data, error } = await admin
       .from("resources")
-      .select("topic_slug, topic_title, portal_card_url, created_at")
+      .select("topic_slug, topic_title, portal_card_url, created_at, kit_type")
       .eq("is_published", true)
       .eq("submission_status", "approved")
       .not("portal_card_url", "is", null)
@@ -28,11 +28,17 @@ export async function GET() {
     // One card per kit, keeping the newest created_at per topic (rows come
     // back newest-first, so first occurrence wins).
     const seen = new Set<string>();
-    const cards: { slug: string; title: string; card: string }[] = [];
+    const cards: { slug: string; title: string; card: string; href?: string }[] = [];
+    const chairsideOn = process.env.NEXT_PUBLIC_CHAIRSIDE_ENABLED === "true";
     for (const r of data ?? []) {
       if (seen.has(r.topic_slug) || !r.portal_card_url) continue;
       seen.add(r.topic_slug);
-      cards.push({ slug: r.topic_slug, title: r.topic_title, card: r.portal_card_url });
+      const isEpisode = (r as { kit_type?: string | null }).kit_type === "chairside";
+      // Chairside episodes link to their public page (Lester, 27 Oct 2026);
+      // playbook cards stay as artwork only. While the Chairside switch is
+      // off the episode card is left out entirely.
+      if (isEpisode && !chairsideOn) continue;
+      cards.push({ slug: r.topic_slug, title: r.topic_title, card: r.portal_card_url, ...(isEpisode ? { href: `/chairside/${r.topic_slug}` } : {}) });
       if (cards.length >= 16) break;
     }
 
