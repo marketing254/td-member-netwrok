@@ -315,7 +315,8 @@ function ResourceLibrary({ typeFilter }: { typeFilter: TypeKey }) {
             },
           }}
           sx={{
-            flex: { md: 1.4 },
+            flex: { md: "1 1 0" },
+            minWidth: 0,
             "& .MuiOutlinedInput-root": {
               borderRadius: 999,
               fontSize: "0.88rem",
@@ -331,7 +332,11 @@ function ResourceLibrary({ typeFilter }: { typeFilter: TypeKey }) {
           label="Category"
           slotProps={{ inputLabel: { sx: { fontSize: "0.82rem" } } }}
           sx={{
+            // The theme makes every TextField fullWidth; on the desktop row
+            // the dropdowns keep a fixed width so the search box gets the rest.
             minWidth: 180,
+            width: { xs: "100%", md: "auto" },
+            flex: { md: "0 0 auto" },
             "& .MuiOutlinedInput-root": {
               borderRadius: 999,
               fontSize: "0.86rem",
@@ -355,7 +360,11 @@ function ResourceLibrary({ typeFilter }: { typeFilter: TypeKey }) {
           label="Expert"
           slotProps={{ inputLabel: { sx: { fontSize: "0.82rem" } } }}
           sx={{
+            // The theme makes every TextField fullWidth; on the desktop row
+            // the dropdowns keep a fixed width so the search box gets the rest.
             minWidth: 170,
+            width: { xs: "100%", md: "auto" },
+            flex: { md: "0 0 auto" },
             "& .MuiOutlinedInput-root": {
               borderRadius: 999,
               fontSize: "0.86rem",
@@ -378,7 +387,11 @@ function ResourceLibrary({ typeFilter }: { typeFilter: TypeKey }) {
           label="Sort"
           slotProps={{ inputLabel: { sx: { fontSize: "0.82rem" } } }}
           sx={{
+            // The theme makes every TextField fullWidth; on the desktop row
+            // the dropdowns keep a fixed width so the search box gets the rest.
             minWidth: 150,
+            width: { xs: "100%", md: "auto" },
+            flex: { md: "0 0 auto" },
             "& .MuiOutlinedInput-root": {
               borderRadius: 999,
               fontSize: "0.86rem",
