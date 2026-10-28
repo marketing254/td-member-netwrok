@@ -168,6 +168,15 @@ function isOffice(_r: { kind: string; mime_type: string | null }): boolean {
 /**
  * Anything we can show inline in the player canvas (with the right iframe).
  */
+/** Kind metadata, with a PDF filed under "other" (e.g. the Chairside
+ * transcript) shown as a PDF download rather than a generic file. */
+function metaFor(r: { kind: string; mime_type: string | null }) {
+  if (r.kind === "other" && r.mime_type === "application/pdf") {
+    return { ...KIND_META.other, defaultMeta: "PDF", actionLabel: "Download", badge: "PDF" };
+  }
+  return KIND_META[r.kind] ?? KIND_META.other;
+}
+
 function isPreviewable(r: { kind: string; mime_type: string | null }): boolean {
   return isPdf(r) || isOffice(r) || isImage(r);
 }
@@ -861,7 +870,7 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
               <Box sx={{ pt: 2 }}>
                 <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 0.75 }}>
                   <InlineTag
-                    label={KIND_META[activeResource.kind]?.badge ?? "Item"}
+                    label={metaFor(activeResource).badge}
                     tone="ink"
                   />
                   {activeResource.duration_label && (
@@ -1158,6 +1167,21 @@ export default function ResourceKitDetailPage({ params }: { params: RouteParams 
                       />
                     ) : (
                       <>
+                        {/* Poster frame (scripts/short-thumbnails.mjs); the
+                            navy gradient stays underneath for shorts that
+                            have none yet. */}
+                        {s.thumbnail_url && (
+                          <Box
+                            component="img"
+                            src={s.thumbnail_url}
+                            alt=""
+                            loading="lazy"
+                            sx={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                          />
+                        )}
+                        {s.thumbnail_url && (
+                          <Box sx={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(10,26,47,0.35) 0%, rgba(10,26,47,0) 35%, rgba(10,26,47,0) 60%, rgba(10,26,47,0.45) 100%)" }} />
+                        )}
                         <Box sx={{ position: "absolute", inset: 0, display: "grid", placeItems: "center" }}>
                           <Box
                             sx={{
@@ -1364,7 +1388,7 @@ function CurriculumRow({
   active: boolean;
   onSelect: () => void;
 }) {
-  const k = KIND_META[resource.kind] ?? KIND_META.other;
+  const k = metaFor(resource);
   const Icon = k.icon;
   const isVid = isVideo(resource.kind);
   const completed = !!resource.progress?.completed_at;
