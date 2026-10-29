@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { requireExpert } from "@/lib/auth/guards";
+import { hasSignedFoundingAgreement } from "@/lib/billing/agreementState";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -28,7 +29,7 @@ export async function POST() {
   const sb = getSupabaseAdmin();
   const { data: expert } = await sb
     .from("experts")
-    .select("id, email, full_name, stripe_customer_id, stripe_subscription_id, subscription_status")
+    .select("id, email, full_name, stripe_customer_id, stripe_subscription_id, subscription_status, agreement_signed_at, agreement_version")
     .eq("id", guard.expertId)
     .maybeSingle();
   if (!expert) {
@@ -71,17 +72,10 @@ export async function POST() {
     );
   }
 
-  // Serve the right agreement: if this same email is ALSO a partner
-  // (a vendors row exists), they get the combined Expert + Partner
-  // agreement — one fee covers both roles. Otherwise the Expert one.
-  const { data: alsoPartner } = await sb
-    .from("vendors")
-    .select("id")
-    .eq("contact_email", expert.email.toLowerCase())
-    .maybeSingle();
-  const agreementHref = alsoPartner
-    ? "/agreements/dmn-expert-partner-agreement.pdf"
-    : "/agreements/dmn-expert-agreement.pdf";
-
-  return NextResponse.json({ clientSecret: setupIntent.client_secret, agreementHref });
+  // The v4 agreement, rendered for this expert (combined Expert + Partner
+  // when the same email also holds a company). Someone who already signed
+  // on the founding accept page is told so, and the card skips the
+  // agreement step entirely.
+  const agreementSigned = await hasSignedFoundingAgreement(sb, { expertId: expert.id }, expert);
+  return NextResponse.json({ clientSecret: setupIntent.client_secret, agreementHref: "/api/expert/agreement/pdf", agreementSigned });
 }

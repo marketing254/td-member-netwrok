@@ -3,7 +3,8 @@ import crypto from "node:crypto";
 import { getStripe, appOrigin, partnerPriceIdFor } from "@/lib/stripe";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { requireVendor } from "@/lib/auth/guards";
-import { renderAgreementPdf } from "@/lib/pdf/agreementPdf";
+import { renderFoundingAgreementPdf } from "@/lib/pdf/foundingAgreementPdf";
+import { PORTAL_AGREEMENT_VERSION, hasSignedFoundingAgreement } from "@/lib/billing/agreementState";
 import { sendJoinConfirmationEmail } from "@/lib/email/joinConfirmation";
 import { cadenceOf, hasStep, normalizePlan } from "@/lib/billing/partnerPlan";
 
@@ -41,7 +42,8 @@ export async function POST(req: Request) {
   const body = (await req.json().catch(() => ({}))) as Body;
   const setupIntentId = (body.setupIntentId ?? "").trim();
   const paymentMethodId = (body.paymentMethodId ?? "").trim();
-  const agreementVersion = (body.agreementVersion ?? "").trim() || "v1";
+  // Every agreement is v4 regardless of what the client sends.
+  const agreementVersion = PORTAL_AGREEMENT_VERSION;
   if (!setupIntentId || !paymentMethodId) {
     return NextResponse.json({ error: "Missing Stripe references." }, { status: 400 });
   }
@@ -59,7 +61,7 @@ export async function POST(req: Request) {
   const sb = getSupabaseAdmin();
   const { data: vendor } = await sb
     .from("vendors")
-    .select("id, contact_email, billing_email, company_name, contact_name, stripe_customer_id, stripe_subscription_id, subscription_status, pricing_plan")
+    .select("id, contact_email, billing_email, company_name, contact_name, stripe_customer_id, stripe_subscription_id, subscription_status, pricing_plan, agreement_signed_at, agreement_version")
     .eq("id", guard.vendorId)
     .maybeSingle();
   if (!vendor?.stripe_customer_id) {
@@ -203,6 +205,19 @@ export async function POST(req: Request) {
   const ipHash = hashIp(clientIp(req));
   const userAgent = req.headers.get("user-agent") ?? null;
 
+  // Someone who already signed the founding agreement on the accept page
+  // keeps that signature: no second stamp, no second PDF, no second
+  // welcome email. The card and subscription are all this call adds.
+  const alreadySigned = await hasSignedFoundingAgreement(sb, { vendorId: vendor.id }, vendor);
+  const agreementStamp = alreadySigned
+    ? {}
+    : {
+        agreement_signed_at: signedAt.toISOString(),
+        agreement_version: agreementVersion,
+        agreement_ip_hash: ipHash,
+        agreement_user_agent: userAgent,
+      };
+
   await sb
     .from("vendors")
     .update({
@@ -217,18 +232,25 @@ export async function POST(req: Request) {
       card_brand: cardBrand,
       card_last4: cardLast4,
       founding_partner_locked: true,
-      agreement_signed_at: signedAt.toISOString(),
-      agreement_version: agreementVersion,
-      agreement_ip_hash: ipHash,
-      agreement_user_agent: userAgent,
+      ...agreementStamp,
     } as never)
     .eq("id", vendor.id);
 
-  // Best-effort PDF + email — acceptance is already stamped on the row.
+  if (alreadySigned) {
+    return NextResponse.json({ ok: true, status: subscription.status });
+  }
+
+  // Best-effort v4 PDF + welcome email — acceptance is already stamped on
+  // the row. A partner whose email also sits on the expert bench signs the
+  // combined Expert + Partner agreement.
   try {
-    const pdfBuffer = await renderAgreementPdf({
-      role: "partner",
-      agreementVersion,
+    const { data: alsoExpert } = await sb
+      .from("experts")
+      .select("id")
+      .eq("email", (vendor.contact_email ?? "").toLowerCase())
+      .maybeSingle();
+    const pdfBuffer = await renderFoundingAgreementPdf({
+      role: alsoExpert ? "both" : "partner",
       pricing,
       signer: {
         name: vendor.contact_name ?? "Partner",
@@ -237,6 +259,7 @@ export async function POST(req: Request) {
       },
       signedAt,
       ipHashLast6: ipHash.slice(-6),
+      accepted: true,
     });
     const pdfPath = `vendor/${vendor.id}/${signedAt.getTime()}.pdf`;
     const { error: upErr } = await sb.storage
@@ -257,7 +280,7 @@ export async function POST(req: Request) {
       contactName: vendor.contact_name ?? "Partner",
       companyName: vendor.company_name ?? null,
       pdfBuffer,
-      pdfFilename: `DMN-Founding-Partner-Agreement-${agreementVersion}.pdf`,
+      pdfFilename: `DMN-Founding-Agreement-${agreementVersion}.pdf`,
       portalUrl: `${appOrigin()}/vendor/account`,
       agreementVersion,
     });

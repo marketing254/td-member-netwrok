@@ -37,7 +37,9 @@ import {
  * is ticked.
  */
 const STRIPE_PK = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
-const AGREEMENT_VERSION = "v1";
+// Every agreement is v4. The PDF behind the link is rendered for the
+// signed-in person by /api/<audience>/agreement/pdf.
+const AGREEMENT_VERSION = "v4";
 
 let stripePromise: Promise<Stripe | null> | null = null;
 function getStripePromise() {
@@ -67,12 +69,13 @@ export default function TrialStartCard({
   // The prepare endpoint may override this with the combined
   // Expert + Partner agreement when the same email holds both roles.
   const defaultAgreementLink =
-    audience === "gold"
-      ? "/agreements/dmn-partner-agreement.pdf"
-      : "/agreements/dmn-expert-agreement.pdf";
+    audience === "gold" ? "/api/vendor/agreement/pdf" : "/api/expert/agreement/pdf";
 
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [agreementLink, setAgreementLink] = useState<string>(defaultAgreementLink);
+  // Already signed the founding agreement on the accept page: the card
+  // only saves a card and starts the subscription (option 1, 28 Oct 2026).
+  const [agreementSigned, setAgreementSigned] = useState(false);
   const [prepareError, setPrepareError] = useState<string | null>(null);
 
   // Prepare the SetupIntent immediately on mount — by the time the user
@@ -90,6 +93,7 @@ export default function TrialStartCard({
         const body = (await res.json().catch(() => ({}))) as {
           clientSecret?: string;
           agreementHref?: string;
+          agreementSigned?: boolean;
           error?: string;
         };
         if (cancelled) return;
@@ -98,6 +102,7 @@ export default function TrialStartCard({
           return;
         }
         if (body.agreementHref) setAgreementLink(body.agreementHref);
+        setAgreementSigned(!!body.agreementSigned);
         setClientSecret(body.clientSecret);
       } catch {
         if (!cancelled) {
@@ -178,6 +183,7 @@ export default function TrialStartCard({
               accentColor={accentColor}
               accentDeep={accentDeep}
               agreementLink={agreementLink}
+              agreementSigned={agreementSigned}
               onSuccess={onSuccess}
             />
           </Elements>
@@ -198,7 +204,9 @@ export default function TrialStartCard({
         <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", justifyContent: "center" }}>
           <LockRoundedIcon sx={{ fontSize: 13, color: "#7A8590" }} />
           <Typography sx={{ fontSize: "0.74rem", color: "#7A8590", textAlign: "center", lineHeight: 1.5 }}>
-            Secured by Stripe. Billing starts at month 7. A copy of your agreement is emailed to you.
+            {agreementSigned
+              ? "Secured by Stripe. Billing starts at month 7. Your signed agreement is already in your inbox."
+              : "Secured by Stripe. Billing starts at month 7. A copy of your agreement is emailed to you."}
           </Typography>
         </Stack>
       </Box>
@@ -228,17 +236,20 @@ function CheckoutInner({
   accentColor,
   accentDeep,
   agreementLink,
+  agreementSigned,
   onSuccess,
 }: {
   startEndpoint: string;
   accentColor: string;
   accentDeep: string;
   agreementLink: string;
+  agreementSigned: boolean;
   onSuccess?: () => void;
 }) {
   const stripe = useStripe();
   const elements = useElements();
-  const [agreed, setAgreed] = useState(false);
+  // Nothing to tick when the founding agreement is already signed.
+  const [agreed, setAgreed] = useState(agreementSigned);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -303,6 +314,7 @@ function CheckoutInner({
           the button, like a standard checkout. Checkbox top-aligns to
           the first line of text; the agreement name is the direct link
           to the PDF. */}
+      {!agreementSigned && (
       <Box
         sx={{
           mt: 2,
@@ -338,6 +350,7 @@ function CheckoutInner({
           .
         </Typography>
       </Box>
+      )}
 
       <Button
         type="submit"
@@ -363,7 +376,7 @@ function CheckoutInner({
         }}
         startIcon={busy ? <CircularProgress size={16} sx={{ color: "inherit" }} /> : null}
       >
-        {busy ? "Processing…" : "Agree and subscribe"}
+        {busy ? "Processing…" : agreementSigned ? "Save card and start" : "Agree and subscribe"}
       </Button>
 
       {error && (

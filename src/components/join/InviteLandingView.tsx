@@ -11,7 +11,7 @@ import Footer from "@/components/sections/Footer";
 import JoinApplicationForm from "@/components/join/JoinApplicationForm";
 import { COLORS } from "@/theme";
 
-const AGREEMENT_VERSION = "v1";
+const AGREEMENT_VERSION = "v4";
 
 /**
  * Client view for /invite/[code] — the personalized standard invite.
@@ -109,7 +109,7 @@ export default function InviteLandingView({
               <JoinApplicationForm
                 role={kind}
                 inviteCode={code}
-                agreementHref={kind === "partner" ? "/agreements/dmn-partner-agreement.pdf" : "/agreements/dmn-expert-agreement.pdf"}
+                agreementHref={kind === "partner" ? "/agreements/dmn-partner-agreement-v4.pdf" : "/agreements/dmn-expert-agreement-v4.pdf"}
                 initial={{ contactName: fullName, contactEmail: email ?? "", focus: companyName ?? "" }}
               />
             )}
@@ -137,7 +137,7 @@ function ProfileAcceptCard({ kind, code, loginHref, cardRequired = true }: { kin
   const [error, setError] = useState<string | null>(null);
   // Non-founding invites use the GENERIC agreement PDFs — personalized
   // agreements are a founding-invite-only thing.
-  const agreementHref = kind === "partner" ? "/agreements/dmn-partner-agreement.pdf" : "/agreements/dmn-expert-agreement.pdf";
+  const agreementHref = kind === "partner" ? "/agreements/dmn-partner-agreement-v4.pdf" : "/agreements/dmn-expert-agreement-v4.pdf";
   const accent = kind === "partner" ? "#A07823" : "#2C7A52";
 
   const accept = async () => {

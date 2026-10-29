@@ -106,6 +106,18 @@ export const SOPS: Sop[] = [
     pdfUrl: `${PDF_BASE}/three-question-performance-check.pdf`,
     approved: "2026-10-22",
   },
+  {
+    // Joint SOP from the Reducing Insurance Dependence Academy panel; both
+    // Denise and Janice approved it (Janice by email, 26 Oct 2026). Listed
+    // under Janice so her page carries it; the card names both.
+    slug: "do-you-take-my-insurance-call",
+    title: "The “do you take my insurance?” call",
+    category: "Insurance & PPOs",
+    expert: { name: "Denise Ciardello & Janice Janssen", id: "f714ec6c-21f5-463c-a10d-82993b7b1338" },
+    cardUrl: `${CARD_BASE}/do-you-take-my-insurance-call-card.jpg`,
+    pdfUrl: `${PDF_BASE}/do-you-take-my-insurance-call.pdf`,
+    approved: "2026-10-26",
+  },
   // STAGED, NOT LIVE (Lester, 9 Oct 2026): Laura Webber's SOP is a draft
   // until she approves the wording. The PDF is already in storage at
   // member-resources/sops/ten-minute-huddle-DRAFT.pdf. When Lester confirms:

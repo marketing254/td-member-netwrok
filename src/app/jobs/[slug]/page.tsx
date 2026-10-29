@@ -105,7 +105,7 @@ export async function generateMetadata({
     title,
     description,
     alternates: { canonical: `/jobs/${job.slug}` },
-    openGraph: { type: "article", title, description },
+    openGraph: { type: "article", title, description, images: ["/og-image.png"] },
     // A filled post should stop competing in search but keep working for
     // anyone who follows an existing link.
     robots: job.status === "filled" ? { index: false, follow: true } : undefined,
