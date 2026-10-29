@@ -32,7 +32,10 @@ import { COLORS } from "@/theme";
  * and the target endpoint / thank-you page pluggable.
  */
 
-const AGREEMENT_VERSION = "v1";
+// Every agreement is v4 (28 Oct 2026). The unsigned copies under
+// /public/agreements/*-v4.pdf are rendered by the same template the
+// signed copy uses.
+const AGREEMENT_VERSION = "v4";
 
 export type JoinRole = "partner" | "expert";
 
@@ -58,7 +61,7 @@ const CONFIG_BY_ROLE: Record<JoinRole, Config> = {
     chipLabel: "✓ Partner",
     focusFieldLabel: "Company name",
     focusFieldKey: "companyName",
-    agreementLinkHref: "/agreement/vendor",
+    agreementLinkHref: "/agreements/dmn-partner-agreement-v4.pdf",
     appliedRedirect: "/vendor/applied",
     endpoint: "/api/join/partner/apply",
     bullets: [
@@ -75,7 +78,7 @@ const CONFIG_BY_ROLE: Record<JoinRole, Config> = {
     focusFieldLabel: "Your topic or firm",
     focusFieldPlaceholder: "e.g. Practice growth · Ekwa Marketing",
     focusFieldKey: "focusArea",
-    agreementLinkHref: "/agreements/dmn-expert-agreement.pdf",
+    agreementLinkHref: "/agreements/dmn-expert-agreement-v4.pdf",
     appliedRedirect: "/expert/applied",
     endpoint: "/api/join/expert/apply",
     bullets: [

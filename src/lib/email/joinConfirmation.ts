@@ -127,6 +127,25 @@ function companiesWithOffers(opts: {
   return list;
 }
 
+/**
+ * The name after "You're in,". First name for most people; for a name
+ * that opens with a title ("Dr. Jesper Hatt") it is title + surname,
+ * "Dr. Hatt", never a bare "Dr." (Lester, 28 Oct 2026).
+ */
+export function greetingName(fullName: string): string {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "there";
+  const title = parts[0].replace(/\.$/, "");
+  const isTitle = /^(dr|prof|professor|mr|mrs|ms|mx)$/i.test(title);
+  if (isTitle && parts.length === 1) return "there";
+  if (isTitle && parts.length >= 2) {
+    const nice = title.charAt(0).toUpperCase() + title.slice(1).toLowerCase();
+    const dotted = /^(dr|prof|mr|mrs|ms|mx)$/i.test(title) ? `${nice}.` : nice;
+    return `${dotted} ${parts[parts.length - 1]}`;
+  }
+  return parts[0];
+}
+
 export async function sendJoinConfirmationEmail(
   input: JoinConfirmationInput,
 ): Promise<boolean> {
@@ -141,7 +160,7 @@ export async function sendJoinConfirmationEmail(
       : input.role === "partner"
         ? "Founding Partner"
         : "Founding Expert";
-  const firstName = input.contactName.split(/\s+/)[0] || "there";
+  const firstName = greetingName(input.contactName);
   const subject = `You're in, ${firstName}. Welcome to the Dental Member Network.`;
   const preheader = `Your ${roleLabel} agreement is confirmed. A copy is attached for your records.`;
 

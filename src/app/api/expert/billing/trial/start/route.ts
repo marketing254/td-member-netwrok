@@ -3,7 +3,9 @@ import crypto from "node:crypto";
 import { getStripe, appOrigin, expertPriceIdFor } from "@/lib/stripe";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { requireExpert } from "@/lib/auth/guards";
-import { renderAgreementPdf } from "@/lib/pdf/agreementPdf";
+import { renderFoundingAgreementPdf } from "@/lib/pdf/foundingAgreementPdf";
+import { normalizePlan } from "@/lib/billing/partnerPlan";
+import { PORTAL_AGREEMENT_VERSION, hasSignedFoundingAgreement } from "@/lib/billing/agreementState";
 import { sendJoinConfirmationEmail } from "@/lib/email/joinConfirmation";
 
 export const runtime = "nodejs";
@@ -34,7 +36,8 @@ export async function POST(req: Request) {
   const body = (await req.json().catch(() => ({}))) as Body;
   const setupIntentId = (body.setupIntentId ?? "").trim();
   const paymentMethodId = (body.paymentMethodId ?? "").trim();
-  const agreementVersion = (body.agreementVersion ?? "").trim() || "v1";
+  // Every agreement is v4 regardless of what the client sends.
+  const agreementVersion = PORTAL_AGREEMENT_VERSION;
   if (!setupIntentId || !paymentMethodId) {
     return NextResponse.json({ error: "Missing Stripe references." }, { status: 400 });
   }
@@ -54,7 +57,7 @@ export async function POST(req: Request) {
   const sb = getSupabaseAdmin();
   const { data: expert } = await sb
     .from("experts")
-    .select("id, email, full_name, specialty, stripe_customer_id, stripe_subscription_id, subscription_status")
+    .select("id, email, full_name, specialty, company_name, stripe_customer_id, stripe_subscription_id, subscription_status, agreement_signed_at, agreement_version")
     .eq("id", guard.expertId)
     .maybeSingle();
   if (!expert?.stripe_customer_id) {
@@ -140,6 +143,19 @@ export async function POST(req: Request) {
   const ipHash = hashIp(clientIp(req));
   const userAgent = req.headers.get("user-agent") ?? null;
 
+  // Someone who already signed the founding agreement on the accept page
+  // keeps that signature: no second stamp, no second PDF, no second
+  // welcome email. The card and subscription are all this call adds.
+  const alreadySigned = await hasSignedFoundingAgreement(sb, { expertId: expert.id }, expert);
+  const agreementStamp = alreadySigned
+    ? {}
+    : {
+        agreement_signed_at: signedAt.toISOString(),
+        agreement_version: agreementVersion,
+        agreement_ip_hash: ipHash,
+        agreement_user_agent: userAgent,
+      };
+
   await sb
     .from("experts")
     .update({
@@ -154,26 +170,35 @@ export async function POST(req: Request) {
       card_brand: cardBrand,
       card_last4: cardLast4,
       founding_expert_locked: true,
-      agreement_signed_at: signedAt.toISOString(),
-      agreement_version: agreementVersion,
-      agreement_ip_hash: ipHash,
-      agreement_user_agent: userAgent,
+      ...agreementStamp,
     } as never)
     .eq("id", expert.id);
 
-  // Best-effort PDF + email so the signer gets a copy in their inbox.
-  // Failure here doesn't roll back — the acceptance is already stamped.
+  if (alreadySigned) {
+    return NextResponse.json({ ok: true, status: subscription.status });
+  }
+
+  // Best-effort v4 PDF + welcome email so the signer gets a copy in their
+  // inbox. Failure here doesn't roll back — the acceptance is already
+  // stamped. An expert whose email also holds a partner company signs the
+  // combined Expert + Partner agreement.
   try {
-    const pdfBuffer = await renderAgreementPdf({
-      role: "expert",
-      agreementVersion,
+    const { data: alsoPartner } = await sb
+      .from("vendors")
+      .select("id, company_name, pricing_plan")
+      .eq("contact_email", expert.email.toLowerCase())
+      .maybeSingle();
+    const pdfBuffer = await renderFoundingAgreementPdf({
+      role: alsoPartner ? "both" : "expert",
+      pricing: alsoPartner ? normalizePlan(alsoPartner.pricing_plan) : null,
       signer: {
         name: expert.full_name ?? "Expert",
         email: expert.email,
-        companyName: expert.specialty ?? null,
+        companyName: alsoPartner?.company_name ?? expert.company_name ?? null,
       },
       signedAt,
       ipHashLast6: ipHash.slice(-6),
+      accepted: true,
     });
     const pdfPath = `expert/${expert.id}/${signedAt.getTime()}.pdf`;
     const { error: upErr } = await sb.storage
@@ -191,7 +216,7 @@ export async function POST(req: Request) {
       contactName: expert.full_name ?? "Expert",
       companyName: expert.specialty ?? null,
       pdfBuffer,
-      pdfFilename: `DMN-Founding-Expert-Agreement-${agreementVersion}.pdf`,
+      pdfFilename: `DMN-Founding-Agreement-${agreementVersion}.pdf`,
       portalUrl: `${appOrigin()}/expert/billing`,
       agreementVersion,
     });

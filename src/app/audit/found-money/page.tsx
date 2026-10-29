@@ -13,6 +13,7 @@ export const metadata: Metadata = {
     url: `${SITE}/audit/found-money`,
     title: "Found Money Audit: three documents, one number, free",
     description: "Card fees, supply prices and subscriptions, read from your own documents. See your number in minutes.",
+    images: ["/og-image.png"],
   },
 };
 

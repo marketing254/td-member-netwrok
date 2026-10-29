@@ -21,7 +21,7 @@ export const dynamic = "force-dynamic";
  * standard application form instead.
  */
 
-const AGREEMENT_VERSION = "v1";
+const AGREEMENT_VERSION = "v4";
 
 function clientIp(req: Request): string {
   const fwd = req.headers.get("x-forwarded-for");

@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { renderAgreementPdf } from "@/lib/pdf/agreementPdf";
+import { renderFoundingAgreementPdf } from "@/lib/pdf/foundingAgreementPdf";
+import { normalizePlan } from "@/lib/billing/partnerPlan";
+import { PORTAL_AGREEMENT_VERSION } from "@/lib/billing/agreementState";
 import { sendJoinConfirmationEmail } from "@/lib/email/joinConfirmation";
 import { notifySignup } from "@/lib/email/teamNotify";
 import { appOrigin } from "@/lib/stripe";
@@ -43,7 +45,8 @@ export async function POST(req: Request) {
   const name = (body.contactName ?? "").trim();
   const email = (body.contactEmail ?? "").trim().toLowerCase();
   const company = (body.companyName ?? "").trim();
-  const agreementVersion = (body.agreementVersion ?? "").trim() || "v1";
+  // Every agreement is v4 regardless of what the form sends.
+  const agreementVersion = PORTAL_AGREEMENT_VERSION;
 
   if (!name || name.length < 2) {
     return NextResponse.json({ error: "Enter your name." }, { status: 400 });
@@ -133,12 +136,14 @@ export async function POST(req: Request) {
   // already saved so a PDF failure doesn't invalidate the application.
   let pdfBuffer: Buffer | null = null;
   try {
-    pdfBuffer = await renderAgreementPdf({
+    pdfBuffer = await renderFoundingAgreementPdf({
       role: "partner",
-      agreementVersion,
+      // Self-serve partners are on the flat $49 plan (the vendors row default).
+      pricing: normalizePlan(null),
       signer: { name, email, companyName: company },
       signedAt,
       ipHashLast6: ipHash.slice(-6),
+      accepted: true,
     });
     const pdfPath = `vendor/${vendorId}/${signedAt.getTime()}.pdf`;
     const { error: upErr } = await sb.storage
@@ -164,7 +169,7 @@ export async function POST(req: Request) {
       contactName: name,
       companyName: company,
       pdfBuffer,
-      pdfFilename: `DMN-Founding-Partner-Agreement-${agreementVersion}.pdf`,
+      pdfFilename: `DMN-Founding-Agreement-${agreementVersion}.pdf`,
       portalUrl: `${appOrigin()}/vendor/login`,
       agreementVersion,
     });

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { renderAgreementPdf } from "@/lib/pdf/agreementPdf";
+import { renderFoundingAgreementPdf } from "@/lib/pdf/foundingAgreementPdf";
+import { PORTAL_AGREEMENT_VERSION } from "@/lib/billing/agreementState";
 import { sendJoinConfirmationEmail } from "@/lib/email/joinConfirmation";
 import { notifySignup } from "@/lib/email/teamNotify";
 import { appOrigin } from "@/lib/stripe";
@@ -42,7 +43,8 @@ export async function POST(req: Request) {
   const name = (body.contactName ?? "").trim();
   const email = (body.contactEmail ?? "").trim().toLowerCase();
   const focusArea = (body.focusArea ?? "").trim();
-  const agreementVersion = (body.agreementVersion ?? "").trim() || "v1";
+  // Every agreement is v4 regardless of what the form sends.
+  const agreementVersion = PORTAL_AGREEMENT_VERSION;
 
   if (!name || name.length < 2) {
     return NextResponse.json({ error: "Enter your name." }, { status: 400 });
@@ -128,12 +130,12 @@ export async function POST(req: Request) {
 
   let pdfBuffer: Buffer | null = null;
   try {
-    pdfBuffer = await renderAgreementPdf({
+    pdfBuffer = await renderFoundingAgreementPdf({
       role: "expert",
-      agreementVersion,
       signer: { name, email, companyName: focusArea },
       signedAt,
       ipHashLast6: ipHash.slice(-6),
+      accepted: true,
     });
     const pdfPath = `expert/${expertId}/${signedAt.getTime()}.pdf`;
     const { error: upErr } = await sb.storage
@@ -159,7 +161,7 @@ export async function POST(req: Request) {
       contactName: name,
       companyName: focusArea,
       pdfBuffer,
-      pdfFilename: `DMN-Founding-Expert-Agreement-${agreementVersion}.pdf`,
+      pdfFilename: `DMN-Founding-Agreement-${agreementVersion}.pdf`,
       portalUrl: `${appOrigin()}/expert/login`,
       agreementVersion,
     });

@@ -42,6 +42,7 @@ export const metadata: Metadata = {
     title: "Dental jobs | Dental Member Network",
     description:
       "Hygienist, assistant, front desk and associate roles at US dental practices. Every listing shows its pay range.",
+    images: ["/og-image.png"],
   },
 };
 

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { requireVendor } from "@/lib/auth/guards";
+import { hasSignedFoundingAgreement } from "@/lib/billing/agreementState";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -33,7 +34,7 @@ export async function POST() {
   const sb = getSupabaseAdmin();
   const { data: vendor } = await sb
     .from("vendors")
-    .select("id, contact_email, billing_email, company_name, contact_name, stripe_customer_id, stripe_subscription_id, subscription_status")
+    .select("id, contact_email, billing_email, company_name, contact_name, stripe_customer_id, stripe_subscription_id, subscription_status, agreement_signed_at, agreement_version")
     .eq("id", guard.vendorId)
     .maybeSingle();
   if (!vendor) {
@@ -76,17 +77,10 @@ export async function POST() {
     );
   }
 
-  // Serve the right agreement: if this same email is ALSO an expert
-  // (an experts row exists), they get the combined Expert + Partner
-  // agreement — one fee covers both roles. Otherwise the Partner one.
-  const { data: alsoExpert } = await sb
-    .from("experts")
-    .select("id")
-    .eq("email", (vendor.contact_email ?? "").toLowerCase())
-    .maybeSingle();
-  const agreementHref = alsoExpert
-    ? "/agreements/dmn-expert-partner-agreement.pdf"
-    : "/agreements/dmn-partner-agreement.pdf";
-
-  return NextResponse.json({ clientSecret: setupIntent.client_secret, agreementHref });
+  // The v4 agreement, rendered for this company (combined Expert + Partner
+  // when the same email also sits on the expert bench). Someone who already
+  // signed on the founding accept page is told so, and the card skips the
+  // agreement step entirely.
+  const agreementSigned = await hasSignedFoundingAgreement(sb, { vendorId: vendor.id }, vendor);
+  return NextResponse.json({ clientSecret: setupIntent.client_secret, agreementHref: "/api/vendor/agreement/pdf", agreementSigned });
 }

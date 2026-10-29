@@ -35,7 +35,7 @@ const PRICING_JSONLD = {
       description:
         "Membership for US + Canadian dental practice owners. Expert hotline that answers right away and follows up in writing, partner-network discounts averaging $6,400/year, and a curated Practice Playbook library.",
       brand: { "@type": "Brand", name: "Dental Member Network" },
-      image: "https://www.dentalmembernetwork.com/td-logo-horizontal-dark.svg",
+      image: "https://www.dentalmembernetwork.com/og-image.png",
       url: "https://www.dentalmembernetwork.com/pricing",
       offers: [
         {

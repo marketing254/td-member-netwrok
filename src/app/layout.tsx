@@ -32,21 +32,24 @@ export const metadata: Metadata = {
     title: "Dental Member Network — Expert helpline, partner savings, and the operator playbook",
     description:
       "Expert helpline that answers right away and follows up in writing, exclusive partner discounts averaging $6,400/year, and a curated Practice Playbook library taught by the operators who built it. Founding rate $49/mo, locked for life. First 100 only.",
+    // 1200x630 PNG (public/og-image.png). The old horizontal-logo SVG no
+    // longer exists and scrapers do not render SVG anyway, so links shared
+    // on LinkedIn, Facebook, WhatsApp and Slack showed no preview.
     images: [
       {
-        url: "/td-logo-horizontal-dark.svg",
-        width: 540,
-        height: 120,
-        alt: "Dental Member Network",
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Dental Member Network: expert helpline, partner savings, and the Practice Playbooks",
       },
     ],
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "Dental Member Network",
     description:
       "Expert helpline, partner savings, and the playbook the top practices actually use.",
-    images: ["/td-logo-horizontal-dark.svg"],
+    images: ["/og-image.png"],
   },
   robots: {
     index: true,
