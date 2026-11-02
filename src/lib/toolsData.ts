@@ -45,6 +45,8 @@ export const MEMBER_TOOLS: MemberTool[] = [
 export const TOOL_CATEGORIES: { name: string; color: string }[] = [
   { name: "Practice Management", color: "#1B3A5C" },
   { name: "Practice Transitions", color: "#A0522D" },
+  // Graphite with a compass icon (Perrin DesPortes, 2 Nov 2026).
+  { name: "Leadership & Growth Strategy", color: "#4b5563" },
   { name: "Case Acceptance", color: "#0E7490" },
   { name: "Marketing & SEO", color: "#B45309" },
   { name: "Patient Experience", color: "#6D28D9" },

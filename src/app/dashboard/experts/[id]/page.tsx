@@ -261,7 +261,7 @@ export default function ExpertProfilePage() {
           )}
 
           {/* Bio */}
-          {expert.bio && (
+          {expert.bio?.trim() && (
             <Section title="About">
               <Typography sx={{ color: INK_SOFT, fontSize: "1rem", lineHeight: 1.7, whiteSpace: "pre-line" }}>
                 {expert.bio}

@@ -320,7 +320,7 @@ function ExpertCard({ expert }: { expert: Expert }) {
           overflow: "hidden",
         }}
       >
-        {expert.bio ?? ""}
+        {expert.bio?.trim() ?? ""}
       </Typography>
 
       <Stack
