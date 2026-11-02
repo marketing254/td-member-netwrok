@@ -83,7 +83,7 @@ export function useVendorIdentity(): PlaceholderIdentity {
           .maybeSingle();
         if (seat?.vendor_id) {
           const { data: v } = await supabase.from("vendors").select("display_name").eq("id", seat.vendor_id).maybeSingle();
-          vendorRow = { contact_name: seat.name ?? userData.user.email, contact_email: userData.user.email, display_name: v?.display_name ?? null };
+          vendorRow = { contact_name: seat.name ?? userData.user.email, contact_email: userData.user.email, display_name: v?.display_name ?? "" };
         }
       }
 

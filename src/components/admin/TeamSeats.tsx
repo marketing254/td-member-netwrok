@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import { Alert, Box, Button, IconButton, Stack, TextField, Typography } from "@mui/material";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlineRounded";
 
 type Seat = { id: string; email: string; name: string | null; created_at: string };
 
