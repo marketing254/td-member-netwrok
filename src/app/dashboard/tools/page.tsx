@@ -14,6 +14,7 @@ import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import NorthEastRoundedIcon from "@mui/icons-material/NorthEastRounded";
 import QueryStatsOutlinedIcon from "@mui/icons-material/QueryStatsOutlined";
 import SwapHorizOutlinedIcon from "@mui/icons-material/SwapHorizOutlined";
+import ExploreOutlinedIcon from "@mui/icons-material/ExploreOutlined";
 import HandshakeOutlinedIcon from "@mui/icons-material/HandshakeOutlined";
 import CampaignOutlinedIcon from "@mui/icons-material/CampaignOutlined";
 import SentimentSatisfiedAltOutlinedIcon from "@mui/icons-material/SentimentSatisfiedAltOutlined";
@@ -37,6 +38,7 @@ const BG = "#FBFAF7";
 const CAT_ICON: Record<string, SvgIconComponent> = {
   "Practice Management": QueryStatsOutlinedIcon,
   "Practice Transitions": SwapHorizOutlinedIcon,
+  "Leadership & Growth Strategy": ExploreOutlinedIcon,
   "Case Acceptance": HandshakeOutlinedIcon,
   "Marketing & SEO": CampaignOutlinedIcon,
   "Patient Experience": SentimentSatisfiedAltOutlinedIcon,

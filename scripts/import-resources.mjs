@@ -159,7 +159,8 @@ const SHORT_RE = /^Short (\d+) \(9x16\) - (.+?)\.mp4$/i;
 //   "Expert Spotlight - Connect Before You Treat.mp4"
 //   "Highlight 2 (16x9) - Know the End Goal.mp4"
 // Event kits ship "Event Spotlight - <title>.mp4" (RIDA, Sep 2026): same slot.
-const SPOTLIGHT_RE = /^(?:Expert|Event) Spotlight( \(Full\))? - (.+?)\.mp4$/i;
+// Partner-attributed kits (Wisdom, Oct 2026) ship "Partner Spotlight - <title>.mp4".
+const SPOTLIGHT_RE = /^(?:Expert|Event|Partner) Spotlight( \(Full\))? - (.+?)\.mp4$/i;
 // Event kits also ship SOP drafts and a two-page Kit Overview PDF. They load
 // as plain files (kind "other") after the wall poster.
 const SOP_RE = /^SOP(?: DRAFT)? - (.+?)\.pdf$/i;
@@ -478,7 +479,8 @@ async function runOneKit(folderName, parentDir) {
     const label = (spot ? spot[2] : high[2]).replace(/_/g, "'").trim();
     const isFullSpot = !!(spot && spot[1]);
     const kind = spot ? "video_spotlight" : "video_highlight";
-    const title = spot ? (isFullSpot ? "Expert Spotlight (Full)" : "Expert Spotlight") : `Highlight ${high[1]} — ${label}`;
+    const spotWord = spot && /^Partner/i.test(filename) ? "Partner Spotlight" : "Expert Spotlight";
+    const title = spot ? (isFullSpot ? `${spotWord} (Full)` : spotWord) : `Highlight ${high[1]} — ${label}`;
     const position = spot ? (isFullSpot ? 13 : 12) : 80 + Number(high[1]);
 
     const safeName = filename.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9._-]/g, "");

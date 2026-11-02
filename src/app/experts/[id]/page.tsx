@@ -24,8 +24,10 @@ export default async function PublicExpertProfilePage({
     .select("id, display_name, full_name, specialty, company_name, bio, topics, website, booking_link, headshot_url, status")
     .eq("id", id)
     .maybeSingle();
-  // Same publish-ready gate as the directory: no headshot/bio → not public.
-  if (!expert || expert.status !== "active" || !expert.headshot_url || !expert.bio) notFound();
+  // Same publish-ready gate as the directory: active with a headshot. The
+  // bio is optional on the page (an expert whose bio is not yet approved
+  // has it blanked, Lester 2 Nov 2026); the About block simply does not render.
+  if (!expert || expert.status !== "active" || !expert.headshot_url) notFound();
 
   // Kit titles only — a public teaser; the content stays members-only.
   const { data: kitRows } = await sb
@@ -64,7 +66,7 @@ export default async function PublicExpertProfilePage({
         name: expert.display_name || expert.full_name || "DMN Expert",
         specialty: expert.specialty,
         company_name: expert.company_name,
-        bio: expert.bio,
+        bio: expert.bio?.trim() ? expert.bio : null,
         headshot_url: expert.headshot_url,
         website: expert.website,
         // booking_link intentionally NOT passed — member-portal-only benefit.
