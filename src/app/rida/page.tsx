@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
   openGraph: {
     title: "Built to Stay: the RIDA Annual Summit, 6 November. Your seat booked, two months of DMN on us.",
-    description: "Nine speakers, six of them in the network. Four CE credits through RIDA. Nothing to pay until 6 January 2027.",
+    description: "Eleven speakers, seven of them in the network. Four CE credits through RIDA. Nothing to pay until 6 January 2027.",
     type: "website",
     images: [{ url: "https://www.dentalmembernetwork.com/replay/rida-annual-2026-11-06-banner.jpg", width: 1600, height: 658 }],
   },

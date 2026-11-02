@@ -30,7 +30,7 @@ const SummitCheckout = dynamic(() => import("./SummitCheckout"), {
   loading: () => <p className="stripe-loading">Loading secure checkout…</p>,
 });
 
-/** The nine speakers on the 6 November banner (RIDA Annual Summit 2026, "Built to Stay"). */
+/** The eleven speakers on 6 November (RIDA Annual Summit 2026, "Built to Stay"). */
 const SPEAKERS = [
   { img: "/rida/nov/devon-banks.jpg", name: "DeVon Banks", role: "CEO, D-TECH Billing & Claims" },
   { img: "/rida/nov/kelly-fox-galvagni.jpg", name: "Kelly Fox Galvagni", role: "Founder, Smile Potential" },
@@ -41,6 +41,9 @@ const SPEAKERS = [
   { img: "/rida/nov/gary-takacs.jpg", name: "Gary Takacs", role: "Founder, The Thriving Dentist" },
   { img: "/rida/nov/kristie-kapp.jpg", name: "Kristie Kapp, RDH", role: "CEO & Co-Founder, EBITDent" },
   { img: "/rida/nov/michael-sonick.jpg", name: "Dr. Michael Sonick", role: "Periodontist and keynote speaker" },
+  // Added 2 Nov 2026 (Lester): both on The DSO Decision panel.
+  { img: "/rida/nov/james-deluca.jpg", name: "James DeLuca", role: "CEO, Precision Dental Analytics" },
+  { img: "/rida/nov/dee-fischer.jpg", name: "Dee Fischer", role: "Founder & CEO, Fischer's Professional Group" },
 ];
 
 type Form = {
@@ -374,7 +377,7 @@ export default function SummitLandingView({ mode = "landing" }: { mode?: "landin
         <div className="container" style={{ paddingTop: 18 }}>
           <Image
             src="/replay/rida-annual-2026-11-06-banner.jpg"
-            alt="RIDA Annual Summit 2026, Built to Stay: The Independent Practice Operating System. Nine speakers."
+            alt="RIDA Annual Summit 2026, Built to Stay: The Independent Practice Operating System. Eleven speakers."
             width={1600}
             height={658}
             sizes="(max-width: 1200px) 100vw, 1160px"
@@ -410,7 +413,7 @@ export default function SummitLandingView({ mode = "landing" }: { mode?: "landin
             <h1>
               Built to stay.<br />The independent practice <em>operating system.</em>
             </h1>
-            <p className="intro">The playbook for practices feeling the squeeze. Practical strategies from nine experts, six of them in this network, over one afternoon on Zoom.</p>
+            <p className="intro">The playbook for practices feeling the squeeze. Practical strategies from eleven experts, seven of them in this network, over one afternoon on Zoom.</p>
             <div className="facts">
               <div><span>FRIDAY</span><b>November 6, 2026</b></div>
               <div><span>LIVE ON ZOOM</span><b>12:00 to 4:30 PM Eastern</b></div>
@@ -640,7 +643,7 @@ export default function SummitLandingView({ mode = "landing" }: { mode?: "landin
           <div className="program-grid">
             <article>
               <span className="chapter">01 / THE SPEAKERS</span>
-              <h3>Nine experts.<br />Six of them in this network.</h3>
+              <h3>Eleven experts.<br />Seven of them in this network.</h3>
               <p>Practical strategies from the people who run, finance and grow independent practices.</p>
               <ul>
                 {SPEAKERS.map((s) => (
