@@ -183,7 +183,7 @@ export const EVENT_REPLAYS: ReplayEntry[] = [
     title: "Built to Stay: The Independent Practice Operating System",
     dateLabel: "6 November 2026",
     date: "2026-11-06",
-    blurb: "Nine speakers, six of them in this network. Your seat is booked; the replay arrives here afterwards.",
+    blurb: "Eleven speakers, seven of them in this network. Your seat is booked; the replay arrives here afterwards.",
     speakers: "",
     banner: "/replay/rida-annual-2026-11-06-banner.jpg",
     runtime: null,
