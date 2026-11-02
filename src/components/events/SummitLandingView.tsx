@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { JOB_TITLES, countryOptions, type JobTitle } from "@/lib/events/summitForm";
 import Image from "next/image";
 import dynamic from "next/dynamic";
+import SummitCountdown from "./SummitCountdown";
 import { trackEvent } from "@/lib/analytics";
 import { initMetaPixel, trackMeta } from "@/components/ads/metaPixel";
 import { useSignOut } from "@/lib/auth/identity";
@@ -456,6 +457,12 @@ export default function SummitLandingView({ mode = "landing" }: { mode?: "landin
                 <small>Expert Hotline · Practice Playbooks &amp; templates · directories &amp; member offers</small>
               </div>
               <div className="divider" />
+
+              {/* Countdown to the summit (Lester, 2 Nov 2026). Sits above
+                  the first button and stays above the payment step; it
+                  switches to "Live now" at noon Eastern on 6 Nov and hides
+                  itself at 4:30 PM. */}
+              <SummitCountdown />
 
               {clientSecret ? (
                 <>
