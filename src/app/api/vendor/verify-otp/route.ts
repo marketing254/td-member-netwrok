@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { seatVendorIdFor } from "@/lib/auth/seats";
 import { createServerSupabase } from "@/lib/supabase/server-ssr";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { checkRateLimit } from "@/lib/waitlist/rateLimit";
@@ -69,11 +70,20 @@ export async function POST(req: Request) {
     }
 
     const admin = getSupabaseAdmin();
-    const { data: vendorRow } = await admin
+    let { data: vendorRow } = await admin
       .from("vendors")
       .select("id, status, auth_user_id")
       .eq("contact_email", email)
       .maybeSingle();
+    // Team seat (0079): never relinks the owner's auth_user_id.
+    let isSeat = false;
+    if (!vendorRow) {
+      const seatVendorId = await seatVendorIdFor(email);
+      if (seatVendorId) {
+        vendorRow = (await admin.from("vendors").select("id, status, auth_user_id").eq("id", seatVendorId).maybeSingle()).data;
+        isSeat = !!vendorRow;
+      }
+    }
 
     if (!vendorRow) return apiError.forbidden(route);
     if (vendorRow.status === "rejected" || vendorRow.status === "churned") {
@@ -82,7 +92,7 @@ export async function POST(req: Request) {
         { status: 403 },
       );
     }
-    if (!vendorRow.auth_user_id) {
+    if (!isSeat && !vendorRow.auth_user_id) {
       await admin
         .from("vendors")
         .update({ auth_user_id: data.user.id })

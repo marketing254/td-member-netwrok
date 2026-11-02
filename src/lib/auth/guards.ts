@@ -1,4 +1,5 @@
 import "server-only";
+import { seatExpertIdFor, seatVendorIdFor } from "@/lib/auth/seats";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
@@ -76,6 +77,8 @@ export type VendorContext = {
   userId: string;
   email: string;
   vendorId: string;
+  /** True when the signed-in person is a team seat (0079), not the owner. */
+  isSeat: boolean;
   status: "pending_review" | "approved" | "rejected" | "suspended" | "churned";
   verified: boolean;
 };
@@ -115,6 +118,8 @@ export type ExpertContext = {
   userId: string;
   email: string;
   expertId: string;
+  /** True when the signed-in person is a team seat (0079), not the owner. */
+  isSeat: boolean;
   fullName: string;
   status: "invited" | "active" | "suspended" | "archived";
 };
@@ -245,11 +250,22 @@ export async function requireVendor(): Promise<VendorContext | Failure> {
   }
 
   const admin = getSupabaseAdmin();
-  const { data: row } = await admin
+  let { data: row } = await admin
     .from("vendors")
     .select("id, status, verified, auth_user_id")
     .eq("contact_email", email)
     .maybeSingle();
+
+  // Team seat (0079): no row of their own, but a seat names this email.
+  let isSeat = false;
+  if (!row) {
+    const seatVendorId = await seatVendorIdFor(email);
+    if (seatVendorId) {
+      const seatRow = await admin.from("vendors").select("id, status, verified, auth_user_id").eq("id", seatVendorId).maybeSingle();
+      row = seatRow.data;
+      isSeat = !!row;
+    }
+  }
 
   if (!row) {
     return {
@@ -260,7 +276,8 @@ export async function requireVendor(): Promise<VendorContext | Failure> {
 
   // Keep auth_user_id linked so the middleware's own-row check resolves this
   // vendor (RLS lets an authenticated user read only their own vendor row).
-  if (row.auth_user_id !== userData.user.id) {
+  // Never for a seat: the row stays linked to the owner.
+  if (!isSeat && row.auth_user_id !== userData.user.id) {
     await admin.from("vendors").update({ auth_user_id: userData.user.id }).eq("id", row.id);
   }
 
@@ -276,9 +293,26 @@ export async function requireVendor(): Promise<VendorContext | Failure> {
     userId: userData.user.id,
     email,
     vendorId: row.id,
+    isSeat,
     status: row.status as VendorContext["status"],
     verified: !!row.verified,
   };
+}
+
+/**
+ * requireVendorOwner — billing, agreement and card endpoints. A team seat
+ * (0079) is refused here even though it passes requireVendor.
+ */
+export async function requireVendorOwner(): Promise<VendorContext | Failure> {
+  const guard = await requireVendor();
+  if (!guard.ok) return guard;
+  if (guard.isSeat) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: "Only the account owner can do this." }, { status: 403 }),
+    };
+  }
+  return guard;
 }
 
 /**
@@ -387,11 +421,22 @@ export async function requireExpert(): Promise<ExpertContext | Failure> {
   }
 
   const admin = getSupabaseAdmin();
-  const { data: row } = await admin
+  let { data: row } = await admin
     .from("experts")
     .select("id, status, full_name, auth_user_id")
     .eq("email", email)
     .maybeSingle();
+
+  // Team seat (0079): no row of their own, but a seat names this email.
+  let isSeat = false;
+  if (!row) {
+    const seatExpertId = await seatExpertIdFor(email);
+    if (seatExpertId) {
+      const seatRow = await admin.from("experts").select("id, status, full_name, auth_user_id").eq("id", seatExpertId).maybeSingle();
+      row = seatRow.data;
+      isSeat = !!row;
+    }
+  }
 
   if (!row) {
     return {
@@ -415,6 +460,7 @@ export async function requireExpert(): Promise<ExpertContext | Failure> {
     userId: userData.user.id,
     email,
     expertId: row.id,
+    isSeat,
     fullName: row.full_name,
     status: row.status as ExpertContext["status"],
   };
@@ -823,4 +869,20 @@ export async function requireMemberOrAdminPreview(): Promise<MemberOrAdminContex
     firstName: memberRow.first_name,
     status: memberRow.status as MemberContext["status"],
   };
+}
+
+/**
+ * requireExpertOwner — billing and agreement endpoints. A team seat (0079)
+ * is refused here even though it passes requireExpert.
+ */
+export async function requireExpertOwner(): Promise<ExpertContext | Failure> {
+  const guard = await requireExpert();
+  if (!guard.ok) return guard;
+  if (guard.isSeat) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: "Only the account owner can do this." }, { status: 403 }),
+    };
+  }
+  return guard;
 }

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { seatExpertIdFor } from "@/lib/auth/seats";
 import { createServerSupabase } from "@/lib/supabase/server-ssr";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { checkRateLimit } from "@/lib/waitlist/rateLimit";
@@ -71,11 +72,20 @@ export async function POST(req: Request) {
 
     // Confirm there's an experts row tied to this email + it's active.
     const admin = getSupabaseAdmin();
-    const { data: expertRow } = await admin
+    let { data: expertRow } = await admin
       .from("experts")
       .select("id, status, auth_user_id")
       .eq("email", email)
       .maybeSingle();
+    // Team seat (0079): never relinks or activates the owner's row.
+    let isSeat = false;
+    if (!expertRow) {
+      const seatExpertId = await seatExpertIdFor(email);
+      if (seatExpertId) {
+        expertRow = (await admin.from("experts").select("id, status, auth_user_id").eq("id", seatExpertId).maybeSingle()).data;
+        isSeat = !!expertRow;
+      }
+    }
 
     if (!expertRow) return apiError.forbidden(route);
     if (expertRow.status === "suspended" || expertRow.status === "archived") {
@@ -84,8 +94,8 @@ export async function POST(req: Request) {
         { status: 403 },
       );
     }
-    // Link auth_user_id if missing (first sign-in).
-    if (!expertRow.auth_user_id) {
+    // Link auth_user_id if missing (first sign-in). Never for a seat.
+    if (!isSeat && !expertRow.auth_user_id) {
       await admin
         .from("experts")
         .update({

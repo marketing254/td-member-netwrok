@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { resolveCurrentExpert } from "@/lib/supabase/expertQueries";
+import OwnerOnlyNotice from "@/components/shared/OwnerOnlyNotice";
 import {
   Box,
   Button,
@@ -43,6 +45,7 @@ type Invoice = {
 export default function ExpertBillingPage() {
   const [expert, setExpert] = useState<ExpertsRow | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isSeat, setIsSeat] = useState(false);
   const [invoices, setInvoices] = useState<Invoice[] | null>(null);
   const [portalBusy, setPortalBusy] = useState(false);
   const [portalError, setPortalError] = useState<string | null>(null);
@@ -51,16 +54,20 @@ export default function ExpertBillingPage() {
     let active = true;
     const supabase = createBrowserSupabase();
     (async () => {
-      const { data: userData } = await supabase.auth.getUser();
-      const email = userData.user?.email?.toLowerCase();
-      if (!email) {
+      const who = await resolveCurrentExpert(supabase);
+      if (!who) {
         if (active) setLoading(false);
+        return;
+      }
+      if (who.isSeat) {
+        // Team seat (0079): billing is owner-only.
+        if (active) { setIsSeat(true); setLoading(false); }
         return;
       }
       const { data } = await supabase
         .from("experts")
         .select("*")
-        .eq("email", email)
+        .eq("id", who.expertId)
         .maybeSingle();
       if (!active) return;
       setExpert(data);
@@ -141,6 +148,8 @@ export default function ExpertBillingPage() {
     const d = formatDate(expert.current_period_end);
     return expert.cancel_at_period_end ? `Ends ${d}` : `Renews ${d}`;
   }, [expert?.current_period_end, expert?.cancel_at_period_end]);
+
+  if (isSeat) return <OwnerOnlyNotice what="Billing and the agreement" />;
 
   if (loading) {
     return (

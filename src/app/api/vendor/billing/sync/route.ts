@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { requireVendor } from "@/lib/auth/guards";
+import { requireVendorOwner } from "@/lib/auth/guards";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
  * "Re-sync from Stripe" button when their plan card looks out of date.
  */
 export async function POST() {
-  const guard = await requireVendor();
+  const guard = await requireVendorOwner();
   if (!guard.ok) return guard.response;
 
   const sb = getSupabaseAdmin();

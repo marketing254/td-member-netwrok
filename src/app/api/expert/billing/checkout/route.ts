@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { requireExpert } from "@/lib/auth/guards";
+import { requireExpertOwner } from "@/lib/auth/guards";
 import {
   ALL_EXPERT_PLAN_KEYS,
   appOrigin,
@@ -31,7 +31,7 @@ function isValidPlan(p: unknown): p is ExpertPlanKey {
 }
 
 export async function POST(req: Request) {
-  const guard = await requireExpert();
+  const guard = await requireExpertOwner();
   if (!guard.ok) return guard.response;
 
   const body = (await req.json().catch(() => ({}))) as { plan?: unknown };

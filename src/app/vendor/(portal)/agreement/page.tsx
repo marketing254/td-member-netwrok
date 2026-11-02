@@ -18,26 +18,32 @@ import {
   vendorFeeScheduleFor,
 } from "@/lib/vendorData";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
-import { fetchCurrentVendor } from "@/lib/supabase/vendorQueries";
+import { fetchCurrentVendor, isSeatForVendor } from "@/lib/supabase/vendorQueries";
+import OwnerOnlyNotice from "@/components/shared/OwnerOnlyNotice";
 import type { VendorsRow } from "@/lib/supabase/types";
 
 export default function VendorAgreementPage() {
   const [vendor, setVendor] = useState<VendorsRow | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isSeat, setIsSeat] = useState(false);
 
   useEffect(() => {
     let active = true;
     const supabase = createBrowserSupabase();
     (async () => {
       const v = await fetchCurrentVendor(supabase);
+      const seat = await isSeatForVendor(supabase, v);
       if (!active) return;
       setVendor(v);
+      setIsSeat(seat);
       setLoading(false);
     })();
     return () => {
       active = false;
     };
   }, []);
+
+  if (!loading && isSeat) return <OwnerOnlyNotice what="The agreement and billing" />;
 
   if (loading) {
     return (

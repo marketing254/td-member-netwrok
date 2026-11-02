@@ -19,7 +19,8 @@ import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 import VolunteerActivismOutlinedIcon from "@mui/icons-material/VolunteerActivismOutlined";
 import { PageHeader, SectionCard, StatCard, TagPill, portalText } from "@/components/vendor/PortalUI";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
-import { fetchCurrentVendor } from "@/lib/supabase/vendorQueries";
+import { fetchCurrentVendor, isSeatForVendor } from "@/lib/supabase/vendorQueries";
+import OwnerOnlyNotice from "@/components/shared/OwnerOnlyNotice";
 import type { VendorsRow } from "@/lib/supabase/types";
 import TrialStartCard from "@/components/shared/TrialStartCard";
 import { hasStep, normalizePlan, planAmounts, rampSteps } from "@/lib/billing/partnerPlan";
@@ -45,6 +46,7 @@ const PLAN_LABELS: Record<string, { name: string; cadenceLabel: string }> = {
 
 export default function VendorAccountPage() {
   const [loading, setLoading] = useState(true);
+  const [isSeat, setIsSeat] = useState(false);
   const [vendor, setVendor] = useState<VendorsRow | null>(null);
   const [invoices, setInvoices] = useState<Invoice[] | null>(null);
   const [portalBusy, setPortalBusy] = useState(false);
@@ -55,8 +57,10 @@ export default function VendorAccountPage() {
     const supabase = createBrowserSupabase();
     (async () => {
       const v = await fetchCurrentVendor(supabase);
+      const seat = await isSeatForVendor(supabase, v);
       if (!active) return;
       setVendor(v);
+      setIsSeat(seat);
       setLoading(false);
     })();
     return () => {
@@ -108,6 +112,8 @@ export default function VendorAccountPage() {
       setPortalBusy(false);
     }
   };
+
+  if (!loading && isSeat) return <OwnerOnlyNotice what="Billing, invoices and the card on file" />;
 
   if (loading) {
     return (

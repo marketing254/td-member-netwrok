@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { getStripe, appOrigin, expertPriceIdFor } from "@/lib/stripe";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { requireExpert } from "@/lib/auth/guards";
+import { requireExpertOwner } from "@/lib/auth/guards";
 import { renderFoundingAgreementPdf } from "@/lib/pdf/foundingAgreementPdf";
 import { normalizePlan } from "@/lib/billing/partnerPlan";
 import { PORTAL_AGREEMENT_VERSION, hasSignedFoundingAgreement } from "@/lib/billing/agreementState";
@@ -30,7 +30,7 @@ function hashIp(ip: string): string {
 }
 
 export async function POST(req: Request) {
-  const guard = await requireExpert();
+  const guard = await requireExpertOwner();
   if (!guard.ok) return guard.response;
 
   const body = (await req.json().catch(() => ({}))) as Body;

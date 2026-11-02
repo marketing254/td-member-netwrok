@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { getStripe, appOrigin, partnerPriceIdFor } from "@/lib/stripe";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { requireVendor } from "@/lib/auth/guards";
+import { requireVendorOwner } from "@/lib/auth/guards";
 import { renderFoundingAgreementPdf } from "@/lib/pdf/foundingAgreementPdf";
 import { PORTAL_AGREEMENT_VERSION, hasSignedFoundingAgreement } from "@/lib/billing/agreementState";
 import { sendJoinConfirmationEmail } from "@/lib/email/joinConfirmation";
@@ -36,7 +36,7 @@ function hashIp(ip: string): string {
 }
 
 export async function POST(req: Request) {
-  const guard = await requireVendor();
+  const guard = await requireVendorOwner();
   if (!guard.ok) return guard.response;
 
   const body = (await req.json().catch(() => ({}))) as Body;

@@ -67,11 +67,25 @@ export function useVendorIdentity(): PlaceholderIdentity {
         return;
       }
 
-      const { data: vendorRow } = await supabase
+      let { data: vendorRow } = await supabase
         .from("vendors")
         .select("contact_name, contact_email, display_name")
         .eq("auth_user_id", userData.user.id)
         .maybeSingle();
+      // Team seat (0079): show the seat holder's own name over the company.
+      if (!vendorRow && userData.user.email) {
+        const { data: seat } = await supabase
+          .from("portal_seats")
+          .select("name, vendor_id")
+          .eq("email", userData.user.email.toLowerCase())
+          .not("vendor_id", "is", null)
+          .limit(1)
+          .maybeSingle();
+        if (seat?.vendor_id) {
+          const { data: v } = await supabase.from("vendors").select("display_name").eq("id", seat.vendor_id).maybeSingle();
+          vendorRow = { contact_name: seat.name ?? userData.user.email, contact_email: userData.user.email, display_name: v?.display_name ?? null };
+        }
+      }
 
       if (!active) return;
 

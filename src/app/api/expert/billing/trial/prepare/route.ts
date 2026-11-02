@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { requireExpert } from "@/lib/auth/guards";
+import { requireExpertOwner } from "@/lib/auth/guards";
 import { hasSignedFoundingAgreement } from "@/lib/billing/agreementState";
 
 export const runtime = "nodejs";
@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
  * Mirror of /api/vendor/billing/trial/prepare for the expert bench.
  */
 export async function POST() {
-  const guard = await requireExpert();
+  const guard = await requireExpertOwner();
   if (!guard.ok) return guard.response;
 
   let stripe;

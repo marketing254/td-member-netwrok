@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { resolveCurrentExpert } from "@/lib/supabase/expertQueries";
 import Link from "next/link";
 import {
   Box,
@@ -36,16 +37,15 @@ export default function ExpertDashboardPage() {
     let active = true;
     (async () => {
       const supabase = createBrowserSupabase();
-      const { data: userData } = await supabase.auth.getUser();
-      const email = userData.user?.email?.toLowerCase();
-      if (!email) {
+      const who = await resolveCurrentExpert(supabase);
+      if (!who) {
         if (active) setLoading(false);
         return;
       }
       const { data } = await supabase
         .from("experts")
         .select("*")
-        .eq("email", email)
+        .eq("id", who.expertId)
         .maybeSingle();
       if (!active) return;
       setExpert(data);
