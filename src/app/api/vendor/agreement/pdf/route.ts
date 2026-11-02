@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { requireVendor } from "@/lib/auth/guards";
+import { requireVendorOwner } from "@/lib/auth/guards";
 import { renderFoundingAgreementPdf } from "@/lib/pdf/foundingAgreementPdf";
 import { normalizePlan } from "@/lib/billing/partnerPlan";
 import { PORTAL_AGREEMENT_VERSION } from "@/lib/billing/agreementState";
@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
  * company and price plan (unsigned).
  */
 export async function GET() {
-  const guard = await requireVendor();
+  const guard = await requireVendorOwner();
   if (!guard.ok) return guard.response;
 
   const sb = getSupabaseAdmin();

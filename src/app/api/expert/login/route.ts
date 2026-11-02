@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { seatExpertIdFor } from "@/lib/auth/seats";
 import { createServerSupabase } from "@/lib/supabase/server-ssr";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { checkRateLimit } from "@/lib/waitlist/rateLimit";
@@ -52,11 +53,16 @@ export async function POST(req: Request) {
   // back-door into the expert portal via /expert/login.
   try {
     const adminCheck = getSupabaseAdmin();
-    const { data: expertRow } = await adminCheck
+    let { data: expertRow } = await adminCheck
       .from("experts")
       .select("id, status")
       .eq("email", email)
       .maybeSingle();
+    // Team seat (0079): this email works on an expert profile it does not own.
+    if (!expertRow) {
+      const seatExpertId = await seatExpertIdFor(email);
+      if (seatExpertId) expertRow = (await adminCheck.from("experts").select("id, status").eq("id", seatExpertId).maybeSingle()).data;
+    }
     if (!expertRow) {
       try {
         await adminCheck.from("auth_audit").insert({

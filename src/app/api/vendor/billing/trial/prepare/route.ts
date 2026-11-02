@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { requireVendor } from "@/lib/auth/guards";
+import { requireVendorOwner } from "@/lib/auth/guards";
 import { hasSignedFoundingAgreement } from "@/lib/billing/agreementState";
 
 export const runtime = "nodejs";
@@ -18,7 +18,7 @@ export const dynamic = "force-dynamic";
  * card is confirmed on the client.
  */
 export async function POST() {
-  const guard = await requireVendor();
+  const guard = await requireVendorOwner();
   if (!guard.ok) return guard.response;
 
   let stripe;

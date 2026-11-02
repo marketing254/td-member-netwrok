@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { requireVendor } from "@/lib/auth/guards";
+import { requireVendorOwner } from "@/lib/auth/guards";
 import {
   ALL_PARTNER_PLAN_KEYS,
   appOrigin,
@@ -30,7 +30,7 @@ function isValidPlan(p: unknown): p is PartnerPlanKey {
 }
 
 export async function POST(req: Request) {
-  const guard = await requireVendor();
+  const guard = await requireVendorOwner();
   if (!guard.ok) return guard.response;
 
   const body = (await req.json().catch(() => ({}))) as { plan?: unknown };

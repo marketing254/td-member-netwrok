@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { appOrigin, getStripe } from "@/lib/stripe";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { requireExpert } from "@/lib/auth/guards";
+import { requireExpertOwner } from "@/lib/auth/guards";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
  * Returns 404 if the expert hasn't subscribed yet (no Stripe customer).
  */
 export async function POST() {
-  const guard = await requireExpert();
+  const guard = await requireExpertOwner();
   if (!guard.ok) return guard.response;
 
   const sb = getSupabaseAdmin();

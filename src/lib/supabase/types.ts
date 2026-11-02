@@ -151,6 +151,17 @@ export type VendorApplicationsRow = {
   updated_at: string;
 };
 
+/** Team seats (0079): extra logins for a partner's or an expert's portal. */
+export type PortalSeatsRow = {
+  id: string;
+  email: string;
+  name: string | null;
+  vendor_id: string | null;
+  expert_id: string | null;
+  added_by: string | null;
+  created_at: string;
+};
+
 export type VendorsRow = {
   id: string;
   auth_user_id: string | null;
@@ -1186,6 +1197,7 @@ export type Database = {
       referral_signups: Table<ReferralSignupsRow>;
       lead_magnet_leads: Table<LeadMagnetLeadsRow>;
       founding_invites: Table<FoundingInvitesRow>;
+      portal_seats: Table<PortalSeatsRow>;
     };
     Views: {
       kit_access_counts: View<{

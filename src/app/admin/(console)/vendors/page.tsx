@@ -31,6 +31,7 @@ import PersonAddAlt1OutlinedIcon from "@mui/icons-material/PersonAddAlt1Outlined
 import VpnKeyOutlinedIcon from "@mui/icons-material/VpnKeyOutlined";
 import DomainAddOutlinedIcon from "@mui/icons-material/DomainAddOutlined";
 import AddCompanyDialog from "@/components/admin/AddCompanyDialog";
+import TeamSeats from "@/components/admin/TeamSeats";
 
 type VendorRow = {
   id: string;
@@ -676,6 +677,7 @@ function VendorProfileDialog({
               <TextField label="Description" value={description} onChange={(e) => setDescription(e.target.value)} fullWidth multiline minRows={4} size="small" />
               <TextField label="Website" value={website} onChange={(e) => setWebsite(e.target.value)} fullWidth size="small" />
               <TextField label="Booking / calendar link" value={calendarLink} onChange={(e) => setCalendarLink(e.target.value)} fullWidth size="small" />
+              <TeamSeats vendorId={vendorId} />
             </>
           )}
           {err && <Alert severity="error">{err}</Alert>}

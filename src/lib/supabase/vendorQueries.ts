@@ -57,7 +57,24 @@ export async function fetchCurrentVendor(supabase: Client): Promise<VendorsRow |
     console.error("[vendorQueries] fetchCurrentVendor (email):", byEmail.error);
     return null;
   }
-  return byEmail.data;
+  if (byEmail.data) return byEmail.data;
+
+  // 3. Team seat (0079): this email works in a company it does not own.
+  const seat = await supabase
+    .from("portal_seats")
+    .select("vendor_id")
+    .eq("email", email)
+    .not("vendor_id", "is", null)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (!seat.data?.vendor_id) return null;
+  const bySeat = await supabase.from("vendors").select("*").eq("id", seat.data.vendor_id).maybeSingle();
+  if (bySeat.error) {
+    console.error("[vendorQueries] fetchCurrentVendor (seat):", bySeat.error);
+    return null;
+  }
+  return bySeat.data;
 }
 
 export async function updateCurrentVendor(
@@ -372,4 +389,19 @@ export async function fetchVendorKpis(supabase: Client, vendorId: string): Promi
     pendingOffersCount: offers.filter((o) => o.review_status === "pending_review").length,
     activeOffersCount: offers.filter((o) => o.review_status === "approved").length,
   };
+}
+
+/**
+ * True when the signed-in person is a team seat (0079) for this vendor
+ * rather than the owner. Used to keep billing and the agreement owner-only.
+ */
+export async function isSeatForVendor(supabase: Client, vendor: VendorsRow | null): Promise<boolean> {
+  if (!vendor) return false;
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData.user;
+  if (!user) return false;
+  if (vendor.auth_user_id === user.id) return false;
+  const email = user.email?.toLowerCase();
+  if (email && (vendor.contact_email ?? "").toLowerCase() === email) return false;
+  return true;
 }

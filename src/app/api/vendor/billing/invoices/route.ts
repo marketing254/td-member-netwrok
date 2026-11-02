@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { requireVendor } from "@/lib/auth/guards";
+import { requireVendorOwner } from "@/lib/auth/guards";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -27,7 +27,7 @@ type InvoiceItem = {
 };
 
 export async function GET() {
-  const guard = await requireVendor();
+  const guard = await requireVendorOwner();
   if (!guard.ok) return guard.response;
 
   const sb = getSupabaseAdmin();

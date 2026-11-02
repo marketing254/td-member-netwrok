@@ -50,24 +50,27 @@ import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
 import Logo from "@/components/brand/Logo";
 import NotificationsBell from "@/components/shared/NotificationsBell";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
-import { fetchCurrentVendor } from "@/lib/supabase/vendorQueries";
+import { fetchCurrentVendor, isSeatForVendor } from "@/lib/supabase/vendorQueries";
 import { useAlsoHasRole } from "@/lib/auth/useRoles";
 import type { VendorsRow } from "@/lib/supabase/types";
 import ProfileEditDialog from "@/components/shared/ProfileEditDialog";
 import { checkBillingAccess } from "@/lib/stripe";
 import BillingGate from "@/components/shared/BillingGate";
 
-function useCurrentVendorRow(): { vendor: VendorsRow | null; loading: boolean } {
+function useCurrentVendorRow(): { vendor: VendorsRow | null; loading: boolean; isSeat: boolean } {
   const [vendor, setVendor] = useState<VendorsRow | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isSeat, setIsSeat] = useState(false);
 
   useEffect(() => {
     let active = true;
     const supabase = createBrowserSupabase();
     (async () => {
       const v = await fetchCurrentVendor(supabase);
+      const seat = await isSeatForVendor(supabase, v);
       if (!active) return;
       setVendor(v);
+      setIsSeat(seat);
       setLoading(false);
     })();
     return () => {
@@ -75,8 +78,11 @@ function useCurrentVendorRow(): { vendor: VendorsRow | null; loading: boolean } 
     };
   }, []);
 
-  return { vendor, loading };
+  return { vendor, loading, isSeat };
 }
+
+// Pages a team seat (0079) never sees: billing, the agreement, the card.
+const OWNER_ONLY_HREFS = new Set(["/vendor/account", "/vendor/agreement"]);
 
 function initialsFromName(s: string | null | undefined): string {
   const t = (s ?? "").trim();
@@ -112,10 +118,13 @@ function SidebarContent({
   onEditProfile,
   avatarUrl,
   onTour,
+  isSeat = false,
 }: {
   pathname: string;
   collapsed: boolean;
   vendor: VendorsRow | null;
+  /** Team seat (0079): owner-only pages are hidden from the nav. */
+  isSeat?: boolean;
   onClose?: () => void;
   onEditProfile: () => void;
   avatarUrl?: string | null;
@@ -289,7 +298,7 @@ function SidebarContent({
           </Typography>
         )}
         <Stack spacing={0.25}>
-          {navItems.map((item) => {
+          {navItems.filter((item) => !isSeat || !OWNER_ONLY_HREFS.has(item.href)).map((item) => {
             const Icon = item.icon;
             const active =
               item.href === "/vendor"
@@ -522,7 +531,7 @@ export default function VendorAppShell({ children }: { children: React.ReactNode
 
   // Live vendor row — replaces the old mock import. Used by both the sidebar
   // identity card and the top-right user menu so they always agree.
-  const { vendor: currentVendor } = useCurrentVendorRow();
+  const { vendor: currentVendor, isSeat } = useCurrentVendorRow();
   const alsoExpert = useAlsoHasRole("expert");
   const tour = usePortalTour("partner", currentVendor?.id);
 
@@ -583,6 +592,7 @@ export default function VendorAppShell({ children }: { children: React.ReactNode
           }}
         >
           <SidebarContent
+            isSeat={isSeat}
             pathname={pathname}
             collapsed={collapsed}
             vendor={currentVendor}
@@ -604,6 +614,7 @@ export default function VendorAppShell({ children }: { children: React.ReactNode
           slotProps={{ paper: { sx: { width: SIDEBAR_W_EXPANDED, border: "none" } } }}
         >
           <SidebarContent
+            isSeat={isSeat}
             pathname={pathname}
             collapsed={false}
             vendor={currentVendor}

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { seatVendorIdFor } from "@/lib/auth/seats";
 import { createServerSupabase } from "@/lib/supabase/server-ssr";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import {
@@ -127,11 +128,16 @@ export async function POST(req: Request) {
     // back-door into the partner portal via /vendor/login.
     try {
       const adminCheck = getSupabaseAdmin();
-      const { data: vendorRow } = await adminCheck
+      let { data: vendorRow } = await adminCheck
         .from("vendors")
         .select("id, status")
         .eq("contact_email", email)
         .maybeSingle();
+      // Team seat (0079): this email works in a company it does not own.
+      if (!vendorRow) {
+        const seatVendorId = await seatVendorIdFor(email);
+        if (seatVendorId) vendorRow = (await adminCheck.from("vendors").select("id, status").eq("id", seatVendorId).maybeSingle()).data;
+      }
       if (!vendorRow) {
         try {
           await adminCheck.from("auth_audit").insert({

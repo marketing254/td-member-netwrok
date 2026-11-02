@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { resolveCurrentExpert } from "@/lib/supabase/expertQueries";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -69,17 +70,17 @@ type CurrentExpert = Pick<
   | "billing_exempt"
 >;
 
-function useCurrentExpert(): { expert: CurrentExpert | null; loading: boolean } {
+function useCurrentExpert(): { expert: CurrentExpert | null; loading: boolean; isSeat: boolean } {
   const [expert, setExpert] = useState<CurrentExpert | null>(null);
+  const [isSeat, setIsSeat] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
     (async () => {
       const supabase = createBrowserSupabase();
-      const { data: userData } = await supabase.auth.getUser();
-      const email = userData.user?.email?.toLowerCase();
-      if (!email) {
+      const who = await resolveCurrentExpert(supabase);
+      if (!who) {
         if (active) setLoading(false);
         return;
       }
@@ -88,10 +89,11 @@ function useCurrentExpert(): { expert: CurrentExpert | null; loading: boolean } 
         .select(
           "id, email, full_name, display_name, specialty, status, headshot_url, months_in_program, subscription_status, stripe_subscription_id, billing_exempt",
         )
-        .eq("email", email)
+        .eq("id", who.expertId)
         .maybeSingle();
       if (!active) return;
       setExpert(data);
+      setIsSeat(who.isSeat);
       setLoading(false);
     })();
     return () => {
@@ -99,7 +101,7 @@ function useCurrentExpert(): { expert: CurrentExpert | null; loading: boolean } 
     };
   }, []);
 
-  return { expert, loading };
+  return { expert, loading, isSeat };
 }
 
 function initials(name: string | null | undefined): string {
@@ -285,7 +287,7 @@ export default function ExpertAppShell({ children }: { children: React.ReactNode
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuAnchor = useRef<HTMLButtonElement | null>(null);
   const router = useRouter();
-  const { expert } = useCurrentExpert();
+  const { expert, isSeat } = useCurrentExpert();
   const alsoVendor = useAlsoHasRole("vendor");
   const tour = usePortalTour("expert", expert?.id);
 
@@ -354,7 +356,7 @@ export default function ExpertAppShell({ children }: { children: React.ReactNode
             {/* CENTER — desktop nav */}
             {showDesktopNav && (
               <Box sx={{ flex: 1, minWidth: 0, display: "flex", justifyContent: "center", overflow: "hidden" }}>
-                <NavTabs pathname={pathname} hideBilling={!!expert?.billing_exempt} />
+                <NavTabs pathname={pathname} hideBilling={!!expert?.billing_exempt || isSeat} />
               </Box>
             )}
 
@@ -534,7 +536,7 @@ export default function ExpertAppShell({ children }: { children: React.ReactNode
             pathname={pathname}
             expanded
             onNavigate={() => setDrawerOpen(false)}
-            hideBilling={!!expert?.billing_exempt}
+            hideBilling={!!expert?.billing_exempt || isSeat}
           />
           <Box
             component="button"

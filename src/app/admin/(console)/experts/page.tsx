@@ -1,5 +1,6 @@
 "use client";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import TeamSeats from "@/components/admin/TeamSeats";
 import { useSearchParams } from "next/navigation";
 import {
   Alert,
@@ -666,6 +667,7 @@ function ExpertProfileDialog({
               <TextField label="Bio" value={bio} onChange={(e) => setBio(e.target.value)} fullWidth multiline minRows={4} size="small" />
               <TextField label="Website" value={website} onChange={(e) => setWebsite(e.target.value)} fullWidth size="small" />
               <TextField label="Booking link" value={bookingLink} onChange={(e) => setBookingLink(e.target.value)} fullWidth size="small" />
+              <TeamSeats expertId={expertId} />
             </>
           )}
           {err && <Alert severity="error">{err}</Alert>}

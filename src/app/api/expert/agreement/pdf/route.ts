@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { requireExpert } from "@/lib/auth/guards";
+import { requireExpertOwner } from "@/lib/auth/guards";
 import { renderFoundingAgreementPdf } from "@/lib/pdf/foundingAgreementPdf";
 import { normalizePlan } from "@/lib/billing/partnerPlan";
 import { PORTAL_AGREEMENT_VERSION } from "@/lib/billing/agreementState";
@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
  * combined Expert + Partner agreement, as before.
  */
 export async function GET() {
-  const guard = await requireExpert();
+  const guard = await requireExpertOwner();
   if (!guard.ok) return guard.response;
 
   const sb = getSupabaseAdmin();
