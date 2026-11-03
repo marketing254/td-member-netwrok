@@ -75,7 +75,8 @@ export const CHAIRSIDE_SHOW = {
   spotify: "https://open.spotify.com/show/516IE8CAHEPsjAXGHle8wN",
   apple: "https://podcasts.apple.com/us/podcast/chairside/id6826901944",
   youtube: "https://www.youtube.com/playlist?list=PLCf87RQppfqQ",
-  trailerYoutubeUrl: "https://youtu.be/XWUaGKazPe8",
+  // Episode 2 trailer (Lester, 3 Nov 2026); the Episode 1 trailer was https://youtu.be/XWUaGKazPe8.
+  trailerYoutubeUrl: "https://youtu.be/rHaCLPuTro8",
 };
 
 /** The navy members box at the bottom of /chairside (Lester, 27 Oct 2026). */
