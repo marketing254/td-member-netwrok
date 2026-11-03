@@ -132,15 +132,19 @@ export const CHAIRSIDE_EPISODES: ChairsideEpisode[] = [
       bio: "Julie Parker began her career as a dental assistant and owned a dental practice in Australia for ten years, from 2003, before becoming a dental practice management consultant. She co-founded Dental Business Mastery with Ameena Basile, and she is an accredited practitioner of the Being Framework.",
     },
     host: "Hosted by Don Adeesha",
-    // Lester, 3 Nov 2026: the YouTube, Spotify and Apple links arrive once the
-    // video is scheduled. Until youtubeUrl is set the page stays hidden
-    // (isEpisodeLive) and the Just dropped card is left out.
-    publicVideo: { youtubeUrl: null, minutes: 22 },
+    // Lester + Chamal, 3 Nov 2026: YouTube and Spotify go public by themselves
+    // at 6:00 am New York; Apple picks the episode up from Spotify within hours
+    // (the show page stays the same).
+    publicVideo: { youtubeUrl: "https://youtu.be/xcRCT9oA2q8", minutes: 22 },
     publicAudio: {
       src: "https://jbntnrtnaqigsyzgvuyv.supabase.co/storage/v1/object/public/kit-thumbnails/chairside/ep2/public-episode-22min.mp3",
       minutes: 22,
     },
-    listen: { spotify: null, apple: null, youtube: null },
+    listen: {
+      spotify: "https://open.spotify.com/episode/7hT1GaZJsBfZ887PpRPM9y",
+      apple: "https://podcasts.apple.com/us/podcast/chairside/id6826901944",
+      youtube: "https://youtu.be/xcRCT9oA2q8",
+    },
     cardImage: { src: "/chairside/ep2/episode-cover.jpg", alt: "Chairside episode 2, Nice or kind: the conversation you keep putting off, with Julie Parker" },
     cardSummary: "Julie Parker on the conversation every owner keeps putting off: why nice is not kind, and how to make it kind, step by step.",
     cover: {
