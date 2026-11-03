@@ -29,10 +29,17 @@ export async function GET(req: Request) {
     .select(
       "id, topic_slug, topic_title, topic_summary, category, portal_card_url, resource_card_url, title, description, kind, storage_path, external_url, thumbnail_url, mime_type, file_size_bytes, duration_label, position, is_free, is_published, created_at, kit_type, book_club_payload, episode_payload, originating_expert_id",
     )
-    .eq("is_published", true)
-    .eq("submission_status", "approved")
     .order("topic_slug", { ascending: true })
     .order("position", { ascending: true });
+  // Local preview (npm run dev): a Chairside episode that is still hidden
+  // (imported, waiting for its go-live time) shows in the local portal so
+  // it can be checked first. Production always requires published + approved.
+  const previewHidden = process.env.NODE_ENV === "development";
+  if (previewHidden) {
+    query = query.or("and(is_published.eq.true,submission_status.eq.approved),kit_type.eq.chairside");
+  } else {
+    query = query.eq("is_published", true).eq("submission_status", "approved");
+  }
 
   if (topicSlug) query = query.eq("topic_slug", topicSlug);
   if (expertId) query = query.eq("originating_expert_id", expertId);

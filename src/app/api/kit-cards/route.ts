@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { serverError } from "@/lib/api/errorResponse";
+import { getChairsideEpisode, isEpisodeLive } from "@/lib/chairside";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -37,8 +38,14 @@ export async function GET() {
     for (const r of data ?? []) {
       if (seen.has(r.topic_slug) || !r.portal_card_url) continue;
       const isEpisode = (r as { kit_type?: string | null }).kit_type === "chairside";
-      // While the Chairside switch is off the episode is left out entirely.
-      if (isEpisode && !chairsideOn) continue;
+      // While the Chairside switch is off the episode is left out entirely,
+      // and so is an episode whose public page is not live yet (no YouTube
+      // link or before its go-live time): the card would 404.
+      if (isEpisode) {
+        if (!chairsideOn) continue;
+        const ep = getChairsideEpisode(r.topic_slug);
+        if (!ep || !isEpisodeLive(ep)) continue;
+      }
       seen.add(r.topic_slug);
       kits.push({
         slug: r.topic_slug,
