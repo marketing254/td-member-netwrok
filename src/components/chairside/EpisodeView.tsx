@@ -295,7 +295,7 @@ export default function EpisodeView({ episode }: { episode: ChairsideEpisode }) 
                   <Typography sx={{ fontSize: "0.95rem", color: INK_SOFT, lineHeight: 1.65, mb: 1.5 }}>{episode.guest.bio}</Typography>
                   <Stack direction="row" spacing={2.5} sx={{ flexWrap: "wrap", rowGap: 0.5 }}>
                     {episode.guest.expertProfileHref && (
-                      <Box component={Link} href={episode.guest.expertProfileHref} sx={guestLinkSx}>His DMN expert page →</Box>
+                      <Box component={Link} href={episode.guest.expertProfileHref} sx={guestLinkSx}>DMN expert page →</Box>
                     )}
                     {episode.guest.website && (
                       <Box component="a" href={episode.guest.website} target="_blank" rel="noopener noreferrer" sx={guestLinkSx}>
@@ -335,6 +335,21 @@ export default function EpisodeView({ episode }: { episode: ChairsideEpisode }) 
                   Join the Dental Member Network
                 </Button>
               </Box>
+
+              {/* The written invitation to experts and companies (Lester, 3 Nov
+                  2026): the host now speaks only to practice owners at the end
+                  of each episode, so this line carries the other two. */}
+              <Typography sx={{ fontSize: "0.88rem", color: INK_SOFT, lineHeight: 1.6, px: { xs: 0.5, md: 1 } }}>
+                Help dental practices with what you know? Experts:{" "}
+                <Box component={Link} href="/experts" sx={{ color: GOLD, fontWeight: 700, textDecoration: "underline", textUnderlineOffset: 3 }}>
+                  dentalmembernetwork.com/experts
+                </Box>
+                . Companies:{" "}
+                <Box component={Link} href="/partners" sx={{ color: GOLD, fontWeight: 700, textDecoration: "underline", textUnderlineOffset: 3 }}>
+                  dentalmembernetwork.com/partners
+                </Box>
+                .
+              </Typography>
 
               {episode.relatedArticle && (
                 <Box component={Link} href={episode.relatedArticle.href} sx={{ display: "block", p: { xs: 2.5, md: 3 }, borderRadius: 4, bgcolor: "#FFFFFF", border: `1px solid ${LINE}`, textDecoration: "none", "&:hover": { borderColor: GOLD_BRIGHT } }}>
