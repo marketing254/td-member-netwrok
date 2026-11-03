@@ -114,6 +114,475 @@ export const BLOG_INDEX_STANDFIRST =
 
 /** Launch order per the build brief: Gary → Ashley → James. */
 export const BLOG_ARTICLES: BlogArticle[] = [
+  // ── Blog week 2 (Lester, build list 2026-11-02). Addresses LOCKED. Copy
+  // verbatim from the post folders in "2026-11-02 - Week 2". Date-gated.
+  // ── Week 2 · post 1 · Wed 4 Nov 2026 ──────────────────────────────────
+  {
+    slug: "is-a-dental-practice-worth-buying",
+    title: "Is a Dental Practice Worth Buying? Perrin DesPortes's Checks Before You Make an Offer",
+    metaTitle: "Is a Dental Practice Worth Buying? 5 Checks Before an Offer",
+    metaDescription:
+      "Perrin DesPortes's checks before you buy a dental practice: the fit, the operatories, the margin, the equipment, and how you will improve it.",
+    excerpt:
+      "Before you make an offer on a dental practice, Perrin DesPortes checks four things: the fit, the chairs, the numbers and the equipment. And he asks one question most buyers skip: how will you improve it?",
+    category: "Practice Transitions",
+    dek: "Before you make an offer on a dental practice, Perrin DesPortes checks four things: the fit, the chairs, the numbers and the equipment. And he asks one question most buyers skip: how will you improve it?",
+    expert: {
+      name: "Perrin DesPortes",
+      role: "Founder, The Next Level Executive",
+      headshotUrl: "/blog/is-a-dental-practice-worth-buying-headshot.jpg",
+      profileHref: "/experts/06a8a085-d8f4-4b89-8a37-4c60b2c92c97",
+      website: "thenextlevelexecutive.com",
+      sourceLine:
+        "*Expert guidance from Perrin DesPortes. Source: his answers on a live Insurance Untangled panel for practice owners, and his DMN Practice Playbook, Buy It to Improve It.*",
+      bio: "Perrin DesPortes is an executive coach and the founder of The Next Level Executive, working with dentists who are looking to build group practices, lead their business to greater heights and become more effective executives. He brings 15 years of corporate leadership experience to the emerging group practice space, and hosts the Next Level Executive podcast for owners growing from clinician to CEO.",
+    },
+    spotlightQuote: { text: "Nobody buys a practice to simply maintain it." },
+    shareImage: { src: "/blog/is-a-dental-practice-worth-buying-share.png", alt: "Perrin DesPortes" },
+    publishAt: "2026-11-04",
+    kitSlug: "buy-it-to-improve-it",
+    hero: { src: "/blog/is-a-dental-practice-worth-buying-hero.png", alt: "Perrin DesPortes" },
+    readTime: "5 minute read",
+    datePublished: "2026-11-04",
+    dateModified: "2026-11-04",
+    quickAnswer:
+      "A dental practice is worth buying when it fits the practice you already run, has enough operatories for more than one dentist, earns a healthy margin after paying the doctor, and has equipment that has been checked by someone independent. Above all, you need a clear plan to improve it. Perrin DesPortes, an executive coach for dentists building group practices, is blunt about that last part: \"So if you buy a business and you have no idea how you're going to improve it and you have no idea how you're going to generate additional revenues off the top end of it, you shouldn't do it.\"",
+    body: [
+      {
+        kind: "p",
+        text: "[Perrin DesPortes](/experts/06a8a085-d8f4-4b89-8a37-4c60b2c92c97) starts with a warning about why owners go shopping in the first place. Their first practice is stable, the dentistry is good, and it throws off cash. Then, in his words, \"they get bored. And bored people make bad business decisions, typically speaking.\"",
+      },
+      { kind: "p", text: "So before anyone falls in love with a listing, he works through a short set of checks." },
+      { kind: "spotlight" },
+      { kind: "h2", id: "the-fit", text: "Does this practice fit the one you already run?", toc: "The fit" },
+      {
+        kind: "p",
+        text: "\"Just because it's a dental practice doesn't mean you should buy it.\" Perrin's first check is whether the practice for sale is the same kind of business as yours.",
+      },
+      {
+        kind: "p",
+        text: "His example is payer mix. If you run a high-end fee-for-service office with a little insurance, and the practice for sale is mostly insurance with some Medicaid, \"that's a completely different business than what you're operating.\" The way you run your first office will not simply carry over.",
+      },
+      {
+        kind: "p",
+        text: "He covers the fit question in more depth, along with cash and family, in our article on [whether your dental practice is ready for a second location](/blog/dental-practice-second-location).",
+      },
+      { kind: "h2", id: "operatories", text: "How many operatories does it have?", toc: "The operatories" },
+      {
+        kind: "p",
+        text: "Perrin's view is that \"all acquisitions are a combination of cash flow and risk at the end of the day.\" You want the cash flow to be steady and the risk to you, as the new owner, kept as low as you can.",
+      },
+      {
+        kind: "p",
+        text: "That is why he looks past the revenue and profit lines first: \"the first thing you should look at beyond top line revenue and beyond bottom line profitability is capacity.\"",
+      },
+      {
+        kind: "p",
+        text: "In general dentistry, he explains that a practice with five or fewer operatories can only have one dentist working at a time. \"And that means you have something called provider risk.\" If that dentist has a health scare, quits or has to be let go, \"it's probably going to be a dark revenue day.\"",
+      },
+      { kind: "p", text: "His preference is six or more operatories, with room for more than one dentist to work at the same time." },
+      { kind: "h2", id: "the-numbers", text: "What do the numbers look like after the doctor is paid?", toc: "The numbers" },
+      {
+        kind: "p",
+        text: "Perrin uses two benchmarks for a general dentistry practice. These are his figures, as he gave them on the panel.",
+      },
+      {
+        kind: "ul",
+        items: [
+          "**Margin.** He looks at operating profit after the doctor's pay is taken out (what group practices call EBITDA). In general dentistry, he says, that is \"somewhere between about 18 and 25%.\"",
+          "**Use of the chairs.** He measures the revenue each chair brings in for every hour the practice is open. For general dentistry, he puts it at \"somewhere between about 125 to 175 dollars per chair per hour.\"",
+        ],
+      },
+      {
+        kind: "p",
+        text: "When a practice has the chairs, sits in that range on both, and does solid everyday dentistry, his verdict is simple: \"that's probably a pretty good business.\"",
+      },
+      {
+        kind: "p",
+        text: "He also reminds buyers how little room there is for error. \"These businesses operate on razor-thin operating income margins.\" Once you add the loan payments, a practice that looked fine on paper can leave very little cash.",
+      },
+      { kind: "h2", id: "the-equipment", text: "Has anyone independent checked the equipment?", toc: "The equipment" },
+      {
+        kind: "p",
+        text: "This is the check Perrin says buyers skip most often. When a senior dentist sells on the way out of the profession, \"the likelihood is that they have not made any capital reinvestments in the business for quite some time.\" It becomes the buyer's problem on day one.",
+      },
+      {
+        kind: "p",
+        text: "His advice is to have an independent service technician, or one from a dental supply company, do an operational assessment of everything in the office before you buy.",
+      },
+      {
+        kind: "p",
+        text: "He tells the story of a buyer who found out three months in that the digital pan was close to the end of its life and had to be replaced soon after the purchase. \"That's completely avoidable.\"",
+      },
+      {
+        kind: "p",
+        text: "His question for any buyer: \"So if you're not doing any type of due diligence clinically, operationally, or financially, then what are you buying?\"",
+      },
+      { kind: "h2", id: "the-income-dip", text: "Can you afford the dip in your income?", toc: "The income dip" },
+      {
+        kind: "p",
+        text: "Adding a practice usually costs the owner money before it makes money. \"The likelihood is you're going to take an income hit to do it,\" Perrin says. \"The question is how much of an income hit and for how long?\"",
+      },
+      {
+        kind: "p",
+        text: "So his first question to anyone thinking about another location is about cash reserves, and how much they can draw on when there is a slow patch. If that has not been planned, \"the bank will get paid, you might not.\"",
+      },
+      {
+        kind: "p",
+        text: "Laura Phillips explains why cash in the bank and profit are not the same thing in [is your dental practice profitable, or is there just money in the bank?](/blog/dental-practice-cash-vs-profit)",
+      },
+      { kind: "h2", id: "staffing", text: "Can you staff it?", toc: "Staffing it" },
+      {
+        kind: "p",
+        text: "A growing group keeps needing dentists. Perrin's view: \"you are in the recruiting business, whether you realize it or not, whether you embrace that or not.\"",
+      },
+      {
+        kind: "p",
+        text: "He suggests keeping a list of good candidates at all times, including dentists who are happily employed elsewhere today. And when you talk pay, talk in income, because a percentage alone means little to an associate. As he puts it, \"You can't spend a comp rate.\"",
+      },
+      { kind: "h2", id: "improve-it", text: "How will you improve it?", toc: "How you will improve it" },
+      {
+        kind: "p",
+        text: "Every check above leads back to this one. \"Nobody buys a practice to simply maintain it.\" Perrin wants a buyer to be able to name, before the offer, where the extra revenue will come from and where the costs can come down, ideally both.",
+      },
+      {
+        kind: "p",
+        text: "If you do buy, our article on [changing systems after buying a dental practice](/blog/change-systems-after-buying-dental-practice) covers what comes next.",
+      },
+    ],
+    faqs: [
+      {
+        q: "How do I know if a dental practice is worth buying?",
+        a: "Perrin DesPortes checks whether it fits the practice you already run, whether it has six or more operatories, whether its margin and revenue per chair hour are in a healthy range, and whether independent checks of the equipment and books came back clean. Then he asks whether you know exactly how you will improve it.",
+      },
+      {
+        q: "What margin should a general dental practice have?",
+        a: "In Perrin's experience, operating profit after doctor pay is somewhere between about 18 and 25% in general dentistry. These are his benchmarks, not a rule, and your accountant should look at the specific practice.",
+      },
+      {
+        q: "Why does the number of operatories matter when buying a practice?",
+        a: "With five or fewer, usually only one dentist can work at a time. Perrin calls that provider risk: if that dentist is ill or leaves, the practice has a day with no revenue.",
+      },
+      {
+        q: "What do buyers most often forget to check?",
+        a: "The equipment. Perrin recommends an independent operational assessment of everything in the office, because a seller close to retirement has often stopped reinvesting.",
+      },
+    ],
+    takeaway: {
+      eyebrow: "The takeaway",
+      title: "Buy a practice you know how to improve.",
+      body: "Check the fit, the chairs, the numbers and the equipment before you make an offer. If you cannot say how the practice will earn more or cost less under you, keep looking.",
+    },
+    kitCta: {
+      kitName: "Buy It to Improve It",
+      eyebrowOverride: "Practice Playbook · Action guide · Practice Transitions",
+      titleOverride: "Buy It to Improve It",
+      description:
+        "Perrin DesPortes's complete Practice Playbook inside the Dental Member Network, plus four more of his playbooks on adding a location, partnerships and leading a group.",
+      support: "Get Perrin DesPortes's complete Buy It to Improve It Practice Playbook inside the Dental Member Network.",
+      href: "/join/member",
+      label: "Join Dental Member Network",
+    },
+  },
+  // ── Week 2 · post 2 · Wed 4 Nov 2026 (asked for Thu 5 Nov, or earlier if
+  // possible) · with Chairside Episode 2 ──────────────────────────────────
+  {
+    slug: "difficult-conversation-dental-employee",
+    title: "How to Have a Difficult Conversation With a Dental Employee: Julie Parker on Nice or Kind",
+    metaTitle: "Difficult Conversation With a Dental Employee: Nice or Kind",
+    metaDescription:
+      "Julie Parker on the conversation you keep putting off: why nice is not kind, what to say, and how a dental owner makes the stakes clear without a fight.",
+    excerpt:
+      "Julie Parker owned a dental practice for ten years and still remembers her hands shaking in her first hard talk with a team member. On Chairside she explains the difference between nice and kind, and how to have the conversation you keep putting off.",
+    category: "Team & Culture",
+    dek: "Julie Parker owned a dental practice for ten years and still remembers her hands shaking in her first hard talk with a team member. On Chairside she explains the difference between nice and kind, and how to have the conversation you keep putting off.",
+    expert: {
+      name: "Julie Parker",
+      role: "Co-founder, Dental Business Mastery",
+      headshotUrl: "/blog/difficult-conversation-dental-employee-headshot.jpg",
+      profileHref: "/experts/e49a90a8-7edb-4d2a-b688-57d477065b44",
+      website: "dentalbusinessmastery.com.au",
+      sourceLine:
+        "*Expert guidance from Julie Parker. Source: [Chairside Episode 2, Nice or Kind: the Conversation You Keep Putting Off](/chairside/nice-or-kind). Watch the 20-minute episode above.*",
+      bio: "I'm the co-founder of Dental Business Mastery, and I was also the first non-dentist to own a dental practice in Australia, running it for ten years before I moved into coaching and consulting full time. These days I work alongside practice owners and managers to help them build teams that actually want to be there, and practices that run well without everything resting on one person's shoulders. I'm big on constant improvement, mine included, and I love watching a practice manager go from overwhelmed to genuinely in control.",
+    },
+    spotlightQuote: { text: "The other side of a difficult conversation is solution, is ease." },
+    shareImage: { src: "/blog/difficult-conversation-dental-employee-share.png", alt: "Julie Parker" },
+    publishAt: "2026-11-04",
+    kitSlug: "nice-or-kind",
+    hero: { src: "/blog/difficult-conversation-dental-employee-hero.png", alt: "Julie Parker" },
+    readTime: "5 minute read",
+    datePublished: "2026-11-04",
+    dateModified: "2026-11-04",
+    quickAnswer:
+      "To have a difficult conversation with a dental employee, go in knowing what success looks like: the team member leaves clear on what is expected, clear on what is at stake, and clear on the next steps. Julie Parker, co-founder of Dental Business Mastery, calls putting it off the nice choice and having it the kind one. In her words, kind \"would have been telling them exactly what was at stake.\"",
+    body: [
+      // [[VIDEO]]: the public episode (Lester, 3 Nov 2026).
+      { kind: "video", youtubeUrl: "https://youtu.be/xcRCT9oA2q8", title: "Chairside Episode 2: Nice or kind, the conversation you keep putting off" },
+      {
+        kind: "p",
+        text: "[Julie Parker](/experts/e49a90a8-7edb-4d2a-b688-57d477065b44) started as a dental assistant and went on to own a practice in Australia for ten years before she became a practice management consultant.",
+      },
+      {
+        kind: "p",
+        text: "Early on, she says, the business books she read taught her one thing about leading a team: \"If I was going to go down this path of being the nicest boss I could be to the people that work for me, it was going to hinder my success, and it was going to make life hard for them as well.\"",
+      },
+      { kind: "spotlight" },
+      { kind: "h2", id: "nice-or-kind", text: "What is the difference between being nice and being kind?", toc: "Nice or kind" },
+      { kind: "p", text: "Nice protects how everyone feels in the moment. Kind protects the person's future, and the team's." },
+      {
+        kind: "p",
+        text: "Julie tells the story of a manager who kept having gentle conversations with a team member whose work was slipping. Then the manager's own boss stepped in and let the employee go. Only then did the manager see that she had been nice when she needed to be kind. In Julie's words, \"Kind would have been having a more difficult, confronting, potentially upsetting conversation.\"",
+      },
+      {
+        kind: "p",
+        text: "She ties this to psychological safety. The part owners miss, she says, is that the team expects you to protect the practice's standards. \"A psychologically safe working environment means that we are addressing that problem as early as possible.\"",
+      },
+      { kind: "h2", id: "choosing-nice", text: "What happens when an owner keeps choosing nice?", toc: "Choosing nice" },
+      {
+        kind: "p",
+        text: "Julie describes a practice she has worked with for a long time. The owner is a very nice person and a good businessman who wanted his team well looked after. When team members had children, he let them come back two days a week. When another needed to leave by three every day, he said yes to that too.",
+      },
+      {
+        kind: "p",
+        text: "Each yes made sense on its own. Twelve years later, the team was fracturing. Others were carrying the load, and gaps opened in the systems. Julie's summary: \"to be nice is to be accommodating, but to not see that bigger picture and how it's going to impact things as time rolls on.\"",
+      },
+      {
+        kind: "p",
+        text: "Now the owner is having much harder conversations with angry team members, and his feeling is a familiar one: \"But I was trying to do the right thing.\"",
+      },
+      { kind: "h2", id: "a-b-c-players", text: "Why does one disengaged team member matter so much?", toc: "A, B and C players" },
+      {
+        kind: "p",
+        text: "Julie sorts a team into three kinds of player. A players are reliable and bring ideas. B players are reliable but keep to themselves. C players are \"actively disengaged\": often late, chased for their checklists, and talking about the boss behind their back.",
+      },
+      {
+        kind: "p",
+        text: "A and B players work happily together. The C player is the problem. \"If a C-type player is tolerated with an organization, The A-type players will quit.\"",
+      },
+      {
+        kind: "p",
+        text: "Her rule for a practice is the same as for any clinical standard: \"Our standard here is that we only employ B and A-type players.\" Someone who is working as a C player is helped to move up, or helped out. As she puts it, \"what you tolerate, you get.\"",
+      },
+      { kind: "h2", id: "step-by-step", text: "How do you have the conversation, step by step?", toc: "Step by step" },
+      {
+        kind: "p",
+        text: "Julie's first step happens before the meeting. Decide what success looks like when the meeting ends. For her, it is nearly always the same: \"I want to be able to have that employee walk away from this meeting. Being very clear of what their expectations on them are. Being very clear that if they don't meet expectation, that it does mean their job.\"",
+      },
+      { kind: "p", text: "Then they need action steps, so they know exactly what to do next." },
+      {
+        kind: "p",
+        text: "She borrows a line from Brené Brown to keep the message honest: \"To be clear is to be kind. To be unclear is to be unkind.\" A message softened too far stops being clear, and that leaves the employee guessing.",
+      },
+      {
+        kind: "p",
+        text: "In the full episode, Julie walks through the rest of the meeting: how she opens it, the share of responsibility she takes on herself, and what she says when someone becomes defensive. Members can watch the full hour inside the Dental Member Network, and the public episode is on [its Chairside page](/chairside/nice-or-kind). For more on giving feedback, see our article on [difficult feedback for dental teams](/blog/difficult-feedback-dental-team).",
+      },
+      { kind: "h2", id: "practice-manager", text: "Can you hand hard conversations to a practice manager?", toc: "Handing it to a manager" },
+      {
+        kind: "p",
+        text: "Some owners plan to stay a silent boss and let a manager do it. Julie is not a fan: \"I think it's a cop-out. But secondly, I think you are doing yourself a disservice.\" If you have never had these conversations yourself, you will have nothing to offer your manager when one goes badly.",
+      },
+      {
+        kind: "p",
+        text: "She remembers her own first one, a few months into owning her practice. \"I'd lost two nights sleep the night before fretting about this conversation.\" In the meeting, \"my hands were actually shaking to the point where I said, I know my hands are shaking, it's just because I'm nervous about this conversation.\"",
+      },
+      {
+        kind: "p",
+        text: "She went ahead because the team member had verbally attacked a colleague, and \"my value around protecting that other team member was stronger than my desire to not have that difficult conversation.\" That person resigned soon after. The next conversation was a little easier, and the one after that easier again.",
+      },
+      {
+        kind: "p",
+        text: "\"The other side of a difficult conversation is solution, is ease,\" Julie says. And \"it doesn't take that many of them to become very comfortable with them, and that empowers you.\"",
+      },
+      { kind: "h2", id: "short-of-hygienists", text: "What if you are short of hygienists?", toc: "Short of hygienists" },
+      {
+        kind: "p",
+        text: "Julie's advice for a short-staffed practice is to look at your own workplace first. Ask hygienists who used to work for you what you could do better, then ask the ones you have now. \"So create hygienist heaven in your working environment.\" Our article on [hiring dental staff when you're short-staffed](/blog/hire-dental-staff-under-pressure) has more ideas.",
+      },
+    ],
+    faqs: [
+      {
+        q: "How do I start a difficult conversation with a dental employee?",
+        a: "Julie Parker suggests deciding the outcome first: the team member should leave clear on what is expected, clear on what is at stake, and clear on the next steps. Then plan the meeting to get there.",
+      },
+      {
+        q: "Is it unkind to tell an employee their job is at risk?",
+        a: "In Julie's view it is the kind thing to do. Kind, she says, \"would have been telling them exactly what was at stake.\" Keeping it vague only feels kinder in the moment.",
+      },
+      {
+        q: "What does nice versus kind mean in a dental practice?",
+        a: "Nice keeps everyone comfortable today. Kind tells the truth so the person, and the rest of the team, can do well over time.",
+      },
+      {
+        q: "What if I am nervous about these conversations?",
+        a: "Julie was too. Her hands shook in her first one, and each one after it got easier.",
+      },
+    ],
+    takeaway: {
+      eyebrow: "The takeaway",
+      title: "Be kind enough to be clear.",
+      body: "Choose one conversation you have been putting off. Before you have it, write down what the team member should be clear on when they leave the room. Then, as Julie suggests for this week, \"Be curious about what the reality for your team members are.\"",
+    },
+    kitCta: {
+      kitName: "Nice or kind",
+      eyebrowOverride: "Chairside · Episode 2 · Team & Culture",
+      titleOverride: "Nice or kind",
+      description:
+        "Members get the full one-hour episode with Julie Parker, the Monday page for the conversation you have been putting off, and her Nice Is Not Kind Practice Playbook.",
+      support: "Watch the full Chairside episode with Julie Parker and get her Nice Is Not Kind Practice Playbook inside the Dental Member Network.",
+      href: "/join/member",
+      label: "Join Dental Member Network",
+    },
+  },
+  // ── Week 2 · post 3 · Fri 6 Nov 2026 ──────────────────────────────────
+  {
+    slug: "dental-patient-late-for-appointment",
+    title: "Dental Patient Late for an Appointment? Dr. Parul Dua Makkar's Five-Minute Question",
+    metaTitle: "Dental Patient Late for an Appointment? Ask This First",
+    metaDescription:
+      "When a dental patient is late, Dr. Parul Dua Makkar asks one question before she thinks about the schedule. Why five minutes builds the practice.",
+    excerpt:
+      "When a patient walks in late, most dental teams think about the schedule. Dr. Parul Dua Makkar asks one question first, and she says those few minutes build the practice in a way nothing else does.",
+    category: "Patient Experience",
+    dek: "When a patient walks in late, most dental teams think about the schedule. Dr. Parul Dua Makkar asks one question first, and she says those few minutes build the practice in a way nothing else does.",
+    expert: {
+      name: "Dr. Parul Dua Makkar",
+      role: "Founder, Dua Good Job",
+      headshotUrl: "/blog/dental-patient-late-for-appointment-headshot.jpg",
+      profileHref: "/experts/9be4e7e9-2842-4ebe-8d83-d7504e823088",
+      website: "duagoodjob.com",
+      sourceLine:
+        "*Expert guidance from Dr. Parul Dua Makkar. Source: a Thriving Dentist expert panel for dentists, and her DMN Practice Playbook, Seen, Felt and Acknowledged.*",
+      bio: "Dr. Parul Dua Makkar is a practicing dentist in NY, and the founder of Dua Good Job™ (duagoodjob.com), an oral cancer education platform built on one core belief: early detection saves lives, and every patient deserves a provider who looks closely and listens fully. She also created Healing the Healers, a grief and resilience program for dentistry and healthcare.",
+    },
+    spotlightQuote: { text: "It may seem insignificant to you, but that parrot is the world to them." },
+    shareImage: { src: "/blog/dental-patient-late-for-appointment-share.png", alt: "Dr. Parul Dua Makkar" },
+    publishAt: "2026-11-06",
+    kitSlug: "seen-felt-and-acknowledged",
+    hero: { src: "/blog/dental-patient-late-for-appointment-hero.png", alt: "Dr. Parul Dua Makkar" },
+    readTime: "4 minute read",
+    datePublished: "2026-11-06",
+    dateModified: "2026-11-06",
+    quickAnswer:
+      "When a dental patient is late for an appointment, Dr. Parul Dua Makkar suggests taking a few minutes to ask why before you think about the schedule. Her question is simple: \"hey, what brought you in late today?\" The answer can be something that matters a great deal to the patient. Listening to it is how a patient comes to feel, in her words, that \"the doctor actually didn't consider me a number.\"",
+    body: [
+      {
+        kind: "p",
+        text: "Every practice has felt it. The day is full, a patient arrives late, and the whole team starts doing the maths on the rest of the morning.",
+      },
+      {
+        kind: "p",
+        text: "[Dr. Makkar](/experts/9be4e7e9-2842-4ebe-8d83-d7504e823088), a practicing dentist in New York, knows that feeling. She describes the reaction most of us have when a patient is late: \"yes, it disrupts the entire schedule.\"",
+      },
+      { kind: "spotlight" },
+      {
+        kind: "p",
+        text: "She also says her own reaction has changed. \"I changed so much about the way I practice,\" she told the panel, and part of that change is how she meets a late patient.",
+      },
+      { kind: "h2", id: "what-to-say", text: "What should you say when a patient arrives late?", toc: "What to say" },
+      {
+        kind: "p",
+        text: "Her approach starts with sitting down and talking. \"But if you sit for five minutes and talk to your patient like, hey, what brought you in late today?\"",
+      },
+      { kind: "p", text: "That is the whole technique: one honest question, and then listening to the answer." },
+      {
+        kind: "p",
+        text: "The question works because it treats the patient as a person who had a morning before they reached you. If something is going on in their life, you will not know what it is unless you ask.",
+      },
+      { kind: "h2", id: "why-the-reason-matters", text: "Why does the reason matter so much?", toc: "Why the reason matters" },
+      {
+        kind: "p",
+        text: "Dr. Makkar tells the story of a patient who arrived late and explained that their parrot had died. It would be easy to hear that and move straight on to the appointment. She does not.",
+      },
+      { kind: "quote", text: "It may seem insignificant to you, but that parrot is the world to them." },
+      {
+        kind: "p",
+        text: "That one sentence holds the idea behind her whole approach. What feels small to the dental team can be the biggest thing in the patient's day. When you stop to hear it, the patient notices.",
+      },
+      {
+        kind: "p",
+        text: "For more on how one practice builds the first visit around the person, see Dr. Michael Sonick's approach to [the new dental patient experience](/blog/new-dental-patient-experience).",
+      },
+      { kind: "h2", id: "worth-the-time", text: "Is it worth the time when you are already behind?", toc: "Is it worth the time" },
+      {
+        kind: "p",
+        text: "Dr. Makkar is honest that it costs something. Talking to a late patient can throw the day off. Her view is that the trade is worth it:",
+      },
+      { kind: "quote", text: "And when you spend that five, 10 minutes extra with that patient. Yeah, it may disrupt your schedule a little bit, but it builds your practice in a different sort of way." },
+      {
+        kind: "p",
+        text: "The way it builds the practice is through how patients talk about you afterwards. In her words, they come away thinking \"the doctor actually didn't consider me a number\" and, instead of hurrying in with a treatment plan, \"actually sat and talked to me.\"",
+      },
+      { kind: "p", text: "She does not put a number on this, and neither do we. Her point is about what patients remember." },
+      { kind: "h2", id: "now-more-than-ever", text: "Why do patients want this now more than ever?", toc: "Now more than ever" },
+      {
+        kind: "p",
+        text: "Dr. Makkar sees a gap in how people connect today, especially younger patients. \"There is such a disconnect because we are in a virtual world. We are yearning for human interaction.\"",
+      },
+      {
+        kind: "p",
+        text: "A dental visit is one of the few times a patient is face to face with a professional who has to slow down and pay attention to them. She sums up what they are looking for in one line:",
+      },
+      { kind: "quote", text: "That's what patients want. They want to be seen, feel felt and acknowledged." },
+      {
+        kind: "p",
+        text: "It is also why she leans towards a practice built on care. \"We want to take care of our patients. We want to do the best for our patients.\"",
+      },
+      { kind: "h2", id: "your-team", text: "Does the same idea apply to your team?", toc: "Your team" },
+      {
+        kind: "p",
+        text: "It does, and Dr. Makkar starts there. She talks about the team members who are juggling children and ageing parents alongside their work. When her assistant told her that her child was sick and asked to bring them in, her answer was: \"sure, I have a room in the back and we can do this.\"",
+      },
+      {
+        kind: "p",
+        text: "She is careful to say this is a balance. Being understanding does not mean letting people take advantage. But a team that is treated with care at work is far more likely to show the same care to a patient who walks in late and flustered.",
+      },
+      { kind: "p", text: "She also believes the good you put out comes back. As she puts it, \"what you give out is what you get back in return.\"" },
+      { kind: "h2", id: "late-patient-policy", text: "What about your late-patient policy?", toc: "Your late-patient policy" },
+      {
+        kind: "p",
+        text: "Dr. Makkar does not talk about policies, fees or rebooking rules on the panel, and this article does not invent any for her. Her point is about the first minute with the patient, whatever your policy says.",
+      },
+      {
+        kind: "p",
+        text: "If late arrivals are a regular strain on your front desk, our article on [reducing dental front desk overload](/blog/reduce-dental-front-desk-overload) looks at the systems side. A good place to share her question with the team is your [morning huddle](/blog/dental-morning-huddle-agenda).",
+      },
+    ],
+    faqs: [
+      {
+        q: "What should I say to a dental patient who is late for an appointment?",
+        a: "Dr. Parul Dua Makkar suggests starting with a simple, caring question: \"hey, what brought you in late today?\" Then listen to the answer before turning to the schedule.",
+      },
+      {
+        q: "Won't talking to late patients make the schedule worse?",
+        a: "It can, a little. Dr. Makkar accepts that. Her view is that five or ten extra minutes builds the practice, because the patient leaves feeling like a person rather than a number.",
+      },
+      {
+        q: "How do I make dental patients feel heard?",
+        a: "Ask about what matters to them and take it seriously, even when it seems small to you. As Dr. Makkar puts it, patients \"want to be seen, feel felt and acknowledged.\"",
+      },
+      {
+        q: "Does this apply to the dental team as well?",
+        a: "Yes. Dr. Makkar extends the same understanding to her staff, for example when a team member's child is sick, while making sure the kindness is not taken advantage of.",
+      },
+    ],
+    takeaway: {
+      eyebrow: "The takeaway",
+      title: "Ask before you rush.",
+      body: "The next time a patient walks in late, take a breath and ask what brought them in late today. What seems small to you may be the world to them, and they will remember that you asked.",
+    },
+    kitCta: {
+      kitName: "Seen, Felt and Acknowledged",
+      eyebrowOverride: "Practice Playbook · Action guide · Patient Experience",
+      titleOverride: "Seen, Felt and Acknowledged",
+      description:
+        "Dr. Parul Dua Makkar's complete Practice Playbook inside the Dental Member Network, built from her own answers on a Thriving Dentist expert panel.",
+      support: "Get Dr. Parul Dua Makkar's complete Seen, Felt and Acknowledged Practice Playbook inside the Dental Member Network.",
+      href: "/join/member",
+      label: "Join Dental Member Network",
+    },
+  },
   // ── Blog relaunch, week 1 (Lester, build list 2026-10-26). Addresses are
   // LOCKED (each expert gets an email that checks the exact address). Copy
   // verbatim from the post folders in "2026-10-27 - Week 1 (blog relaunch)".
@@ -3012,7 +3481,8 @@ export function isReleased(article: BlogArticle, now: Date = new Date()): boolea
 
 /** Released articles, newest first by registry order, evaluated now. */
 export function getReleasedArticles(now: Date = new Date()): BlogArticle[] {
-  return BLOG_ARTICLES.filter((a) => isReleased(a, now));
+  // Newest first on the index, whatever order the registry is written in.
+  return BLOG_ARTICLES.filter((a) => isReleased(a, now)).sort((a, b) => b.datePublished.localeCompare(a.datePublished));
 }
 
 /**
