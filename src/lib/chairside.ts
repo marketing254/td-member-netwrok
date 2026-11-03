@@ -29,8 +29,10 @@ export type ChairsideEpisode = {
     bio: string;
   };
   host: string;
-  /** The public 20-minute cut. youtubeUrl null = not released yet. */
+  /** The public 20-minute cut. youtubeUrl null = not released yet (the page stays hidden). */
   publicVideo: { youtubeUrl: string | null; minutes: number };
+  /** The public cut as audio, for the player under the video (Episode 2 on). */
+  publicAudio?: { src: string; minutes: number };
   /** Listen buttons. A null link hides that button. */
   listen: { spotify: string | null; apple: string | null; youtube: string | null };
   /** 16:9 episode artwork, also the og:image. */
@@ -117,6 +119,69 @@ export function coverSrc(ep: Pick<ChairsideEpisode, "cover" | "publicVideo">): {
 
 export const CHAIRSIDE_EPISODES: ChairsideEpisode[] = [
   {
+    slug: "nice-or-kind",
+    number: 2,
+    title: "Nice or kind: the conversation you keep putting off",
+    guest: {
+      name: "Julie Parker",
+      role: "Co-founder, Dental Business Mastery",
+      location: "Australia",
+      headshotUrl: "/chairside/ep2/julie-parker.jpg",
+      expertProfileHref: "/experts/e49a90a8-7edb-4d2a-b688-57d477065b44",
+      website: "https://dentalbusinessmastery.com.au",
+      bio: "Julie Parker began her career as a dental assistant and owned a dental practice in Australia for ten years, from 2003, before becoming a dental practice management consultant. She co-founded Dental Business Mastery with Ameena Basile, and she is an accredited practitioner of the Being Framework.",
+    },
+    host: "Hosted by Don Adeesha",
+    // Lester, 3 Nov 2026: the YouTube, Spotify and Apple links arrive once the
+    // video is scheduled. Until youtubeUrl is set the page stays hidden
+    // (isEpisodeLive) and the Just dropped card is left out.
+    publicVideo: { youtubeUrl: null, minutes: 22 },
+    publicAudio: {
+      src: "https://jbntnrtnaqigsyzgvuyv.supabase.co/storage/v1/object/public/kit-thumbnails/chairside/ep2/public-episode-22min.mp3",
+      minutes: 22,
+    },
+    listen: { spotify: null, apple: null, youtube: null },
+    cardImage: { src: "/chairside/ep2/episode-cover.jpg", alt: "Chairside episode 2, Nice or kind: the conversation you keep putting off, with Julie Parker" },
+    cardSummary: "Julie Parker on the conversation every owner keeps putting off: why nice is not kind, and how to make it kind, step by step.",
+    cover: {
+      src: "/chairside/ep2/cover.jpg",
+      ready: true,
+      alt: "What you tolerate, you get. Chairside episode 2 with Julie Parker",
+    },
+    description:
+      "Julie Parker started out as a dental assistant, owned her own dental practice in Australia for ten years, and now runs Dental Business Mastery with Ameena Basile. On this episode of Chairside she talks about the difference between being nice and being kind: the owner who said yes to everyone, why A-type players leave when a C-type player is tolerated, how to have the conversation you\u2019ve been putting off, step by step, her own first hard conversation as an owner, and the one thing an owner can do this week.",
+    pullQuote: {
+      text: "Kind would have been telling them exactly what was at stake.",
+      cite: "Julie Parker",
+    },
+    chapters: [
+      { time: "0:00", label: "Cold open" },
+      { time: "0:32", label: "What owning a practice teaches you" },
+      { time: "3:06", label: "Nice or kind" },
+      { time: "6:23", label: "The owner who said yes to everyone" },
+      { time: "8:40", label: "A, B and C players" },
+      { time: "11:07", label: "The conversation, step by step" },
+      { time: "12:13", label: "The silent boss" },
+      { time: "14:34", label: "Hygienist heaven" },
+      { time: "17:42", label: "One thing this week" },
+      { time: "18:59", label: "The question from the last chair" },
+      { time: "20:40", label: "Where to go next" },
+    ],
+    memberLibrary: {
+      resourceSlug: "nice-or-kind",
+      bullets: [
+        "The full 54-minute episode",
+        "The Monday page: Julie\u2019s five steps for the conversation you\u2019ve been putting off, with a huddle checklist",
+        "Julie\u2019s Practice Playbook: Nice Is Not Kind",
+      ],
+    },
+    relatedArticle: null,
+    datePublished: "2026-11-03",
+    published: true,
+    // Lester: live Tuesday 3 November, 6:00 am New York (EST).
+    liveFrom: "2026-11-03T11:00:00Z",
+  },
+  {
     slug: "treating-people-not-patients",
     number: 1,
     title: "Treating people, not patients",
@@ -187,6 +252,13 @@ export const CHAIRSIDE_EPISODES: ChairsideEpisode[] = [
 /** Published AND past its go-live time. Evaluate per request (pages revalidate hourly). */
 export function isEpisodeLive(e: ChairsideEpisode, now = new Date()): boolean {
   if (!CHAIRSIDE_ENABLED) return false;
+  // Local preview (npm run dev): show every published episode, even before
+  // its go-live time or its YouTube link, so pages can be checked before
+  // they go live. Production is unaffected (NODE_ENV is "production" there).
+  if (process.env.NODE_ENV === "development") return e.published;
+  // No YouTube link yet = the public page stays hidden (Lester, 3 Nov 2026:
+  // "if the YouTube link isn't there by 6:00 am, keep the episode page hidden").
+  if (!e.publicVideo.youtubeUrl) return false;
   return e.published && (!e.liveFrom || new Date(e.liveFrom).getTime() <= now.getTime());
 }
 

@@ -194,6 +194,18 @@ export default function EpisodeView({ episode }: { episode: ChairsideEpisode }) 
             )}
           </Box>
 
+          {/* The public cut as audio (Episode 2 on): a plain player under the video */}
+          {episode.publicAudio && (
+            <Box sx={{ mt: 2, p: { xs: 1.5, md: 2 }, borderRadius: "14px", bgcolor: "#FFFFFF", border: `1px solid ${LINE}` }}>
+              <Typography sx={{ fontSize: "0.72rem", fontWeight: 800, letterSpacing: "0.14em", textTransform: "uppercase", color: GOLD, mb: 1 }}>
+                Listen to this episode · {episode.publicAudio.minutes} min
+              </Typography>
+              <Box component="audio" controls preload="none" src={episode.publicAudio.src} sx={{ width: "100%", display: "block", height: 40 }}>
+                Your browser cannot play this audio.
+              </Box>
+            </Box>
+          )}
+
           {/* Listen pills: only the links that exist */}
           {listen.length > 0 && (
             <Stack direction="row" spacing={1} sx={{ mt: 2, flexWrap: "wrap", rowGap: 1 }}>
