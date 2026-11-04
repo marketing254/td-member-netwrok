@@ -22,7 +22,7 @@ function parts(ms: number) {
   return { d: Math.floor(s / 86400), h: Math.floor((s % 86400) / 3600), m: Math.floor((s % 3600) / 60), s: s % 60 };
 }
 
-export default function SummitCountdown({ registered = "300+" }: { registered?: string }) {
+export default function SummitCountdown() {
   // Ticks once a second; the server snapshot is null so the first client
   // paint matches the server and the clock appears right after hydration.
   const now = useSyncExternalStore(subscribeTick, () => Math.floor(Date.now() / 1000) * 1000, () => null);
@@ -42,8 +42,8 @@ export default function SummitCountdown({ registered = "300+" }: { registered?: 
       <strong className="summit-countdown__clock">{clock}</strong>
       <p className="summit-countdown__note">
         {live
-          ? `Friday 6 November, live on Zoom until 4:30 PM Eastern. ${registered} registered. Join now and your seat is booked for you.`
-          : `Friday 6 November, 12:00 PM Eastern, live on Zoom. ${registered} already registered. Join before it starts and your seat is booked for you.`}
+          ? "Friday 6 November, live on Zoom until 4:30 PM Eastern. Join now and your seat is booked for you."
+          : "Friday 6 November, 12:00 PM Eastern, live on Zoom. Join before it starts and your seat is booked for you."}
       </p>
     </div>
   );
