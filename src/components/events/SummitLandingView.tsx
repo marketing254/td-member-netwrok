@@ -461,12 +461,6 @@ export default function SummitLandingView({ mode = "landing" }: { mode?: "landin
               </div>
               <div className="divider" />
 
-              {/* Countdown to the summit (Lester, 2 Nov 2026). Sits above
-                  the first button and stays above the payment step; it
-                  switches to "Live now" at noon Eastern on 6 Nov and hides
-                  itself at 4:30 PM. */}
-              <SummitCountdown />
-
               {clientSecret ? (
                 <>
                   <h3 id="pay-head">Complete your membership</h3>
@@ -477,6 +471,7 @@ export default function SummitLandingView({ mode = "landing" }: { mode?: "landin
                   <div className="stripe-wrap">
                     <SummitCheckout clientSecret={clientSecret} />
                   </div>
+                  <SummitCountdown />
                 </>
               ) : memberDone ? (
                 <div className="success-card">
@@ -512,6 +507,7 @@ export default function SummitLandingView({ mode = "landing" }: { mode?: "landin
                       {submitting ? "Booking…" : "Book my seat for November 6"} <span aria-hidden="true">↗</span>
                     </button>
                   </form>
+                  <SummitCountdown />
                 </>
               ) : (
                 <>
@@ -571,6 +567,11 @@ export default function SummitLandingView({ mode = "landing" }: { mode?: "landin
                     )}
                   </form>
                   <p className="form-note">Your card will not be charged today. Billing starts on Wednesday 6 January 2027, at $49 a month. Cancel any time before then and you will not be charged at all. We register you for RIDA, so your name and email are shared with the event organiser. Your Zoom link is emailed to you within a few minutes of joining.</p>
+                  {/* Countdown to the summit (Lester, 2 Nov 2026; moved below
+                      the form on 4 Nov so Continue stays on the first laptop
+                      screen). Switches to "Live now" at noon Eastern on 6 Nov
+                      and hides itself at 4:30 PM. */}
+                  <SummitCountdown />
                   {!me?.signedIn && (
                     <Link className="text-link existing" href="/member/login?next=%2Frida%2Fjoin">Already a DMN member? Sign in to register</Link>
                   )}
