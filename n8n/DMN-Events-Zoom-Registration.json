@@ -1,0 +1,380 @@
+{
+  "name": "DMN - Events - Zoom registrations",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## DMN portal events → Zoom (Marketing account)\n\nWebhook-triggered by the Apps Script on the **DMN x RIDA Zoom Registrants** sheet when a member registers in the portal for a non-RIDA event (tabs \"DMS - Events\", \"TD - Events\", …).\n\nThis workflow is completely separate from the RIDA summit one: that one is a sheet trigger on the Registrants tab with a fixed webinar id on Naren's account. Nothing here touches it.\n\n1. The payload carries `webinar_id` from the **Events Config** tab.\n2. Token from the Marketing Zoom app.\n3. **Get webinar questions** reads the webinar's own registration questions from Zoom.\n4. **Build Zoom payload** answers each question by matching its title (mobile, job title, practice, country, question, membership), so titles, trailing spaces and radio answers never have to be configured. A required question it cannot recognise gets \"-\".\n5. Registers, then writes Registered / Failed + registrant id + error back to the event's tab (match on `registration_id`).\n\nSet the sheet id on the last node.",
+        "height": 420,
+        "width": 420
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        -120
+      ],
+      "id": "note-1",
+      "name": "Sticky - How it works"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "dmn-event-registrations",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        80,
+        160
+      ],
+      "id": "wh-1",
+      "name": "Webhook",
+      "webhookId": "dmn-event-registrations"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "has-webinar",
+              "leftValue": "={{ $json.body.webinar_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "has-email",
+              "leftValue": "={{ $json.body.email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        300,
+        160
+      ],
+      "id": "if-1",
+      "name": "Has webinar id"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://zoom.us/oauth/token",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "grant_type",
+              "value": "account_credentials"
+            },
+            {
+              "name": "account_id",
+              "value": "_g3I9bSvQ6SSUa01MD03Mg"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        780,
+        160
+      ],
+      "id": "tok-m",
+      "name": "Get Zoom token (Marketing)",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "KzU7XwJdEJgVqIXI",
+          "name": "Marketing Zoom Credentials"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Answer the webinar's OWN registration questions (read by the previous node)\n// from the sheet row, matching each question by its title. Nothing about the\n// titles is configured anywhere: trailing spaces, \"U.S.\" vs \"US\", radio answer\n// wording all come from Zoom itself.\nconst clean = (s) => (s ?? '').toString().replace(/[\\x00-\\x1F\\x7F]/g, ' ').trim();\nconst norm = (s) => clean(s).toLowerCase().replace(/[^a-z0-9]/g, '');\nconst b = $('Webhook').item.json.body;\nconst token = $('Get Zoom token (Marketing)').item.json.access_token;\nconst resp = $json.body && typeof $json.body === 'object' ? $json.body : {};\nconst stdQs = Array.isArray(resp.questions) ? resp.questions : [];\nconst customQs = Array.isArray(resp.custom_questions) ? resp.custom_questions : [];\n\nconst v = {\n  phone: clean(b.phone).slice(0, 20),\n  job: clean(b.job_title).slice(0, 128) || 'Other',\n  practice: clean(b.practice_name).slice(0, 128),\n  question: clean(b.questions).slice(0, 128) || '-',\n  country: clean(b.country).toUpperCase(),\n  interest: clean(b.member_interest).toLowerCase(),\n};\nconst COUNTRY = { US: ['us', 'usa', 'unitedstates'], CA: ['canada'], GB: ['uk', 'unitedkingdom'], AU: ['australia'], NZ: ['newzealand'], OTHER: ['other'] };\nconst INTEREST = { yes: ['yes'], already: ['already'], no: ['no', 'not'] };\n\n// First answer whose normalised text equals, starts with, or contains a keyword.\nconst pick = (answers, words) => {\n  const n = (answers || []).map((a) => ({ a, n: norm(a) }));\n  for (const w of words) { const h = n.find((x) => x.n === w); if (h) return h.a; }\n  for (const w of words) { const h = n.find((x) => x.n.startsWith(w)); if (h) return h.a; }\n  for (const w of words) { const h = n.find((x) => x.n.includes(w)); if (h) return h.a; }\n  return null;\n};\n\nconst custom = [];\nfor (const q of customQs) {\n  const t = norm(q.title);\n  const choice = Array.isArray(q.answers) && q.answers.length > 0;\n  let val = null;\n  if (/mobile|phone|cell/.test(t)) val = v.phone;\n  else if (/jobtitle|role|position|describe/.test(t)) val = v.job;\n  else if (/practice|company|organi|business/.test(t)) val = v.practice;\n  else if (/country|location|where/.test(t)) val = choice ? (pick(q.answers, COUNTRY[v.country] || COUNTRY.OTHER) || pick(q.answers, COUNTRY.OTHER)) : v.country;\n  else if (/member|join/.test(t)) val = choice ? pick(q.answers, INTEREST[v.interest] || INTEREST.no) : v.interest;\n  else if (/question|ask|panel|topic|learn|hope|discuss/.test(t)) val = v.question;\n  if (choice && val && !q.answers.includes(val)) val = pick(q.answers, [norm(val)]);\n  if (!val && q.required) val = choice ? q.answers[q.answers.length - 1] : '-';\n  if (val) custom.push({ title: q.title, value: String(val).slice(0, 128) });\n}\n\nconst payload = {\n  first_name: clean(b.first_name).slice(0, 64) || 'Member',\n  last_name: clean(b.last_name).slice(0, 64) || '-',\n  email: clean(b.email).toLowerCase(),\n  phone: v.phone,\n  org: v.practice,\n  job_title: v.job,\n  custom_questions: custom,\n  auto_approve: true,\n};\n// Standard Zoom fields the webinar marks required.\nfor (const q of stdQs) {\n  if (!q.required) continue;\n  const f = q.field_name;\n  if (f === 'last_name' || f === 'phone' || f === 'org' || f === 'job_title') continue;\n  if (f === 'country') payload.country = /^[A-Z]{2}$/.test(v.country) ? v.country : 'US';\n  else if (f === 'comments') payload.comments = v.question;\n  else if (!(f in payload)) payload[f] = '-';\n}\nreturn [{ json: { access_token: token, webinar_id: clean(b.webinar_id), payload, questions_seen: customQs.map((q) => q.title) } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1260,
+        160
+      ],
+      "id": "build-1",
+      "name": "Build Zoom payload"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.zoom.us/v2/webinars/{{ $json.webinar_id }}/registrants",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.access_token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.payload) }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1500,
+        160
+      ],
+      "id": "reg-1",
+      "name": "Register in Zoom"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Turn Zoom's answer into the three sheet columns.\nconst r = $json;\nconst code = r.statusCode ?? r.status ?? 0;\nconst body = r.body ?? {};\nconst ok = code >= 200 && code < 300 && body.registrant_id;\nconst b = $('Webhook').item.json.body;\nreturn [{ json: {\n  registration_id: b.registration_id,\n  sheet_name: b.sheet_name,\n  zoom_status: ok ? 'Registered' : 'Failed',\n  zoom_registrant_id: ok ? String(body.registrant_id) : '',\n  zoom_error: ok ? '' : `${code} ${body.code ?? ''} ${body.message ?? JSON.stringify(body).slice(0, 300)}`.trim()\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1740,
+        160
+      ],
+      "id": "res-1",
+      "name": "Zoom result"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_DMN_REGISTRANTS_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $json.sheet_name }}",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "registration_id": "={{ $json.registration_id }}",
+            "zoom_status": "={{ $json.zoom_status }}",
+            "zoom_registrant_id": "={{ $json.zoom_registrant_id }}",
+            "zoom_error": "={{ $json.zoom_error }}"
+          },
+          "matchingColumns": [
+            "registration_id"
+          ],
+          "schema": [
+            {
+              "id": "registration_id",
+              "displayName": "registration_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "zoom_status",
+              "displayName": "zoom_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "zoom_registrant_id",
+              "displayName": "zoom_registrant_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "zoom_error",
+              "displayName": "zoom_error",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1980,
+        160
+      ],
+      "id": "sheet-1",
+      "name": "Update event tab",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "6S7wdhppZUUMlsex",
+          "name": "Marketing"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.zoom.us/v2/webinars/{{ $('Webhook').item.json.body.webinar_id }}/registrants/questions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.access_token }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1020,
+        160
+      ],
+      "id": "qs-1",
+      "name": "Get webinar questions"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Has webinar id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has webinar id": {
+      "main": [
+        [
+          {
+            "node": "Get Zoom token (Marketing)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Build Zoom payload": {
+      "main": [
+        [
+          {
+            "node": "Register in Zoom",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Register in Zoom": {
+      "main": [
+        [
+          {
+            "node": "Zoom result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Zoom result": {
+      "main": [
+        [
+          {
+            "node": "Update event tab",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get webinar questions": {
+      "main": [
+        [
+          {
+            "node": "Build Zoom payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Zoom token (Marketing)": {
+      "main": [
+        [
+          {
+            "node": "Get webinar questions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": []
+}

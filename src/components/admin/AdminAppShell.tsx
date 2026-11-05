@@ -166,6 +166,7 @@ const navSections: { label: string; items: NavItem[] }[] = [
       { href: "/admin/referrals", label: "Referrals", icon: LinkRoundedIcon },
       { href: "/admin/promo-codes", label: "Promo codes", icon: ConfirmationNumberOutlinedIcon },
       { href: "/admin/lead-magnets", label: "Lead magnets", icon: DownloadOutlinedIcon },
+      { href: "/admin/events", label: "Events", icon: EventAvailableOutlinedIcon },
       { href: "/admin/summit", label: "Summit registrations", icon: EventAvailableOutlinedIcon },
       { href: "/admin/audits", label: "Found Money audits", icon: ReceiptLongOutlinedIcon },
       { href: "/admin/waitlist", label: "Launch waitlist", icon: MarkEmailReadOutlinedIcon },

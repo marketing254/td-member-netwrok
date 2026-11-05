@@ -22,6 +22,7 @@ import PolicyOutlinedIcon from "@mui/icons-material/PolicyOutlined";
 import RuleFolderOutlinedIcon from "@mui/icons-material/RuleFolderOutlined";
 import { useCurrentMember } from "@/lib/hooks/useCurrentMember";
 import { KitCover } from "@/components/member/KitCover";
+import NextEventCard from "@/components/events/portal/NextEventCard";
 import { type Spotlight } from "@/components/member/SpotlightSection";
 import {
   EditorialSection,
@@ -303,6 +304,14 @@ export default function DashboardHome() {
               },
             ]}
           />
+        </Box>
+      </Reveal>
+
+      {/* "Your next event" (portal events, Lester 5 Nov 2026). Renders
+          nothing when no event is coming up. */}
+      <Reveal delay={160}>
+        <Box sx={{ mb: 3 }}>
+          <NextEventCard />
         </Box>
       </Reveal>
 

@@ -51,6 +51,35 @@ export function countryOptions(): { code: string; name: string }[] {
   return COUNTRIES.map((c) => ({ code: c.code, name: c.name }));
 }
 
+/**
+ * Portal events (5 Nov 2026): the TD and DMS webinars ask Country with six
+ * answers (US, Canada, UK, Australia, New Zealand, Other). Separate list so
+ * the RIDA form keeps Lester's five.
+ */
+export const EVENT_COUNTRIES = [
+  { code: "US", name: "USA" },
+  { code: "CA", name: "Canada" },
+  { code: "GB", name: "UK" },
+  { code: "AU", name: "Australia" },
+  { code: "NZ", name: "New Zealand" },
+  { code: "OTHER", name: "Other" },
+] as const;
+
+export function isEventCountryCode(v: unknown): boolean {
+  return typeof v === "string" && EVENT_COUNTRIES.some((c) => c.code === v.toUpperCase());
+}
+
+/** "Would you like to become a DMS member?" on the DMS webinars. Stored as the code; n8n matches the Zoom answer by keyword. */
+export const MEMBER_INTEREST = [
+  { value: "yes", label: "Yes, I'd like to become a member" },
+  { value: "already", label: "I'm already a member" },
+  { value: "no", label: "No, I'm not interested" },
+] as const;
+
+export function isMemberInterest(v: unknown): boolean {
+  return typeof v === "string" && MEMBER_INTEREST.some((m) => m.value === v);
+}
+
 /** Map a two-letter geo code to a dropdown value. */
 export function countryFromGeo(geo: string | null | undefined): CountryCode {
   const g = (geo ?? "").toUpperCase();
