@@ -144,10 +144,26 @@ export function summitTrialEndUnix(): number | null {
 //   SUMMIT_SHEET_SECRET        must equal SECRET in the Apps Script
 // ---------------------------------------------------------------------
 
+/**
+ * Which Zoom webinar a registration belongs to. The summit keeps its env
+ * value; any other event is a portal_events row (migration 0080) whose
+ * slug is the event_id, with the webinar id typed in by the team.
+ */
+export async function webinarForEvent(eventId: string): Promise<{ webinarId: string; title: string }> {
+  if (eventId === SUMMIT.eventId) return { webinarId: SUMMIT.zoomWebinarId, title: SUMMIT.title };
+  const { data } = await eventsDb().from("portal_events").select("title, zoom_webinar_id").eq("slug", eventId).maybeSingle();
+  const row = data as { title?: string; zoom_webinar_id?: string | null } | null;
+  return { webinarId: row?.zoom_webinar_id ?? "", title: row?.title ?? eventId };
+}
+
 /** One sheet row. Column names must match the Registrants sheet headers exactly. */
-export function sheetRowFor(reg: EventRegistrationRow): Record<string, string> {
+export function sheetRowFor(reg: EventRegistrationRow, webinar: { webinarId: string; title: string } = { webinarId: SUMMIT.zoomWebinarId, title: SUMMIT.title }): Record<string, string> {
   const utm = reg.utm ?? {};
   return {
+    // Added 5 Nov 2026 (portal events): n8n reads the webinar id from the row
+    // so one workflow serves every event.
+    Zoom_Webinar_ID: webinar.webinarId,
+    Event_Title: webinar.title,
     Registration_ID: reg.id,
     Registered_At: reg.entitled_at ?? new Date().toISOString(),
     Event_ID: reg.event_id,
@@ -161,6 +177,7 @@ export function sheetRowFor(reg: EventRegistrationRow): Record<string, string> {
     "Speaker Question": reg.speaker_question ?? "",
     "RIDA Member": reg.rida_member_interest ?? "",
     Member_ID: reg.member_id ?? "",
+    Member_Email: utm.member_email ?? "",
     Entitled_Via: reg.entitled_via ?? "",
     Member_Status: reg.entitled_via === "trial_checkout" ? "trialing" : "active",
     Status: "Pending",
@@ -193,10 +210,12 @@ export async function pushRegistrationToSheet(registrationId: string): Promise<b
   // account and writes the join link back; Zoom emails the registrant.
   // The direct Zoom API path below stays available but only switches on
   // with ZOOM_DIRECT_REGISTRATION=true plus the Zoom credentials.
-  if (process.env.ZOOM_DIRECT_REGISTRATION === "true" && zoomConfigured() && SUMMIT.zoomWebinarId) {
+  const webinar = await webinarForEvent(reg.event_id);
+
+  if (process.env.ZOOM_DIRECT_REGISTRATION === "true" && zoomConfigured() && webinar.webinarId) {
     try {
       const z = await registerWebinarRegistrant({
-        webinarId: SUMMIT.zoomWebinarId,
+        webinarId: webinar.webinarId,
         email: reg.email,
         firstName: reg.first_name,
         lastName: reg.last_name,
@@ -208,7 +227,7 @@ export async function pushRegistrationToSheet(registrationId: string): Promise<b
         .from("event_registrations")
         .update({
           status: "zoom_registered",
-          zoom_webinar_id: SUMMIT.zoomWebinarId,
+          zoom_webinar_id: webinar.webinarId,
           zoom_registrant_id: z.registrantId,
           zoom_join_url: z.joinUrl,
           zoom_requested_at: new Date().toISOString(),
@@ -250,7 +269,7 @@ export async function pushRegistrationToSheet(registrationId: string): Promise<b
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ kind: "summit_registration", secret, row: sheetRowFor(reg) }),
+      body: JSON.stringify({ kind: "summit_registration", secret, row: sheetRowFor(reg, webinar) }),
       signal: AbortSignal.timeout(10000),
       redirect: "follow", // Apps Script /exec answers with a 302 to the result
     });
@@ -258,7 +277,74 @@ export async function pushRegistrationToSheet(registrationId: string): Promise<b
     if (!res.ok || !/^ok/i.test(text)) return fail(`sheet append: ${res.status} ${text.slice(0, 200)}`);
     await sb
       .from("event_registrations")
-      .update({ status: "zoom_requested", sheet_synced_at: new Date().toISOString(), zoom_requested_at: new Date().toISOString(), zoom_webinar_id: SUMMIT.zoomWebinarId, zoom_error: null })
+      .update({ status: "zoom_requested", sheet_synced_at: new Date().toISOString(), zoom_requested_at: new Date().toISOString(), zoom_webinar_id: webinar.webinarId || null, zoom_error: null })
+      .eq("id", registrationId);
+    return true;
+  } catch (err) {
+    return fail(`sheet unreachable: ${err instanceof Error ? err.message.slice(0, 300) : "unknown"}`);
+  }
+}
+
+/**
+ * Non-RIDA portal events (5 Nov 2026): the same Apps Script on the DMN x
+ * RIDA registrants spreadsheet, kind "event_registration". The script looks
+ * the event_key up in its "Events Config" tab, appends the row to that
+ * event's tab ("DMS - Events", "TD - Events", ...) and calls the events n8n
+ * webhook, which registers the person in Zoom on the account named in the
+ * config row. Never throws; a failure leaves the row entitled with the
+ * error recorded and alerts the team.
+ */
+export async function pushEventRegistrationToSheet(registrationId: string, eventKey: string): Promise<boolean> {
+  const sb = eventsDb();
+  const { data } = await sb.from("event_registrations").select("*").eq("id", registrationId).maybeSingle();
+  const reg = data as EventRegistrationRow | null;
+  if (!reg || reg.status === "pending_payment") return false;
+  if (reg.status === "zoom_registered" || reg.sheet_synced_at) return true;
+
+  const url = process.env.SUMMIT_SHEET_WEBHOOK_URL;
+  const secret = process.env.SUMMIT_SHEET_SECRET;
+  const fail = async (why: string) => {
+    await sb.from("event_registrations").update({ zoom_error: why.slice(0, 900), zoom_attempts: reg.zoom_attempts + 1 }).eq("id", registrationId);
+    try {
+      const { sendSummitFailureAlert } = await import("@/lib/email/summitEmails");
+      await sendSummitFailureAlert({ registrationId, email: reg.email, name: `${reg.first_name} ${reg.last_name}`.trim(), error: `[${eventKey}] ${why}` });
+    } catch {
+      /* alert is best-effort */
+    }
+    return false;
+  };
+  if (!url || !secret) return fail("SUMMIT_SHEET_WEBHOOK_URL / SUMMIT_SHEET_SECRET not configured");
+
+  const row = {
+    event_key: eventKey,
+    registration_id: reg.id,
+    member_id: reg.member_id ?? "",
+    member_email: reg.utm?.member_email ?? "",
+    first_name: reg.first_name,
+    last_name: reg.last_name,
+    email: reg.email,
+    phone: reg.phone ?? "",
+    job_title: jobTitleLabel(reg.job_title),
+    practice_name: reg.practice_website_name ?? "",
+    country: reg.country ?? "",
+    questions: reg.speaker_question ?? "",
+    member_interest: reg.rida_member_interest ?? "",
+    source_id: "",
+    source_name: "DMN Member Portal",
+  };
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ kind: "event_registration", secret, row }),
+      signal: AbortSignal.timeout(10000),
+      redirect: "follow",
+    });
+    const text = (await res.text().catch(() => "")).trim();
+    if (!res.ok || !/^ok/i.test(text)) return fail(`sheet append: ${res.status} ${text.slice(0, 200)}`);
+    await sb
+      .from("event_registrations")
+      .update({ status: "zoom_requested", sheet_synced_at: new Date().toISOString(), zoom_requested_at: new Date().toISOString(), zoom_error: null })
       .eq("id", registrationId);
     return true;
   } catch (err) {

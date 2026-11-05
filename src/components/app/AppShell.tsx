@@ -61,9 +61,12 @@ const navItems = [
   { href: "/dashboard/experts", label: "Experts", icon: SchoolOutlinedIcon },
   { href: "/dashboard/partners", label: "Partners", icon: StorefrontOutlinedIcon },
   { href: "/dashboard/tools", label: "Tools", icon: CalculateOutlinedIcon },
-  // Event Replays (RIDA brief, 29 Sep 2026). The NEW pill shows for the
-  // first month after launch, then the item stays without it.
-  { href: "/dashboard/replays", label: "Event Replays", icon: EventAvailableOutlinedIcon, badge: new Date() < new Date("2026-11-01T00:00:00Z") ? "NEW" : undefined },
+  // Events (Lester's design pick, 5 Nov 2026): the next event, the List |
+  // Month views and every replay, so this replaces the Event Replays link.
+  // NEW pill for the first few weeks.
+  ...(process.env.NEXT_PUBLIC_EVENTS_ENABLED === "true"
+    ? [{ href: "/dashboard/events", label: "Events", icon: EventAvailableOutlinedIcon, badge: new Date() < new Date("2026-12-15T00:00:00Z") ? "NEW" : undefined }]
+    : [{ href: "/dashboard/replays", label: "Event Replays", icon: EventAvailableOutlinedIcon }]),
   { href: "/dashboard/network", label: "Network", icon: HubOutlinedIcon },
   // Hidden until NEXT_PUBLIC_JOB_BOARD_ENABLED=true; the middleware 404s
   // the page as well, so members see nothing before launch.
@@ -222,7 +225,9 @@ function SidebarContent({
                   ? (pathname === hrefPath && search.includes(hrefQuery)) || pathname.startsWith("/dashboard/chairside")
                   : hrefPath === "/dashboard/resources"
                     ? pathname.startsWith(hrefPath) && !search.includes("type=chairside")
-                    : pathname.startsWith(hrefPath);
+                    : hrefPath === "/dashboard/events"
+                      ? pathname.startsWith(hrefPath) || pathname.startsWith("/dashboard/replays")
+                      : pathname.startsWith(hrefPath);
             return (
               <Box
                 key={item.href}

@@ -162,6 +162,34 @@ export type PortalSeatsRow = {
   created_at: string;
 };
 
+/** 0080 — events inside the member portal (Lester, 5 Nov 2026). */
+export type PortalEventSpeaker = { name: string; title?: string | null; company?: string | null; expert_id?: string | null; photo_url?: string | null };
+export type PortalEventsRow = {
+  id: string;
+  slug: string;
+  title: string;
+  subtitle: string | null;
+  series: string;
+  starts_at: string;
+  duration_minutes: number;
+  format: string | null;
+  ce_credits: number | null;
+  speakers: PortalEventSpeaker[];
+  description: string | null;
+  banner_url: string | null;
+  register_url: string | null;
+  zoom_webinar_id: string | null;
+  replay_url: string | null;
+  replay_slug: string | null;
+  replay_runtime: string | null;
+  /** 0081: key of the row in the registrants sheet's "Events Config" tab (non-RIDA events). */
+  event_key: string | null;
+  is_published: boolean;
+  source: string;
+  created_at: string;
+  updated_at: string;
+};
+
 export type VendorsRow = {
   id: string;
   auth_user_id: string | null;
@@ -1198,6 +1226,7 @@ export type Database = {
       lead_magnet_leads: Table<LeadMagnetLeadsRow>;
       founding_invites: Table<FoundingInvitesRow>;
       portal_seats: Table<PortalSeatsRow>;
+      portal_events: Table<PortalEventsRow>;
     };
     Views: {
       kit_access_counts: View<{
